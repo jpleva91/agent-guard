@@ -1,4 +1,4 @@
-// Keyboard input handler
+// Keyboard + touch input handler
 const keys = {};
 let justPressed = {};
 
@@ -13,6 +13,18 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => {
   keys[e.key] = false;
 });
+
+// Virtual button press (called by touch controls)
+export function simulatePress(key) {
+  if (!keys[key]) {
+    justPressed[key] = true;
+  }
+  keys[key] = true;
+}
+
+export function simulateRelease(key) {
+  keys[key] = false;
+}
 
 export function isDown(key) {
   return !!keys[key];
