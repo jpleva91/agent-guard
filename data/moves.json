@@ -3,5 +3,7 @@
   { "id": "hotfix", "name": "Hotfix", "power": 6 },
   { "id": "threadlock", "name": "ThreadLock", "power": 8 },
   { "id": "garbagecollect", "name": "GarbageCollect", "power": 7 },
-  { "id": "memorydump", "name": "MemoryDump", "power": 9 }
+  { "id": "memorydump", "name": "MemoryDump", "power": 9 },
+  { "id": "mutex", "name": "Mutex", "power": 7 },
+  { "id": "forcequit", "name": "ForceQuit", "power": 12 }
 ]

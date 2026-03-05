@@ -34,5 +34,17 @@
     "color": "#2ecc71",
     "sprite": "memoryleak",
     "description": "A bloated green blob creature that looks like it is slowly inflating and cannot stop growing. Its body is a round squishy mass of green slime with half-closed sleepy eyes, exhausted from carrying so much. Bright teal droplets drip constantly from its body and pool beneath it. Small floating 0s and 1s orbit around it like debris. A tiny faucet or pipe sticks out of its head, slowly dripping. It looks heavy, tired, and perpetually expanding."
+  },
+  {
+    "id": 4,
+    "name": "Deadlock",
+    "hp": 35,
+    "attack": 7,
+    "defense": 8,
+    "speed": 2,
+    "moves": ["mutex", "forcequit"],
+    "color": "#8e44ad",
+    "sprite": "deadlock",
+    "description": "Two interlocked purple chain-link creatures fused together in a death grip, each one grabbing the resource the other needs. They form a circular shape, like two snakes biting each other's tails. Their faces are strained and furious, teeth gritted, eyes bulging. Purple and violet energy crackles where their bodies interlock. Chains and padlock symbols orbit around them. Neither will ever let go."
   }
 ]
