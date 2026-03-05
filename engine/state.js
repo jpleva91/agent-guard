@@ -1,5 +1,5 @@
 // Game state machine
-const STATES = { EXPLORE: 'EXPLORE', BATTLE: 'BATTLE', MENU: 'MENU' };
+const STATES = { EXPLORE: 'EXPLORE', BATTLE_TRANSITION: 'BATTLE_TRANSITION', BATTLE: 'BATTLE', MENU: 'MENU' };
 
 let currentState = STATES.EXPLORE;
 
