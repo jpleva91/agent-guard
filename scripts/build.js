@@ -38,7 +38,6 @@ const MODULE_ORDER = [
   'sync/save.js',
   'engine/title.js',
   'battle/damage.js',
-  'battle/battle-core.js',
   'battle/battleEngine.js',
   'evolution/tracker.js',
   'evolution/evolution.js',
@@ -91,9 +90,15 @@ async function minifyWithEsbuildAndTerser(code) {
   // Step 2: terser — additional compression + property mangling where safe
   const terserResult = await terserMinify(minified, {
     compress: {
-      passes: 2,
+      passes: 3,
       unsafe_math: true,
-      drop_console: false,
+      unsafe_methods: true,
+      unsafe_proto: true,
+      drop_console: true,
+      pure_getters: true,
+      collapse_vars: true,
+      reduce_vars: true,
+      join_vars: true,
     },
     mangle: {
       toplevel: true,
