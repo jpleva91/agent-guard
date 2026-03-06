@@ -38,6 +38,9 @@ BugMon/
 │   ├── moves.json          Move definitions
 │   └── map.json            Tile grid for the world map
 │
+├── audio/                  Sound effects (Web Audio API, no files)
+│   └── sound.js            Synthesized sound effects and mute control
+│
 ├── sprites/                Pixel art sprites (PNG images)
 │   ├── sprites.js          Image loader with preload and fallback
 │   ├── SPRITE_GUIDE.md     Art specs, palettes, and generation prompts
@@ -56,15 +59,16 @@ BugMon/
 ```
 game.js (entry point)
 ├── engine/state.js         (no deps)
-├── engine/input.js         (no deps, also used by index.html touch controls)
+├── engine/input.js         ← audio/sound.js
 ├── engine/renderer.js      ← sprites/sprites.js
-├── engine/transition.js    (no deps)
+├── engine/transition.js    ← audio/sound.js
 ├── world/map.js            (no deps)
-├── world/player.js         ← engine/input.js, world/map.js
-├── world/encounters.js     (no deps, receives data via setter)
+├── world/player.js         ← engine/input.js, world/map.js, audio/sound.js
+├── world/encounters.js     ← audio/sound.js (receives data via setter)
 ├── battle/damage.js        (no deps)
 ├── battle/battleEngine.js  ← battle/damage.js, engine/input.js,
-│                              engine/state.js, world/player.js
+│                              engine/state.js, world/player.js, audio/sound.js
+├── audio/sound.js          (no deps, Web Audio API)
 └── sprites/sprites.js      (no deps, image loader)
 ```
 
@@ -201,6 +205,32 @@ See `sprites/SPRITE_GUIDE.md` for art specs and generation prompts.
 - `touch-action: none` prevents browser zoom/scroll
 - `user-scalable=no` in viewport meta
 - Canvas scales responsively
+
+## Audio System
+
+All sound effects are synthesized at runtime using the Web Audio API — no audio files needed.
+
+- **Module**: `audio/sound.js` — single module with exported `play*()` functions
+- **AudioContext**: Created lazily on first call, resumed on user interaction to comply with autoplay policies
+- **Unlock**: `unlock()` is called on every `keydown` and `simulatePress` (idempotent)
+- **Master volume**: All sounds route through a single `GainNode` for volume/mute control
+- **Mute toggle**: `toggleMute()` sets master gain to 0 or restores it; wired to the speaker button in the UI
+
+### Sound Effects
+
+| Event | Function | Synthesis |
+|-------|----------|-----------|
+| Menu navigate | `playMenuNav()` | Square wave blip, 880Hz |
+| Menu confirm | `playMenuConfirm()` | Two ascending square tones |
+| Menu cancel | `playMenuCancel()` | Descending frequency sweep |
+| Footstep | `playFootstep()` | Quiet triangle blip |
+| Encounter | `playEncounterAlert()` | 4-note ascending arpeggio (C-E-G-C) |
+| Transition flash | `playTransitionFlash()` | White noise burst |
+| Attack hit | `playAttack()` | Noise burst + descending sine sweep |
+| Faint | `playFaint()` | Long descending triangle tone |
+| Capture success | `playCaptureSuccess()` | 5-note ascending sine jingle |
+| Capture failure | `playCaptureFailure()` | "Boing" pitch sweep |
+| Battle victory | `playBattleVictory()` | Ascending jingle (lower octave) |
 
 ## Key Design Decisions
 

@@ -22,7 +22,8 @@
 - [x] Deadlock BugMon (#4) with Mutex and ForceQuit moves
 - [ ] Tile sprites (ground texture, wall bricks, animated grass)
 - [ ] Battle background art
-- [ ] Sound effects (Web Audio API, no files needed)
+- [x] Sound effects (Web Audio API, synthesized — no audio files)
+- [x] Mute toggle button
 
 ## V2 - More BugMon & Moves
 
