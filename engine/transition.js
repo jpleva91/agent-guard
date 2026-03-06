@@ -3,20 +3,29 @@ import { playTransitionFlash } from '../audio/sound.js';
 
 let transition = null;
 
-// Timeline: 3 quick white flashes, then fade to black, then start battle
-const PHASES = [
-  { type: 'flash', duration: 60, color: 'rgba(255,255,255,' },
-  { type: 'pause', duration: 80 },
-  { type: 'flash', duration: 60, color: 'rgba(255,255,255,' },
-  { type: 'pause', duration: 80 },
-  { type: 'flash', duration: 80, color: 'rgba(255,255,255,' },
-  { type: 'fade',  duration: 300, color: 'rgba(0,0,0,' },
-  { type: 'hold',  duration: 200 },
-];
+function hexToRgb(hex) {
+  const n = parseInt((hex || '#ffffff').replace('#', ''), 16);
+  return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+}
+
+function buildPhases(flashRgb) {
+  const flashColor = `rgba(${flashRgb},`;
+  return [
+    { type: 'flash', duration: 60, color: flashColor },
+    { type: 'pause', duration: 80 },
+    { type: 'flash', duration: 60, color: flashColor },
+    { type: 'pause', duration: 80 },
+    { type: 'flash', duration: 80, color: flashColor },
+    { type: 'fade',  duration: 300, color: 'rgba(0,0,0,' },
+    { type: 'hold',  duration: 200 },
+  ];
+}
 
 export function startTransition(wildMon) {
+  const rgb = hexToRgb(wildMon.color);
   transition = {
     wildMon,
+    phases: buildPhases(rgb),
     phase: 0,
     timer: 0,
     totalTime: 0,
@@ -29,17 +38,18 @@ export function updateTransition(dt) {
   if (!transition || transition.done) return null;
 
   transition.timer += dt;
-  const phase = PHASES[transition.phase];
+  const phases = transition.phases;
+  const phase = phases[transition.phase];
 
   if (transition.timer >= phase.duration) {
     transition.timer = 0;
     transition.phase++;
 
-    if (transition.phase < PHASES.length && PHASES[transition.phase].type === 'flash') {
+    if (transition.phase < phases.length && phases[transition.phase].type === 'flash') {
       playTransitionFlash();
     }
 
-    if (transition.phase >= PHASES.length) {
+    if (transition.phase >= phases.length) {
       transition.done = true;
       const mon = transition.wildMon;
       transition = null;
@@ -60,7 +70,7 @@ export function drawTransitionOverlay(ctx, width, height, mapDrawFn) {
   // Always draw the map underneath during transition
   mapDrawFn();
 
-  const phase = PHASES[transition.phase];
+  const phase = transition.phases[transition.phase];
   const progress = transition.timer / phase.duration;
 
   if (phase.type === 'flash') {
