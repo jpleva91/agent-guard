@@ -40,11 +40,13 @@ BugMon/
 │   └── cli/                # CLI tool (bugmon command)
 │       ├── bin.js           # Entry point (bugmon command)
 │       ├── adapter.js       # CLI watch adapter
+│       ├── auto-walk.js     # Auto-walk feature
 │       ├── catch.js         # Catch/cache mechanic
+│       ├── contribute.js    # Contribution prompt
 │       ├── encounter.js     # CLI encounter logic
 │       ├── renderer.js      # Terminal renderer (ANSI)
 │       ├── sync-server.js   # WebSocket sync server (zero deps)
-│       └── ...              # Other CLI modules
+│       └── bugmon-legacy.js # Legacy CLI version
 │
 ├── game/                   # Browser game (client-side)
 │   ├── game.js             # Game loop orchestration (entry point for JS)
@@ -76,6 +78,7 @@ BugMon/
 │       ├── sprites.js      # Image loader with preload/fallback
 │       ├── monsterGen.js   # Procedural monster sprite generation
 │       ├── tiles.js        # Procedural tile texture generation
+│       ├── SPRITE_GUIDE.md # Sprite creation guide
 │       └── *.png           # 64x64 battle sprites, 32x32 player sprites
 │
 ├── ecosystem/              # Game content & metagame systems
@@ -104,14 +107,21 @@ BugMon/
 │   └── rng.js              # Seeded random number generator
 │
 ├── examples/               # Error examples for CLI testing
+│   ├── async-error.js
+│   ├── module-error.js
+│   ├── null-error.js
+│   ├── reference-error.js
+│   ├── stack-overflow.js
+│   └── syntax-error.js
 │
-├── tests/                  # Test suite (8 test files)
+├── tests/                  # Test suite (9 test files)
 │   ├── run.js              # Test runner
-│   └── *.test.js           # Tests (battle, damage, data, build, simulation, strategies, rng, report)
+│   └── *.test.js           # Tests (battle, damage, data, build, simulator, simulation strategies, rng, report)
 │
 ├── scripts/                # Build tooling
 │   ├── build.js            # Single-file builder (esbuild + terser → dist/index.html)
-│   └── sync-data.js        # JSON → JS module converter
+│   ├── sync-data.js        # JSON → JS module converter
+│   └── prune-merged-branches.sh  # Git branch cleanup script
 │
 ├── hooks/                  # Git hooks for dev activity tracking
 │   ├── post-commit         # Increments commit counter in .events.json
@@ -135,8 +145,26 @@ BugMon/
 │       ├── bug-report.yml      # Bug report template
 │       └── balance-report.yml  # Balance issue reports
 │
+├── .claude/                # Claude Code custom skills & configuration
+│   ├── add-bugmon.md       # Guided BugMon creation skill
+│   ├── add-evolution.md    # Evolution chain skill
+│   ├── add-move.md         # Move creation skill
+│   ├── balance-check.md    # Balance analysis skill
+│   ├── full-test.md        # Full test suite skill
+│   ├── roster-report.md    # Roster analysis skill
+│   ├── update-docs.md      # Documentation update skill
+│   ├── validate-data.md    # Data validation skill
+│   ├── 21st-dev-magic/     # UI component generation via 21st.dev Magic MCP
+│   └── ui-ux-pro-max/      # Comprehensive UI/UX design intelligence
+│
+├── size-budget.json        # Bundle size budget (subsystem-level caps)
 ├── ARCHITECTURE.md         # Detailed technical architecture
+├── CODE_OF_CONDUCT.md      # Community guidelines
+├── CONSTRAINTS.md          # Project constraints
+├── CONTRIBUTING.md         # Contribution guide
+├── LIGHTWEIGHT.md          # Lightweight implementation guide
 ├── ROADMAP.md              # Milestone planning and feature backlog
+├── LICENSE                 # MIT license
 └── README.md               # User-facing guide
 ```
 
@@ -292,14 +320,31 @@ Defines evolution chains with dev-activity triggers:
 - **Size Check**: `.github/workflows/size-check.yml` enforces byte budget on every push.
 - **BugMon Submissions**: Community can submit new BugMon via GitHub Issue template. `validate-bugmon.yml` auto-validates and previews. `approve-bugmon.yml` auto-adds approved submissions to game data.
 
+## Size Budget
+
+The project enforces strict bundle size limits via `size-budget.json` and the `size-check.yml` CI workflow:
+
+- **Main bundle**: 10 KB target / 16 KB cap (gzipped, built with `--no-sprites`)
+- **Subsystem caps** (raw bytes): engine (7.5 KB), rendering (15.5 KB), battle (14.5 KB), data (13.2 KB), game-logic (19.5 KB), infrastructure (7 KB)
+
+Run `npm run budget` to check compliance locally.
+
 ## Testing
 
 ```bash
-npm test                               # Run all tests (8 test files)
+npm test                               # Run all tests (9 test files)
 npm run simulate -- --all --runs 100   # Round-robin roster balance analysis
 ```
 
-Test suite covers: battle logic, damage formula, data integrity, build output, simulation, strategies, RNG, reporting.
+Test suite covers: battle logic, damage formula, data integrity, build output, simulator, simulation strategies, RNG, reporting.
+
+## Claude Code Skills
+
+Custom skills are defined in `.claude/` for guided workflows:
+- **add-bugmon** / **add-move** / **add-evolution** — Step-by-step content creation
+- **balance-check** / **roster-report** — Game balance analysis
+- **full-test** / **validate-data** — Testing and validation
+- **update-docs** — Documentation maintenance
 
 ## When Adding New Content
 
