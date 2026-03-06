@@ -17,10 +17,10 @@ No dependencies. No build step. That's it.
 
 | What | Difficulty | Files to edit |
 |------|-----------|---------------|
-| Add a new BugMon | Easy | `data/monsters.json` |
-| Add a new move | Easy | `data/moves.json` |
-| Add a sprite | Easy | `sprites/` |
-| Balance stats | Easy | `data/monsters.json` |
+| Add a new BugMon | Easy | `ecosystem/data/monsters.json` |
+| Add a new move | Easy | `ecosystem/data/moves.json` |
+| Add a sprite | Easy | `game/sprites/` |
+| Balance stats | Easy | `ecosystem/data/monsters.json` |
 | Fix a bug | Medium | Source files |
 | Add a feature | Medium-Hard | Source files |
 
@@ -28,7 +28,7 @@ No dependencies. No build step. That's it.
 
 ## Add a New BugMon (2 minutes)
 
-1. Open `data/monsters.json`
+1. Open `ecosystem/data/monsters.json`
 2. Add an entry at the end of the array:
 
 ```json
@@ -53,7 +53,7 @@ No dependencies. No build step. That's it.
 |-------|------|-------------|
 | `id` | number | Unique integer. Use the next available number. |
 | `name` | string | PascalCase name. Should be a programming concept, bug, or dev culture reference. |
-| `type` | string | One of: `memory`, `logic`, `runtime`, `syntax`, `frontend`, `backend`, `devops`, `testing` |
+| `type` | string | One of: `frontend`, `backend`, `devops`, `testing`, `architecture`, `security`, `ai` |
 | `hp` | number | Hit points. Range: 20-50. |
 | `attack` | number | Attack power. Range: 3-10. |
 | `defense` | number | Defense. Range: 2-8. |
@@ -76,22 +76,21 @@ Aim for a total stat sum (HP + ATK + DEF + SPD) between 40 and 55.
 
 ### Type Guide
 
-| Type | Color | Theme |
-|------|-------|-------|
-| Memory | Green | Memory management bugs (leaks, segfaults, pointers) |
-| Logic | Orange | Algorithmic and logical errors (race conditions, deadlocks) |
-| Runtime | Red | Execution failures (crashes, stack overflows, infinite loops) |
-| Syntax | Purple | Code structure issues (spaghetti code, merge conflicts) |
-| Frontend | Blue | Browser and UI bugs (CSS issues, 404s, DOM problems) |
-| Backend | Teal | Server-side bugs (broken pipes, deprecated APIs, SQL injection) |
-| DevOps | Burnt Orange | Infrastructure bugs (pipeline failures, container issues, git problems) |
-| Testing | Gold | Test-related bugs (unhandled promises, regex issues, assertion errors) |
+| Type | Theme |
+|------|-------|
+| Frontend | Browser and UI bugs (CSS issues, 404s, DOM problems) |
+| Backend | Server-side bugs (null pointers, memory leaks, race conditions) |
+| DevOps | Infrastructure bugs (pipeline failures, container issues, git problems) |
+| Testing | Test-related bugs (flaky tests, assertion errors) |
+| Architecture | Design pattern bugs (monoliths, spaghetti code) |
+| Security | Security vulnerabilities (SQL injection, XSS) |
+| AI | AI/ML bugs (hallucinations, prompt issues) |
 
 ---
 
 ## Add a New Move
 
-1. Open `data/moves.json`
+1. Open `ecosystem/data/moves.json`
 2. Add an entry:
 
 ```json
@@ -105,7 +104,7 @@ Aim for a total stat sum (HP + ATK + DEF + SPD) between 40 and 55.
 | `id` | string | Lowercase, no spaces. Used as the internal identifier. |
 | `name` | string | Display name shown in battle. |
 | `power` | number | Base damage. Range: 4-14. |
-| `type` | string | One of the 8 types. Determines effectiveness. |
+| `type` | string | One of the 7 types. Determines effectiveness. |
 
 ### Power Guidelines
 
@@ -123,12 +122,12 @@ Aim for a total stat sum (HP + ATK + DEF + SPD) between 40 and 55.
 Sprites are 64x64 PNG images with transparent backgrounds.
 
 1. Create a 64x64 pixel art sprite
-2. Save as `sprites/<name>.png` (lowercase, matching the `sprite` field in monsters.json)
+2. Save as `game/sprites/<name>.png` (lowercase, matching the `sprite` field in monsters.json)
 3. The game will automatically load it
 
 If no sprite exists, the game falls back to a colored rectangle -- so sprites are optional.
 
-See `sprites/SPRITE_GUIDE.md` for art style guidelines and color palettes.
+See `game/sprites/SPRITE_GUIDE.md` for art style guidelines and color palettes.
 
 ---
 
@@ -147,13 +146,18 @@ Use the [Bug Report](../../issues/new?template=bug-report.yml) issue template, o
 ### Project Structure
 
 ```
-game.js              # Entry point, game loop
-engine/              # Core framework (state, input, rendering)
-battle/              # Battle engine + damage formula
-world/               # Map, player, encounters
-data/                # All game content (JSON)
-audio/               # Synthesized sounds
-sprites/             # Sprite images + procedural tiles
+core/                # CLI companion & shared logic (Node.js)
+game/                # Browser game (client-side)
+├── game.js          # Entry point, game loop
+├── engine/          # Core framework (state, input, rendering)
+├── battle/          # Battle engine + damage formula
+├── world/           # Map, player, encounters
+├── evolution/       # Dev-activity evolution system
+├── audio/           # Synthesized sounds
+├── sync/            # Save/load + CLI sync
+└── sprites/         # Sprite images + procedural tiles
+ecosystem/           # Game content & metagame
+└── data/            # All game content (JSON + JS modules)
 ```
 
 ### How It Works

@@ -143,24 +143,26 @@ npm run dev                            # Run CLI companion tool
 
 ```
 BugMon/
-├── game.js              # Game loop and orchestration
-├── engine/              # State machine, input, rendering, title screen
-├── battle/              # Turn-based battle engine + damage calc
-├── world/               # Map, player, encounters
-├── evolution/           # Dev-activity evolution system + animation
-├── data/                # JSON content (monsters, moves, types, evolutions, map)
-├── audio/               # Synthesized sound effects (Web Audio API)
-├── sync/                # Save/load + CLI↔browser sync
-├── sprites/             # Sprites + procedural generation
+├── core/                # CLI companion & shared logic (Node.js)
+│   ├── cli/             # CLI tool (bugmon command, watch adapter, sync server)
+│   ├── matcher.js       # Error → BugMon matching
+│   └── error-parser.js  # Error & stack trace parsing
+├── game/                # Browser game (client-side)
+│   ├── game.js          # Game loop and orchestration
+│   ├── engine/          # State machine, input, rendering, title screen
+│   ├── battle/          # Turn-based battle engine + damage calc
+│   ├── world/           # Map, player, encounters
+│   ├── evolution/       # Dev-activity evolution system + animation
+│   ├── audio/           # Synthesized sound effects (Web Audio API)
+│   ├── sync/            # Save/load + CLI↔browser sync
+│   └── sprites/         # Sprites + procedural generation
+├── ecosystem/           # Game content & metagame
+│   ├── data/            # JSON + JS modules (monsters, moves, types, evolutions, map)
+│   ├── bugdex.js        # BugDex collection system
+│   └── bosses.js        # Boss definitions
 ├── tests/               # Test suite (battle, damage, data, build, simulation)
 ├── scripts/             # Build tooling (single-file builder, data sync)
-└── cli/                 # CLI debugging companion
-    ├── bin.js           # Entry point
-    ├── core/            # Error & stacktrace parsers
-    ├── monsters/        # Error → monster matching
-    ├── bugdex/          # BugDex persistence
-    ├── ui/              # Terminal renderer (ANSI)
-    └── adapters/        # CLI watch adapter
+└── simulation/          # Headless battle simulation (strategies, RNG, reports)
 ```
 
 All game content (monsters, moves, types, evolutions) is defined in JSON and loaded at runtime. The engine never hardcodes game data. See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical breakdown.

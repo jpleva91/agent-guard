@@ -2,7 +2,7 @@
 
 ## Overview
 
-BugMon is a Pokémon-style browser game themed around software bugs. It runs entirely client-side with vanilla JS, HTML Canvas, and zero dependencies. Serve it with any static file server and open `index.html`.
+BugMon is a Pokémon-style browser game themed around software bugs. It runs entirely client-side with vanilla JS, HTML Canvas, and zero runtime dependencies. Serve it with any static file server and open `index.html`.
 
 ```
 python3 -m http.server
@@ -13,77 +13,104 @@ Also deployable to GitHub Pages — see `.github/workflows/deploy.yml`.
 
 ## Project Structure
 
+The codebase follows a **layered architecture** with three top-level directories separating concerns:
+
 ```
 BugMon/
 ├── index.html              Entry point - canvas, touch controls, loads game.js
-├── game.js                 Game loop, data loading, orchestration
 ├── simulate.js             Battle simulator CLI (Node.js)
-├── package.json            npm scripts (simulate, serve)
+├── package.json            npm scripts (simulate, serve, build, test)
 │
-├── engine/                 Core engine (framework-level)
-│   ├── state.js            Game state machine with named transitions
-│   ├── events.js           Event bus for decoupled system communication
-│   ├── input.js            Keyboard + touch input (pressed/just-pressed/simulate)
-│   ├── renderer.js         All Canvas drawing functions
-│   ├── transition.js       Battle transition animation (flash/fade)
-│   └── title.js            Title screen (ASCII logo, starfield, menu)
+├── core/                   CLI companion & shared logic (Node.js)
+│   ├── matcher.js          Error → BugMon matching logic
+│   ├── error-parser.js     Error message parser
+│   ├── stacktrace-parser.js Stack trace analysis
+│   ├── bug-event.js        Bug event definitions
+│   └── cli/                CLI tool (bugmon command)
+│       ├── bin.js           Entry point (bugmon command)
+│       ├── adapter.js       CLI watch adapter
+│       ├── catch.js         Catch/cache mechanic
+│       ├── contribute.js    Contribution helper
+│       ├── encounter.js     CLI encounter logic
+│       ├── renderer.js      Terminal renderer (ANSI)
+│       ├── auto-walk.js     Auto-walk mode
+│       ├── sync-server.js   WebSocket sync server (zero deps)
+│       └── bugmon-legacy.js Legacy CLI entry
 │
-├── world/                  Overworld systems
-│   ├── map.js              Map data loading, tile queries, collision
-│   ├── player.js           Player position, movement, party
-│   └── encounters.js       Wild encounter checks (10% in tall grass)
+├── game/                   Browser game (client-side)
+│   ├── game.js             Game loop, data loading, orchestration
+│   ├── engine/             Core engine (framework-level)
+│   │   ├── state.js        Game state machine with named transitions
+│   │   ├── events.js       Event bus for decoupled system communication
+│   │   ├── input.js        Keyboard + touch input (pressed/just-pressed/simulate)
+│   │   ├── renderer.js     All Canvas drawing functions
+│   │   ├── transition.js   Battle transition animation (flash/fade)
+│   │   └── title.js        Title screen (ASCII logo, starfield, menu)
+│   ├── world/              Overworld systems
+│   │   ├── map.js          Map data loading, tile queries, collision
+│   │   ├── player.js       Player position, movement, party
+│   │   └── encounters.js   Wild encounter checks (10% in tall grass)
+│   ├── battle/             Battle systems
+│   │   ├── battle-core.js  Pure battle engine (no UI/audio — testable, simulatable)
+│   │   ├── battleEngine.js Battle UI controller (connects core to input/audio)
+│   │   └── damage.js       Damage formula
+│   ├── evolution/          Evolution system
+│   │   ├── evolution.js    Checks conditions, triggers evolutions
+│   │   ├── tracker.js      Dev activity tracker (localStorage + .events.json)
+│   │   └── animation.js    Evolution visual sequence (flash, morph, reveal)
+│   ├── audio/              Sound effects (Web Audio API, no files)
+│   │   └── sound.js        Synthesized sound effects and mute control
+│   ├── sync/               Save/sync system
+│   │   ├── save.js         Browser-side save/load (localStorage)
+│   │   └── client.js       Client-side sync (WebSocket to CLI)
+│   └── sprites/            Pixel art sprites (PNG images)
+│       ├── sprites.js      Image loader with preload and fallback
+│       ├── monsterGen.js   Procedural monster sprite generation
+│       ├── tiles.js        Procedural tile texture generation
+│       ├── SPRITE_GUIDE.md Art specs, palettes, and generation prompts
+│       └── *.png           Battle sprites (64x64) and player sprites (32x32)
 │
-├── battle/                 Battle systems
-│   ├── battle-core.js      Pure battle engine (no UI/audio — testable, simulatable)
-│   ├── battleEngine.js     Battle UI controller (connects core to input/audio)
-│   └── damage.js           Damage formula
-│
-├── data/                   Game content (JSON, data-driven)
-│   ├── monsters.json       BugMon creatures, stats, and sprite refs
-│   ├── moves.json          Move definitions
-│   ├── types.json          Type system and effectiveness chart
-│   ├── evolutions.json     Evolution chains with dev-activity triggers
-│   ├── map.json            Tile grid for the world map
-│   └── *.js                Inlined data modules (generated by sync-data.js)
-│
-├── evolution/              Evolution system
-│   ├── evolution.js        Checks conditions, triggers evolutions
-│   ├── tracker.js          Dev activity tracker (localStorage + .events.json)
-│   └── animation.js        Evolution visual sequence (flash, morph, reveal)
-│
-├── audio/                  Sound effects (Web Audio API, no files)
-│   └── sound.js            Synthesized sound effects and mute control
-│
-├── sync/                   Save/sync system
-│   ├── save.js             Browser-side save/load (localStorage)
-│   └── client.js           Client-side sync (WebSocket to CLI)
-│
-├── sprites/                Pixel art sprites (PNG images)
-│   ├── sprites.js          Image loader with preload and fallback
-│   ├── monsterGen.js       Procedural monster sprite generation
-│   ├── tiles.js            Procedural tile texture generation
-│   ├── SPRITE_GUIDE.md     Art specs, palettes, and generation prompts
-│   ├── *.png               Battle sprites (64x64) and player sprites (32x32)
-│
-├── cli/                    CLI companion tool
-│   ├── bin.js              Entry point (bugmon command)
-│   ├── core/               Error parsing, stack trace analysis
-│   ├── monsters/           Error → monster matching
-│   ├── bugdex/             BugDex persistence
-│   ├── ui/                 Terminal renderer (ANSI)
-│   ├── adapters/           CLI watch adapter
-│   └── sync/               Sync server (WebSocket, zero deps)
+├── ecosystem/              Game content & metagame systems
+│   ├── data/               All game data (JSON source + JS modules)
+│   │   ├── monsters.json   BugMon creatures, stats, and sprite refs
+│   │   ├── monsters.js     Inlined JS module (imported by game)
+│   │   ├── moves.json      Move definitions
+│   │   ├── moves.js        Inlined JS module
+│   │   ├── types.json      Type system and effectiveness chart
+│   │   ├── types.js        Inlined JS module
+│   │   ├── evolutions.json Evolution chains with dev-activity triggers
+│   │   ├── evolutions.js   Inlined JS module
+│   │   ├── map.json        Tile grid for the world map
+│   │   └── mapData.js      Inlined JS module
+│   ├── bugdex.js           BugDex collection system
+│   ├── bugdex-spec.js      BugDex specification
+│   ├── bosses.js           Boss encounter definitions
+│   └── storage.js          Shared storage utilities
 │
 ├── tests/                  Test suite
 │   ├── run.js              Test runner
-│   └── *.test.js           Tests (battle, damage, data, build, simulation...)
+│   └── *.test.js           Tests (battle, damage, data, build, simulation, strategies, rng, report)
 │
 ├── scripts/                Build tooling
-│   ├── build.js            Single-file builder (esbuild + terser → dist/bugmon.html)
-│   └── sync-data.js        JSON → JS module converter
+│   ├── build.js            Single-file builder (esbuild + terser → dist/index.html)
+│   ├── sync-data.js        JSON → JS module converter
+│   └── prune-merged-branches.sh  Git branch cleanup
 │
-├── simulation/             Legacy headless battle simulation
-│   └── cli.js              CLI entry point (seeded RNG version)
+├── simulation/             Headless battle simulation
+│   ├── cli.js              CLI entry point (seeded RNG version)
+│   ├── simulator.js        Battle simulator engine
+│   ├── headlessBattle.js   Headless battle runner
+│   ├── strategies.js       AI battle strategies
+│   ├── report.js           Simulation report generator
+│   └── rng.js              Seeded random number generator
+│
+├── examples/               Error examples for CLI testing
+│   ├── async-error.js
+│   ├── null-error.js
+│   ├── reference-error.js
+│   ├── stack-overflow.js
+│   ├── syntax-error.js
+│   └── module-error.js
 │
 ├── hooks/                  Git hooks for dev activity tracking
 │   ├── post-commit         Increments commit counter in .events.json
@@ -108,71 +135,87 @@ BugMon/
         └── balance-report.yml  Balance issue reports
 ```
 
+## Layered Architecture
+
+The codebase is organized into three layers:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  index.html / simulate.js        (entry points)        │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  core/                     CLI companion & shared logic  │
+│  ├── cli/*                 Terminal UI, watch adapter    │
+│  ├── matcher.js            Error → BugMon matching      │
+│  └── error-parser.js       Error parsing                │
+│                                                         │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  game/                     Browser game (client-side)    │
+│  ├── engine/*              State, input, rendering       │
+│  ├── battle/*              Combat engine + damage calc   │
+│  ├── world/*               Map, player, encounters       │
+│  ├── evolution/*           Dev-activity evolution        │
+│  ├── audio/*               Synthesized sound effects     │
+│  ├── sync/*                Save/load + CLI sync          │
+│  └── sprites/*             Sprite loading + generation   │
+│                                                         │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ecosystem/                Game content & metagame        │
+│  ├── data/*.json           Source data (monsters, moves)  │
+│  ├── data/*.js             Inlined JS modules            │
+│  ├── bugdex.js             Collection tracking           │
+│  └── bosses.js             Boss definitions              │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Key separation:**
+- **core/** — Node.js code for the CLI companion tool. Parses errors, matches them to BugMon, renders to terminal. Runs in Node.js only.
+- **game/** — Browser game code. Engine, battle, world, evolution, audio, sprites. Runs in the browser only.
+- **ecosystem/** — Shared game content (JSON data, BugDex, bosses). Consumed by both core/ and game/.
+
 ## Module Dependency Graph
 
 ```
-game.js (entry point, browser)
-├── engine/events.js        (no deps — event bus)
-├── engine/state.js         ← engine/events.js
-├── engine/input.js         ← audio/sound.js
-├── engine/renderer.js      ← sprites/sprites.js, sprites/monsterGen.js
-├── engine/transition.js    ← audio/sound.js
-├── engine/title.js         ← engine/input.js, engine/state.js, audio/sound.js
-├── world/map.js            (no deps)
-├── world/player.js         ← engine/input.js, world/map.js, audio/sound.js
-├── world/encounters.js     ← audio/sound.js (receives data via setter)
-├── battle/damage.js        (no deps — pure math)
-├── battle/battleEngine.js  ← battle/damage.js, engine/input.js, engine/state.js,
-│                              engine/events.js, world/player.js, audio/sound.js
-├── evolution/tracker.js    (localStorage + .events.json)
-├── evolution/evolution.js  ← evolution/tracker.js
-├── evolution/animation.js  ← engine/renderer.js, audio/sound.js
-├── sync/save.js            (localStorage persistence)
-├── audio/sound.js          (no deps, Web Audio API)
-├── sprites/sprites.js      (no deps, image loader)
-├── sprites/monsterGen.js   (no deps, procedural sprite gen)
-└── sprites/tiles.js        (no deps, procedural tile gen)
+game/game.js (entry point, browser)
+├── game/engine/events.js        (no deps — event bus)
+├── game/engine/state.js         ← game/engine/events.js
+├── game/engine/input.js         ← game/audio/sound.js
+├── game/engine/renderer.js      ← game/sprites/sprites.js, game/sprites/monsterGen.js
+├── game/engine/transition.js    ← game/audio/sound.js
+├── game/engine/title.js         ← game/engine/input.js, game/engine/state.js, game/audio/sound.js
+├── game/world/map.js            (no deps)
+├── game/world/player.js         ← game/engine/input.js, game/world/map.js, game/audio/sound.js
+├── game/world/encounters.js     ← game/audio/sound.js (receives data via setter)
+├── game/battle/damage.js        (no deps — pure math)
+├── game/battle/battleEngine.js  ← game/battle/damage.js, game/engine/input.js, game/engine/state.js,
+│                                   game/engine/events.js, game/world/player.js, game/audio/sound.js
+├── game/evolution/tracker.js    (localStorage + .events.json)
+├── game/evolution/evolution.js  ← game/evolution/tracker.js
+├── game/evolution/animation.js  ← game/engine/renderer.js, game/audio/sound.js
+├── game/sync/save.js            (localStorage persistence)
+├── game/audio/sound.js          (no deps, Web Audio API)
+├── game/sprites/sprites.js      (no deps, image loader)
+├── game/sprites/monsterGen.js   (no deps, procedural sprite gen)
+├── game/sprites/tiles.js        (no deps, procedural tile gen)
+├── ecosystem/data/monsters.js   (inlined data module)
+├── ecosystem/data/moves.js      (inlined data module)
+├── ecosystem/data/types.js      (inlined data module)
+└── ecosystem/data/evolutions.js (inlined data module)
 
 simulate.js (entry point, Node.js CLI)
-└── battle/battle-core.js   ← battle/damage.js (pure logic only)
+└── game/battle/battle-core.js   ← game/battle/damage.js (pure logic only)
 
-cli/bin.js (entry point, Node.js CLI companion)
-├── cli/core/               ← error parsing, stack traces
-├── cli/monsters/           ← error → monster matching
-├── cli/bugdex/             ← BugDex persistence
-├── cli/ui/                 ← terminal renderer
-├── cli/adapters/           ← watch adapter
-└── cli/sync/               ← WebSocket sync server
+core/cli/bin.js (entry point, Node.js CLI companion)
+├── core/error-parser.js         ← error parsing
+├── core/stacktrace-parser.js    ← stack trace analysis
+├── core/matcher.js              ← error → monster matching
+└── core/cli/*                   ← CLI subsystems
 ```
 
-All modules use ES Module `import`/`export`. JSON data is loaded via `fetch()` at startup in `game.js` and passed to modules through setter functions.
-
-### Architecture Layers
-
-```
-┌─────────────────────────────────────────────┐
-│  game.js / simulate.js  (entry points)      │
-│  cli/bin.js              (CLI entry point)   │
-├─────────────────────────────────────────────┤
-│  battle/battleEngine.js  (UI controller)    │
-│  world/*.js              (overworld)        │  ← Game layer (presentation)
-│  engine/renderer.js      (drawing)          │
-│  engine/title.js         (title screen)     │
-│  audio/sound.js          (sound effects)    │
-│  evolution/animation.js  (evo visuals)      │
-├─────────────────────────────────────────────┤
-│  battle/damage.js        (pure math)        │
-│  engine/state.js         (state machine)    │  ← Engine layer (logic)
-│  engine/events.js        (event bus)        │
-│  evolution/evolution.js  (evo conditions)   │
-│  evolution/tracker.js    (dev activity)     │
-│  sync/save.js            (persistence)      │
-├─────────────────────────────────────────────┤
-│  data/*.json             (content)          │  ← Data layer (content)
-└─────────────────────────────────────────────┘
-```
-
-The engine layer has zero UI dependencies and can run in Node.js (used by the battle simulator CLI).
+All modules use ES Module `import`/`export`. Game data lives in `ecosystem/data/` as both JSON source files and inlined JS modules. The game imports the JS modules directly (no `fetch()` needed).
 
 ## Game State Machine
 
@@ -254,6 +297,8 @@ Unified input system supporting both keyboard and touch:
 
 ## Data Formats
 
+All game data lives in `ecosystem/data/`. JSON files are the source of truth; JS modules are generated from them via `node scripts/sync-data.js`.
+
 ### monsters.json
 ```json
 {
@@ -300,7 +345,7 @@ Tile values: `0` = ground, `1` = wall, `2` = tall grass
 
 ## Sprite System
 
-Image-based sprites loaded at startup via `sprites/sprites.js`:
+Image-based sprites loaded at startup via `game/sprites/sprites.js`:
 
 - **Battle sprites**: 64x64 PNG, transparent background, loaded by `sprite` field in monsters.json
 - **Player sprites**: 32x32 PNG, 4 directional frames (`player_down.png`, etc.)
@@ -308,13 +353,13 @@ Image-based sprites loaded at startup via `sprites/sprites.js`:
 - **Preload**: all sprites loaded via `preloadAll()` before game starts
 - `imageSmoothingEnabled = false` keeps pixel art crisp when scaled
 
-See `sprites/SPRITE_GUIDE.md` for art specs and generation prompts.
+See `game/sprites/SPRITE_GUIDE.md` for art specs and generation prompts.
 
 ## Rendering
 
-- Canvas: 480x320 (15×10 tiles at 32px)
+- Canvas: 480x320 (15x10 tiles at 32px)
 - Scales to fit screen width on mobile (`max-width: 100%`)
-- Tiles: colored rectangles (tan ground, gray walls, green grass with crosshatch)
+- Tiles: procedurally generated textures (ground with pebbles, brick walls, animated grass)
 - Player: directional sprite (cyberpunk debugger with teal visor)
 - Battle: split screen with sprites, HP bars, and text menu
 - Transition: white flash overlay → fade to black between explore and battle
@@ -331,7 +376,7 @@ See `sprites/SPRITE_GUIDE.md` for art specs and generation prompts.
 
 All sound effects are synthesized at runtime using the Web Audio API — no audio files needed.
 
-- **Module**: `audio/sound.js` — single module with exported `play*()` functions
+- **Module**: `game/audio/sound.js` — single module with exported `play*()` functions
 - **AudioContext**: Created lazily on first call, resumed on user interaction to comply with autoplay policies
 - **Unlock**: `unlock()` is called on every `keydown` and `simulatePress` (idempotent)
 - **Master volume**: All sounds route through a single `GainNode` for volume/mute control
@@ -357,23 +402,23 @@ All sound effects are synthesized at runtime using the Web Audio API — no audi
 
 BugMon evolve based on real developer activity tracked via git hooks and localStorage:
 
-- **tracker.js** — tracks 10 event types (commits, PRs merged, bugs fixed, etc.)
-- **evolution.js** — checks if conditions are met, calculates progress percentage
-- **animation.js** — renders 4-phase visual sequence (announce → flash → reveal → complete) with particles and glow
-- **evolutions.json** — defines 7 evolution chains with 10 evolved forms
-- **Git hooks** — `post-commit` and `post-merge` write to `.events.json` for the tracker
+- **game/evolution/tracker.js** — tracks 10 event types (commits, PRs merged, bugs fixed, etc.)
+- **game/evolution/evolution.js** — checks if conditions are met, calculates progress percentage
+- **game/evolution/animation.js** — renders 4-phase visual sequence (announce → flash → reveal → complete) with particles and glow
+- **ecosystem/data/evolutions.json** — defines evolution chains with dev-activity triggers
+- **Git hooks** — `hooks/post-commit` and `hooks/post-merge` write to `.events.json` for the tracker
 
 Console API for testing: `window.bugmon.log('commits')`
 
 ## Save/Sync System
 
-- **sync/save.js** — browser-side persistence via localStorage (party, BugDex, position, auto-save every 30s)
-- **sync/client.js** — WebSocket client that auto-connects to CLI sync server for real-time state push/pull
-- **cli/sync/server.js** — zero-dependency WebSocket server for CLI ↔ browser bridge
+- **game/sync/save.js** — browser-side persistence via localStorage (party, BugDex, position, auto-save every 30s)
+- **game/sync/client.js** — WebSocket client that auto-connects to CLI sync server for real-time state push/pull
+- **core/cli/sync-server.js** — zero-dependency WebSocket server for CLI ↔ browser bridge
 
 ## Build System
 
-The build system produces a single-file distribution (`dist/bugmon.html`):
+The build system produces a single-file distribution (`dist/index.html`):
 
 ```bash
 npm run build          # Full build with inline sprites
@@ -388,21 +433,23 @@ Size budget enforcement is defined in `size-budget.json` with per-subsystem targ
 ## Testing
 
 ```bash
-npm test               # Run all tests (9 test files)
+npm test               # Run all tests (8 test files)
 npm run simulate       # Random battle matchup
 npm run simulate -- --all --runs 100   # Full roster balance analysis
 ```
 
-Test suite covers: battle logic, damage formula, data integrity, build output, simulation, RNG.
+Test suite covers: battle logic, damage formula, data integrity, build output, simulation, strategies, RNG, reporting.
 
 ## Key Design Decisions
 
+- **Layered architecture** — `core/` (CLI), `game/` (browser), `ecosystem/` (shared data). Clear separation of concerns between Node.js CLI code, browser game code, and shared game content.
+- **Inlined data modules** — Game data lives in `ecosystem/data/` as both JSON (source of truth) and JS modules (imported by the game). Run `npm run sync-data` to regenerate JS from JSON. No runtime `fetch()` needed.
 - **ES Modules** over script tags: proper scoping, explicit dependencies
-- **Setter functions** for data injection: modules like `encounters.js` receive monster data via `setMonstersData()` rather than importing JSON directly (fetch requires async)
-- **Pure battle engine**: `battle-core.js` contains all battle logic with zero UI/audio/DOM dependencies. This enables AI opponents, battle simulations, balance testing, and multiplayer without touching UI code
+- **Setter functions** for data injection: some modules receive monster data via `setMonstersData()` for flexibility
+- **Pure battle engine**: `game/battle/battle-core.js` contains all battle logic with zero UI/audio/DOM dependencies. This enables battle simulations, balance testing, and multiplayer without touching UI code
 - **Event bus**: systems communicate via events (`MOVE_USED`, `BUGMON_FAINTED`, etc.) instead of calling each other directly, preventing tight coupling between battle logic, UI, and audio
 - **State machine with named transitions**: `enterBattle()`, `exitBattle()`, etc. instead of raw `setState()` calls, making state flow explicit and preventing invalid transitions
-- **Data-driven content**: all BugMon, moves, types, maps, and evolution chains live in `/data` JSON files. The engine reads data at runtime — no hardcoded monsters
+- **Data-driven content**: all BugMon, moves, types, maps, and evolution chains live in `ecosystem/data/` JSON files. The engine reads data at runtime — no hardcoded monsters
 - **Grid-locked movement**: player position is always integer tile coords. No sub-tile animation yet.
 - **Message queue pattern**: battle uses `showMessage(text, callback)` to chain actions with visible pauses between them
 - **Image sprites with fallback**: PNG files loaded at startup, graceful degradation to colored squares
@@ -421,14 +468,14 @@ npm run simulate -- --all                      # Full roster round-robin
 npm run simulate -- --all --runs 500           # Round-robin with custom sample
 ```
 
-The simulator uses `battle/battle-core.js` directly with no browser dependencies. This enables balance testing, AI training data generation, and quick debugging.
+The simulator uses `game/battle/battle-core.js` directly with no browser dependencies. This enables balance testing, AI training data generation, and quick debugging.
 
 ## Event Bus
 
 Systems subscribe to game events for decoupled communication:
 
 ```js
-import { eventBus, Events } from './engine/events.js';
+import { eventBus, Events } from './game/engine/events.js';
 
 // Any system can listen
 eventBus.on(Events.BUGMON_FAINTED, ({ name, side }) => { ... });
