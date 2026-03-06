@@ -12,7 +12,9 @@
 
 A monster-taming RPG where the monsters are software bugs, the types are programming domains, and your real coding activity drives your monsters' evolution. Commit code, your BugMon evolve. Merge a PR, unlock new forms. Fix bugs, encounter rare creatures.
 
-Built with zero dependencies, pure vanilla JS, and way too many puns.
+Fun for devs at every stage — whether you just wrote your first `Hello World` or you're debugging distributed systems.
+
+Built with zero runtime dependencies, pure vanilla JS, and way too many puns. The entire game fits in a single 21 KB file (gzipped, smaller than jQuery).
 
 **[Play Now](https://jpleva91.github.io/BugMon/)**
 
@@ -60,15 +62,17 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## Features
 
-- **30 BugMon** across 7 types with evolutions
+- **30 BugMon** across 7 types with 7 evolution chains (10 evolved forms)
 - **Dev-activity evolution** — your commits, PRs, and bug fixes trigger monster evolutions via git hooks
-- **CLI companion** — battle simulator, BugDex, and real-time sync between terminal and browser
+- **CLI companion** — wrap your dev commands with `bugmon watch`, turn real errors into encounters
+- **Browser ↔ CLI sync** — cache BugMon in your terminal, see them in the browser game instantly
 - Turn-based combat with speed priority, type effectiveness, and critical hits
 - Tile-based exploration with random encounters in tall grass
 - Cache mechanic with HP-based probability
-- Synthesized sound effects (Web Audio API)
+- Synthesized sound effects (Web Audio API — zero audio files)
 - Mobile touch controls (D-pad + A/B buttons)
-- **Zero dependencies** -- vanilla JS, HTML5 Canvas, no build step ([see the Lightweight Manifesto](LIGHTWEIGHT.md))
+- Save/load with auto-save and BugDex collection tracking
+- **Zero runtime dependencies** — vanilla JS, HTML5 Canvas, no framework ([see the Lightweight Manifesto](LIGHTWEIGHT.md))
 
 ## How to Play
 
@@ -124,18 +128,33 @@ python3 -m http.server
 
 Any static file server works. No build step, no `npm install`, no bundler.
 
+### Development Commands
+
+```bash
+npm test                               # Run test suite
+npm run simulate                       # Random battle matchup
+npm run simulate -- --all --runs 100   # Full roster balance analysis
+npm run build                          # Build single-file dist/bugmon.html (~21 KB gzipped)
+npm run budget                         # Check size budget compliance
+npm run dev                            # Run CLI companion tool
+```
+
 ## Architecture
 
 ```
 BugMon/
 ├── game.js              # Game loop and orchestration
-├── engine/              # State machine, input, rendering, transitions
+├── engine/              # State machine, input, rendering, title screen
 ├── battle/              # Turn-based battle engine + damage calc
 ├── world/               # Map, player, encounters
-├── data/                # JSON content (monsters, moves, types, map)
+├── evolution/           # Dev-activity evolution system + animation
+├── data/                # JSON content (monsters, moves, types, evolutions, map)
 ├── audio/               # Synthesized sound effects (Web Audio API)
-├── sprites/             # Pixel art sprites + procedural tile textures
-└── cli/                 # CLI debugging tool
+├── sync/                # Save/load + CLI↔browser sync
+├── sprites/             # Sprites + procedural generation
+├── tests/               # Test suite (battle, damage, data, build, simulation)
+├── scripts/             # Build tooling (single-file builder, data sync)
+└── cli/                 # CLI debugging companion
     ├── bin.js           # Entry point
     ├── core/            # Error & stacktrace parsers
     ├── monsters/        # Error → monster matching
@@ -144,7 +163,7 @@ BugMon/
     └── adapters/        # CLI watch adapter
 ```
 
-All game content (monsters, moves, types) is defined in JSON and loaded at runtime. The engine never hardcodes game data. See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical breakdown.
+All game content (monsters, moves, types, evolutions) is defined in JSON and loaded at runtime. The engine never hardcodes game data. See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical breakdown.
 
 ## Contributing
 
@@ -157,7 +176,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 - Vanilla JavaScript (ES6 modules)
 - HTML5 Canvas 2D
 - Web Audio API (synthesized sounds)
-- Zero dependencies, zero build tools
+- Zero runtime dependencies
+- Dev tooling: esbuild + terser (build), custom test runner
+- CI: GitHub Actions (deploy, validate, size check)
 
 ## License
 

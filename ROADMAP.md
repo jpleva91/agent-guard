@@ -1,10 +1,12 @@
 # BugMon Roadmap
 
-> The codebase is infested with bugs. Time to catch 'em all.
+> The codebase is infested with bugs. Time to cache 'em all.
 
 ## Vision
 
-BugMon is building toward a game where **your real coding life drives your monsters' evolution**. The core loop:
+BugMon is building toward a game that **every developer wants to share** — something fun enough to go viral, easy enough for any dev to contribute to, and small enough to embed anywhere.
+
+The core loop:
 
 ```
 code → encounter → battle → cache → evolve → repeat
@@ -14,11 +16,22 @@ code → encounter → battle → cache → evolve → repeat
 
 Commit code, your BugMon evolve. Merge a PR, unlock new forms. Fix bugs, encounter rare creatures. The game doesn't compete with your work — it runs alongside it.
 
+**Who is this for?** Developers at every stage of their coding journey. Whether you just wrote your first `Hello World` or you're debugging distributed systems, there's a BugMon that speaks to your experience.
+
+**How people play:**
+- **Browser** — Play on GitHub Pages, explore and battle
+- **CLI** — Run `bugmon watch -- npm run dev` and turn real errors into encounters
+- **Console injection** — Drop BugMon into any website's dev console (future)
+- **Contribute** — Add a BugMon in 2 minutes with a JSON edit, no code required
+
 **Strategic priorities:**
-1. Complete the core game loop with QoL features (V3)
-2. Add strategic depth to battles (V4)
-3. Build enough content and world to sustain engagement (V6)
-4. Grow through community contributions and developer word-of-mouth
+1. Make the game **fun and shareable** — on par with what early Pokémon was
+2. Keep the bundle **meaningfully small** (target: 16 KB gzipped, cap: 32 KB)
+3. Make it **dead simple to contribute** — new BugMon, new moves, new art styles
+4. Build **good tooling** — tests, CI, Claude Code integration, balance simulation
+5. Grow through community contributions and developer word-of-mouth
+
+**Pragmatic about dependencies:** Zero runtime deps is the goal for the browser game. But dev tooling should be good — tests, build tools, linters, whatever makes the product better. If React or a framework genuinely helps a feature, we'll consider it. The constraint is on the *shipped bundle*, not the development experience.
 
 ### Legend
 
@@ -26,18 +39,27 @@ Commit code, your BugMon evolve. Merge a PR, unlock new forms. Fix bugs, encount
 - **Priority:** Must-have | Should-have | Nice-to-have
 - **Status:** `DONE` | `IN PROGRESS` | `PLANNED` (assigned to a milestone) | `IDEA` (backlog only)
 
+### Size Budget
+
+Every feature must fit within the byte budget. Run `npm run budget` to check.
+
+| Metric | Target | Hard Cap |
+|--------|-------:|--------:|
+| Bundle (gzipped, no sprites) | 10 KB | 16 KB |
+| Bundle (gzipped, with sprites) | ~21 KB | 32 KB |
+
+See `size-budget.json` for per-subsystem budgets and `CONSTRAINTS.md` for design rules.
+
 ### Milestone Dependency Map
 
 ```
-V1 ──> V1.1 ──> V2 ──> V2.5 ──> V2.9 ──> V3 ──> V4 ──> V6 ──> V7
-                                                    |       |
-                                                    v       +──> V8
-                                                   V5*
-                                               (mostly done,
-                                            independent of V4)
+V1 ──> V1.1 ──> V2 ──> V2.5 ──> V2.9 ──> V2.95 ──> V3 ──> V4 ──> V6 ──> V7
+                                                              |       |
+                                                              v       +──> V8
+                                                             V5
 ```
 
-*V5 (Evolution) was built ahead of schedule — the core system is implemented. Remaining V5 work (XP/leveling) can proceed in parallel with V4.*
+*V2.95 (Evolution) was built ahead of schedule. V5 (XP/leveling) adds traditional RPG progression on top.*
 
 ---
 
@@ -135,14 +157,18 @@ This was originally V5 but was built ahead of schedule due to being the game's u
 
 ## V3 — Party Management & Core QoL `IN PROGRESS`
 
-> **Depends on:** V2.9 | **Effort:** Medium | **Theme:** Make the game feel like a real play session
+> **Depends on:** V2.95 | **Effort:** Medium | **Theme:** Make the game feel like a real play session
 
 - [x] Save/load via localStorage — `[L]` *(done in V2.9)*
 - [x] BugDex / collection tracker — `[M]` *(done in V2.9)*
+- [x] Test suite (`npm test`) — `[M]` *(9 test files covering battle, damage, data, build, simulation)*
+- [x] Build system with size budget enforcement (`npm run build`, `npm run budget`) — `[M]`
+- [x] CI workflows for data validation and size checks — `[S]`
 - [ ] Party management (swap active BugMon in and out of battle) — `[M]` *Must-have*
 - [ ] Settings menu (volume slider, text speed) — `[M]` *Should-have*
 - [ ] Smooth tile-to-tile movement animation (lerp between tiles) — `[M]` *Should-have*
 - [ ] PP system for moves (limited uses, restored at healing stations) — `[M]` *Should-have*
+- [ ] More sprite art — only 4/30 BugMon have PNG sprites, rest use fallback — `[L]` *Should-have*
 
 ## V4 — Status Effects & Battle Depth
 
@@ -244,11 +270,24 @@ The evolution system (dev-activity triggers) is done. This milestone adds the tr
 
 ## Stretch Goals
 
+**Distribution & virality:**
+- [ ] Console injection mode — drop BugMon into any website's dev tools console
+- [ ] Browser extension — encounter BugMon while browsing, catches persist
+- [ ] npm package — `npx bugmon` to play instantly in any terminal
+- [ ] Embeddable widget — `<script src="bugmon.js">` adds a mini-game to any site
+- [ ] Social sharing — screenshot/share your team, evolution milestones, rare catches
+
 **Dev-activity expansion:**
 - [ ] Team leaderboards (compare BugDex across a dev team)
 - [ ] GitHub Action that posts BugMon evolution announcements to PRs
 - [ ] Repo-specific encounter tables (different projects spawn different BugMon)
 - [ ] Weekly/monthly dev activity summaries as in-game rewards
+
+**Visual upgrades:**
+- [ ] Upgrade from pixel art to a more polished art style (SVG, vector, illustrated)
+- [ ] Animated battle sprites (idle bounce, attack flash, evolution particles)
+- [ ] Procedural monster sprite generation (canvas-drawn creatures by type/color)
+- [ ] Weather/time-of-day visual effects
 
 **Game features:**
 - [ ] Procedural BugMon generator (random stats, names, sprites)
