@@ -4,42 +4,29 @@ let ctx = null;
 let masterGain = null;
 let muted = false;
 let volume = 0.5;
-let ready = false;
+
+function initContext() {
+  if (ctx) return true;
+  try {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = ctx.createGain();
+    masterGain.gain.value = volume;
+    masterGain.connect(ctx.destination);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
 function ensureContext() {
-  if (!ctx) {
-    try {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      masterGain = ctx.createGain();
-      masterGain.gain.value = volume;
-      masterGain.connect(ctx.destination);
-      ctx.resume().then(() => { ready = true; });
-    } catch (e) {
-      return false;
-    }
-  }
-  if (ctx.state === 'suspended') {
-    ctx.resume().then(() => { ready = true; });
-  }
-  return ready;
+  if (!initContext()) return false;
+  if (ctx.state === 'suspended') ctx.resume();
+  return true;
 }
 
 export function unlock() {
-  if (!ctx) {
-    try {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      masterGain = ctx.createGain();
-      masterGain.gain.value = volume;
-      masterGain.connect(ctx.destination);
-    } catch (e) {
-      return;
-    }
-  }
-  if (ctx.state !== 'running') {
-    ctx.resume().then(() => { ready = true; });
-  } else {
-    ready = true;
-  }
+  if (!initContext()) return;
+  if (ctx.state === 'suspended') ctx.resume();
 }
 
 export function toggleMute() {
