@@ -46,7 +46,7 @@ Every feature must fit within the byte budget. Run `npm run budget` to check.
 | Metric | Target | Hard Cap |
 |--------|-------:|--------:|
 | Bundle (gzipped, no sprites) | 10 KB | 16 KB |
-| Bundle (gzipped, with sprites) | ~21 KB | 32 KB |
+| Bundle (gzipped, with sprites) | ~19 KB | 32 KB |
 
 See `size-budget.json` for per-subsystem budgets and `CONSTRAINTS.md` for design rules.
 

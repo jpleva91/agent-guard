@@ -14,18 +14,20 @@ Just vanilla JavaScript and vibes.
 
 | Category | Files | Size |
 |----------|------:|-----:|
-| JavaScript (game logic + engine) | ~25 | ~100 KB |
-| HTML + inline CSS | 1 | 5.5 KB |
-| JSON data (monsters, moves, types, map, evolutions) | 5 | 37 KB |
-| PNG sprites (pixel art) | 8 | 6.0 KB |
-| **Total deployable** | **~54** | **~190 KB** |
+| JavaScript (game logic + engine) | ~68 | ~229 KB |
+| HTML + inline CSS | 1 | 8 KB |
+| JSON data (monsters, moves, types, map, evolutions) | 5 | 43 KB |
+| PNG sprites (pixel art) | 8 | 6 KB |
+| **Total deployable** | **~83** | **~292 KB** |
 
 ### Single-File Build (`dist/bugmon.html`)
 
 | Metric | Size |
 |--------|-----:|
-| With sprites (base64) | 73 KB |
-| **Gzipped (with sprites)** | **~21 KB** |
+| Raw (with sprites, base64) | 43 KB |
+| **Gzipped (with sprites)** | **~19 KB** |
+| Raw (no sprites) | 35 KB |
+| **Gzipped (no sprites, deployed)** | **~12 KB** |
 | HTTP requests | **1** |
 
 Build it yourself: `node scripts/build.js`
@@ -34,7 +36,7 @@ Build it yourself: `node scripts/build.js`
 
 | What | Size |
 |------|-----:|
-| **BugMon (gzipped, with sprites)** | **~21 KB** |
+| **BugMon (gzipped, with sprites)** | **~19 KB** |
 | React 18 production (minified) | ~142 KB |
 | jQuery 3.7 (minified) | ~87 KB |
 | Vue 3 (minified) | ~33 KB |

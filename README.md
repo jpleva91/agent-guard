@@ -14,7 +14,7 @@ A monster-taming RPG where the monsters are software bugs, the types are program
 
 Fun for devs at every stage — whether you just wrote your first `Hello World` or you're debugging distributed systems.
 
-Built with zero runtime dependencies, pure vanilla JS, and way too many puns. The entire game fits in a single 21 KB file (gzipped, smaller than jQuery).
+Built with zero runtime dependencies, pure vanilla JS, and way too many puns. The entire game fits in a single 12 KB file (gzipped, smaller than jQuery).
 
 **[Play Now](https://jpleva91.github.io/BugMon/)**
 
@@ -134,7 +134,7 @@ Any static file server works. No build step, no `npm install`, no bundler.
 npm test                               # Run test suite
 npm run simulate                       # Random battle matchup
 npm run simulate -- --all --runs 100   # Full roster balance analysis
-npm run build                          # Build single-file dist/bugmon.html (~21 KB gzipped)
+npm run build                          # Build single-file dist/bugmon.html (~19 KB gzipped)
 npm run budget                         # Check size budget compliance
 npm run dev                            # Run CLI companion tool
 ```
