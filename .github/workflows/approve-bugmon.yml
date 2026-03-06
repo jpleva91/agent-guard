@@ -25,7 +25,7 @@ jobs:
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          RESULT=$(node .github/scripts/validate-submission.js "$ISSUE_BODY")
+          RESULT=$(node .github/scripts/validate-submission.cjs "$ISSUE_BODY")
           BUGMON=$(echo "$RESULT" | node -e "const d=require('fs').readFileSync('/dev/stdin','utf8'); console.log(JSON.stringify(JSON.parse(d).bugmon))")
           echo "bugmon=$BUGMON" >> "$GITHUB_OUTPUT"
 
@@ -35,7 +35,7 @@ jobs:
 
       - name: Generate BugMon entry
         run: |
-          node .github/scripts/generate-bugmon.js '${{ steps.validate.outputs.bugmon }}'
+          node .github/scripts/generate-bugmon.cjs '${{ steps.validate.outputs.bugmon }}'
 
       - name: Create PR
         env:

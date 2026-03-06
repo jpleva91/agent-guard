@@ -25,10 +25,13 @@ body:
       label: Type
       description: Your BugMon's type. Determines type effectiveness in battle.
       options:
-        - memory
-        - logic
-        - runtime
-        - syntax
+        - frontend
+        - backend
+        - devops
+        - testing
+        - architecture
+        - security
+        - ai
     validations:
       required: true
 
@@ -45,7 +48,7 @@ body:
     id: attack
     attributes:
       label: Attack
-      description: Attack stat (1-120). Current roster ranges from 4-9.
+      description: Attack stat (1-120). Current roster ranges from 5-9.
       placeholder: e.g. 8
     validations:
       required: true
@@ -54,7 +57,7 @@ body:
     id: defense
     attributes:
       label: Defense
-      description: Defense stat (1-120). Current roster ranges from 3-8.
+      description: Defense stat (1-120). Current roster ranges from 3-7.
       placeholder: e.g. 5
     validations:
       required: true
@@ -63,7 +66,7 @@ body:
     id: speed
     attributes:
       label: Speed
-      description: Speed stat (1-120). Faster BugMon attacks first. Current roster ranges from 1-10.
+      description: Speed stat (1-120). Faster BugMon attacks first. Current roster ranges from 2-10.
       placeholder: e.g. 6
     validations:
       required: true
@@ -72,25 +75,68 @@ body:
     id: move1
     attributes:
       label: Move 1
-      description: First move for your BugMon.
+      description: First move for your BugMon. Must be different from Move 2 and Move 3.
       options:
         - SegFault
-        - Hotfix
-        - ThreadLock
-        - GarbageCollect
-        - MemoryDump
-        - Mutex
-        - ForceQuit
-        - PatchDeploy
-        - Refactor
-        - BlueScreen
-        - CoreDump
-        - Rollback
-        - HotReload
-        - TypeMismatch
-        - Compile
-        - NullCheck
-        - BufferOverrun
+        - UnhandledException
+        - MemoryAccess
+        - RecursiveLoop
+        - StackOverflow
+        - EventStorm
+        - ThreadCollision
+        - Deadlock
+        - DataCorruption
+        - HeapOverflow
+        - GarbageStorm
+        - ReferenceTrap
+        - LayoutShift
+        - ZIndexWar
+        - MarginCollapse
+        - LoadingLoop
+        - Timeout
+        - RetryRequest
+        - ReduxStorm
+        - ContextExplosion
+        - StateMutation
+        - ConflictMarkers
+        - ForcePush
+        - DetachedHead
+        - FlakyTest
+        - PipelineCrash
+        - DependencyMismatch
+        - ContainerSpawn
+        - ImagePull
+        - PortBinding
+        - RandomFail
+        - TimingIssue
+        - MockBreak
+        - ExpectedMismatch
+        - EdgeCase
+        - StrictMode
+        - CouplingStrike
+        - DependencyWeb
+        - RefactorResist
+        - DependencyRule
+        - InterfaceSegregation
+        - AbstractionShield
+        - UntouchableModule
+        - TribalKnowledge
+        - RefactorCurse
+        - TableDrop
+        - QueryEscape
+        - PrivilegeEscalation
+        - ScriptInjection
+        - DOMHijack
+        - CookieTheft
+        - PromptInjection
+        - ContextFlood
+        - TokenOverflow
+        - ConfidentAnswer
+        - FabricatedCitation
+        - CreativeGuess
+        - RecursiveSelfImprove
+        - ComputeOverload
+        - AlignmentTest
     validations:
       required: true
 
@@ -98,27 +144,169 @@ body:
     id: move2
     attributes:
       label: Move 2
-      description: Second move for your BugMon. Must be different from Move 1.
+      description: Second move for your BugMon. Must be different from Move 1 and Move 3.
       options:
         - SegFault
-        - Hotfix
-        - ThreadLock
-        - GarbageCollect
-        - MemoryDump
-        - Mutex
-        - ForceQuit
-        - PatchDeploy
-        - Refactor
-        - BlueScreen
-        - CoreDump
-        - Rollback
-        - HotReload
-        - TypeMismatch
-        - Compile
-        - NullCheck
-        - BufferOverrun
+        - UnhandledException
+        - MemoryAccess
+        - RecursiveLoop
+        - StackOverflow
+        - EventStorm
+        - ThreadCollision
+        - Deadlock
+        - DataCorruption
+        - HeapOverflow
+        - GarbageStorm
+        - ReferenceTrap
+        - LayoutShift
+        - ZIndexWar
+        - MarginCollapse
+        - LoadingLoop
+        - Timeout
+        - RetryRequest
+        - ReduxStorm
+        - ContextExplosion
+        - StateMutation
+        - ConflictMarkers
+        - ForcePush
+        - DetachedHead
+        - FlakyTest
+        - PipelineCrash
+        - DependencyMismatch
+        - ContainerSpawn
+        - ImagePull
+        - PortBinding
+        - RandomFail
+        - TimingIssue
+        - MockBreak
+        - ExpectedMismatch
+        - EdgeCase
+        - StrictMode
+        - CouplingStrike
+        - DependencyWeb
+        - RefactorResist
+        - DependencyRule
+        - InterfaceSegregation
+        - AbstractionShield
+        - UntouchableModule
+        - TribalKnowledge
+        - RefactorCurse
+        - TableDrop
+        - QueryEscape
+        - PrivilegeEscalation
+        - ScriptInjection
+        - DOMHijack
+        - CookieTheft
+        - PromptInjection
+        - ContextFlood
+        - TokenOverflow
+        - ConfidentAnswer
+        - FabricatedCitation
+        - CreativeGuess
+        - RecursiveSelfImprove
+        - ComputeOverload
+        - AlignmentTest
     validations:
       required: true
+
+  - type: dropdown
+    id: move3
+    attributes:
+      label: Move 3
+      description: Third move for your BugMon. Must be different from Move 1 and Move 2.
+      options:
+        - SegFault
+        - UnhandledException
+        - MemoryAccess
+        - RecursiveLoop
+        - StackOverflow
+        - EventStorm
+        - ThreadCollision
+        - Deadlock
+        - DataCorruption
+        - HeapOverflow
+        - GarbageStorm
+        - ReferenceTrap
+        - LayoutShift
+        - ZIndexWar
+        - MarginCollapse
+        - LoadingLoop
+        - Timeout
+        - RetryRequest
+        - ReduxStorm
+        - ContextExplosion
+        - StateMutation
+        - ConflictMarkers
+        - ForcePush
+        - DetachedHead
+        - FlakyTest
+        - PipelineCrash
+        - DependencyMismatch
+        - ContainerSpawn
+        - ImagePull
+        - PortBinding
+        - RandomFail
+        - TimingIssue
+        - MockBreak
+        - ExpectedMismatch
+        - EdgeCase
+        - StrictMode
+        - CouplingStrike
+        - DependencyWeb
+        - RefactorResist
+        - DependencyRule
+        - InterfaceSegregation
+        - AbstractionShield
+        - UntouchableModule
+        - TribalKnowledge
+        - RefactorCurse
+        - TableDrop
+        - QueryEscape
+        - PrivilegeEscalation
+        - ScriptInjection
+        - DOMHijack
+        - CookieTheft
+        - PromptInjection
+        - ContextFlood
+        - TokenOverflow
+        - ConfidentAnswer
+        - FabricatedCitation
+        - CreativeGuess
+        - RecursiveSelfImprove
+        - ComputeOverload
+        - AlignmentTest
+    validations:
+      required: true
+
+  - type: dropdown
+    id: rarity
+    attributes:
+      label: Rarity
+      description: How rare your BugMon is in the wild.
+      options:
+        - common
+        - uncommon
+        - legendary
+    validations:
+      required: true
+
+  - type: input
+    id: theme
+    attributes:
+      label: Theme
+      description: A short theme for your BugMon (e.g. "runtime error", "concurrency bug", "infinite loading spinner").
+      placeholder: e.g. nested async chaos
+    validations:
+      required: true
+
+  - type: input
+    id: evolution
+    attributes:
+      label: Evolution (optional)
+      description: Name of the BugMon this evolves into. Leave blank if no evolution.
+      placeholder: e.g. AsyncAwait
+    validations:
+      required: false
 
   - type: input
     id: color
