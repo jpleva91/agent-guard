@@ -5,27 +5,32 @@ import { getState, setState, STATES } from './engine/state.js';
 import { loadMap, getMap, getTile } from './world/map.js';
 import { getPlayer, updatePlayer } from './world/player.js';
 import { setMonstersData, checkEncounter } from './world/encounters.js';
-import { setMovesData, startBattle, getBattle, updateBattle, movesData } from './battle/battleEngine.js';
+import { setMovesData, setTypeData, startBattle, getBattle, updateBattle, movesData } from './battle/battleEngine.js';
 import { preloadAll } from './sprites/sprites.js';
 import { initTileTextures } from './sprites/tiles.js';
 import { startTransition, updateTransition, getTransition, drawTransitionOverlay } from './engine/transition.js';
 
 let lastTime = 0;
+let typeColors = null;
 
 async function init() {
   const canvas = document.getElementById('game');
   initRenderer(canvas);
 
   // Load data
-  const [monstersRes, movesRes] = await Promise.all([
+  const [monstersRes, movesRes, typesRes] = await Promise.all([
     fetch('data/monsters.json'),
-    fetch('data/moves.json')
+    fetch('data/moves.json'),
+    fetch('data/types.json')
   ]);
   const monsters = await monstersRes.json();
   const moves = await movesRes.json();
+  const types = await typesRes.json();
 
   setMonstersData(monsters);
   setMovesData(moves);
+  setTypeData(types);
+  typeColors = types.typeColors;
 
   // Preload sprite images (gracefully falls back if PNGs don't exist yet)
   await preloadAll(monsters);
@@ -102,7 +107,7 @@ function render() {
   } else if (state === STATES.BATTLE) {
     const battle = getBattle();
     if (battle) {
-      drawBattle(battle, movesData);
+      drawBattle(battle, movesData, typeColors);
     }
   }
 }

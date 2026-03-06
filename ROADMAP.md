@@ -25,18 +25,18 @@
 - [x] Sound effects (Web Audio API, synthesized — no audio files)
 - [x] Mute toggle button
 
-## V2 - More BugMon & Moves
+## V2 - More BugMon & Moves (DONE)
 
-- [ ] Expand to 9+ BugMon:
-  - ~~Deadlock~~ (done), OffByOne, MergeConflict
+- [x] Expand to 12 BugMon:
+  - ~~Deadlock~~ (V1.1), OffByOne, MergeConflict
   - CallbackHell, Heisenbug, InfiniteLoop
-  - SpaghettiCode, StackOverflow (creature), IndexOutOfBounds
-- [ ] Expand to 15+ moves:
-  - PatchDeploy, Refactor, ~~ForceQuit~~ (done), BlueScreen
+  - SpaghettiCode, StackOverflow, IndexOutOfBounds
+- [x] Expand to 17 moves:
+  - PatchDeploy, Refactor, ~~ForceQuit~~ (V1.1), BlueScreen
   - CoreDump, Rollback, HotReload, TypeMismatch
-  - NullCheck, BufferOverrun, Reboot, Compile
-- [ ] Type system (memory, logic, runtime, syntax)
-- [ ] Type effectiveness chart
+  - NullCheck, BufferOverrun, Compile
+- [x] Type system (memory, logic, runtime, syntax)
+- [x] Type effectiveness chart (circular: memory > runtime > logic > syntax > memory)
 
 ## V3 - Status Effects & Depth
 

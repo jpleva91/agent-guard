@@ -11,11 +11,16 @@ import {
 
 let battle = null;
 let movesData = [];
+let typeData = null;
 let messageTimer = 0;
 const MESSAGE_DURATION = 1500;
 
 export function setMovesData(data) {
   movesData = data;
+}
+
+export function setTypeData(data) {
+  typeData = data;
 }
 
 export function startBattle(wildMon) {
@@ -123,10 +128,14 @@ function executeTurn(playerMove) {
 }
 
 function doAttack(attacker, move, defender, callback) {
-  const dmg = calcDamage(attacker, move, defender);
-  defender.currentHP -= dmg;
+  const typeChart = typeData ? typeData.effectiveness : null;
+  const { damage, effectiveness } = calcDamage(attacker, move, defender, typeChart);
+  defender.currentHP -= damage;
   playAttack();
-  showMessage(`${attacker.name} used ${move.name}! ${dmg} damage!`, callback);
+  let msg = `${attacker.name} used ${move.name}! ${damage} damage!`;
+  if (effectiveness > 1.0) msg += ' Super effective!';
+  else if (effectiveness < 1.0) msg += ' Not very effective...';
+  showMessage(msg, callback);
 }
 
 function enemyTurn(callback) {

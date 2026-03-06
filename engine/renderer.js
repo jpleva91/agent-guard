@@ -68,7 +68,7 @@ export function drawPlayer(player) {
   ctx.fill();
 }
 
-export function drawBattle(battle, movesData) {
+export function drawBattle(battle, movesData, typeColors) {
   // Background
   const bg = getBattleBackground();
   if (bg) {
@@ -86,6 +86,9 @@ export function drawBattle(battle, movesData) {
   ctx.fillStyle = '#fff';
   ctx.font = '14px monospace';
   ctx.fillText(battle.enemy.name, 300, 30);
+  if (typeColors && battle.enemy.type) {
+    drawTypeBadge(battle.enemy.name, 300, 30, battle.enemy.type, typeColors);
+  }
   drawHPBar(300, 110, 100, battle.enemy.currentHP, battle.enemy.hp);
 
   // Player BugMon (bottom left)
@@ -96,6 +99,9 @@ export function drawBattle(battle, movesData) {
   }
   ctx.fillStyle = '#fff';
   ctx.fillText(playerMon.name, 60, 130);
+  if (typeColors && playerMon.type) {
+    drawTypeBadge(playerMon.name, 60, 130, playerMon.type, typeColors);
+  }
   drawHPBar(60, 210, 100, playerMon.currentHP, playerMon.hp);
 
   // Menu area
@@ -117,9 +123,16 @@ export function drawBattle(battle, movesData) {
     moves.forEach((moveId, i) => {
       const move = movesData.find(m => m.id === moveId);
       if (move) {
+        // Type color dot
+        if (typeColors && move.type) {
+          ctx.fillStyle = typeColors[move.type] || '#fff';
+          ctx.beginPath();
+          ctx.arc(14 + i * 160, 271, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
         ctx.fillStyle = i === battle.moveIndex ? '#e94560' : '#fff';
         ctx.font = '14px monospace';
-        ctx.fillText(move.name, 20 + i * 160, 275);
+        ctx.fillText(move.name, 22 + i * 160, 275);
       }
     });
   } else if (battle.state === 'message') {
@@ -127,6 +140,26 @@ export function drawBattle(battle, movesData) {
     ctx.font = '14px monospace';
     ctx.fillText(battle.message, 20, 275);
   }
+}
+
+function drawTypeBadge(name, nameX, nameY, type, typeColors) {
+  ctx.font = '14px monospace';
+  const nameWidth = ctx.measureText(name).width;
+  const label = type.toUpperCase();
+  ctx.font = '9px monospace';
+  const labelWidth = ctx.measureText(label).width;
+  const badgeX = nameX + nameWidth + 6;
+  const badgeY = nameY - 10;
+  const badgeW = labelWidth + 8;
+  const badgeH = 13;
+
+  ctx.fillStyle = typeColors[type] || '#555';
+  ctx.beginPath();
+  ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 3);
+  ctx.fill();
+
+  ctx.fillStyle = '#fff';
+  ctx.fillText(label, badgeX + 4, nameY - 1);
 }
 
 function drawHPBar(x, y, width, current, max) {

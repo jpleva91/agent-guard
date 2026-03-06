@@ -1,0 +1,15 @@
+{
+  "types": ["memory", "logic", "runtime", "syntax"],
+  "typeColors": {
+    "memory": "#2ecc71",
+    "logic": "#f39c12",
+    "runtime": "#e74c3c",
+    "syntax": "#9b59b6"
+  },
+  "effectiveness": {
+    "memory":  { "memory": 1.0, "logic": 0.5, "runtime": 1.5, "syntax": 1.0 },
+    "logic":   { "memory": 1.0, "logic": 1.0, "runtime": 0.5, "syntax": 1.5 },
+    "runtime": { "memory": 0.5, "logic": 1.5, "runtime": 1.0, "syntax": 1.0 },
+    "syntax":  { "memory": 1.5, "logic": 1.0, "runtime": 1.0, "syntax": 0.5 }
+  }
+}

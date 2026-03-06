@@ -2,6 +2,7 @@
   {
     "id": 1,
     "name": "NullPointer",
+    "type": "memory",
     "hp": 30,
     "attack": 8,
     "defense": 4,
@@ -14,6 +15,7 @@
   {
     "id": 2,
     "name": "RaceCondition",
+    "type": "logic",
     "hp": 25,
     "attack": 6,
     "defense": 3,
@@ -26,6 +28,7 @@
   {
     "id": 3,
     "name": "MemoryLeak",
+    "type": "memory",
     "hp": 40,
     "attack": 5,
     "defense": 6,
@@ -38,6 +41,7 @@
   {
     "id": 4,
     "name": "Deadlock",
+    "type": "logic",
     "hp": 35,
     "attack": 7,
     "defense": 8,
@@ -46,5 +50,109 @@
     "color": "#8e44ad",
     "sprite": "deadlock",
     "description": "Two interlocked purple chain-link creatures fused together in a death grip, each one grabbing the resource the other needs. They form a circular shape, like two snakes biting each other's tails. Their faces are strained and furious, teeth gritted, eyes bulging. Purple and violet energy crackles where their bodies interlock. Chains and padlock symbols orbit around them. Neither will ever let go."
+  },
+  {
+    "id": 5,
+    "name": "OffByOne",
+    "type": "logic",
+    "hp": 28,
+    "attack": 7,
+    "defense": 5,
+    "speed": 7,
+    "moves": ["nullcheck", "rollback"],
+    "color": "#e67e22",
+    "sprite": "offbyone",
+    "description": "A small orange imp-like creature that is always slightly misaligned with reality. One eye is higher than the other, its teeth don't quite line up, and it stands half a step to the left of where it should be. Numbers float around it, all off by exactly one. It has a mischievous grin, knowing it causes subtle chaos everywhere it goes."
+  },
+  {
+    "id": 6,
+    "name": "MergeConflict",
+    "type": "syntax",
+    "hp": 32,
+    "attack": 6,
+    "defense": 7,
+    "speed": 4,
+    "moves": ["refactor", "patchdeploy"],
+    "color": "#8e44ad",
+    "sprite": "mergeconflict",
+    "description": "A creature torn between two versions of itself, with <<<< and >>>> markers visible on its body like battle scars. Its left side is one color scheme and its right side another, with a jagged line of equal signs running down the middle. It looks perpetually confused and conflicted, unable to decide which version of itself to be."
+  },
+  {
+    "id": 7,
+    "name": "CallbackHell",
+    "type": "runtime",
+    "hp": 27,
+    "attack": 9,
+    "defense": 3,
+    "speed": 8,
+    "moves": ["hotreload", "bluescreen"],
+    "color": "#c0392b",
+    "sprite": "callbackhell",
+    "description": "A nightmarish red creature made of nested curly braces and parentheses, each layer deeper and more indented than the last. Its body spirals inward like a vortex of code. Flames lick at its edges and its eyes glow from deep within the nested layers. Arrow functions trail behind it like tentacles. It screams in async agony."
+  },
+  {
+    "id": 8,
+    "name": "Heisenbug",
+    "type": "logic",
+    "hp": 26,
+    "attack": 7,
+    "defense": 4,
+    "speed": 9,
+    "moves": ["nullcheck", "typemismatch"],
+    "color": "#d4ac0d",
+    "sprite": "heisenbug",
+    "description": "A shimmering golden insect that flickers in and out of visibility. When you look directly at it, it appears normal, but in your peripheral vision it glitches and distorts. It wears tiny spectacles and has a quantum uncertainty cloud around it. Debug symbols orbit its head like a halo. The harder you try to observe it, the more it changes behavior."
+  },
+  {
+    "id": 9,
+    "name": "InfiniteLoop",
+    "type": "runtime",
+    "hp": 45,
+    "attack": 4,
+    "defense": 5,
+    "speed": 1,
+    "moves": ["coredump", "hotreload"],
+    "color": "#e74c3c",
+    "sprite": "infiniteloop",
+    "description": "A massive red ouroboros-like creature endlessly chasing its own tail in a perfect circle. Its body is covered in repeating arrow symbols all pointing forward. Its eyes are dizzy spirals. Loading spinners orbit around it. It has been running since the program started and shows no signs of stopping. Despite its size, it moves incredibly slowly because it is stuck repeating the same path forever."
+  },
+  {
+    "id": 10,
+    "name": "SpaghettiCode",
+    "type": "syntax",
+    "hp": 33,
+    "attack": 8,
+    "defense": 5,
+    "speed": 3,
+    "moves": ["refactor", "compile"],
+    "color": "#7d3c98",
+    "sprite": "spaghetticode",
+    "description": "A tangled purple mass of intertwined code lines that form a creature vaguely resembling a ball of spaghetti with eyes. Goto arrows stick out in random directions. Its body is a hopeless knot of dependencies and circular references. Despite being an absolute mess, it somehow still works. It leaves a trail of deprecated functions wherever it slithers."
+  },
+  {
+    "id": 11,
+    "name": "StackOverflow",
+    "type": "runtime",
+    "hp": 30,
+    "attack": 9,
+    "defense": 4,
+    "speed": 6,
+    "moves": ["bufferoverrun", "bluescreen"],
+    "color": "#cb4335",
+    "sprite": "stackoverflow",
+    "description": "A towering red creature made of stacked rectangular frames, each one representing a function call. It grows taller and taller as frames pile on top, wobbling precariously. Its eyes peek out from near the top of the stack, looking panicked. The bottom frames are crushed under the weight. When it attacks, the whole stack comes crashing down in a spectacular collapse."
+  },
+  {
+    "id": 12,
+    "name": "IndexOutOfBounds",
+    "type": "memory",
+    "hp": 28,
+    "attack": 8,
+    "defense": 3,
+    "speed": 8,
+    "moves": ["bufferoverrun", "segfault"],
+    "color": "#27ae60",
+    "sprite": "indexoutofbounds",
+    "description": "A green creature shaped like a hand with an extended index finger, always pointing just past the edge of an array. It stands on a numbered grid but is always one square beyond the last valid position. Red error exclamation marks pop up wherever it points. It has a confused expression, never understanding why it keeps reaching into forbidden territory."
   }
 ]
