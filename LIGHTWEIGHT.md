@@ -45,7 +45,7 @@ Build it yourself: `node scripts/build.js`
 
 BugMon has 30 monsters, 69 moves, 7 types, evolution chains, procedural terrain, synthesized audio, a full battle system, and mobile controls. Still smaller than jQuery.
 
-`node_modules` size: **0 bytes. Forever.**
+`node_modules` for dev tooling: esbuild + terser only. Zero runtime dependencies.
 
 ## What Makes This Possible
 
@@ -82,7 +82,7 @@ Dependencies are a tradeoff. For BugMon, the tradeoff was never worth it:
 - **Rendering?** Canvas 2D is built into every browser. It draws pixels. That's all we need.
 - **Sound?** The Web Audio API synthesizes everything. No codec negotiation, no file loading.
 - **State management?** A `let currentState` and a getter/setter. 14 lines. Works perfectly at this scale.
-- **Build tools?** Two Node.js scripts using only `fs`, `path`, and `zlib`. Run them if you want. Don't if you don't.
+- **Build tools?** esbuild + terser for production builds. Two dev dependencies. Run them if you want. Don't if you don't.
 - **Module system?** The browser has had native ES modules since 2017. No polyfill needed.
 
 Every line of code serves the game. Nothing serves a framework.
@@ -108,7 +108,7 @@ node scripts/build.js --no-sprites
 Can we make it smaller? Ideas for the ambitious:
 
 - **Procedural monster sprites** — Replace PNGs with canvas-drawn creatures based on type/color. ~30 lines per type pattern could eliminate all sprite files.
-- **Shorter variable names** — A proper minifier (terser) could shrink the JS significantly. Our build script does simple minification only.
+- **Shorter variable names** — Terser already handles minification, but more aggressive property mangling could help further.
 - **Map compression** — Run-length encoding on the tile grid. The current 15x10 grid is tiny, but larger maps would benefit.
 - **Binary data format** — Pack monster stats into a binary buffer instead of JSON. Probably overkill, but fun.
 - **WASM** — Rewrite the engine in C and compile to ~5KB of WASM. Absolute overkill. Would be hilarious.

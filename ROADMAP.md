@@ -161,9 +161,10 @@ This was originally V5 but was built ahead of schedule due to being the game's u
 
 - [x] Save/load via localStorage — `[L]` *(done in V2.9)*
 - [x] BugDex / collection tracker — `[M]` *(done in V2.9)*
-- [x] Test suite (`npm test`) — `[M]` *(9 test files covering battle, damage, data, build, simulation)*
+- [x] Test suite (`npm test`) — `[M]` *(8 test files covering battle, damage, data, build, simulation, strategies, RNG, reporting)*
 - [x] Build system with size budget enforcement (`npm run build`, `npm run budget`) — `[M]`
 - [x] CI workflows for data validation and size checks — `[S]`
+- [x] Layered architecture restructure (`core/`, `game/`, `ecosystem/`) — `[L]`
 - [ ] Party management (swap active BugMon in and out of battle) — `[M]` *Must-have*
 - [ ] Settings menu (volume slider, text speed) — `[M]` *Should-have*
 - [ ] Smooth tile-to-tile movement animation (lerp between tiles) — `[M]` *Should-have*
