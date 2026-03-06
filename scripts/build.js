@@ -217,7 +217,7 @@ ${bodyHTML}
 
 // --- Write output ---
 if (!fs.existsSync(DIST)) fs.mkdirSync(DIST);
-const outPath = path.join(DIST, 'bugmon.html');
+const outPath = path.join(DIST, 'index.html');
 fs.writeFileSync(outPath, output);
 
 // --- Size report ---
