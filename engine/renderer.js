@@ -1,6 +1,7 @@
 // Canvas rendering
 import { drawSprite } from '../sprites/sprites.js';
 import { getTileTexture, getGrassFrame, getBattleBackground } from '../sprites/tiles.js';
+import { generateMonster } from '../sprites/monsterGen.js';
 
 const TILE = 32;
 const COLORS = {
@@ -80,8 +81,8 @@ export function drawBattle(battle, movesData, typeColors) {
 
   // Enemy BugMon (top right)
   if (!battle.enemy.sprite || !drawSprite(ctx, battle.enemy.sprite, 320, 40, 64, 64)) {
-    ctx.fillStyle = battle.enemy.color;
-    ctx.fillRect(320, 40, 64, 64);
+    const enemySprite = generateMonster(battle.enemy.id, battle.enemy.color, 64);
+    ctx.drawImage(enemySprite, 320, 40);
   }
   ctx.fillStyle = '#fff';
   ctx.font = '14px monospace';
@@ -94,8 +95,8 @@ export function drawBattle(battle, movesData, typeColors) {
   // Player BugMon (bottom left)
   const playerMon = battle.playerMon;
   if (!playerMon.sprite || !drawSprite(ctx, playerMon.sprite, 80, 140, 64, 64)) {
-    ctx.fillStyle = playerMon.color;
-    ctx.fillRect(80, 140, 64, 64);
+    const playerSprite = generateMonster(playerMon.id, playerMon.color, 64);
+    ctx.drawImage(playerSprite, 80, 140);
   }
   ctx.fillStyle = '#fff';
   ctx.fillText(playerMon.name, 60, 130);
