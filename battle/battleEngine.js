@@ -4,6 +4,7 @@ import { wasPressed } from '../engine/input.js';
 import { setState, STATES } from '../engine/state.js';
 import { getPlayer } from '../world/player.js';
 import { eventBus, Events } from '../engine/events.js';
+import { triggerScreenShake, updateScreenShake } from '../engine/renderer.js';
 import {
   playMenuNav, playMenuConfirm, playMenuCancel,
   playAttack, playFaint, playCaptureSuccess,
@@ -52,6 +53,8 @@ export function getBattle() {
 
 export function updateBattle(dt) {
   if (!battle) return;
+
+  updateScreenShake(dt);
 
   if (battle.state === 'message') {
     messageTimer -= dt;
@@ -148,6 +151,7 @@ function doAttack(attacker, move, defender, callback) {
   const { damage, effectiveness, critical } = calcDamage(attacker, move, defender, typeChart);
   defender.currentHP -= damage;
   playAttack();
+  if (critical) triggerScreenShake(6, 300);
 
   eventBus.emit(Events.MOVE_USED, {
     attacker: attacker.name,

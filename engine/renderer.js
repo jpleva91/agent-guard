@@ -11,6 +11,32 @@ const COLORS = {
 let ctx;
 let frameCount = 0;
 
+// Screen shake state
+let shakeTime = 0;
+let shakeDuration = 0;
+let shakeIntensity = 0;
+let shakeX = 0;
+let shakeY = 0;
+
+export function triggerScreenShake(intensity = 6, duration = 300) {
+  shakeIntensity = intensity;
+  shakeDuration = duration;
+  shakeTime = duration;
+}
+
+export function updateScreenShake(dt) {
+  if (shakeTime <= 0) {
+    shakeX = 0;
+    shakeY = 0;
+    return;
+  }
+  shakeTime -= dt;
+  const progress = Math.max(0, shakeTime / shakeDuration);
+  const currentIntensity = shakeIntensity * progress;
+  shakeX = Math.random() * currentIntensity * 2 - currentIntensity;
+  shakeY = Math.random() * currentIntensity * 2 - currentIntensity;
+}
+
 export function initRenderer(canvas) {
   ctx = canvas.getContext('2d');
 }
@@ -70,6 +96,10 @@ export function drawPlayer(player) {
 }
 
 export function drawBattle(battle, movesData, typeColors) {
+  // Apply screen shake offset to battle scene (not menu)
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
   // Background
   const bg = getBattleBackground();
   if (bg) {
@@ -105,7 +135,9 @@ export function drawBattle(battle, movesData, typeColors) {
   }
   drawHPBar(60, 210, 100, playerMon.currentHP, playerMon.hp);
 
-  // Menu area
+  ctx.restore();
+
+  // Menu area (not affected by screen shake)
   ctx.fillStyle = '#16213e';
   ctx.fillRect(0, 240, 480, 80);
   ctx.strokeStyle = '#e94560';
