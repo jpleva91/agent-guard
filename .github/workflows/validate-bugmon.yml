@@ -24,7 +24,7 @@ jobs:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           set +e
-          RESULT=$(node .github/scripts/validate-submission.js "$ISSUE_BODY")
+          RESULT=$(node .github/scripts/validate-submission.cjs "$ISSUE_BODY")
           EXIT_CODE=$?
           echo "result=$RESULT" >> "$GITHUB_OUTPUT"
           echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
@@ -39,7 +39,7 @@ jobs:
         if: steps.validate.outputs.exit_code == '0'
         id: preview
         run: |
-          PREVIEW=$(node .github/scripts/battle-preview.js '${{ steps.validate.outputs.bugmon }}')
+          PREVIEW=$(node .github/scripts/battle-preview.cjs '${{ steps.validate.outputs.bugmon }}')
           # Use a delimiter for multiline output
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "preview<<$EOF" >> "$GITHUB_OUTPUT"

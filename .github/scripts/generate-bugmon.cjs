@@ -36,6 +36,10 @@ const newMonster = {
   moves: bugmon.moves,
   color: bugmon.color,
   sprite: spriteName,
+  rarity: bugmon.rarity || 'common',
+  theme: bugmon.theme || '',
+  evolution: bugmon.evolution || null,
+  passive: null,
   description: bugmon.description,
 };
 

@@ -8,6 +8,7 @@ const path = require('path');
 
 const STAT_MIN = 1;
 const STAT_MAX = 120;
+const VALID_RARITIES = ['common', 'uncommon', 'legendary'];
 
 function parseIssueBody(body) {
   // GitHub issue forms produce markdown with ### headers and values below them.
@@ -86,27 +87,45 @@ function validate(issueBody) {
     }
   }
 
-  // Validate moves
-  const move1Name = (fields['Move 1'] || '').trim();
-  const move2Name = (fields['Move 2'] || '').trim();
-  const move1Id = moveNameToId(move1Name);
-  const move2Id = moveNameToId(move2Name);
+  // Validate moves (3 moves required, all different)
+  const moveNames = [];
+  const moveIds = [];
+  for (let i = 1; i <= 3; i++) {
+    const moveName = (fields[`Move ${i}`] || '').trim();
+    const moveId = moveNameToId(moveName);
 
-  if (!move1Name) {
-    errors.push('Move 1 is required.');
-  } else if (!validMoveIds.includes(move1Id)) {
-    errors.push(`Invalid Move 1 "${move1Name}". Must be one of: ${validMoveNames.join(', ')}.`);
+    if (!moveName) {
+      errors.push(`Move ${i} is required.`);
+    } else if (!validMoveIds.includes(moveId)) {
+      errors.push(`Invalid Move ${i} "${moveName}". Must be one of: ${validMoveNames.join(', ')}.`);
+    } else {
+      moveNames.push(moveName);
+      moveIds.push(moveId);
+    }
   }
 
-  if (!move2Name) {
-    errors.push('Move 2 is required.');
-  } else if (!validMoveIds.includes(move2Id)) {
-    errors.push(`Invalid Move 2 "${move2Name}". Must be one of: ${validMoveNames.join(', ')}.`);
+  // Check for duplicate moves
+  const uniqueMoveIds = new Set(moveIds);
+  if (moveIds.length > 0 && uniqueMoveIds.size !== moveIds.length) {
+    errors.push('All three moves must be different.');
   }
 
-  if (move1Id && move2Id && move1Id === move2Id) {
-    errors.push('Move 1 and Move 2 must be different.');
+  // Validate rarity
+  const rarity = (fields['Rarity'] || '').trim().toLowerCase();
+  if (!rarity) {
+    errors.push('Rarity is required.');
+  } else if (!VALID_RARITIES.includes(rarity)) {
+    errors.push(`Invalid rarity "${rarity}". Must be one of: ${VALID_RARITIES.join(', ')}.`);
   }
+
+  // Validate theme
+  const theme = (fields['Theme'] || '').trim();
+  if (!theme) {
+    errors.push('Theme is required.');
+  }
+
+  // Evolution (optional)
+  const evolution = (fields['Evolution (optional)'] || '').trim() || null;
 
   // Validate color (optional)
   const color = (fields['Color (optional)'] || '').trim();
@@ -131,8 +150,11 @@ function validate(issueBody) {
       attack: stats.attack,
       defense: stats.defense,
       speed: stats.speed,
-      moves: [move1Id, move2Id],
+      moves: moveIds,
       color: color || defaultColor,
+      rarity,
+      theme,
+      evolution,
       description,
     };
   }
