@@ -114,9 +114,11 @@ BugMon/
 │   ├── stack-overflow.js
 │   └── syntax-error.js
 │
-├── tests/                  # Test suite (9 test files)
+├── tests/                  # Test suite (16 test files)
 │   ├── run.js              # Test runner
-│   └── *.test.js           # Tests (battle, damage, data, build, simulator, simulation strategies, rng, report)
+│   └── *.test.js           # Tests (battle-core, battle, bug-event, build, damage, data,
+│                           #   error-parser, events, evolution, map, matcher, report,
+│                           #   rng, simulator, stacktrace-parser, strategies)
 │
 ├── scripts/                # Build tooling
 │   ├── build.js            # Single-file builder (esbuild + terser → dist/index.html)
@@ -146,16 +148,17 @@ BugMon/
 │       └── balance-report.yml  # Balance issue reports
 │
 ├── .claude/                # Claude Code custom skills & configuration
-│   ├── add-bugmon.md       # Guided BugMon creation skill
-│   ├── add-evolution.md    # Evolution chain skill
-│   ├── add-move.md         # Move creation skill
-│   ├── balance-check.md    # Balance analysis skill
-│   ├── full-test.md        # Full test suite skill
-│   ├── roster-report.md    # Roster analysis skill
-│   ├── update-docs.md      # Documentation update skill
-│   ├── validate-data.md    # Data validation skill
-│   ├── 21st-dev-magic/     # UI component generation via 21st.dev Magic MCP
-│   └── ui-ux-pro-max/      # Comprehensive UI/UX design intelligence
+│   └── skills/             # Skill definitions
+│       ├── add-bugmon.md       # Guided BugMon creation skill
+│       ├── add-evolution.md    # Evolution chain skill
+│       ├── add-move.md         # Move creation skill
+│       ├── balance-check.md    # Balance analysis skill
+│       ├── full-test.md        # Full test suite skill
+│       ├── roster-report.md    # Roster analysis skill
+│       ├── update-docs.md      # Documentation update skill
+│       ├── validate-data.md    # Data validation skill
+│       ├── 21st-dev-magic/     # UI component generation via 21st.dev Magic MCP
+│       └── ui-ux-pro-max/      # Comprehensive UI/UX design intelligence
 │
 ├── size-budget.json        # Bundle size budget (subsystem-level caps)
 ├── ARCHITECTURE.md         # Detailed technical architecture
@@ -332,15 +335,15 @@ Run `npm run budget` to check compliance locally.
 ## Testing
 
 ```bash
-npm test                               # Run all tests (9 test files)
+npm test                               # Run all tests (16 test files)
 npm run simulate -- --all --runs 100   # Round-robin roster balance analysis
 ```
 
-Test suite covers: battle logic, damage formula, data integrity, build output, simulator, simulation strategies, RNG, reporting.
+Test suite covers: battle-core, battle logic, bug events, build output, damage formula, data integrity, error parsing, event bus, evolution, map, matcher, reporting, RNG, simulator, stacktrace parsing, strategies.
 
 ## Claude Code Skills
 
-Custom skills are defined in `.claude/` for guided workflows:
+Custom skills are defined in `.claude/skills/` for guided workflows:
 - **add-bugmon** / **add-move** / **add-evolution** — Step-by-step content creation
 - **balance-check** / **roster-report** — Game balance analysis
 - **full-test** / **validate-data** — Testing and validation
