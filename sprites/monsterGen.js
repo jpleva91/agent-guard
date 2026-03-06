@@ -239,3 +239,101 @@ export function generateMonster(monsterId, color, size) {
   monsterCache.set(key, canvas);
   return canvas;
 }
+
+/**
+ * Generate a colored egg sprite for wild (unhatched) monsters.
+ * Each egg is unique based on monster id - different spot patterns, crack styles.
+ */
+export function generateEgg(monsterId, color, size) {
+  const key = `egg_${monsterId}_${color}_${size}`;
+  if (monsterCache.has(key)) return monsterCache.get(key);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  const rand = mulberry32(monsterId * 3571 + 17);
+  const cx = size / 2;
+  const cy = size / 2 + size * 0.05; // slightly lower center
+  const rx = size * 0.3;  // horizontal radius
+  const ryTop = size * 0.4;  // taller on top
+  const ryBot = size * 0.32; // rounder on bottom
+
+  const baseColor = color;
+  const darkColor = darken(color, 50);
+  const lightColor = lighten(color, 60);
+  const shellLight = lighten(color, 30);
+
+  // Draw egg shape (oval, narrower at top)
+  ctx.beginPath();
+  // Top half (narrower)
+  ctx.ellipse(cx, cy, rx, ryTop, 0, Math.PI, 0, false);
+  // Bottom half (wider)
+  ctx.ellipse(cx, cy, rx * 1.1, ryBot, 0, 0, Math.PI, false);
+  ctx.closePath();
+
+  // Gradient fill
+  const grad = ctx.createRadialGradient(
+    cx - rx * 0.3, cy - ryTop * 0.3, 2,
+    cx, cy, rx * 1.2
+  );
+  grad.addColorStop(0, lightColor);
+  grad.addColorStop(0.5, baseColor);
+  grad.addColorStop(1, darkColor);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Outline
+  ctx.strokeStyle = darkColor;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Spots/markings (unique per monster)
+  const spotCount = 2 + Math.floor(rand() * 4);
+  for (let i = 0; i < spotCount; i++) {
+    const angle = rand() * Math.PI * 2;
+    const dist = rand() * 0.5 + 0.2;
+    const spotX = cx + Math.cos(angle) * rx * dist;
+    const spotY = cy + Math.sin(angle) * ryBot * dist * 0.8;
+    const spotR = size * (0.02 + rand() * 0.04);
+
+    ctx.beginPath();
+    ctx.arc(spotX, spotY, spotR, 0, Math.PI * 2);
+    ctx.fillStyle = rand() > 0.5 ? shellLight : darkColor;
+    ctx.fill();
+  }
+
+  // Cracks (subtle, like it's about to hatch)
+  const hasCracks = rand() > 0.4;
+  if (hasCracks) {
+    ctx.strokeStyle = darkColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    const crackStartX = cx + (rand() - 0.5) * rx * 0.8;
+    const crackStartY = cy - ryTop * 0.1;
+    ctx.moveTo(crackStartX, crackStartY);
+    const segments = 2 + Math.floor(rand() * 3);
+    for (let i = 0; i < segments; i++) {
+      const dx = (rand() - 0.5) * size * 0.12;
+      const dy = rand() * size * 0.08;
+      ctx.lineTo(crackStartX + dx * (i + 1) * 0.5, crackStartY + dy * (i + 1));
+    }
+    ctx.stroke();
+  }
+
+  // Highlight/shine
+  ctx.beginPath();
+  ctx.ellipse(cx - rx * 0.25, cy - ryTop * 0.35, size * 0.04, size * 0.07, -0.3, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fill();
+
+  // Subtle wobble shadow at bottom
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + ryBot + 2, rx * 0.8, size * 0.03, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fill();
+
+  monsterCache.set(key, canvas);
+  return canvas;
+}

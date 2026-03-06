@@ -1,7 +1,7 @@
 // Canvas rendering
 import { drawSprite } from '../sprites/sprites.js';
 import { getTileTexture, getGrassFrame, getBattleBackground } from '../sprites/tiles.js';
-import { generateMonster } from '../sprites/monsterGen.js';
+import { generateMonster, generateEgg } from '../sprites/monsterGen.js';
 
 const TILE = 32;
 const COLORS = {
@@ -79,9 +79,9 @@ export function drawBattle(battle, movesData, typeColors) {
     ctx.fillRect(0, 0, 480, 320);
   }
 
-  // Enemy BugMon (top right)
+  // Enemy BugMon (top right) - wild monsters show as eggs until caught
   if (!battle.enemy.sprite || !drawSprite(ctx, battle.enemy.sprite, 320, 40, 64, 64)) {
-    const enemySprite = generateMonster(battle.enemy.id, battle.enemy.color, 64);
+    const enemySprite = generateEgg(battle.enemy.id, battle.enemy.color, 64);
     ctx.drawImage(enemySprite, 320, 40);
   }
   ctx.fillStyle = '#fff';
