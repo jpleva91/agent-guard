@@ -220,6 +220,18 @@ if (!fs.existsSync(DIST)) fs.mkdirSync(DIST);
 const outPath = path.join(DIST, 'index.html');
 fs.writeFileSync(outPath, output);
 
+// --- Copy sprite PNGs for lazy loading (when not inlined) ---
+if (noSprites) {
+  const spriteDir = path.join(ROOT, 'sprites');
+  const distSprites = path.join(DIST, 'sprites');
+  if (!fs.existsSync(distSprites)) fs.mkdirSync(distSprites, { recursive: true });
+  const pngs = fs.existsSync(spriteDir) ? fs.readdirSync(spriteDir).filter(f => f.endsWith('.png')) : [];
+  for (const png of pngs) {
+    fs.copyFileSync(path.join(spriteDir, png), path.join(distSprites, png));
+  }
+  if (pngs.length > 0) console.log(`\nCopied ${pngs.length} sprite PNGs to dist/sprites/ for lazy loading.`);
+}
+
 // --- Size report ---
 const rawSize = output.length;
 const gzipped = zlib.gzipSync(output);
