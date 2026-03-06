@@ -15,28 +15,33 @@ code → encounter → battle → cache → evolve → repeat
 Commit code, your BugMon evolve. Merge a PR, unlock new forms. Fix bugs, encounter rare creatures. The game doesn't compete with your work — it runs alongside it.
 
 **Strategic priorities:**
-1. Lock in the core game loop (V3)
-2. Activate the dev-activity evolution mechanic as the central differentiator (V5)
-3. Build enough content to sustain engagement (V6)
+1. Complete the core game loop with QoL features (V3)
+2. Add strategic depth to battles (V4)
+3. Build enough content and world to sustain engagement (V6)
 4. Grow through community contributions and developer word-of-mouth
 
 ### Legend
 
 - **Effort:** `[S]` = hours | `[M]` = 1-2 days | `[L]` = 3+ days
 - **Priority:** Must-have | Should-have | Nice-to-have
-- **Status:** `DONE` | `PLANNED` (assigned to a milestone) | `IDEA` (backlog only)
+- **Status:** `DONE` | `IN PROGRESS` | `PLANNED` (assigned to a milestone) | `IDEA` (backlog only)
 
 ### Milestone Dependency Map
 
 ```
-V1 -> V1.1 -> V2 -> V2.5 -> V2.9 -> V2.1 -> V3 -> V4 -> V5 -> V6 -> V7
-                                                                  |
-                                                                  +-> V8
+V1 ──> V1.1 ──> V2 ──> V2.5 ──> V2.9 ──> V3 ──> V4 ──> V6 ──> V7
+                                                    |       |
+                                                    v       +──> V8
+                                                   V5*
+                                               (mostly done,
+                                            independent of V4)
 ```
+
+*V5 (Evolution) was built ahead of schedule — the core system is implemented. Remaining V5 work (XP/leveling) can proceed in parallel with V4.*
 
 ---
 
-## V1 -- Playable Prototype (DONE)
+## V1 — Playable Prototype `DONE`
 
 - [x] Tile-based exploration (15x10 map)
 - [x] Arrow key movement with grid snapping
@@ -48,7 +53,7 @@ V1 -> V1.1 -> V2 -> V2.5 -> V2.9 -> V2.1 -> V3 -> V4 -> V5 -> V6 -> V7
 - [x] Run option (always succeeds)
 - [x] HUD showing active BugMon and party size
 
-## V1.1 -- Sprites & Polish (DONE)
+## V1.1 — Sprites & Polish `DONE`
 
 > **Theme:** Make it look and sound like a real game
 
@@ -57,173 +62,183 @@ V1 -> V1.1 -> V2 -> V2.5 -> V2.9 -> V2.1 -> V3 -> V4 -> V5 -> V6 -> V7
 - [x] Battle transition animation (3x white flash + fade to black)
 - [x] Mobile touch controls (D-pad + A/B buttons)
 - [x] GitHub Pages deployment workflow
-- [x] Deadlock BugMon (#4) with Mutex and ForceQuit moves
-- [x] Sound effects (Web Audio API, synthesized -- no audio files)
+- [x] Sound effects (Web Audio API, synthesized — no audio files)
 - [x] Mute toggle button
 - [x] Procedural tile textures (ground, wall bricks, animated grass)
 - [x] Battle background art (procedurally generated)
+- [x] Title screen with retro synthwave design (ASCII logo, starfield, perspective grid)
 
-## V2 -- Type System & Expanded Roster (DONE)
+## V2 — Type System & Expanded Roster `DONE`
 
 > **Theme:** Give battles strategic depth through type matchups
 
-- [x] 4 types defined: Memory, Logic, Runtime, Syntax
-- [x] Type effectiveness chart (super effective 1.5x / not very effective 0.5x)
-- [x] Types assigned to all existing BugMon and moves
-- [x] 8 new BugMon (12 total): OffByOne, MergeConflict, CallbackHell, Heisenbug, InfiniteLoop, SpaghettiCode, StackOverflow, IndexOutOfBounds
-- [x] 10 new moves (17 total): PatchDeploy, Refactor, BlueScreen, CoreDump, Rollback, HotReload, TypeMismatch, Compile, NullCheck, BufferOverrun
+- [x] 7 types: frontend, backend, devops, testing, architecture, security, ai
+- [x] 7x7 type effectiveness chart (super effective 1.5x / not very effective 0.5x)
+- [x] Types assigned to all BugMon and moves
+- [x] 20 base BugMon across all 7 types (including 2 legendaries)
+- [x] 69 moves across all 7 types
+- [x] Rarity system: common, uncommon, legendary, evolved
+- [x] Rarity-weighted encounter tables
 
-## V2.5 -- Open Source & Expanded Types (DONE)
+## V2.5 — Open Source & Community `DONE`
 
-> **Depends on:** V2 | **Effort:** Medium | **Theme:** Make BugMon contributor-friendly
+> **Theme:** Make BugMon contributor-friendly
 
-- [x] Expanded type system: 4 new types (Frontend, Backend, DevOps, Testing) -- `[M]`
-- [x] 8x8 type effectiveness chart with two interlocking cycles -- `[S]`
-- [x] 8 new BugMon for new types (20 total): CSSFloat, 404NotFound, DeprecatedAPI, BrokenPipe, GitBlame, ForkBomb, UnhandledPromise, RegexDenial -- `[M]`
-- [x] 8 new moves for new types (25 total): CacheInvalidation, DOMManipulation, SQLInjection, APITimeout, DockerKill, PipelineFailure, AssertionError, MockOverride -- `[M]`
-- [x] README overhaul (open source positioning, contributor teaser) -- `[S]`
-- [x] CONTRIBUTING.md (add BugMon in 2 minutes, schemas, guidelines) -- `[S]`
-- [x] GitHub issue templates (New BugMon, New Move, Balance, Bug Report) -- `[S]`
-- [x] JSON validation GitHub Action (validates data on PRs) -- `[M]`
+- [x] Community BugMon submission via GitHub Issue template (new-bugmon.yml form)
+- [x] Auto-validation workflow (validate-bugmon.yml) — checks schema, stat ranges, move existence
+- [x] Battle preview bot — auto-comments with matchup preview on valid submissions
+- [x] Auto-generation workflow (approve-bugmon.yml) — "approved" label triggers PR creation
+- [x] README overhaul (open source positioning, contributor teaser)
+- [x] CONTRIBUTING.md (add BugMon in 2 minutes, schemas, guidelines)
 
-## V2.1 -- Roster Polish & Battle UI
+## V2.9 — CLI ↔ Browser Sync & "Cache" Mechanic `DONE`
 
-> **Depends on:** V2 | **Effort:** Medium | **Theme:** Finish what V2 started
+> **Theme:** Bridge terminal and browser — cache 'em all
 
-- [ ] Pixel art sprites for 8 new BugMon (currently using color fallbacks) -- `[L]`
-- [ ] Show move descriptions and types in battle UI -- `[M]`
-- [ ] Move categories: damage, heal, status, utility -- `[S]`
-- [ ] Reboot move (planned in V2 but not yet implemented) -- `[S]`
+- [x] Rename "Catch/Capture" to "Cache" throughout
+- [x] Browser persistence via localStorage (party, BugDex, position, auto-save)
+- [x] CLI sync server (`bugmon sync`) — Node.js built-in WebSocket, zero deps
+- [x] Browser sync client — auto-connects to local sync server, real-time state push/pull
+- [x] Shared BugDex — CLI and browser merge party, storage, seen counts, stats
+- [x] Seamless handoff — cache BugMon in terminal, see them in browser game instantly
+- [x] Title screen with continue/new game menu
+- [x] Auto-save every 30 seconds during exploration
 
-## V2.9 -- CLI ↔ Browser Sync & "Cache" Mechanic (DONE)
+## V2.95 — Evolution System `DONE`
 
-> **Depends on:** V2.5 | **Effort:** Medium | **Theme:** Bridge terminal and browser — cache 'em all
+> **Theme:** Your coding life drives your monsters' growth — BugMon's core differentiator
 
-- [x] Rename "Catch/Capture" to "Cache" throughout (thematic: you cache BugMon to storage) -- `[M]`
-- [x] Browser persistence via localStorage (party, BugDex, position, auto-save) -- `[M]`
-- [x] CLI sync server (`bugmon sync`) — Node.js built-in WebSocket, zero deps -- `[M]`
-- [x] Browser sync client — auto-connects to local sync server, real-time state push/pull -- `[M]`
-- [x] Shared BugDex — CLI and browser merge party, storage, seen counts, stats -- `[M]`
-- [x] Seamless handoff — cache BugMon in terminal, see them in browser game instantly -- `[S]`
+This was originally V5 but was built ahead of schedule due to being the game's unique selling point.
 
-## V3 -- Save/Load & Core QoL
+**Evolution engine:**
+- [x] Dev-activity tracker (localStorage + .events.json) — 10 tracked event types
+- [x] Evolution condition checker with progress percentage
+- [x] 4-phase evolution animation (announce → flash → reveal → complete) with particles and glow
+- [x] Git hooks (post-commit, post-merge) for automatic event tracking
+- [x] Console API for testing (`window.bugmon.log('commits')`)
 
-> **Depends on:** V2.9 | **Effort:** Large | **Theme:** Make the game feel like a real play session
+**7 evolution chains (10 evolved forms):**
+- [x] CallbackHell → PromiseChain → AsyncAwait (commits, PRs merged)
+- [x] NullPointer → OptionalChaining → TypeSafety (bugs fixed, tests passing)
+- [x] DivSoup → Flexbox → CSSGrid (refactors, code reviews)
+- [x] MergeConflict → RebaseMaster (conflicts resolved)
+- [x] Monolith → Microservice (deploys)
+- [x] MemoryLeak → GarbageCollector (CI passes)
+- [x] PromptGoblin → PromptEngineer (docs written)
 
-- [x] Save/load via localStorage -- `[L]` *(done in V2.9)*
-- [ ] Party management (swap active BugMon) -- `[M]`
-- [ ] Settings menu (volume, text speed) -- `[M]`
-- [x] BugDex / collection tracker -- `[M]` *(done in V2.9)*
-- [ ] Smooth tile-to-tile movement animation -- `[M]`
-- [ ] PP system for moves (limited uses, restored at healing stations) -- `[M]`
+**HUD integration:**
+- [x] Evolution progress shown in exploration HUD
+- [x] EVOLVING game state with dedicated animation sequence
+- [x] Sound effect for evolution
 
-## V4 -- Status Effects & Battle Depth
+---
+
+## V3 — Party Management & Core QoL `IN PROGRESS`
+
+> **Depends on:** V2.9 | **Effort:** Medium | **Theme:** Make the game feel like a real play session
+
+- [x] Save/load via localStorage — `[L]` *(done in V2.9)*
+- [x] BugDex / collection tracker — `[M]` *(done in V2.9)*
+- [ ] Party management (swap active BugMon in and out of battle) — `[M]` *Must-have*
+- [ ] Settings menu (volume slider, text speed) — `[M]` *Should-have*
+- [ ] Smooth tile-to-tile movement animation (lerp between tiles) — `[M]` *Should-have*
+- [ ] PP system for moves (limited uses, restored at healing stations) — `[M]` *Should-have*
+
+## V4 — Status Effects & Battle Depth
 
 > **Depends on:** V3 | **Effort:** Large | **Theme:** Make every battle a strategic puzzle
 
 **Status conditions:**
-- [ ] Bugged (damage over time) -- `[S]`
-- [ ] Deprecated (reduced attack) -- `[S]`
-- [ ] Frozen (skip turn chance) -- `[S]`
-- [ ] Corrupted (random move override) -- `[S]`
-- [ ] Optimized (speed boost) -- `[S]`
+- [ ] Bugged (damage over time) — `[S]`
+- [ ] Deprecated (reduced attack) — `[S]`
+- [ ] Frozen (skip turn chance) — `[S]`
+- [ ] Corrupted (random move override) — `[S]`
+- [ ] Optimized (speed boost) — `[S]`
 
 **Battle mechanics:**
-- [ ] Moves that inflict/cure status effects -- `[M]`
-- [ ] Multi-turn moves (Compile: charge then hit hard) -- `[M]`
-- [ ] Healing moves (Hotfix reclassified from damage to heal) -- `[S]`
-- [ ] Critical hits (small random chance for 1.5x damage) -- `[S]`
-- [ ] Accuracy/evasion stats -- `[M]`
+- [ ] Moves that inflict/cure status effects — `[M]`
+- [ ] Move categories: damage, heal, status, utility (currently all damage) — `[M]`
+- [ ] Multi-turn moves (Compile: charge then hit hard) — `[M]`
+- [ ] Healing moves (Hotfix reclassified from damage to heal) — `[S]`
+- [x] Critical hits (6.25% chance for 1.5x damage) — `[S]` *(already implemented)*
+- [ ] Accuracy/evasion stats — `[M]`
+- [ ] Passive abilities (data exists for some BugMon, not yet used in battles) — `[M]`
 
-## V5 -- Progression & Evolution (Core Differentiator)
+## V5 — XP, Leveling & Move Learning
 
-> **Depends on:** V4 | **Effort:** Large | **Theme:** Your coding life drives your monsters' growth
+> **Depends on:** V4 | **Effort:** Large | **Theme:** Traditional progression alongside dev-activity evolution
 
-This is BugMon's unique selling point. No other game evolves creatures based on real developer activity.
+The evolution system (dev-activity triggers) is done. This milestone adds the traditional RPG progression layer.
 
 **Leveling:**
-- [ ] Experience points and leveling -- `[L]`
-- [ ] Stat growth curves on level up -- `[M]`
-- [ ] Learn new moves at level thresholds -- `[M]`
-- [ ] Move replacement UI (pick which move to forget) -- `[M]`
+- [ ] Experience points from battles — `[L]`
+- [ ] Stat growth curves on level up — `[M]`
+- [ ] Learn new moves at level thresholds — `[M]`
+- [ ] Move replacement UI (pick which move to forget) — `[M]`
 
-**Evolution (dev-activity triggers):**
-- [ ] Evolution system with transformations: -- `[L]`
-  - CallbackHell -> AsyncAwait
-  - MemoryLeak -> GarbageCollector
-  - SpaghettiCode -> CleanArchitecture
-  - NullPointer -> OptionalChaining
-  - RaceCondition -> MutexGuard
-  - OffByOne -> ArrayOutOfBounds
-  - MergeConflict -> RebaseHell
-  - InfiniteLoop -> RecursionLimit
-  - Heisenbug -> Schrodinbug
-  - BitRot -> DataCorruption -> SystemFailure (3-stage)
-
-**Dev-activity integration:**
-- [ ] Commit streak bonuses (consecutive days → XP multiplier) -- `[M]`
-- [ ] PR merges trigger evolution checks -- `[S]`
-- [ ] Bug fix commits unlock rare encounters -- `[M]`
-- [ ] CI failures spawn boss-like encounters -- `[M]`
-- [ ] Code review activity rewards (reviewer XP) -- `[S]`
+**Dev-activity bonuses:**
+- [ ] Commit streak bonuses (consecutive days → XP multiplier) — `[M]`
+- [ ] Bug fix commits unlock rare encounters — `[M]`
+- [ ] CI failures spawn boss-like encounters — `[M]`
+- [ ] Code review activity rewards (reviewer XP) — `[S]`
 
 **Scaling:**
-- [ ] Wild BugMon level scaling by area -- `[M]`
+- [ ] Wild BugMon level scaling by area — `[M]`
 
-## V6 -- World Expansion
+## V6 — World Expansion
 
 > **Depends on:** V5 | **Effort:** Extra Large | **Theme:** A whole codebase to explore
 
 **Maps:**
-- [ ] Multiple maps with zone transitions -- `[L]`
-- [ ] Map zones: -- `[L]`
-  - Server Room (early game, Memory-type BugMon)
-  - QA Lab (mid game, Logic-type BugMon)
-  - Production Floor (late game, Runtime-type BugMon)
+- [ ] Multiple maps with zone transitions — `[L]`
+- [ ] Map zones: — `[L]`
+  - Server Room (early game, backend-type BugMon)
+  - QA Lab (mid game, testing-type BugMon)
+  - Production Floor (late game, devops-type BugMon)
   - Legacy Basement (end game, mixed + rare)
-  - Open Source Garden (optional area, community bugs)
-- [ ] Minimap -- `[M]`
+  - Open Source Garden (optional area, community-submitted BugMon)
+- [ ] Minimap — `[M]`
 
 **NPCs:**
-- [ ] NPC trainers: Junior Dev, Senior Dev, DevOps Engineer, QA Tester -- `[L]`
-- [ ] Dialog system -- `[M]`
+- [ ] NPC trainers: Junior Dev, Senior Dev, DevOps Engineer, QA Tester — `[L]`
+- [ ] Dialog system — `[M]`
 
 **Stations & items:**
-- [ ] Healing station (the Coffee Machine) -- `[M]`
-- [ ] Items: -- `[M]`
+- [ ] Healing station (the Coffee Machine) — `[M]`
+- [ ] Items: — `[M]`
   - Energy Drink (heal HP)
   - Debug Log (capture boost)
   - Stack Trace (reveal enemy stats)
   - Repel (suppress encounters)
   - PP Restore (refill move uses)
 
-## V7 -- Boss Battles & Story
+## V7 — Boss Battles & Story
 
 > **Depends on:** V6 | **Effort:** Large | **Theme:** The final debug
 
 **Boss trainers (unique dialog + custom teams):**
-- [ ] The Tech Lead (mid-boss, Server Room) -- `[M]`
-- [ ] The Architect (late-boss, Production Floor) -- `[M]`
-- [ ] Legacy System (final boss, Legacy Basement -- ancient, overpowered, undocumented) -- `[L]`
+- [ ] The Tech Lead (mid-boss, Server Room) — `[M]`
+- [ ] The Architect (late-boss, Production Floor) — `[M]`
+- [ ] Legacy System (final boss, Legacy Basement — ancient, overpowered, undocumented) — `[L]`
 
 **Story:**
-- [ ] Simple story arc: "The codebase is infested. Debug them all." -- `[M]`
-- [ ] Victory condition / ending screen -- `[S]`
-- [ ] Post-game: harder encounters, rare BugMon, NewGame+ -- `[L]`
+- [ ] Simple story arc: "The codebase is infested. Debug them all." — `[M]`
+- [ ] Victory condition / ending screen — `[S]`
+- [ ] Post-game: harder encounters, rare BugMon, NewGame+ — `[L]`
 
-## V8 -- Music & Atmosphere
+## V8 — Music & Atmosphere
 
 > **Depends on:** V6 | **Effort:** Large | **Theme:** Make it feel alive
 
-- [ ] Background music (synthesized chiptune loops via Web Audio API) -- `[L]`
+- [ ] Background music (synthesized chiptune loops via Web Audio API) — `[L]`
   - Overworld theme
   - Battle theme
   - Boss battle theme
   - Victory fanfare
-- [ ] Weather/time-of-day visual effects -- `[M]`
-- [ ] Animated battle sprites (idle bounce, attack flash) -- `[M]`
-- [ ] Screen shake on critical hits -- `[S]`
-- [ ] Encounter transition with species-specific flash color -- `[S]`
+- [ ] Weather/time-of-day visual effects — `[M]`
+- [ ] Animated battle sprites (idle bounce, attack flash) — `[M]`
+- [x] Screen shake on damage — `[S]` *(already implemented)*
+- [ ] Encounter transition with species-specific flash color — `[S]`
 
 ---
 
@@ -249,96 +264,88 @@ This is BugMon's unique selling point. No other game evolves creatures based on 
 
 ---
 
+## Current Roster (30 BugMon)
+
+### Base Forms (20)
+
+| # | Name | Type | Rarity | Evolves To |
+|---|------|------|--------|------------|
+| 1 | NullPointer | backend | common | OptionalChaining → TypeSafety |
+| 2 | CallbackHell | backend | common | PromiseChain → AsyncAwait |
+| 3 | RaceCondition | backend | uncommon | — |
+| 4 | MemoryLeak | backend | common | GarbageCollector |
+| 5 | DivSoup | frontend | common | Flexbox → CSSGrid |
+| 6 | SpinnerOfDoom | frontend | common | — |
+| 7 | StateHydra | frontend | uncommon | — |
+| 8 | MergeConflict | devops | common | RebaseMaster |
+| 9 | CIPhantom | devops | uncommon | — |
+| 10 | DockerDaemon | devops | common | — |
+| 11 | FlakyTest | testing | common | — |
+| 12 | AssertionError | testing | common | — |
+| 13 | Monolith | architecture | uncommon | Microservice |
+| 14 | CleanArchitecture | architecture | uncommon | — |
+| 15 | SQLInjector | security | uncommon | — |
+| 16 | XSSpecter | security | uncommon | — |
+| 17 | PromptGoblin | ai | uncommon | PromptEngineer |
+| 18 | HalluciBot | ai | common | — |
+| 19 | TheSingularity | ai | legendary | — |
+| 20 | TheLegacySystem | architecture | legendary | — |
+
+### Evolved Forms (10)
+
+| # | Name | Type | Evolves From | Trigger |
+|---|------|------|-------------|---------|
+| 21 | OptionalChaining | backend | NullPointer | Fix 5 bugs |
+| 22 | TypeSafety | backend | OptionalChaining | Pass 10 test runs |
+| 23 | PromiseChain | backend | CallbackHell | Make 10 commits |
+| 24 | AsyncAwait | backend | PromiseChain | Merge 3 PRs |
+| 25 | Flexbox | frontend | DivSoup | Perform 5 refactors |
+| 26 | CSSGrid | frontend | Flexbox | Complete 5 code reviews |
+| 27 | RebaseMaster | devops | MergeConflict | Resolve 5 merge conflicts |
+| 28 | Microservice | architecture | Monolith | Deploy 5 times |
+| 29 | GarbageCollector | backend | MemoryLeak | Pass 8 CI builds |
+| 30 | PromptEngineer | ai | PromptGoblin | Write 5 docs |
+
 ## BugMon Ideas Backlog
 
-| Name | Type | Status | Milestone | Concept |
-|------|------|--------|-----------|---------|
-| NullPointer | Memory | DONE | V1 | Points to nothing |
-| RaceCondition | Logic | DONE | V1 | Unpredictably fast |
-| MemoryLeak | Memory | DONE | V1 | Bloated, won't free |
-| Deadlock | Logic | DONE | V1.1 | Two threads, neither yields |
-| OffByOne | Logic | DONE | V2 | Always slightly wrong |
-| MergeConflict | Syntax | DONE | V2 | Two versions collide |
-| CallbackHell | Runtime | DONE | V2 | Nested chaos |
-| Heisenbug | Logic | DONE | V2 | Changes when observed |
-| InfiniteLoop | Runtime | DONE | V2 | Never stops |
-| SpaghettiCode | Syntax | DONE | V2 | Tangled mess |
-| StackOverflow | Runtime | DONE | V2 | Too deep, it collapses |
-| IndexOutOfBounds | Memory | DONE | V2 | Reaches past the edge |
-| SegFaultling | Memory | IDEA | -- | Illegal access creature |
-| TypeCoercion | Runtime | IDEA | -- | Shapeshifter |
-| ZeroDivide | Logic | IDEA | -- | Approaches infinity |
-| CSSFloat | Frontend | DONE | V2.5 | Floats unpredictably, hard to pin down |
-| 404NotFound | Frontend | DONE | V2.5 | Exists in theory, never where you look |
-| DeprecatedAPI | Backend | DONE | V2.5 | Ancient, powerful, slowly fading |
-| BrokenPipe | Backend | DONE | V2.5 | Leaks data everywhere |
-| GitBlame | DevOps | DONE | V2.5 | Points fingers, deflects damage |
-| ForkBomb | DevOps | DONE | V2.5 | Multiplies endlessly |
-| UnhandledPromise | Testing | DONE | V2.5 | Silently fails |
-| RegexDenial | Testing | DONE | V2.5 | So complex it causes a denial of service |
-| SegFaultling | Memory | IDEA | -- | Illegal access creature |
-| TypeCoercion | Runtime | IDEA | -- | Shapeshifter |
-| ZeroDivide | Logic | IDEA | -- | Approaches infinity |
-| BitRot | Memory | IDEA | -- | Decays over time |
-| PhantomRead | Memory | IDEA | -- | Reads data that was never written |
-| KernelPanic | Memory | IDEA | -- | The nuclear option |
-| DarkPattern | Logic | IDEA | -- | Manipulative, tricks opponents |
+| Name | Type | Concept |
+|------|------|---------|
+| SegFaultling | backend | Illegal access creature |
+| TypeCoercion | backend | Shapeshifter |
+| ZeroDivide | backend | Approaches infinity |
+| BitRot | backend | Decays over time (3-stage evo: BitRot → DataCorruption → SystemFailure) |
+| PhantomRead | backend | Reads data that was never written |
+| KernelPanic | backend | The nuclear option |
+| DarkPattern | frontend | Manipulative, tricks opponents |
+| TabsVsSpaces | architecture | The eternal debate — dual-type? |
+| TodoComment | testing | "I'll fix this later" — never does |
+| LeftPadCollapse | devops | One small removal breaks everything |
+| CopilotShadow | ai | Writes code that almost works |
 
 ## Move Ideas Backlog
 
-| Name | Power | Category | Status | Concept |
-|------|-------|----------|--------|---------|
-| SegFault | 10 | Damage | DONE | Crashes hard |
-| Hotfix | 6 | Damage* | DONE | Quick patch (*reclassified to Heal in V4) |
-| ThreadLock | 8 | Damage | DONE | Seizes up |
-| GarbageCollect | 7 | Damage | DONE | Cleans up |
-| MemoryDump | 9 | Damage | DONE | Dumps everything |
-| Mutex | 7 | Damage | DONE | Locks the resource |
-| ForceQuit | 12 | Damage | DONE | Terminates with prejudice |
-| PatchDeploy | 7 | Damage | DONE | Ships a fix |
-| Refactor | 8 | Damage | DONE | Restructures for more damage |
-| BlueScreen | 11 | Damage | DONE | Critical failure |
-| CoreDump | 10 | Damage | DONE | Full memory spill |
-| Rollback | 5 | Damage | DONE | Undo + slight heal |
-| HotReload | 6 | Damage | DONE | Quick refresh |
-| TypeMismatch | 8 | Damage | DONE | Wrong type, big consequences |
-| Compile | 14 | Damage | DONE | 2-turn charge attack |
-| NullCheck | 4 | Damage | DONE | Weak but never misses |
-| BufferOverrun | 13 | Damage | DONE | High damage, high risk (recoil) |
-| CacheInvalidation | 9 | Damage | DONE | The hardest problem |
-| DOMManipulation | 7 | Damage | DONE | Directly manipulates the DOM |
-| SQLInjection | 11 | Damage | DONE | Drops tables |
-| APITimeout | 8 | Damage | DONE | Connection timed out |
-| DockerKill | 10 | Damage | DONE | Container terminated |
-| PipelineFailure | 7 | Damage | DONE | Build failed |
-| AssertionError | 8 | Damage | DONE | Expected vs actual |
-| MockOverride | 6 | Damage | DONE | Replaces the real thing |
-| Reboot | 7 | Utility | PLANNED | Full system restart |
-| CtrlZ | -- | Heal | IDEA | Undo last damage taken |
-| DDoS | 6x3 | Damage | IDEA | Multi-hit, 3 weak strikes |
-| Obfuscate | -- | Status | IDEA | Sharply lowers enemy accuracy |
-| GitRevert | -- | Utility | IDEA | Reset all stat changes |
-| Defragment | -- | Heal | IDEA | Heal + cure status condition |
-| Transpile | 8 | Utility | IDEA | Changes user's type mid-battle |
-| Overclock | -- | Status | IDEA | Raise ATK and SPD, lower DEF |
-| SyntaxError | 11 | Damage | IDEA | High power, chance to confuse self |
-| MemoryWipe | 15 | Damage | IDEA | Strongest memory move, recoil damage |
-| UnitTest | -- | Utility | IDEA | Reveals enemy stats and moves |
+| Name | Power | Category | Concept |
+|------|-------|----------|---------|
+| Reboot | 7 | Utility | Full system restart (planned for V3) |
+| CtrlZ | — | Heal | Undo last damage taken |
+| DDoS | 6x3 | Damage | Multi-hit, 3 weak strikes |
+| Obfuscate | — | Status | Sharply lowers enemy accuracy |
+| GitRevert | — | Utility | Reset all stat changes |
+| Defragment | — | Heal | Heal + cure status condition |
+| Transpile | 8 | Utility | Changes user's type mid-battle |
+| Overclock | — | Status | Raise ATK and SPD, lower DEF |
+| SyntaxError | 11 | Damage | High power, chance to confuse self |
+| MemoryWipe | 15 | Damage | Strongest memory move, recoil damage |
+| UnitTest | — | Utility | Reveals enemy stats and moves |
 
-## Evolution Chains
+## Evolution Chain Ideas
 
-Evolutions can trigger via traditional leveling OR dev-activity milestones (whichever comes first).
-
-| From | To | Level | Dev-Activity Trigger |
-|------|----|-------|---------------------|
-| CallbackHell | AsyncAwait | 20 | Refactor 5 files in one commit |
-| MemoryLeak | GarbageCollector | 18 | Fix 10 bugs |
-| SpaghettiCode | CleanArchitecture | 22 | 20 commits with "refactor" in message |
-| NullPointer | OptionalChaining | 16 | 10 commits |
-| RaceCondition | MutexGuard | 18 | Resolve 5 merge conflicts |
-| OffByOne | ArrayOutOfBounds | 15 | 5 test-related commits |
-| MergeConflict | RebaseHell | 20 | Merge 10 PRs |
-| InfiniteLoop | RecursionLimit | 25 | 30 commits (the grind) |
-| Heisenbug | Schrodinbug | 22 | Fix a bug that returns within 24h |
-| BitRot | DataCorruption | 14 | 7-day commit streak |
-| DataCorruption | SystemFailure | 28 | 3 CI failures in one day |
+| From | To | Dev-Activity Trigger |
+|------|----|---------------------|
+| RaceCondition | MutexGuard | Resolve 5 merge conflicts |
+| SpinnerOfDoom | ProgressBar | Complete 10 deploys |
+| FlakyTest | IntegrationTest | Pass 20 test runs |
+| DockerDaemon | KubernetesOrchestrator | Deploy 15 times |
+| HalluciBot | GroundedAgent | Write 10 docs |
+| BitRot | DataCorruption | 7-day commit streak |
+| DataCorruption | SystemFailure | 3 CI failures in one day |
