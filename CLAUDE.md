@@ -10,7 +10,7 @@ BugMon is a Pokémon-style monster-taming RPG browser game themed around softwar
 - Build tooling: esbuild + terser (dev dependencies only)
 - Deployed to GitHub Pages
 - Community BugMon submissions via GitHub Issues + automated validation
-- Layered architecture: `core/` (CLI), `game/` (browser), `ecosystem/` (shared data)
+- Layered architecture: `core/` (CLI), `game/` (browser), `ecosystem/` (shared data), `domain/` (pure logic)
 
 ## Quick Start
 
@@ -23,7 +23,7 @@ npm run serve    # Runs scripts/dev-server.js (zero deps, live reload)
 
 ## Project Structure
 
-The codebase follows a **layered architecture** with three top-level directories:
+The codebase follows a **layered architecture** with four top-level directories:
 
 ```
 BugMon/
@@ -51,6 +51,7 @@ BugMon/
 │       ├── init.js          # Git hooks installer for evolution tracking
 │       ├── renderer.js      # Terminal renderer (ANSI)
 │       ├── resolve.js       # Bug resolve/XP mechanic
+│       ├── args.js          # Lightweight CLI argument parser (zero deps)
 │       ├── scan.js          # Error scanning feature
 │       ├── sync-server.js   # WebSocket sync server (zero deps)
 │       └── bugmon-legacy.js # Legacy CLI version
@@ -106,6 +107,19 @@ BugMon/
 │   ├── storage.js          # Shared storage utilities
 │   └── sync-protocol.js    # Shared WebSocket sync protocol constants
 │
+├── domain/                 # Pure domain logic (no DOM, no Node.js-specific APIs)
+│   ├── battle.js           # Pure battle engine (deterministic with injected RNG)
+│   ├── encounters.js       # Pure encounter logic (rarity weights, trigger checks)
+│   ├── event-bus.js        # Universal EventBus (works in Node.js and browser)
+│   ├── events.js           # Canonical domain event definitions
+│   ├── evolution.js        # Pure evolution engine (no localStorage)
+│   └── ingestion/          # Error ingestion pipeline
+│       ├── pipeline.js     # Orchestrates: parse → fingerprint → classify → map
+│       ├── parser.js       # Error message and stack trace parsing
+│       ├── fingerprint.js  # Error deduplication via stable fingerprinting
+│       ├── classifier.js   # Parsed error → BugEvent classification
+│       └── species-mapper.js # BugEvent → BugMon species mapping
+│
 ├── simulation/             # Headless battle simulation
 │   ├── cli.js              # CLI entry point (seeded RNG version)
 │   ├── simulator.js        # Battle simulator engine
@@ -122,14 +136,15 @@ BugMon/
 │   ├── stack-overflow.js
 │   └── syntax-error.js
 │
-├── tests/                  # Test suite (38 test files)
+├── tests/                  # Test suite (43 test files)
 │   ├── run.js              # Test runner
-│   └── *.test.js           # Tests (battle-core, battle, battleEngine, bosses, bug-event, bugdex,
-│                           #   bugdex-spec, build, damage, data, encounters, error-parser, events,
-│                           #   evolution, evolution-animation, game-damage, game-loop,
-│                           #   headless-battle, input, map, matcher, monsterGen, player, report,
-│                           #   rng, save, simulator, sound, sprites, stacktrace-parser, state,
-│                           #   storage, strategies, sync-client, tiles, title, tracker, transition)
+│   └── *.test.js           # Tests (auto-walk, battle-core, battle, battleEngine, bosses, bug-event,
+│                           #   bugdex, bugdex-spec, build, catch, damage, data, encounters,
+│                           #   error-parser, events, evolution, evolution-animation, game-damage,
+│                           #   game-loop, headless-battle, input, integration, map, matcher,
+│                           #   monsterGen, player, renderer, report, rng, save, simulator, sound,
+│                           #   sprites, stacktrace-parser, state, storage, strategies, sync-client,
+│                           #   sync-protocol, tiles, title, tracker, transition)
 │
 ├── scripts/                # Build tooling
 │   ├── build.js            # Single-file builder (esbuild + terser → dist/index.html)
@@ -148,7 +163,10 @@ BugMon/
 │   │   ├── validate-bugmon.yml # Validates community BugMon submissions
 │   │   ├── approve-bugmon.yml  # Auto-adds approved BugMon to game data
 │   │   ├── validate.yml        # General data validation
-│   │   └── size-check.yml      # Bundle size check (enforces byte budget)
+│   │   ├── size-check.yml      # Bundle size check (enforces byte budget)
+│   │   ├── codeql.yml          # CodeQL security scanning
+│   │   ├── publish.yml         # npm package publishing
+│   │   └── release.yml         # Release automation
 │   ├── scripts/
 │   │   ├── validate-submission.cjs  # Parses + validates issue form data
 │   │   ├── battle-preview.cjs       # Generates battle preview for submissions
@@ -175,8 +193,12 @@ BugMon/
 │       └── ui-ux-pro-max/      # Comprehensive UI/UX design intelligence
 │
 ├── .editorconfig           # Editor configuration
+├── .prettierrc             # Prettier configuration
+├── .prettierignore         # Prettier ignore rules
+├── eslint.config.js        # ESLint flat config (no-var, prefer-const, eqeqeq, no-undef)
 ├── size-budget.json        # Bundle size budget (subsystem-level caps)
 ├── ARCHITECTURE.md         # Detailed technical architecture
+├── CHANGELOG.md            # Project changelog
 ├── CODE_OF_CONDUCT.md      # Community guidelines
 ├── CONSTRAINTS.md          # Project constraints
 ├── CONTRIBUTING.md         # Contribution guide
@@ -215,10 +237,18 @@ npm run simulate:compare # Compare battle strategies
 # Build single-file distribution
 npm run build            # Full build with inline sprites
 npm run build:tiny       # Build without sprites (smallest)
+npm run build:debug      # Build with sourcemaps
 npm run budget           # Check size budget compliance
 
 # Sync JSON data → JS modules
 npm run sync-data
+
+# Code quality
+npm run lint             # Run ESLint
+npm run lint:fix         # Run ESLint with auto-fix
+npm run format           # Check formatting (Prettier)
+npm run format:fix       # Fix formatting (Prettier)
+npm run test:coverage    # Run tests with coverage (c8, 50% line threshold)
 
 # Run CLI companion tool
 npm run dev
@@ -227,10 +257,20 @@ npm run dev
 ## Architecture & Key Patterns
 
 ### Layered Architecture
-The codebase is organized into three layers:
+The codebase is organized into four layers:
 - **core/** — Node.js code for the CLI companion tool. Runs in Node.js only.
 - **game/** — Browser game code (engine, battle, world, evolution, audio, sprites). Runs in the browser only.
 - **ecosystem/** — Shared game content (JSON data, inlined JS modules, BugDex, bosses). Consumed by both core/ and game/.
+- **domain/** — Pure domain logic with no DOM or Node.js-specific APIs. Contains the canonical battle engine, encounter logic, evolution engine, event definitions, and the error ingestion pipeline. All functions are pure and deterministic (when RNG is injected). Consumed by both core/ and game/.
+
+### Domain Layer & Ingestion Pipeline
+The `domain/` layer provides environment-agnostic logic:
+- **`domain/events.js`** — Canonical event kinds (e.g., `ERROR_OBSERVED`, `MOVE_USED`, `EVOLUTION_TRIGGERED`)
+- **`domain/event-bus.js`** — Universal EventBus that works in both Node.js and browser
+- **`domain/battle.js`** — Pure battle engine with passive abilities, healing, and damage calculation
+- **`domain/encounters.js`** — Encounter trigger checks with rarity-weighted monster selection
+- **`domain/evolution.js`** — Evolution condition checking (takes event counts as input, no storage dependency)
+- **`domain/ingestion/`** — Multi-stage pipeline: raw stderr → parsed errors → fingerprinted → classified → mapped to BugMon species. Each stage is independently testable and replaceable.
 
 ### ES6 Modules
 All source uses ES6 `import`/`export`. No CommonJS, no bundler. Browser loads `game/game.js` as a module via `<script type="module">`. GitHub scripts use `.cjs` extension for CommonJS (Node.js workflow context).
@@ -298,6 +338,9 @@ PNG sprites are preloaded at startup. If a sprite fails to load, a colored recta
 - All audio is synthesized at runtime via Web Audio API (no audio files)
 - Try-catch around AudioContext creation (browser compatibility)
 - Console.error for startup failures, null checks for optional data
+- **ESLint** enforced via `eslint.config.js` (flat config): `no-var`, `prefer-const`, `eqeqeq`, `no-undef`
+- **Prettier** enforced via `.prettierrc` for consistent formatting
+- Run `npm run lint` and `npm run format` before committing
 
 ## Data Formats
 
@@ -340,6 +383,9 @@ Defines evolution chains with dev-activity triggers:
 - **Data Validation**: `.github/workflows/validate.yml` validates game data on push.
 - **Size Check**: `.github/workflows/size-check.yml` enforces byte budget on every push.
 - **BugMon Submissions**: Community can submit new BugMon via GitHub Issue template. `validate-bugmon.yml` auto-validates and previews. `approve-bugmon.yml` auto-adds approved submissions to game data.
+- **Security Scanning**: `.github/workflows/codeql.yml` runs CodeQL analysis.
+- **Publishing**: `.github/workflows/publish.yml` handles npm package publishing.
+- **Releases**: `.github/workflows/release.yml` automates release creation.
 
 ## Size Budget
 
@@ -353,11 +399,12 @@ Run `npm run budget` to check compliance locally.
 ## Testing
 
 ```bash
-npm test                               # Run all tests (38 test files)
+npm test                               # Run all tests (43 test files)
+npm run test:coverage                  # Run with coverage (c8, 50% line threshold)
 npm run simulate -- --all --runs 100   # Round-robin roster balance analysis
 ```
 
-Test suite covers: battle-core, battle logic, battleEngine, bosses, bug events, bugdex, bugdex-spec, build output, damage formula, data integrity, encounters, error parsing, event bus, evolution, evolution-animation, game-damage, game-loop, headless-battle, input, map, matcher, monsterGen, player, reporting, RNG, save, simulator, sound, sprites, stacktrace parsing, state, storage, strategies, sync-client, tiles, title, tracker, transition.
+Test suite covers: auto-walk, battle-core, battle logic, battleEngine, bosses, bug events, bugdex, bugdex-spec, build output, catch, damage formula, data integrity, encounters, error parsing, event bus, evolution, evolution-animation, game-damage, game-loop, headless-battle, input, integration, map, matcher, monsterGen, player, renderer, reporting, RNG, save, simulator, sound, sprites, stacktrace parsing, state, storage, strategies, sync-client, sync-protocol, tiles, title, tracker, transition.
 
 ## Claude Code Skills
 
