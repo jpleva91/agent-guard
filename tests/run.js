@@ -59,6 +59,13 @@ async function main() {
   await import('./save.test.js');
   await import('./storage.test.js');
   await import('./game-damage.test.js');
+  await import('./tracker.test.js');
+  await import('./player.test.js');
+  await import('./bugdex.test.js');
+  await import('./monsterGen.test.js');
+  await import('./tiles.test.js');
+  await import('./transition.test.js');
+  await import('./evolution-animation.test.js');
 
   console.log('\n' + '='.repeat(40));
   if (totalFailed === 0) {

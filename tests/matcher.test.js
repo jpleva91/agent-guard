@@ -59,4 +59,62 @@ suite('Matcher (core/matcher.js)', () => {
     // The monster should be a backend type since null-reference maps to backend
     // (unless errorPatterns match something else, which is fine)
   });
+
+  test('matchMonster scores higher for longer pattern matches', () => {
+    const specific = matchMonster({
+      type: 'null-reference',
+      message: "TypeError: Cannot read properties of null (reading 'map')",
+      rawLines: ["TypeError: Cannot read properties of null (reading 'map')"],
+    });
+    const vague = matchMonster({
+      type: 'totally-unknown',
+      message: 'zzz',
+      rawLines: ['zzz'],
+    });
+    assert.ok(specific.confidence > vague.confidence,
+      `Specific match (${specific.confidence}) should have higher confidence than vague (${vague.confidence})`);
+  });
+
+  test('matchMonster handles empty message gracefully', () => {
+    const result = matchMonster({
+      type: '',
+      message: '',
+      rawLines: [''],
+    });
+    assert.ok(result.monster, 'should still return a monster');
+    assert.ok(typeof result.confidence === 'number');
+  });
+
+  test('matchMonster handles syntax error type with pattern match', () => {
+    const result = matchMonster({
+      type: 'syntax',
+      message: 'Unexpected token }',
+      rawLines: ['SyntaxError: Unexpected token }'],
+    });
+    assert.ok(result.monster);
+    // Pattern matching may match to a non-frontend monster if errorPatterns match
+    assert.ok(result.confidence > 0, 'should have positive confidence');
+  });
+
+  test('matchMonster handles network error type', () => {
+    const result = matchMonster({
+      type: 'network',
+      message: 'connect ECONNREFUSED',
+      rawLines: ['Error: connect ECONNREFUSED 127.0.0.1:3000'],
+    });
+    assert.ok(result.monster);
+  });
+
+  test('matchMonster confidence is between 0 and 1', () => {
+    const cases = [
+      { type: 'null-reference', message: "Cannot read properties of null", rawLines: ["TypeError: Cannot read properties of null"] },
+      { type: 'syntax', message: 'Unexpected token', rawLines: ['SyntaxError: Unexpected token'] },
+      { type: 'unknown', message: 'xyzzy', rawLines: ['xyzzy'] },
+    ];
+    for (const c of cases) {
+      const result = matchMonster(c);
+      assert.ok(result.confidence >= 0 && result.confidence <= 1,
+        `confidence out of range: ${result.confidence}`);
+    }
+  });
 });

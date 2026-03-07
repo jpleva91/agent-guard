@@ -51,4 +51,33 @@ suite('EventBus (game/engine/events.js)', () => {
     eventBus.emit('test_data_types', null);
     assert.deepStrictEqual(results, ['string', 123, null]);
   });
+
+  test('emit with undefined data passes undefined to listener', () => {
+    let received = 'sentinel';
+    eventBus.on('test_undef_data', (d) => { received = d; });
+    eventBus.emit('test_undef_data');
+    assert.strictEqual(received, undefined);
+  });
+
+  test('same callback registered twice fires twice', () => {
+    let count = 0;
+    const cb = () => { count++; };
+    eventBus.on('test_double_reg', cb);
+    eventBus.on('test_double_reg', cb);
+    eventBus.emit('test_double_reg');
+    assert.strictEqual(count, 2);
+  });
+
+  test('listeners fire in registration order', () => {
+    const order = [];
+    eventBus.on('test_order', () => order.push('first'));
+    eventBus.on('test_order', () => order.push('second'));
+    eventBus.on('test_order', () => order.push('third'));
+    eventBus.emit('test_order');
+    assert.deepStrictEqual(order, ['first', 'second', 'third']);
+  });
+
+  test('PASSIVE_ACTIVATED event constant is defined', () => {
+    assert.strictEqual(Events.PASSIVE_ACTIVATED, 'PASSIVE_ACTIVATED');
+  });
 });

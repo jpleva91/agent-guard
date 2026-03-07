@@ -91,4 +91,45 @@ suite('Wild encounters (game/world/encounters.js)', () => {
     assert.ok(counts['CommonBug'] > counts['RareBug'],
       `Common (${counts['CommonBug']}) should appear more than Rare (${counts['RareBug']})`);
   });
+
+  test('checkEncounter returns null for negative tile values', () => {
+    setMonstersData(MOCK_MONSTERS);
+    assert.strictEqual(checkEncounter(-1), null);
+    assert.strictEqual(checkEncounter(-100), null);
+  });
+
+  test('checkEncounter returns null for high tile values (not grass)', () => {
+    setMonstersData(MOCK_MONSTERS);
+    for (let i = 0; i < 50; i++) {
+      assert.strictEqual(checkEncounter(3), null);
+      assert.strictEqual(checkEncounter(99), null);
+    }
+  });
+
+  test('encountered monster is a copy not a reference to source data', () => {
+    setMonstersData(MOCK_MONSTERS);
+    let found = null;
+    for (let i = 0; i < 500; i++) {
+      found = checkEncounter(2);
+      if (found) break;
+    }
+    assert.ok(found);
+    found.name = 'MUTATED';
+    // Original data should not be affected
+    assert.notStrictEqual(MOCK_MONSTERS[0].name, 'MUTATED');
+  });
+
+  test('all monster rarities can appear in encounters', () => {
+    setMonstersData(MOCK_MONSTERS);
+    const seen = new Set();
+    for (let i = 0; i < 50000; i++) {
+      const result = checkEncounter(2);
+      if (result) seen.add(result.rarity);
+      if (seen.size === 4) break;
+    }
+    assert.ok(seen.has('common'), 'common should appear');
+    assert.ok(seen.has('uncommon'), 'uncommon should appear');
+    assert.ok(seen.has('rare'), 'rare should appear');
+    assert.ok(seen.has('legendary'), 'legendary should appear');
+  });
 });
