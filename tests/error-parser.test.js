@@ -105,4 +105,42 @@ SyntaxError: Unexpected end of input`;
     assert.strictEqual(result.length, 1);
     assert.strictEqual(result[0].type, 'permission');
   });
+
+  // --- Dev tool output formats ---
+
+  test('parses ESLint error output', () => {
+    const result = parseErrors('src/app.js:10:5: error Unexpected var, use let or const instead (no-var)');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'lint-error');
+  });
+
+  test('parses ESLint warning output', () => {
+    const result = parseErrors('src/utils.js:25:1: warning Unexpected console statement (no-console)');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'lint-warning');
+  });
+
+  test('parses vitest/jest FAIL line', () => {
+    const result = parseErrors('FAIL src/app.test.js');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'test-failure');
+  });
+
+  test('parses jest summary with failures', () => {
+    const result = parseErrors('Tests: 3 failed, 12 passed, 15 total');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'test-failure');
+  });
+
+  test('parses TypeScript compiler error', () => {
+    const result = parseErrors("error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.");
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'type-error');
+  });
+
+  test('parses TypeScript file-level error', () => {
+    const result = parseErrors('src/index.tsx(42,15): error TS2322: Type mismatch');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'type-error');
+  });
 });

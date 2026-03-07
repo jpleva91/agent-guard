@@ -111,6 +111,72 @@ export function generateReport(simResult) {
   return lines.join('\n');
 }
 
+/**
+ * Generate a comparison report for strategy vs strategy results.
+ */
+export function generateComparisonReport(comparisonResult) {
+  const { results, strategyNames } = comparisonResult;
+  const lines = [];
+
+  lines.push('');
+  lines.push('==========================================================');
+  lines.push('          Strategy Comparison Report');
+  lines.push('==========================================================');
+  lines.push('');
+
+  // Head-to-head results
+  lines.push('  HEAD-TO-HEAD RESULTS');
+  lines.push('  --------------------');
+  lines.push('');
+  lines.push('  ' + pad('Strategy A', 18) + pad('Strategy B', 18) + pad('A Wins', 10) + pad('B Wins', 10) + pad('Draws', 8) + 'A Win%');
+  lines.push('  ' + '-'.repeat(72));
+
+  for (const r of results) {
+    const aRate = ((r.winsA / r.totalBattles) * 100).toFixed(1);
+    lines.push('  ' + pad(r.strategyA, 18) + pad(r.strategyB, 18) + pad(String(r.winsA), 10) + pad(String(r.winsB), 10) + pad(String(r.draws), 8) + aRate + '%');
+  }
+  lines.push('');
+
+  // Overall strategy rankings
+  lines.push('  OVERALL RANKINGS');
+  lines.push('  ----------------');
+  lines.push('');
+
+  const totals = {};
+  for (const name of strategyNames) {
+    totals[name] = { wins: 0, losses: 0, draws: 0, battles: 0 };
+  }
+
+  for (const r of results) {
+    totals[r.strategyA].wins += r.winsA;
+    totals[r.strategyA].losses += r.winsB;
+    totals[r.strategyA].draws += r.draws;
+    totals[r.strategyA].battles += r.totalBattles;
+    totals[r.strategyB].wins += r.winsB;
+    totals[r.strategyB].losses += r.winsA;
+    totals[r.strategyB].draws += r.draws;
+    totals[r.strategyB].battles += r.totalBattles;
+  }
+
+  const ranked = Object.entries(totals)
+    .map(([name, t]) => ({ name, ...t, rate: t.battles > 0 ? t.wins / t.battles : 0 }))
+    .sort((a, b) => b.rate - a.rate);
+
+  lines.push('  ' + pad('Rank', 6) + pad('Strategy', 18) + pad('Win%', 8) + pad('W', 8) + pad('L', 8) + 'D');
+  lines.push('  ' + '-'.repeat(54));
+
+  ranked.forEach((r, i) => {
+    const rate = (r.rate * 100).toFixed(1);
+    lines.push('  ' + pad(String(i + 1), 6) + pad(r.name, 18) + pad(rate + '%', 8) + pad(String(r.wins), 8) + pad(String(r.losses), 8) + String(r.draws));
+  });
+
+  lines.push('');
+  lines.push('==========================================================');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
 function pad(str, len) {
   return String(str).padEnd(len);
 }

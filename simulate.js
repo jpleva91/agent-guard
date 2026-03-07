@@ -2,18 +2,22 @@
 // Battle Simulator CLI
 //
 // Usage:
-//   npm run simulate                          # random matchup
-//   npm run simulate -- NullPointer Deadlock   # specific matchup
-//   npm run simulate -- --all                  # full roster round-robin
-//   npm run simulate -- --runs 1000            # statistical analysis
+//   npm run simulate                                    # random matchup
+//   npm run simulate -- NullPointer Deadlock             # specific matchup
+//   npm run simulate -- NullPointer Deadlock --runs 1000 # statistical analysis
+//   npm run simulate -- --all                            # full roster round-robin
+//   npm run simulate -- --strategy typeAware             # select strategy
 
 import { readFileSync } from 'fs';
-import { simulateBattle, createBattleState, getTurnOrder, resolveMove, applyDamage, isFainted } from './game/battle/battle-core.js';
+import { runBattle, calcDamageHeadless } from './simulation/headlessBattle.js';
+import { STRATEGIES } from './simulation/strategies.js';
+import { createRNG } from './simulation/rng.js';
 
 // Load game data
 const monsters = JSON.parse(readFileSync('ecosystem/data/monsters.json', 'utf-8'));
 const movesData = JSON.parse(readFileSync('ecosystem/data/moves.json', 'utf-8'));
 const typeData = JSON.parse(readFileSync('ecosystem/data/types.json', 'utf-8'));
+const typeChart = typeData.effectiveness;
 
 function findMonster(name) {
   const mon = monsters.find(m => m.name.toLowerCase() === name.toLowerCase());
@@ -25,102 +29,76 @@ function findMonster(name) {
   return mon;
 }
 
-function verboseBattle(monA, monB) {
+function getStrategy(args) {
+  const idx = args.indexOf('--strategy');
+  if (idx === -1) return STRATEGIES.mixed;
+  const key = args[idx + 1];
+  if (!STRATEGIES[key]) {
+    console.error(`Unknown strategy: ${key}`);
+    console.error(`Available: ${Object.keys(STRATEGIES).join(', ')}`);
+    process.exit(1);
+  }
+  return STRATEGIES[key];
+}
+
+function verboseBattle(monA, monB, strategy) {
   console.log(`\n${'='.repeat(50)}`);
   console.log(`  ${monA.name} (${monA.type}) vs ${monB.name} (${monB.type})`);
+  console.log(`  Strategy: ${strategy.name}`);
   console.log(`${'='.repeat(50)}`);
   console.log(`  ${monA.name}: HP ${monA.hp} | ATK ${monA.attack} | DEF ${monA.defense} | SPD ${monA.speed}`);
   console.log(`  ${monB.name}: HP ${monB.hp} | ATK ${monB.attack} | DEF ${monB.defense} | SPD ${monB.speed}`);
   console.log();
 
-  let state = createBattleState(monA, monB);
+  const rng = createRNG(Date.now());
+  const result = runBattle(monA, monB, movesData, typeChart, strategy.fn, strategy.fn, rng);
 
-  while (!state.outcome && state.turn < 100) {
-    const turn = state.turn + 1;
-
-    // Pick random moves
-    const moveIdA = monA.moves[Math.floor(Math.random() * monA.moves.length)];
-    const moveIdB = monB.moves[Math.floor(Math.random() * monB.moves.length)];
-    const moveA = movesData.find(m => m.id === moveIdA);
-    const moveB = movesData.find(m => m.id === moveIdB);
-
-    const first = getTurnOrder(state.playerMon, state.enemy);
-    const attacks = first === 'player'
-      ? [{ name: state.playerMon.name, mon: state.playerMon, move: moveA, target: state.enemy, side: 'player' },
-         { name: state.enemy.name, mon: state.enemy, move: moveB, target: state.playerMon, side: 'enemy' }]
-      : [{ name: state.enemy.name, mon: state.enemy, move: moveB, target: state.playerMon, side: 'enemy' },
-         { name: state.playerMon.name, mon: state.playerMon, move: moveA, target: state.enemy, side: 'player' }];
-
-    console.log(`Turn ${turn}`);
-
-    let playerMon = { ...state.playerMon };
-    let enemy = { ...state.enemy };
-
-    for (const atk of attacks) {
-      const currentAttacker = atk.side === 'player' ? playerMon : enemy;
-      const currentDefender = atk.side === 'player' ? enemy : playerMon;
-
-      if (isFainted(currentAttacker)) continue;
-
-      const { damage, effectiveness } = resolveMove(currentAttacker, atk.move, currentDefender, typeData.effectiveness);
-
-      let effectText = '';
-      if (effectiveness > 1.0) effectText = ' (super effective!)';
-      else if (effectiveness < 1.0) effectText = ' (not very effective)';
-
-      console.log(`  ${currentAttacker.name} used ${atk.move.name}`);
-      console.log(`  Damage: ${damage}${effectText}`);
-
-      if (atk.side === 'player') {
-        enemy = applyDamage(enemy, damage);
-        console.log(`  ${enemy.name} HP: ${enemy.currentHP}/${monB.hp}`);
-      } else {
-        playerMon = applyDamage(playerMon, damage);
-        console.log(`  ${playerMon.name} HP: ${playerMon.currentHP}/${monA.hp}`);
-      }
-
-      if (isFainted(atk.side === 'player' ? enemy : playerMon)) {
-        const faintedName = atk.side === 'player' ? enemy.name : playerMon.name;
-        console.log(`  ${faintedName} fainted!`);
-        break;
-      }
+  // Print battle log
+  for (const entry of result.log) {
+    if (entry.turn > (result.log[result.log.indexOf(entry) - 1]?.turn ?? 0)) {
+      console.log(`Turn ${entry.turn}`);
     }
 
-    console.log();
+    if (entry.healing) {
+      console.log(`  ${entry.attacker} used ${entry.move}`);
+      console.log(`  Healed ${entry.healing} HP (HP: ${entry.targetHP})`);
+    } else {
+      let effectText = '';
+      if (entry.effectiveness > 1.0) effectText = ' (super effective!)';
+      else if (entry.effectiveness < 1.0) effectText = ' (not very effective)';
 
-    let outcome = null;
-    if (isFainted(enemy)) outcome = 'win';
-    else if (isFainted(playerMon)) outcome = 'lose';
+      console.log(`  ${entry.attacker} used ${entry.move}`);
+      console.log(`  Damage: ${entry.damage}${effectText} (HP: ${entry.targetHP})`);
+    }
 
-    state = {
-      playerMon,
-      enemy,
-      turn,
-      log: state.log,
-      outcome,
-    };
+    if (entry.targetHP <= 0) {
+      const fainted = result.log.filter(e => e.turn === entry.turn).find(e => e !== entry)?.attacker || entry.attacker;
+      // The one whose target HP hit 0 is the winner's target
+    }
   }
 
-  const winner = state.outcome === 'win' ? monA.name : monB.name;
-  console.log(`Winner: ${winner} (${state.turn} turns)`);
+  console.log();
+  const winner = result.winner === 'A' ? monA.name : result.winner === 'B' ? monB.name : 'Draw';
+  console.log(`Winner: ${winner} (${result.turns} turns)`);
   console.log();
 
-  return state;
+  return result;
 }
 
-function runStatistical(monA, monB, runs) {
+function runStatistical(monA, monB, runs, strategy) {
   let winsA = 0;
   let winsB = 0;
   let totalTurns = 0;
 
   for (let i = 0; i < runs; i++) {
-    const result = simulateBattle(monA, monB, movesData, typeData);
-    if (result.outcome === 'win') winsA++;
-    else winsB++;
-    totalTurns += result.turn;
+    const rng = createRNG(i);
+    const result = runBattle(monA, monB, movesData, typeChart, strategy.fn, strategy.fn, rng);
+    if (result.winner === 'A') winsA++;
+    else if (result.winner === 'B') winsB++;
+    totalTurns += result.turns;
   }
 
-  console.log(`\n${monA.name} vs ${monB.name} — ${runs} battles`);
+  console.log(`\n${monA.name} vs ${monB.name} — ${runs} battles (${strategy.name})`);
   console.log(`${'─'.repeat(40)}`);
   console.log(`  ${monA.name} wins: ${winsA} (${(winsA / runs * 100).toFixed(1)}%)`);
   console.log(`  ${monB.name} wins: ${winsB} (${(winsB / runs * 100).toFixed(1)}%)`);
@@ -128,8 +106,8 @@ function runStatistical(monA, monB, runs) {
   console.log();
 }
 
-function roundRobin(runs) {
-  console.log(`\nFull Roster Round-Robin (${runs} battles each)\n`);
+function roundRobin(runs, strategy) {
+  console.log(`\nFull Roster Round-Robin (${runs} battles each, ${strategy.name})\n`);
 
   const results = {};
   for (const mon of monsters) {
@@ -143,8 +121,9 @@ function roundRobin(runs) {
 
       let winsA = 0;
       for (let r = 0; r < runs; r++) {
-        const result = simulateBattle(monA, monB, movesData, typeData);
-        if (result.outcome === 'win') winsA++;
+        const rng = createRNG(i * 10000 + j * 100 + r);
+        const result = runBattle(monA, monB, movesData, typeChart, strategy.fn, strategy.fn, rng);
+        if (result.winner === 'A') winsA++;
       }
 
       results[monA.name].wins += winsA;
@@ -177,11 +156,12 @@ function roundRobin(runs) {
 
 // Parse CLI args
 const args = process.argv.slice(2);
+const strategy = getStrategy(args);
 
 if (args.includes('--all')) {
   const runsIdx = args.indexOf('--runs');
   const runs = runsIdx !== -1 ? parseInt(args[runsIdx + 1], 10) : 100;
-  roundRobin(runs);
+  roundRobin(runs, strategy);
 } else if (args.length >= 2 && !args[0].startsWith('-')) {
   const monA = findMonster(args[0]);
   const monB = findMonster(args[1]);
@@ -189,12 +169,12 @@ if (args.includes('--all')) {
 
   if (runsIdx !== -1) {
     const runs = parseInt(args[runsIdx + 1], 10);
-    runStatistical(monA, monB, runs);
+    runStatistical(monA, monB, runs, strategy);
   } else {
-    verboseBattle(monA, monB);
+    verboseBattle(monA, monB, strategy);
   }
-} else if (args.length === 0 || (args.length === 1 && args[0] === '--help')) {
-  if (args[0] === '--help') {
+} else if (args.length === 0 || args.includes('--help')) {
+  if (args.includes('--help')) {
     console.log(`
 BugMon Battle Simulator
 
@@ -204,6 +184,10 @@ Usage:
   npm run simulate -- MonA MonB --runs 1000     Statistical analysis
   npm run simulate -- --all                     Full roster round-robin
   npm run simulate -- --all --runs 500          Round-robin with custom sample
+  npm run simulate -- --strategy typeAware      Select AI strategy
+
+Strategies:
+  ${Object.entries(STRATEGIES).map(([k, v]) => `${k.padEnd(15)} ${v.name}`).join('\n  ')}
 
 Available BugMon:
   ${monsters.map(m => m.name).join(', ')}
@@ -213,6 +197,6 @@ Available BugMon:
     const a = Math.floor(Math.random() * monsters.length);
     let b = Math.floor(Math.random() * (monsters.length - 1));
     if (b >= a) b++;
-    verboseBattle(monsters[a], monsters[b]);
+    verboseBattle(monsters[a], monsters[b], strategy);
   }
 }

@@ -1,6 +1,7 @@
 // Error parser — detects and classifies JS/TS/Node errors from stderr output
 
 const ERROR_PATTERNS = [
+  // Node.js / JavaScript runtime errors
   { pattern: /TypeError: Cannot read propert/i, type: 'null-reference' },
   { pattern: /TypeError: Cannot access/i, type: 'null-reference' },
   { pattern: /TypeError: (\w+) is not a function/i, type: 'type-mismatch' },
@@ -27,6 +28,24 @@ const ERROR_PATTERNS = [
   { pattern: /Assertion.*failed/i, type: 'assertion' },
   { pattern: /AssertionError/i, type: 'assertion' },
   { pattern: /DEPRECAT/i, type: 'deprecated' },
+
+  // ESLint output format: "filepath:line:col: error message (rule-name)"
+  { pattern: /^\S+:\d+:\d+:\s+error\s+/m, type: 'lint-error' },
+  { pattern: /^\S+:\d+:\d+:\s+warning\s+/m, type: 'lint-warning' },
+  { pattern: /✖ \d+ problems?\s/i, type: 'lint-error' },
+
+  // Vitest / Jest test failures
+  { pattern: /FAIL\s+\S+\.(?:test|spec)\./i, type: 'test-failure' },
+  { pattern: /AssertionError: expected/i, type: 'assertion' },
+  { pattern: /Expected:.*Received:/s, type: 'assertion' },
+  { pattern: /Test Suites:.*failed/i, type: 'test-failure' },
+  { pattern: /Tests:\s+\d+ failed/i, type: 'test-failure' },
+
+  // TypeScript compiler errors: "error TS2345:"
+  { pattern: /error TS\d+:/i, type: 'type-error' },
+  { pattern: /\.tsx?\(\d+,\d+\):\s*error/i, type: 'type-error' },
+
+  // Generic (must be last)
   { pattern: /Error:/i, type: 'generic' },
 ];
 

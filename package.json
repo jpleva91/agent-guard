@@ -15,6 +15,7 @@
     "simulate": "node simulate.js",
     "simulate:quick": "node simulation/cli.js --battles 1000",
     "simulate:full": "node simulation/cli.js --battles 50000",
+    "simulate:compare": "node simulation/cli.js --compare",
     "sync-data": "node scripts/sync-data.js",
     "build": "node scripts/build.js",
     "build:tiny": "node scripts/build.js --no-sprites",

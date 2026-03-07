@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { randomStrategy, highestDamageStrategy, typeAwareStrategy, mixedStrategy } from '../simulation/strategies.js';
+import { randomStrategy, highestDamageStrategy, typeAwareStrategy, mixedStrategy, hpAwareStrategy, defensiveStrategy, adaptiveStrategy } from '../simulation/strategies.js';
 import { createRNG } from '../simulation/rng.js';
 
 suite('Strategies (simulation/strategies.js)', () => {
@@ -81,5 +81,84 @@ suite('Strategies (simulation/strategies.js)', () => {
     assert.strictEqual(highestDamageStrategy(singleMoveMonster, defender, movesData, typeChart, rng).id, 'weak');
     assert.strictEqual(typeAwareStrategy(singleMoveMonster, defender, movesData, typeChart, rng).id, 'weak');
     assert.strictEqual(mixedStrategy(singleMoveMonster, defender, movesData, typeChart, rng).id, 'weak');
+  });
+
+  // --- HP-Aware Strategy ---
+
+  const healMove = { id: 'heal', name: 'Heal', power: 12, type: 'backend', category: 'heal' };
+  const movesWithHeal = [...movesData, healMove];
+
+  test('hpAwareStrategy heals when HP is low and heal move available', () => {
+    const rng = createRNG(42);
+    const lowHpAttacker = { ...attacker, hp: 30, currentHP: 8, moves: ['weak', 'strong', 'medium', 'heal'] };
+    const move = hpAwareStrategy(lowHpAttacker, defender, movesWithHeal, typeChart, rng);
+    assert.strictEqual(move.id, 'heal', 'should heal when HP below 30%');
+  });
+
+  test('hpAwareStrategy picks highest damage when HP is healthy', () => {
+    const rng = createRNG(42);
+    const healthyAttacker = { ...attacker, hp: 30, currentHP: 30, moves: ['weak', 'strong', 'medium', 'heal'] };
+    const move = hpAwareStrategy(healthyAttacker, defender, movesWithHeal, typeChart, rng);
+    assert.notStrictEqual(move.id, 'heal', 'should not heal at full HP');
+  });
+
+  test('hpAwareStrategy picks damage move when low HP but no heal available', () => {
+    const rng = createRNG(42);
+    const lowHpNoHeal = { ...attacker, hp: 30, currentHP: 5 };
+    const move = hpAwareStrategy(lowHpNoHeal, defender, movesData, typeChart, rng);
+    assert.ok(movesData.some(m => m.id === move.id), 'should pick a damage move');
+  });
+
+  // --- Defensive Strategy ---
+
+  test('defensiveStrategy heals when HP below 50%', () => {
+    const rng = createRNG(42);
+    const hurtAttacker = { ...attacker, hp: 30, currentHP: 12, moves: ['weak', 'strong', 'medium', 'heal'] };
+    const move = defensiveStrategy(hurtAttacker, defender, movesWithHeal, typeChart, rng);
+    assert.strictEqual(move.id, 'heal', 'should heal when HP below 50%');
+  });
+
+  test('defensiveStrategy picks type-aware damage when healthy', () => {
+    const rng = createRNG(42);
+    const healthyAttacker = { ...attacker, hp: 30, currentHP: 30, moves: ['weak', 'strong', 'medium'] };
+    const move = defensiveStrategy(healthyAttacker, defender, movesData, typeChart, rng);
+    assert.ok(movesData.some(m => m.id === move.id), 'should return a valid move');
+  });
+
+  // --- Adaptive Strategy ---
+
+  test('adaptiveStrategy uses typeAware early game', () => {
+    const rng = createRNG(42);
+    const fullHpAttacker = { ...attacker, hp: 30, currentHP: 30 };
+    const fullHpDefender = { ...defender, hp: 30, currentHP: 30 };
+    const move = adaptiveStrategy(fullHpAttacker, fullHpDefender, movesData, typeChart, rng);
+    // Should behave like typeAware — pick backend move (super-effective vs devops)
+    assert.strictEqual(move.type, 'backend', 'should use type-aware early game');
+  });
+
+  test('adaptiveStrategy switches to highest damage when opponent weakened', () => {
+    const rng = createRNG(42);
+    const fullHpAttacker = { ...attacker, hp: 30, currentHP: 25 };
+    const weakDefender = { ...defender, hp: 30, currentHP: 10 };
+    const move = adaptiveStrategy(fullHpAttacker, weakDefender, movesData, typeChart, rng);
+    assert.ok(movesData.some(m => m.id === move.id), 'should return a valid move');
+  });
+
+  test('adaptiveStrategy heals when desperate', () => {
+    const rng = createRNG(42);
+    const desperateAttacker = { ...attacker, hp: 30, currentHP: 5, moves: ['weak', 'strong', 'medium', 'heal'] };
+    const healthyDefender = { ...defender, hp: 30, currentHP: 28 };
+    const move = adaptiveStrategy(desperateAttacker, healthyDefender, movesWithHeal, typeChart, rng);
+    assert.strictEqual(move.id, 'heal', 'should heal when desperate');
+  });
+
+  // --- All strategies handle single move ---
+
+  test('new strategies handle monster with single move', () => {
+    const singleMoveMonster = { ...attacker, hp: 30, currentHP: 5, moves: ['weak'] };
+    const rng = createRNG(42);
+    assert.strictEqual(hpAwareStrategy(singleMoveMonster, defender, movesData, typeChart, rng).id, 'weak');
+    assert.strictEqual(defensiveStrategy(singleMoveMonster, defender, movesData, typeChart, rng).id, 'weak');
+    assert.strictEqual(adaptiveStrategy(singleMoveMonster, defender, movesData, typeChart, rng).id, 'weak');
   });
 });

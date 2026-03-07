@@ -67,9 +67,73 @@ export function mixedStrategy(attacker, defender, movesData, typeChart, rng) {
   return randomStrategy(attacker, defender, movesData, typeChart, rng);
 }
 
+// Strategy: considers remaining HP — heals when low, otherwise picks highest damage
+export function hpAwareStrategy(attacker, defender, movesData, typeChart, rng) {
+  const moves = getMoves(attacker, movesData);
+  const hpRatio = (attacker.currentHP ?? attacker.hp) / attacker.hp;
+
+  // If HP below 30%, try to heal
+  if (hpRatio < 0.3) {
+    const healMove = moves.find(m => m.category === 'heal');
+    if (healMove) return healMove;
+  }
+
+  return highestDamageStrategy(attacker, defender, movesData, typeChart, rng);
+}
+
+// Strategy: prioritizes survival — heals when HP < 50%, otherwise picks type-aware damage
+export function defensiveStrategy(attacker, defender, movesData, typeChart, rng) {
+  const moves = getMoves(attacker, movesData);
+  const hpRatio = (attacker.currentHP ?? attacker.hp) / attacker.hp;
+
+  // Heal when below 50% HP
+  if (hpRatio < 0.5) {
+    const healMove = moves.find(m => m.category === 'heal');
+    if (healMove) return healMove;
+  }
+
+  // Prefer same-type moves (STAB-like bonus) when effectiveness is equal
+  let best = moves[0];
+  let bestScore = -1;
+
+  for (const move of moves) {
+    if (move.category === 'heal') continue;
+    const eff = getEffectiveness(move.type, defender.type, typeChart);
+    const sameType = move.type === attacker.type ? 0.1 : 0;
+    const score = eff + sameType;
+    if (score > bestScore || (score === bestScore && move.power > best.power)) {
+      bestScore = score;
+      best = move;
+    }
+  }
+  return best;
+}
+
+// Strategy: phase-based — typeAware early, highestDamage mid, hpAware when desperate
+export function adaptiveStrategy(attacker, defender, movesData, typeChart, rng) {
+  const ownHpRatio = (attacker.currentHP ?? attacker.hp) / attacker.hp;
+  const oppHpRatio = (defender.currentHP ?? defender.hp) / defender.hp;
+
+  // Desperate: heal if possible
+  if (ownHpRatio < 0.3) {
+    return hpAwareStrategy(attacker, defender, movesData, typeChart, rng);
+  }
+
+  // Opponent is weakened: go for maximum damage to finish them
+  if (oppHpRatio < 0.5) {
+    return highestDamageStrategy(attacker, defender, movesData, typeChart, rng);
+  }
+
+  // Early game: exploit type advantages
+  return typeAwareStrategy(attacker, defender, movesData, typeChart, rng);
+}
+
 export const STRATEGIES = {
   random: { fn: randomStrategy, name: 'Random' },
   highestDamage: { fn: highestDamageStrategy, name: 'Highest Damage' },
   typeAware: { fn: typeAwareStrategy, name: 'Type Aware' },
-  mixed: { fn: mixedStrategy, name: 'Mixed (70/30)' }
+  mixed: { fn: mixedStrategy, name: 'Mixed (70/30)' },
+  hpAware: { fn: hpAwareStrategy, name: 'HP Aware' },
+  defensive: { fn: defensiveStrategy, name: 'Defensive' },
+  adaptive: { fn: adaptiveStrategy, name: 'Adaptive' }
 };

@@ -93,6 +93,13 @@ switch (command) {
     break;
   }
 
+  case 'scan': {
+    const target = args[1] || '.';
+    const { scan } = await import('./scan.js');
+    await scan(target);
+    break;
+  }
+
   case 'help':
   case '--help':
   case '-h':
@@ -116,6 +123,7 @@ function printHelp() {
     bugmon watch -- <command>             Wrap a command (passive mode)
     bugmon watch --cache -- <command>     Interactive: battle & cache BugMon!
     bugmon watch --cache --open -- <cmd>  Same + offer to open in browser
+    bugmon scan [path]                    Scan files for bugs (eslint/tsc)
     bugmon sync                           Start sync server (CLI ↔ browser)
     bugmon party                          View your BugMon party
     bugmon dex                            View your BugDex
@@ -127,6 +135,7 @@ function printHelp() {
     bugmon watch --cache -- node server.js
     bugmon watch -c -- npx tsc --noEmit
     bugmon watch -- npm test
+    bugmon scan src/
     bugmon sync
     bugmon party
     bugmon dex
