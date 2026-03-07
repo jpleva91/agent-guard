@@ -50,6 +50,12 @@ const TYPE_SEVERITY = {
   'regex': SEVERITY.LOW,
   'assertion': SEVERITY.MEDIUM,
   'deprecated': SEVERITY.MINOR,
+  'merge-conflict': SEVERITY.MEDIUM,
+  'security-finding': SEVERITY.HIGH,
+  'ci-failure': SEVERITY.MEDIUM,
+  'lint-error': SEVERITY.LOW,
+  'lint-warning': SEVERITY.MINOR,
+  'test-failure': SEVERITY.MEDIUM,
   'generic': SEVERITY.LOW,
 };
 
@@ -98,7 +104,7 @@ export function createBugEvent(type, message, file = null, line = null, severity
 /**
  * Maps error-parser type strings to BugMon monster types.
  */
-const ERROR_TO_MONSTER_TYPE = {
+export const ERROR_TO_MONSTER_TYPE = {
   'null-reference': 'backend',
   'type-mismatch': 'backend',
   'type-error': 'backend',
@@ -116,6 +122,12 @@ const ERROR_TO_MONSTER_TYPE = {
   'regex': 'testing',
   'assertion': 'testing',
   'deprecated': 'architecture',
+  'merge-conflict': 'devops',
+  'security-finding': 'security',
+  'ci-failure': 'devops',
+  'lint-error': 'testing',
+  'lint-warning': 'testing',
+  'test-failure': 'testing',
   'generic': 'testing',
 };
 

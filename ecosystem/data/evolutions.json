@@ -144,6 +144,9 @@
     "conflicts_resolved": { "label": "Conflicts Resolved", "icon": "git-branch", "description": "Merge conflicts resolved" },
     "ci_passes": { "label": "CI Passes", "icon": "server", "description": "CI pipeline passed" },
     "deploys": { "label": "Deploys", "icon": "rocket", "description": "Code deployed" },
-    "docs_written": { "label": "Docs Written", "icon": "book", "description": "Documentation added" }
+    "docs_written": { "label": "Docs Written", "icon": "book", "description": "Documentation added" },
+    "lint_fixes": { "label": "Lint Fixes", "icon": "check-circle", "description": "Lint issues resolved" },
+    "type_errors_fixed": { "label": "Type Errors Fixed", "icon": "shield", "description": "TypeScript errors resolved" },
+    "security_fixes": { "label": "Security Fixes", "icon": "lock", "description": "Security issues resolved" }
   }
 }

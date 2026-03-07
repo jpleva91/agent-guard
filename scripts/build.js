@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// BugMon single-file builder — produces dist/bugmon.html
+// BugMon single-file builder — produces dist/index.html
 // Dev dependencies: esbuild + terser (zero RUNTIME dependencies)
 // Usage: node scripts/build.js [--no-sprites]
 
@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
 import { fileURLToPath } from 'url';
-import { transformSync } from 'esbuild';
+import { buildSync } from 'esbuild';
 import { minify as terserMinify } from 'terser';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -15,35 +15,6 @@ const ROOT = path.join(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
 
 const noSprites = process.argv.includes('--no-sprites');
-
-// --- Dependency graph (manually ordered, leaves first) ---
-const MODULE_ORDER = [
-  'ecosystem/data/monsters.js',
-  'ecosystem/data/moves.js',
-  'ecosystem/data/types.js',
-  'ecosystem/data/mapData.js',
-  'ecosystem/data/evolutions.js',
-  'game/engine/events.js',
-  'game/engine/state.js',
-  'game/audio/sound.js',
-  'game/engine/input.js',
-  'game/sprites/sprites.js',
-  'game/sprites/monsterGen.js',
-  'game/sprites/tiles.js',
-  'game/world/map.js',
-  'game/world/player.js',
-  'game/world/encounters.js',
-  'game/engine/renderer.js',
-  'game/engine/transition.js',
-  'game/sync/save.js',
-  'game/engine/title.js',
-  'game/battle/damage.js',
-  'game/battle/battleEngine.js',
-  'game/evolution/tracker.js',
-  'game/evolution/evolution.js',
-  'game/evolution/animation.js',
-  'game/game.js',
-];
 
 console.log('Building BugMon single-file distribution...\n');
 
@@ -78,17 +49,8 @@ function stripImportsExports(code) {
   return code;
 }
 
-async function minifyWithEsbuildAndTerser(code) {
-  // Step 1: esbuild — fast minification, dead code elimination, identifier shortening
-  const esbuildResult = transformSync(code, {
-    minify: true,
-    target: 'es2020',
-    loader: 'js',
-  });
-  let minified = esbuildResult.code;
-
-  // Step 2: terser — additional compression + property mangling where safe
-  const terserResult = await terserMinify(minified, {
+async function minifyWithTerser(code) {
+  const terserResult = await terserMinify(code, {
     compress: {
       passes: 3,
       unsafe_math: true,
@@ -167,35 +129,26 @@ const bodyHTML = bodyMatch ? bodyMatch[1].trim() : '';
 const inlineScriptMatch = html.match(/<script type="module">\s*([\s\S]*?)<\/script>/);
 const inlineScript = inlineScriptMatch ? inlineScriptMatch[1] : '';
 
-// --- Bundle all JS modules ---
-let bundle = '(function() {\n"use strict";\n\n';
+// --- Bundle JS using esbuild's native bundler ---
+// esbuild resolves the dependency graph automatically from the entry point,
+// eliminating the need for manual MODULE_ORDER and regex import/export stripping.
+const esbuildResult = buildSync({
+  entryPoints: [path.join(ROOT, 'game', 'game.js')],
+  bundle: true,
+  format: 'iife',
+  minify: true,
+  target: 'es2020',
+  write: false,
+});
 
-const declaredNames = new Set();
+let bundle = esbuildResult.outputFiles[0].text;
 
-for (const mod of MODULE_ORDER) {
-  const raw = readModule(mod);
-  if (!raw) continue;
-  let stripped = stripImportsExports(raw);
-  // Deduplicate top-level const/let declarations across modules
-  stripped = stripped.replace(/^(const|let)\s+(\w+)\s*(=|;|,)/gm, (match, kw, name, sep) => {
-    if (declaredNames.has(name)) {
-      return `${name} ${sep === '=' ? '=' : sep}`;
-    }
-    declaredNames.add(name);
-    return match;
-  });
-  bundle += `// --- ${mod} ---\n${stripped}\n\n`;
-}
+// Append inline script (touch controls), stripping its imports since
+// those modules are already bundled above
+bundle += '\n' + stripImportsExports(inlineScript);
 
-// Add inline script (touch controls), stripping its imports
-bundle += '\n// --- Touch controls & mute ---\n';
-bundle += stripImportsExports(inlineScript);
-
-// Close the IIFE before minification
-bundle += '\n})();\n';
-
-// Minify JS with esbuild + terser (before adding sprite data which contains base64)
-let minBundle = await minifyWithEsbuildAndTerser(bundle);
+// Apply terser for additional compression on top of esbuild
+let minBundle = await minifyWithTerser(bundle);
 
 // Add sprite inlining after minification (base64 data is not minify-safe)
 minBundle += inlineSprites();
@@ -339,4 +292,4 @@ if (!noBudget) {
   }
 }
 
-console.log('Done! Open dist/bugmon.html in any browser.');
+console.log('Done! Open dist/index.html in any browser.');

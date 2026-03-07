@@ -267,6 +267,21 @@ export const EVOLUTIONS = {
       label: 'Docs Written',
       icon: 'book',
       description: 'Documentation added'
+    },
+    lint_fixes: {
+      label: 'Lint Fixes',
+      icon: 'check-circle',
+      description: 'Lint issues resolved'
+    },
+    type_errors_fixed: {
+      label: 'Type Errors Fixed',
+      icon: 'shield',
+      description: 'TypeScript errors resolved'
+    },
+    security_fixes: {
+      label: 'Security Fixes',
+      icon: 'lock',
+      description: 'Security issues resolved'
     }
   }
 };

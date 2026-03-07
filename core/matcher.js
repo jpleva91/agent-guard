@@ -1,8 +1,11 @@
 // Monster matcher — maps parsed errors to BugMon creatures
+// Uses ERROR_TO_MONSTER_TYPE from bug-event.js as the single source of truth
+// for error type → monster type mapping.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { ERROR_TO_MONSTER_TYPE } from './bug-event.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -67,28 +70,7 @@ export function matchMonster(error) {
  * Fallback: map error parser type to monster type.
  */
 function matchByErrorType(errorType, allMonsters) {
-  const typeMap = {
-    'null-reference': 'backend',
-    'type-mismatch': 'backend',
-    'type-error': 'backend',
-    'syntax': 'frontend',
-    'undefined-reference': 'backend',
-    'stack-overflow': 'backend',
-    'range-error': 'backend',
-    'network': 'backend',
-    'file-not-found': 'devops',
-    'permission': 'security',
-    'import': 'devops',
-    'unhandled-promise': 'testing',
-    'broken-pipe': 'backend',
-    'memory-leak': 'backend',
-    'regex': 'testing',
-    'assertion': 'testing',
-    'deprecated': 'architecture',
-    'generic': 'testing',
-  };
-
-  const monsterType = typeMap[errorType];
+  const monsterType = ERROR_TO_MONSTER_TYPE[errorType];
   if (!monsterType) return null;
 
   // Pick a random monster of the matching type for variety

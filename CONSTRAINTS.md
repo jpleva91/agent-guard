@@ -12,6 +12,8 @@ Total bundle must remain under 32 KB gzipped. Target: 16 KB.
 - Avoid abstractions unless reused 3+ times
 - Prefer data tables over logic
 - All sprites are procedurally generated or optional PNG overlays
+- `core/` must not import from `game/`; `game/` must not import from `core/`
+- `ecosystem/data/*.js` modules are generated artifacts — edit the `.json` source files and run `npm run sync-data`
 
 ## Byte Budget
 

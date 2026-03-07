@@ -440,6 +440,22 @@ npm run simulate -- --all --runs 100   # Full roster balance analysis
 
 Test suite covers: battle logic, damage formula, data integrity, build output, simulation, strategies, RNG, reporting.
 
+## Architectural Invariants
+
+These are hard rules, not suggestions. They protect the system as it scales.
+
+1. **Layer boundaries are strict.** `core/` must not import from `game/`. `game/` must not import from `core/`. Both may import from `ecosystem/`. This keeps the CLI and browser game independently deployable.
+
+2. **`battle-core.js` must stay pure.** `game/battle/battle-core.js` must have zero UI, audio, or DOM dependencies. It is the only battle module imported by the simulator (`simulate.js`). If battle logic needs UI feedback, it goes in `battleEngine.js`.
+
+3. **JSON is the source of truth.** `ecosystem/data/*.json` files are canonical game data. The corresponding `*.js` modules are generated build artifacts produced by `scripts/sync-data.js`. Never hand-edit the `.js` modules — edit the JSON and run `npm run sync-data`.
+
+4. **Contributed monsters require no code changes.** New BugMon are added entirely through JSON edits to `monsters.json` (and optionally `evolutions.json`, `moves.json`). The engine reads data at runtime. This is enforced by the community submission workflow.
+
+5. **Sync is eventually consistent.** The CLI-to-browser sync system (`core/cli/sync-server.js` + `game/sync/client.js`) uses last-write-wins per field. Neither side is authoritative. BugDex, party, and storage merge independently.
+
+6. **npm package ships CLI only.** `package.json` `"files"` includes only `core/` and `ecosystem/`. The browser game (`game/`) is excluded from the npm package and deployed separately via GitHub Pages.
+
 ## Key Design Decisions
 
 - **Layered architecture** — `core/` (CLI), `game/` (browser), `ecosystem/` (shared data). Clear separation of concerns between Node.js CLI code, browser game code, and shared game content.

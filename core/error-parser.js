@@ -45,6 +45,20 @@ const ERROR_PATTERNS = [
   { pattern: /error TS\d+:/i, type: 'type-error' },
   { pattern: /\.tsx?\(\d+,\d+\):\s*error/i, type: 'type-error' },
 
+  // Merge conflict markers
+  { pattern: /^<{7}\s/m, type: 'merge-conflict' },
+  { pattern: /^>{7}\s/m, type: 'merge-conflict' },
+
+  // Security scanner output (npm audit, snyk)
+  { pattern: /\d+ vulnerabilit/i, type: 'security-finding' },
+  { pattern: /high.*severity/i, type: 'security-finding' },
+  { pattern: /critical.*vulnerability/i, type: 'security-finding' },
+
+  // CI failure patterns (GitHub Actions, generic CI)
+  { pattern: /::error::/i, type: 'ci-failure' },
+  { pattern: /Build failed/i, type: 'ci-failure' },
+  { pattern: /Pipeline failed/i, type: 'ci-failure' },
+
   // Generic (must be last)
   { pattern: /Error:/i, type: 'generic' },
 ];

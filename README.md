@@ -1,22 +1,19 @@
 # BugMon
 
-**Developer monsters battling in a type-safe ecosystem.**
+**A CLI that turns your real bugs into collectible monsters.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![npm](https://img.shields.io/badge/npm-bugmon-cb3837.svg)](https://www.npmjs.com/package/bugmon)
 [![Play Now](https://img.shields.io/badge/Play-GitHub%20Pages-orange.svg)](https://jpleva91.github.io/BugMon/)
 [![Size](https://img.shields.io/badge/gzipped-12_KB-brightgreen.svg)](LIGHTWEIGHT.md)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](LIGHTWEIGHT.md)
 
-> The Pokémon game developers deserve.
+> Every runtime error is a wild encounter.
 
-A monster-taming RPG where the monsters are software bugs, the types are programming domains, and your real coding activity drives your monsters' evolution. Commit code, your BugMon evolve. Merge a PR, unlock new forms. Fix bugs, encounter rare creatures.
+BugMon wraps your dev commands, intercepts real errors from stderr, and spawns matching monster encounters. A `TypeError: Cannot read properties of null` summons NullPointer. A stack overflow unleashes StackOverflow. You battle them, cache them, build a party — and your real coding activity (commits, PRs merged, bugs fixed) drives their evolution.
 
-Fun for devs at every stage — whether you just wrote your first `Hello World` or you're debugging distributed systems.
-
-Built with zero runtime dependencies, pure vanilla JS, and way too many puns. The entire game fits in a single 12 KB file (gzipped, smaller than jQuery).
-
-**[Play Now](https://jpleva91.github.io/BugMon/)**
+Built with zero runtime dependencies, pure vanilla JS, and way too many puns.
 
 <p align="center">
   <img src="sprites/nullpointer.png" width="64" alt="NullPointer">
@@ -29,22 +26,53 @@ Built with zero runtime dependencies, pure vanilla JS, and way too many puns. Th
   <img src="sprites/heisenbug.png" width="64" alt="Heisenbug">
 </p>
 
-## CLI Debugging Tool
+## CLI
 
-BugMon also works as a CLI that wraps your dev commands and turns real errors into monster encounters:
+Wrap any dev command. Errors become encounters. Your workflow stays unchanged — BugMon augments, never hides.
 
 ```bash
+# Watch mode — intercept errors in real time
 bugmon watch -- npm run dev
 bugmon watch -- node server.js
+bugmon watch -- tsc --watch
+
+# Scan mode — find bugs in your project
+bugmon scan
+
+# Collection
 bugmon dex                      # View your BugDex
-bugmon stats                    # View your bug hunter level and XP
+bugmon party                    # View your party
+bugmon stats                    # Bug hunter level and XP
+
+# Sync CLI ↔ browser game
+bugmon sync
 ```
 
-Errors pass through unchanged — BugMon augments, never hides.
+30+ error patterns are recognized across Node.js runtime errors, TypeScript compiler output, ESLint, Jest/Vitest test failures, merge conflicts, security findings, and CI output.
+
+## Browser Game
+
+The optional browser companion is a full RPG — explore a tile-based world, battle wild BugMon, and watch your evolution progress. It syncs with the CLI in real time via WebSocket.
+
+**[Play Now](https://jpleva91.github.io/BugMon/)** — the entire game fits in a single 12 KB file (gzipped, smaller than jQuery).
+
+### Controls
+
+| Action | Keyboard | Mobile |
+|--------|----------|--------|
+| Move | Arrow keys | D-pad |
+| Confirm | Enter | A button |
+| Back | Escape | B button |
+
+### Battle Options
+
+- **Fight** — Pick a move. Faster BugMon acts first.
+- **Capture** — Lower HP = higher catch chance. Failed capture = enemy gets a free turn.
+- **Run** — Always succeeds.
 
 ## Add a BugMon in Under 2 Minutes
 
-BugMon is data-driven. Add a new monster by editing a single JSON file -- no code changes needed:
+BugMon is data-driven. Add a new monster by editing a single JSON file — no code changes needed:
 
 ```json
 {
@@ -63,8 +91,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 ## Features
 
 - **30 BugMon** across 7 types with 7 evolution chains (10 evolved forms)
+- **CLI encounter engine** — wraps your dev commands, classifies real errors, spawns matching BugMon
 - **Dev-activity evolution** — your commits, PRs, and bug fixes trigger monster evolutions via git hooks
-- **CLI companion** — wrap your dev commands with `bugmon watch`, turn real errors into encounters
 - **Browser ↔ CLI sync** — cache BugMon in your terminal, see them in the browser game instantly
 - Turn-based combat with speed priority, type effectiveness, and critical hits
 - Tile-based exploration with random encounters in tall grass
@@ -73,24 +101,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 - Mobile touch controls (D-pad + A/B buttons)
 - Save/load with auto-save and BugDex collection tracking
 - **Zero runtime dependencies** — vanilla JS, HTML5 Canvas, no framework ([see the Lightweight Manifesto](LIGHTWEIGHT.md))
-
-## How to Play
-
-Walk through the world and step into tall grass to encounter wild BugMon.
-
-### Controls
-
-| Action | Keyboard | Mobile |
-|--------|----------|--------|
-| Move | Arrow keys | D-pad |
-| Confirm | Enter | A button |
-| Back | Escape | B button |
-
-### Battle Options
-
-- **Fight** -- Pick a move. Faster BugMon acts first.
-- **Capture** -- Lower HP = higher catch chance. Failed capture = enemy gets a free turn.
-- **Run** -- Always succeeds.
 
 ## Type System
 
@@ -143,7 +153,7 @@ npm run dev                            # Run CLI companion tool
 
 ```
 BugMon/
-├── core/                # CLI companion & shared logic (Node.js)
+├── core/                # CLI encounter engine (Node.js)
 │   ├── cli/             # CLI tool (bugmon command, watch adapter, sync server)
 │   ├── matcher.js       # Error → BugMon matching
 │   └── error-parser.js  # Error & stack trace parsing
@@ -169,7 +179,7 @@ All game content (monsters, moves, types, evolutions) is defined in JSON and loa
 
 ## Contributing
 
-We welcome contributions! The easiest way to contribute is adding new BugMon or moves -- it only takes a JSON edit.
+We welcome contributions! The easiest way to contribute is adding new BugMon or moves — it only takes a JSON edit.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 

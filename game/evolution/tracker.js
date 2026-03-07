@@ -4,7 +4,8 @@ const STORAGE_KEY = 'bugmon_dev_events';
 
 const defaultEvents = {
   commits: 0, prs_merged: 0, bugs_fixed: 0, tests_passing: 0, refactors: 0,
-  code_reviews: 0, conflicts_resolved: 0, ci_passes: 0, deploys: 0, docs_written: 0
+  code_reviews: 0, conflicts_resolved: 0, ci_passes: 0, deploys: 0, docs_written: 0,
+  lint_fixes: 0, type_errors_fixed: 0, security_fixes: 0
 };
 
 let events = { ...defaultEvents };

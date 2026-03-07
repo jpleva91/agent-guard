@@ -4,7 +4,7 @@
 
 ## Vision
 
-BugMon is building toward a game that **every developer wants to share** — something fun enough to go viral, easy enough for any dev to contribute to, and small enough to embed anywhere.
+BugMon is a **CLI-first dev activity engine** with a browser game as the retention layer. The CLI is the wedge — it lives in developer workflows, intercepts real errors, and turns them into collectible encounters. The browser game is where progression, evolution, and visualization come alive.
 
 The core loop:
 
@@ -14,24 +14,25 @@ code → encounter → battle → cache → evolve → repeat
  └──────────────────────────────────────────────┘
 ```
 
-Commit code, your BugMon evolve. Merge a PR, unlock new forms. Fix bugs, encounter rare creatures. The game doesn't compete with your work — it runs alongside it.
+Commit code, your BugMon evolve. Merge a PR, unlock new forms. Fix bugs, encounter rare creatures. The CLI doesn't compete with your work — it runs alongside it.
 
 **Who is this for?** Developers at every stage of their coding journey. Whether you just wrote your first `Hello World` or you're debugging distributed systems, there's a BugMon that speaks to your experience.
 
-**How people play:**
-- **Browser** — Play on GitHub Pages, explore and battle
-- **CLI** — Run `bugmon watch -- npm run dev` and turn real errors into encounters
-- **Console injection** — Drop BugMon into any website's dev console (future)
+**How people discover BugMon:**
+- **CLI** — `npm install -g bugmon` or `npx bugmon watch -- npm run dev` — the primary entry point
+- **Browser** — Play on GitHub Pages for RPG progression and visualization
 - **Contribute** — Add a BugMon in 2 minutes with a JSON edit, no code required
+- **VS Code extension** — Surface encounters in the editor (future)
 
 **Strategic priorities:**
-1. Make the game **fun and shareable** — on par with what early Pokémon was
-2. Keep the bundle **meaningfully small** (target: 16 KB gzipped, cap: 32 KB)
-3. Make it **dead simple to contribute** — new BugMon, new moves, new art styles
-4. Build **good tooling** — tests, CI, Claude Code integration, balance simulation
-5. Grow through community contributions and developer word-of-mouth
+1. Make the **CLI the best way to discover BugMon** — reliable error detection, clean UX, instant setup
+2. Expand **error coverage** — support more languages, frameworks, and tooling output
+3. Keep the **browser game fun and shareable** — the retention layer that makes people come back
+4. Keep the bundle **meaningfully small** (target: 16 KB gzipped, cap: 32 KB)
+5. Make it **dead simple to contribute** — new BugMon, new moves, new art styles
+6. Grow through community contributions and developer word-of-mouth
 
-**Pragmatic about dependencies:** Zero runtime deps is the goal for the browser game. But dev tooling should be good — tests, build tools, linters, whatever makes the product better. If React or a framework genuinely helps a feature, we'll consider it. The constraint is on the *shipped bundle*, not the development experience.
+**Pragmatic about dependencies:** Zero runtime deps is the goal for the browser game. But dev tooling should be good — tests, build tools, linters, whatever makes the product better. The constraint is on the *shipped bundle*, not the development experience.
 
 ### Legend
 
@@ -166,6 +167,9 @@ This was originally V5 but was built ahead of schedule due to being the game's u
 - [x] CI workflows for data validation and size checks — `[S]`
 - [x] Layered architecture restructure (`core/`, `game/`, `ecosystem/`) — `[L]`
 - [ ] Party management (swap active BugMon in and out of battle) — `[M]` *Must-have*
+- [ ] Expanded error parser coverage (merge conflicts, security findings, CI failures) — `[M]` *Must-have*
+- [ ] `bugmon init` command for project setup (install git hooks automatically) — `[S]` *Must-have*
+- [ ] Error-to-BugMon mapping taxonomy documentation — `[S]` *Should-have*
 - [ ] Settings menu (volume slider, text speed) — `[M]` *Should-have*
 - [ ] Smooth tile-to-tile movement animation (lerp between tiles) — `[M]` *Should-have*
 - [ ] PP system for moves (limited uses, restored at healing stations) — `[M]` *Should-have*
@@ -269,20 +273,33 @@ The evolution system (dev-activity triggers) is done. This milestone adds the tr
 
 ---
 
+## CLI Distribution & Expansion `PLANNED`
+
+> **Theme:** Make BugMon the easiest dev tool to install and the hardest to stop using
+
+**Distribution:**
+- [ ] npm package — `npx bugmon` to play instantly in any terminal — `[M]` *Must-have*
+- [ ] VS Code extension — surface encounters in the editor sidebar — `[L]` *Should-have*
+- [ ] Browser extension — encounter BugMon while browsing, catches persist — `[L]` *Nice-to-have*
+
+**Error coverage expansion:**
+- [ ] Python tracebacks (`Traceback (most recent call last)`) — `[S]`
+- [ ] Go panics and compile errors — `[S]`
+- [ ] Rust compile errors (`error[E0308]`) — `[S]`
+- [ ] Java/Kotlin stack traces — `[S]`
+
+**Dev-activity expansion:**
+- [ ] Team leaderboards (compare BugDex across a dev team) — `[M]`
+- [ ] GitHub Action that posts BugMon evolution announcements to PRs — `[M]`
+- [ ] Repo-specific encounter tables (different projects spawn different BugMon) — `[M]`
+- [ ] Weekly/monthly dev activity summaries as in-game rewards — `[S]`
+
 ## Stretch Goals
 
 **Distribution & virality:**
 - [ ] Console injection mode — drop BugMon into any website's dev tools console
-- [ ] Browser extension — encounter BugMon while browsing, catches persist
-- [ ] npm package — `npx bugmon` to play instantly in any terminal
 - [ ] Embeddable widget — `<script src="bugmon.js">` adds a mini-game to any site
 - [ ] Social sharing — screenshot/share your team, evolution milestones, rare catches
-
-**Dev-activity expansion:**
-- [ ] Team leaderboards (compare BugDex across a dev team)
-- [ ] GitHub Action that posts BugMon evolution announcements to PRs
-- [ ] Repo-specific encounter tables (different projects spawn different BugMon)
-- [ ] Weekly/monthly dev activity summaries as in-game rewards
 
 **Visual upgrades:**
 - [ ] Upgrade from pixel art to a more polished art style (SVG, vector, illustrated)
