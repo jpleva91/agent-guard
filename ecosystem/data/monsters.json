@@ -882,5 +882,33 @@
       "429"
     ],
     "fixTip": "The AI API returned an error. Check rate limits, API keys, and request format."
+  },
+  {
+    "id": 31,
+    "name": "TodoComment",
+    "type": "testing",
+    "hp": 26,
+    "attack": 6,
+    "defense": 6,
+    "speed": 5,
+    "moves": [
+      "techdebt",
+      "timingissue",
+      "edgecase"
+    ],
+    "color": "#95a5a6",
+    "sprite": "todocomment",
+    "rarity": "common",
+    "theme": "procrastinated fixes",
+    "evolution": null,
+    "passive": null,
+    "description": "A dusty gray creature covered in faded sticky notes and comment blocks. Each note reads 'TODO: fix this later' in increasingly desperate handwriting. It has been sitting in the codebase since the first commit, gathering dust and quietly accumulating technical debt. Its eyes are half-closed, perpetually about to start working on something but never quite getting around to it. A calendar on its back shows every deadline it has missed.",
+    "errorPatterns": [
+      "TODO",
+      "FIXME",
+      "HACK",
+      "XXX"
+    ],
+    "fixTip": "Stop adding TODO comments and just fix the issue. Future you will thank present you."
   }
 ]

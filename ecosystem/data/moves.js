@@ -421,5 +421,11 @@ export const MOVES = [
     power: 12,
     type: 'devops',
     category: 'heal'
+  },
+  {
+    id: 'techdebt',
+    name: 'TechDebt',
+    power: 9,
+    type: 'testing'
   }
 ];

@@ -854,5 +854,32 @@ export const MONSTERS = [
       '429'
     ],
     fixTip: 'The AI API returned an error. Check rate limits, API keys, and request format.'
+  },
+  {
+    id: 31,
+    name: 'TodoComment',
+    type: 'testing',
+    hp: 26,
+    attack: 6,
+    defense: 6,
+    speed: 5,
+    moves: [
+      'techdebt',
+      'timingissue',
+      'edgecase'
+    ],
+    color: '#95a5a6',
+    sprite: 'todocomment',
+    rarity: 'common',
+    theme: 'procrastinated fixes',
+    evolution: null,
+    passive: null,
+    errorPatterns: [
+      'TODO',
+      'FIXME',
+      'HACK',
+      'XXX'
+    ],
+    fixTip: 'Stop adding TODO comments and just fix the issue. Future you will thank present you.'
   }
 ];
