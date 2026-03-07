@@ -14,11 +14,10 @@ BugMon is a Pokémon-style monster-taming RPG browser game themed around softwar
 
 ## Quick Start
 
-No build step required. Serve with any static file server:
+No build step required. Start the dev server:
 
 ```bash
-npm run serve
-# or: python3 -m http.server
+npm run serve    # Runs scripts/dev-server.js (zero deps, live reload)
 # Then open http://localhost:8000
 ```
 
@@ -41,10 +40,17 @@ BugMon/
 │       ├── bin.js           # Entry point (bugmon command)
 │       ├── adapter.js       # CLI watch adapter
 │       ├── auto-walk.js     # Auto-walk feature
+│       ├── boss-battle.js   # Boss battle interactive encounter
 │       ├── catch.js         # Catch/cache mechanic
+│       ├── claude-hook.js   # Claude Code PostToolUse hook (error encounters)
+│       ├── claude-init.js   # Claude Code integration setup
+│       ├── colors.js        # Shared ANSI color constants
 │       ├── contribute.js    # Contribution prompt
+│       ├── demo.js          # Demo encounter launcher
 │       ├── encounter.js     # CLI encounter logic
+│       ├── init.js          # Git hooks installer for evolution tracking
 │       ├── renderer.js      # Terminal renderer (ANSI)
+│       ├── resolve.js       # Bug resolve/XP mechanic
 │       ├── scan.js          # Error scanning feature
 │       ├── sync-server.js   # WebSocket sync server (zero deps)
 │       └── bugmon-legacy.js # Legacy CLI version
@@ -84,9 +90,9 @@ BugMon/
 │
 ├── ecosystem/              # Game content & metagame systems
 │   ├── data/               # Game content (JSON source + JS modules)
-│   │   ├── monsters.json   # 30 BugMon definitions (stats, moves, types, evolutions)
+│   │   ├── monsters.json   # 31 BugMon definitions (stats, moves, types, evolutions)
 │   │   ├── monsters.js     # Inlined JS module (imported by game)
-│   │   ├── moves.json      # 70 move definitions
+│   │   ├── moves.json      # 71 move definitions
 │   │   ├── moves.js        # Inlined JS module
 │   │   ├── types.json      # 7 types + effectiveness chart
 │   │   ├── types.js        # Inlined JS module
@@ -97,7 +103,8 @@ BugMon/
 │   ├── bugdex.js           # BugDex collection system
 │   ├── bugdex-spec.js      # BugDex specification
 │   ├── bosses.js           # Boss encounter definitions
-│   └── storage.js          # Shared storage utilities
+│   ├── storage.js          # Shared storage utilities
+│   └── sync-protocol.js    # Shared WebSocket sync protocol constants
 │
 ├── simulation/             # Headless battle simulation
 │   ├── cli.js              # CLI entry point (seeded RNG version)
@@ -115,17 +122,18 @@ BugMon/
 │   ├── stack-overflow.js
 │   └── syntax-error.js
 │
-├── tests/                  # Test suite (31 test files)
+├── tests/                  # Test suite (38 test files)
 │   ├── run.js              # Test runner
-│   └── *.test.js           # Tests (battle-core, battle, bosses, bug-event, bugdex, bugdex-spec,
-│                           #   build, damage, data, encounters, error-parser, events,
-│                           #   evolution, evolution-animation, game-damage, input, map, matcher,
-│                           #   monsterGen, player, report, rng, save, simulator,
-│                           #   stacktrace-parser, state, storage, strategies, tiles, tracker,
-│                           #   transition)
+│   └── *.test.js           # Tests (battle-core, battle, battleEngine, bosses, bug-event, bugdex,
+│                           #   bugdex-spec, build, damage, data, encounters, error-parser, events,
+│                           #   evolution, evolution-animation, game-damage, game-loop,
+│                           #   headless-battle, input, map, matcher, monsterGen, player, report,
+│                           #   rng, save, simulator, sound, sprites, stacktrace-parser, state,
+│                           #   storage, strategies, sync-client, tiles, title, tracker, transition)
 │
 ├── scripts/                # Build tooling
 │   ├── build.js            # Single-file builder (esbuild + terser → dist/index.html)
+│   ├── dev-server.js       # Zero-dependency dev server with live reload
 │   ├── sync-data.js        # JSON → JS module converter
 │   └── prune-merged-branches.sh  # Git branch cleanup script
 │
@@ -134,6 +142,7 @@ BugMon/
 │   └── post-merge          # Increments merge counter in .events.json
 │
 ├── .github/
+│   ├── dependabot.yml          # Dependabot configuration
 │   ├── workflows/
 │   │   ├── deploy.yml          # GitHub Pages auto-deploy on push to main
 │   │   ├── validate-bugmon.yml # Validates community BugMon submissions
@@ -157,6 +166,7 @@ BugMon/
 │       ├── add-evolution.md    # Evolution chain skill
 │       ├── add-move.md         # Move creation skill
 │       ├── balance-check.md    # Balance analysis skill
+│       ├── bugmon.md           # BugMon encounter skill
 │       ├── full-test.md        # Full test suite skill
 │       ├── roster-report.md    # Roster analysis skill
 │       ├── update-docs.md      # Documentation update skill
@@ -164,6 +174,7 @@ BugMon/
 │       ├── 21st-dev-magic/     # UI component generation via 21st.dev Magic MCP
 │       └── ui-ux-pro-max/      # Comprehensive UI/UX design intelligence
 │
+├── .editorconfig           # Editor configuration
 ├── size-budget.json        # Bundle size budget (subsystem-level caps)
 ├── ARCHITECTURE.md         # Detailed technical architecture
 ├── CODE_OF_CONDUCT.md      # Community guidelines
@@ -342,17 +353,18 @@ Run `npm run budget` to check compliance locally.
 ## Testing
 
 ```bash
-npm test                               # Run all tests (31 test files)
+npm test                               # Run all tests (38 test files)
 npm run simulate -- --all --runs 100   # Round-robin roster balance analysis
 ```
 
-Test suite covers: battle-core, battle logic, bosses, bug events, bugdex, bugdex-spec, build output, damage formula, data integrity, encounters, error parsing, event bus, evolution, evolution-animation, game-damage, input, map, matcher, monsterGen, player, reporting, RNG, save, simulator, stacktrace parsing, state, storage, strategies, tiles, tracker, transition.
+Test suite covers: battle-core, battle logic, battleEngine, bosses, bug events, bugdex, bugdex-spec, build output, damage formula, data integrity, encounters, error parsing, event bus, evolution, evolution-animation, game-damage, game-loop, headless-battle, input, map, matcher, monsterGen, player, reporting, RNG, save, simulator, sound, sprites, stacktrace parsing, state, storage, strategies, sync-client, tiles, title, tracker, transition.
 
 ## Claude Code Skills
 
 Custom skills are defined in `.claude/skills/` for guided workflows:
 - **add-bugmon** / **add-move** / **add-evolution** — Step-by-step content creation
 - **balance-check** / **roster-report** — Game balance analysis
+- **bugmon** — BugMon encounter skill
 - **full-test** / **validate-data** — Testing and validation
 - **update-docs** — Documentation maintenance
 
