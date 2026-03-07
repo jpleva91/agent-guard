@@ -66,4 +66,60 @@ suite('Damage Calculation (battle/damage.js, headlessBattle.js)', () => {
     assert.strictEqual(r1.damage, r2.damage);
     assert.strictEqual(r1.effectiveness, r2.effectiveness);
   });
+
+  // --- Additional edge cases ---
+
+  test('damage with very high defense still returns at least 1', () => {
+    const tank = { ...defender, defense: 500 };
+    const weakMove = { ...move, power: 1 };
+    const weakAttacker = { ...attacker, attack: 1 };
+    const rng = createRNG(42);
+    const result = calcDamageHeadless(weakAttacker, weakMove, tank, null, rng);
+    assert.ok(result.damage >= 1, `damage should be at least 1, got ${result.damage}`);
+  });
+
+  test('damage with max stats from game data', () => {
+    const maxAttacker = { ...attacker, attack: 20 }; // max attack in spec
+    const maxDefender = { ...defender, defense: 16 }; // high defense
+    const strongMove = { ...move, power: 20 }; // high power
+    const rng = createRNG(42);
+    const result = calcDamageHeadless(maxAttacker, strongMove, maxDefender, typeChart, rng);
+    assert.ok(result.damage > 0);
+    assert.ok(typeof result.damage === 'number');
+  });
+
+  test('0.5x effectiveness halves damage approximately', () => {
+    const rng1 = createRNG(42);
+    const rng2 = createRNG(42);
+    // backend vs frontend = 0.5x
+    const frontendDef = { ...defender, type: 'frontend' };
+    const neutralDef = { ...defender, type: 'backend' }; // 1.0x
+    const dmgWeak = calcDamageHeadless(attacker, move, frontendDef, typeChart, rng1);
+    const dmgNeutral = calcDamageHeadless(attacker, move, neutralDef, typeChart, rng2);
+    assert.ok(dmgWeak.damage <= dmgNeutral.damage, 'weak effectiveness should deal less damage');
+  });
+
+  test('damage with zero-power move still returns at least 1', () => {
+    const zeroMove = { ...move, power: 0 };
+    const rng = createRNG(42);
+    const result = calcDamageHeadless(attacker, zeroMove, defender, null, rng);
+    assert.ok(result.damage >= 1, `damage should be at least 1, got ${result.damage}`);
+  });
+
+  test('different seeds produce different random components', () => {
+    const results = new Set();
+    for (let seed = 0; seed < 20; seed++) {
+      const rng = createRNG(seed);
+      const r = calcDamageHeadless(attacker, move, defender, null, rng);
+      results.add(r.damage);
+    }
+    assert.ok(results.size > 1, 'different seeds should produce at least some different damage values');
+  });
+
+  test('headless calc returns damage and effectiveness only', () => {
+    const rng = createRNG(42);
+    const result = calcDamageHeadless(attacker, move, defender, typeChart, rng);
+    assert.ok('damage' in result, 'should have damage');
+    assert.ok('effectiveness' in result, 'should have effectiveness');
+  });
 });

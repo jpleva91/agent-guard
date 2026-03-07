@@ -110,4 +110,38 @@ suite('EventBus (game/engine/events.js)', () => {
     eventBus.on('test_late_listener', (d) => { received = d; });
     assert.strictEqual(received, null);
   });
+
+  // --- Stress and edge cases ---
+
+  test('many listeners on same event all fire', () => {
+    let count = 0;
+    for (let i = 0; i < 100; i++) {
+      eventBus.on('test_many_listeners', () => { count++; });
+    }
+    eventBus.emit('test_many_listeners');
+    assert.strictEqual(count, 100);
+  });
+
+  test('listener data mutation does not affect subsequent listeners', () => {
+    const results = [];
+    eventBus.on('test_mutation_safe', (d) => {
+      d.value = 999; // mutate
+      results.push(d.value);
+    });
+    eventBus.on('test_mutation_safe', (d) => {
+      results.push(d.value);
+    });
+    eventBus.emit('test_mutation_safe', { value: 1 });
+    // Both listeners share the same object reference, so both see 999
+    // This documents current behavior (no defensive copying)
+    assert.strictEqual(results[0], 999);
+    assert.strictEqual(results[1], 999);
+  });
+
+  test('emit with no data passes undefined', () => {
+    let received = 'sentinel';
+    eventBus.on('test_no_data_emit', (d) => { received = d; });
+    eventBus.emit('test_no_data_emit');
+    assert.strictEqual(received, undefined);
+  });
 });

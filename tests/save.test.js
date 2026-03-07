@@ -164,4 +164,67 @@ suite('Save/load system (game/sync/save.js)', () => {
     assert.strictEqual(loaded.bugdex.seen[1], 2);
     assert.strictEqual(loaded.bugdex.seen[2], 1);
   });
+
+  // --- localStorage quota handling ---
+
+  test('saveGame handles localStorage quota exceeded gracefully', () => {
+    localStorage.clear();
+    // Override setItem to throw
+    const origSet = localStorage.setItem;
+    localStorage.setItem = () => { throw new DOMException('quota exceeded', 'QuotaExceededError'); };
+    const result = saveGame(MOCK_PLAYER);
+    assert.strictEqual(result, false, 'should return false when storage is full');
+    localStorage.setItem = origSet;
+  });
+
+  test('loadGame handles save with extra fields (forward compat)', () => {
+    localStorage.clear();
+    const extendedSave = {
+      version: 1,
+      timestamp: Date.now(),
+      player: { x: 3, y: 7, dir: 'down', party: [] },
+      bugdex: { seen: {}, storage: [], stats: {} },
+      futureField: 'some new data',
+    };
+    localStorage.setItem('bugmon_save', JSON.stringify(extendedSave));
+    const loaded = loadGame();
+    assert.ok(loaded, 'should load successfully with extra fields');
+    assert.strictEqual(loaded.player.x, 3);
+  });
+
+  test('applySave with evolved monster party member', () => {
+    localStorage.clear();
+    const evolvedParty = {
+      ...MOCK_PLAYER,
+      party: [{
+        id: 21, name: 'OptionalChaining', type: 'backend', hp: 45, currentHP: 40,
+        attack: 12, defense: 7, speed: 9, moves: ['segfault', 'nullcheck'],
+        color: '#2ecc71', sprite: 'optionalchaining', rarity: 'evolved',
+      }],
+    };
+    saveGame(evolvedParty);
+    const loaded = loadGame();
+    const player = { x: 0, y: 0, dir: 'up', party: [] };
+    applySave(player, loaded);
+    assert.strictEqual(player.party[0].name, 'OptionalChaining');
+    assert.strictEqual(player.party[0].currentHP, 40);
+    assert.strictEqual(player.party[0].rarity, 'evolved');
+  });
+
+  test('recordBrowserCache without prior save does nothing', () => {
+    localStorage.clear();
+    // No save exists, recordBrowserCache should not throw
+    assert.doesNotThrow(() => recordBrowserCache({ id: 1 }));
+  });
+
+  test('saveGame serializes currentHP correctly for wounded monsters', () => {
+    localStorage.clear();
+    const woundedPlayer = {
+      ...MOCK_PLAYER,
+      party: [{ ...MOCK_PLAYER.party[0], currentHP: 1 }],
+    };
+    saveGame(woundedPlayer);
+    const loaded = loadGame();
+    assert.strictEqual(loaded.player.party[0].currentHP, 1);
+  });
 });

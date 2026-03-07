@@ -161,4 +161,44 @@ suite('Strategies (simulation/strategies.js)', () => {
     assert.strictEqual(defensiveStrategy(singleMoveMonster, defender, movesData, typeChart, rng).id, 'weak');
     assert.strictEqual(adaptiveStrategy(singleMoveMonster, defender, movesData, typeChart, rng).id, 'weak');
   });
+
+  // --- Heal-only moveset ---
+
+  test('strategies handle heal-only moveset', () => {
+    const healOnlyMoves = [{ id: 'heal', name: 'Heal', power: 12, type: 'backend', category: 'heal' }];
+    const healOnlyMon = { ...attacker, hp: 30, currentHP: 30, moves: ['heal'] };
+    const rng = createRNG(42);
+    // All strategies should return the heal move since it's the only one
+    assert.strictEqual(randomStrategy(healOnlyMon, defender, healOnlyMoves, typeChart, rng).id, 'heal');
+    assert.strictEqual(highestDamageStrategy(healOnlyMon, defender, healOnlyMoves, typeChart, rng).id, 'heal');
+    assert.strictEqual(typeAwareStrategy(healOnlyMon, defender, healOnlyMoves, typeChart, rng).id, 'heal');
+  });
+
+  test('hpAwareStrategy at exactly 30% HP threshold', () => {
+    const rng = createRNG(42);
+    const movesWithHeal = [...movesData, healMove];
+    // Exactly 30% HP = 9/30 = 0.3
+    const exactThresholdMon = { ...attacker, hp: 30, currentHP: 9, moves: ['weak', 'strong', 'medium', 'heal'] };
+    const move = hpAwareStrategy(exactThresholdMon, defender, movesWithHeal, typeChart, rng);
+    // At exactly 30% (not below), should NOT heal
+    assert.notStrictEqual(move.id, 'heal', 'should not heal at exactly 30% (threshold is <0.3)');
+  });
+
+  test('adaptiveStrategy uses highestDamage when opponent below 50% HP', () => {
+    const rng = createRNG(42);
+    const healthyAttacker = { ...attacker, hp: 30, currentHP: 30 };
+    const weakenedDefender = { ...defender, hp: 30, currentHP: 14 }; // ~47% HP
+    const move = adaptiveStrategy(healthyAttacker, weakenedDefender, movesData, typeChart, rng);
+    // When opponent < 50%, should use highestDamage strategy
+    const expectedMove = highestDamageStrategy(healthyAttacker, weakenedDefender, movesData, typeChart, createRNG(42));
+    assert.strictEqual(move.id, expectedMove.id);
+  });
+
+  test('defensiveStrategy skips heal moves when picking damage', () => {
+    const rng = createRNG(42);
+    const movesWithHeal = [...movesData, healMove];
+    const healthyMon = { ...attacker, hp: 30, currentHP: 30, moves: ['weak', 'strong', 'medium', 'heal'] };
+    const move = defensiveStrategy(healthyMon, defender, movesWithHeal, typeChart, rng);
+    assert.notStrictEqual(move.category, 'heal', 'healthy mon should not heal');
+  });
 });

@@ -115,4 +115,69 @@ suite('Dev Activity Tracker (game/evolution/tracker.js)', () => {
     for (let i = 0; i < 5; i++) logEvent('bugs_fixed');
     assert.strictEqual(getEvents().bugs_fixed, 5);
   });
+
+  // --- importFromFile tests ---
+
+  test('importFromFile handles missing fetch gracefully', async () => {
+    localStorage.clear();
+    initTracker();
+    const { importFromFile } = await import('../game/evolution/tracker.js');
+    const result = await importFromFile();
+    assert.strictEqual(result, false, 'should return false when fetch fails');
+  });
+
+  // --- Additional edge cases ---
+
+  test('logEvent returns true for all valid event types', () => {
+    localStorage.clear();
+    initTracker();
+    const validTypes = [
+      'commits', 'prs_merged', 'bugs_fixed', 'tests_passing', 'refactors',
+      'code_reviews', 'conflicts_resolved', 'ci_passes', 'deploys', 'docs_written'
+    ];
+    for (const type of validTypes) {
+      assert.strictEqual(logEvent(type), true, `logEvent('${type}') should return true`);
+    }
+  });
+
+  test('logEvent handles large accumulation', () => {
+    localStorage.clear();
+    initTracker();
+    const before = getEvents().commits;
+    for (let i = 0; i < 100; i++) logEvent('commits');
+    assert.strictEqual(getEvents().commits, before + 100);
+  });
+
+  test('initTracker preserves extra keys from saved data', () => {
+    localStorage.clear();
+    localStorage.setItem('bugmon_dev_events', JSON.stringify({
+      commits: 5, unknown_event: 999
+    }));
+    initTracker();
+    const events = getEvents();
+    assert.strictEqual(events.commits, 5);
+    assert.doesNotThrow(() => logEvent('commits'));
+  });
+
+  test('events persist across init cycles', () => {
+    localStorage.clear();
+    initTracker();
+    const baseline = getEvents().commits;
+    logEvent('commits');
+    logEvent('commits');
+    initTracker(); // re-init
+    const afterReinit = getEvents().commits;
+    assert.strictEqual(afterReinit, baseline + 2, 'events should persist across init cycles');
+    logEvent('commits');
+    assert.strictEqual(getEvents().commits, baseline + 3);
+  });
+
+  test('getEvents includes newer event types', () => {
+    localStorage.clear();
+    initTracker();
+    const events = getEvents();
+    assert.strictEqual(typeof events.lint_fixes, 'number');
+    assert.strictEqual(typeof events.type_errors_fixed, 'number');
+    assert.strictEqual(typeof events.security_fixes, 'number');
+  });
 });

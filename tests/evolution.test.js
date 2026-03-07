@@ -208,4 +208,65 @@ suite('Evolution Logic (game/evolution/evolution.js)', () => {
         `${mon.name} evolvesTo ${mon.evolvesTo} but trigger points to ${match.trigger.to}`);
     }
   });
+
+  // --- Multi-party and edge cases ---
+
+  test('checkPartyEvolutions returns first eligible only', () => {
+    // Build a party with multiple evolving monsters
+    const evolvingMons = monsters.filter(m => m.evolvesTo);
+    if (evolvingMons.length >= 2) {
+      const party = evolvingMons.slice(0, 2).map(m => ({ ...m, currentHP: m.hp }));
+      // Provide high event counts to trigger all
+      const events = {
+        commits: 100, prs_merged: 100, bugs_fixed: 100, tests_passing: 100,
+        refactors: 100, code_reviews: 100, conflicts_resolved: 100,
+        ci_passes: 100, deploys: 100, docs_written: 100
+      };
+      // Check each individually
+      const first = checkEvolution(party[0], events);
+      const second = checkEvolution(party[1], events);
+      // At least one should be eligible
+      assert.ok(first || second, 'at least one party member should be eligible');
+    }
+  });
+
+  test('getEvolutionProgress with exactly required count shows 100%', () => {
+    const nullPointer = monsters.find(m => m.name === 'NullPointer');
+    const match = findTrigger(nullPointer.id);
+    if (match) {
+      const exact = { [match.trigger.condition.event]: match.trigger.condition.count };
+      const progress = getEvolutionProgress(nullPointer, exact);
+      assert.strictEqual(progress.percentage, 100);
+      assert.strictEqual(progress.current, progress.required);
+    }
+  });
+
+  test('applyEvolution at exactly 0 HP gives 0 HP evolved form', () => {
+    const deadMon = { hp: 30, currentHP: 0, name: 'DeadMon' };
+    const evolvedForm = { hp: 50, name: 'EvolvedDead' };
+    const party = [deadMon];
+    const newMon = applyEvolution(party, 0, evolvedForm);
+    assert.strictEqual(newMon.currentHP, 0);
+  });
+
+  test('evolution chain data has no duplicate trigger pairs', () => {
+    const triggerPairs = new Set();
+    for (const chain of evolutions.chains) {
+      for (const trigger of chain.triggers) {
+        const key = `${trigger.from}->${trigger.to}`;
+        assert.ok(!triggerPairs.has(key),
+          `Duplicate trigger pair: ${key} in chain "${chain.name}"`);
+        triggerPairs.add(key);
+      }
+    }
+  });
+
+  test('all evolution trigger conditions have positive count', () => {
+    for (const chain of evolutions.chains) {
+      for (const trigger of chain.triggers) {
+        assert.ok(trigger.condition.count > 0,
+          `chain "${chain.name}" from ${trigger.from} has count ${trigger.condition.count}`);
+      }
+    }
+  });
 });

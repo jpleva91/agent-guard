@@ -316,4 +316,95 @@ suite('Battle Core (game/battle/battle-core.js)', () => {
     const state = createBattleState(passiveMon, monB);
     assert.deepStrictEqual(state.playerMon.passive, { name: 'TestPassive', description: 'Test' });
   });
+
+  // --- Multi-turn scenarios ---
+
+  test('multi-turn battle: 3 turns of combat accumulate damage', () => {
+    let state = createBattleState(monA, monB);
+    const playerMove = movesData[0];
+    const enemyMove = movesData[1];
+
+    for (let i = 0; i < 3; i++) {
+      if (state.outcome) break;
+      const result = executeTurn(state, playerMove, enemyMove, typeChart);
+      state = result.state;
+    }
+
+    assert.ok(state.turn >= 2, `Expected at least 2 turns, got ${state.turn}`);
+    assert.ok(state.playerMon.currentHP < monA.hp || state.enemy.currentHP < monB.hp,
+      'At least one monster should have taken damage');
+  });
+
+  test('executeTurn: log accumulates across turns', () => {
+    let state = createBattleState(monA, monB);
+    const playerMove = movesData[0];
+    const enemyMove = movesData[1];
+
+    const result1 = executeTurn(state, playerMove, enemyMove, typeChart);
+    state = result1.state;
+    const result2 = executeTurn(state, playerMove, enemyMove, typeChart);
+    state = result2.state;
+
+    assert.ok(state.log.length >= 4, `Expected at least 4 log entries across 2 turns, got ${state.log.length}`);
+    assert.strictEqual(state.turn, 2);
+  });
+
+  // --- Edge cases ---
+
+  test('cacheChance at exact boundary: full HP gives 0.1', () => {
+    const fullHP = { hp: 100, currentHP: 100 };
+    assert.ok(Math.abs(cacheChance(fullHP) - 0.1) < 0.001);
+  });
+
+  test('cacheChance at exact boundary: 0 HP gives 0.6', () => {
+    const noHP = { hp: 100, currentHP: 0 };
+    assert.ok(Math.abs(cacheChance(noHP) - 0.6) < 0.001);
+  });
+
+  test('cacheChance at 50% HP gives 0.35', () => {
+    const halfHP = { hp: 100, currentHP: 50 };
+    assert.ok(Math.abs(cacheChance(halfHP) - 0.35) < 0.001);
+  });
+
+  test('executeTurn does not mutate original state', () => {
+    const state = createBattleState(monA, monB);
+    const origPlayerHP = state.playerMon.currentHP;
+    const origEnemyHP = state.enemy.currentHP;
+    executeTurn(state, movesData[0], movesData[1], typeChart);
+    assert.strictEqual(state.playerMon.currentHP, origPlayerHP, 'original player HP should not change');
+    assert.strictEqual(state.enemy.currentHP, origEnemyHP, 'original enemy HP should not change');
+    assert.strictEqual(state.turn, 0, 'original turn should not change');
+  });
+
+  test('resolveMove returns non-negative damage', () => {
+    // Even with extreme defense
+    const tankDefender = { ...monB, defense: 200 };
+    const result = resolveMove(monA, movesData[0], tankDefender, typeChart);
+    assert.ok(result.damage >= 0, 'damage should be non-negative');
+  });
+
+  test('executeTurn with both having passives', () => {
+    // Both have passives - verify no crash
+    const state = createBattleState(flakyMon, raceMon);
+    const result = executeTurn(state, movesData[0], movesData[0], typeChart, { passive: () => 0.1 });
+    assert.ok(result.events.length >= 1, 'should produce at least one event');
+    assert.ok(result.state.turn === 1);
+  });
+
+  test('simulateBattle with same monster type', () => {
+    const result = simulateBattle(monA, { ...monA, name: 'Clone' }, movesData, { effectiveness: typeChart });
+    assert.ok(result.outcome !== null || result.turn >= 100, 'battle should end');
+  });
+
+  test('applyDamage with zero damage', () => {
+    const mon = { ...monA, currentHP: 30 };
+    const result = applyDamage(mon, 0);
+    assert.strictEqual(result.currentHP, 30);
+  });
+
+  test('applyHealing with zero amount', () => {
+    const mon = { ...monA, currentHP: 20 };
+    const result = applyHealing(mon, 0);
+    assert.strictEqual(result.currentHP, 20);
+  });
 });

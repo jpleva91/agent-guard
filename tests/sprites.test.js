@@ -51,17 +51,42 @@ suite('Sprite loader (game/sprites/sprites.js)', () => {
   });
 
   test('preloadAll includes player direction sprites', async () => {
-    const preloaded = [];
-    // We can't easily intercept preloadSprite calls, but we can verify
-    // by checking that it processes an array of monsters
     const monsters = [
       { sprite: 'mon_a' },
       { sprite: 'mon_b' },
       { sprite: null }, // should be filtered out
     ];
-    // preloadAll should not throw
     await assert.doesNotReject(async () => {
       await preloadAll(monsters);
     });
+  });
+
+  // --- Additional sprite tests ---
+
+  test('preloadAll with empty monster list does not throw', async () => {
+    await assert.doesNotReject(async () => {
+      await preloadAll([]);
+    });
+  });
+
+  test('getSprite returns null for never-preloaded sprite', () => {
+    assert.strictEqual(getSprite('completely_unknown_sprite_xyz'), null);
+  });
+
+  test('drawSprite returns false and does not throw for unknown sprite', () => {
+    const ctx = {
+      drawImage() {},
+      imageSmoothingEnabled: true,
+    };
+    assert.doesNotThrow(() => {
+      const result = drawSprite(ctx, 'unknown_sprite_for_draw', 0, 0, 64, 64);
+      assert.strictEqual(result, false);
+    });
+  });
+
+  test('preloadSprite returns same promise for duplicate calls', () => {
+    const p1 = preloadSprite('dedup_sprite_test_2');
+    const p2 = preloadSprite('dedup_sprite_test_2');
+    assert.strictEqual(p1, p2, 'duplicate preload should return same promise');
   });
 });

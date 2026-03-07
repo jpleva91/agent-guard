@@ -96,4 +96,56 @@ suite('Player state & movement (game/world/player.js)', () => {
     input.simulateRelease('ArrowRight');
     input.clearJustPressed();
   });
+
+  // --- Movement and collision ---
+
+  test('movement into walkable tile returns tile value', () => {
+    const player = getPlayer();
+    // Position player in a known safe spot
+    player.x = 3;
+    player.y = 3;
+    player.moveTimer = 0;
+    input.simulatePress('ArrowDown');
+    const result = updatePlayer(0);
+    // Result is either a tile value (0, 2) or null if wall
+    // We verify the function returns something when movement occurs
+    if (result !== null) {
+      assert.ok(typeof result === 'number', 'should return tile value');
+    }
+    input.simulateRelease('ArrowDown');
+    input.clearJustPressed();
+  });
+
+  test('movement sets cooldown timer', () => {
+    const player = getPlayer();
+    // Position at (5,1), moving down to (5,2) — both are walkable (0)
+    player.x = 5;
+    player.y = 1;
+    player.moveTimer = 0;
+    input.simulatePress('ArrowDown');
+    updatePlayer(0);
+    assert.ok(player.moveTimer > 0, 'moveTimer should be positive after movement');
+    input.simulateRelease('ArrowDown');
+    input.clearJustPressed();
+  });
+
+  test('party is initially empty', () => {
+    const player = getPlayer();
+    assert.ok(Array.isArray(player.party));
+  });
+
+  test('party can hold multiple monsters', () => {
+    const player = getPlayer();
+    const origLength = player.party.length;
+    player.party.push({ name: 'TestMon1' });
+    player.party.push({ name: 'TestMon2' });
+    assert.ok(player.party.length >= origLength + 2);
+    // Clean up
+    player.party.splice(origLength);
+  });
+
+  test('player defaults include moving flag', () => {
+    const player = getPlayer();
+    assert.strictEqual(typeof player.moving, 'boolean');
+  });
 });

@@ -70,6 +70,8 @@ async function main() {
   await import('./sound.test.js');
   await import('./sprites.test.js');
   await import('./sync-client.test.js');
+  await import('./battleEngine.test.js');
+  await import('./game-loop.test.js');
 
   console.log('\n' + '='.repeat(40));
   if (totalFailed === 0) {
