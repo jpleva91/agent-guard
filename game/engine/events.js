@@ -20,6 +20,7 @@ export const Events = {
   CACHE_SUCCESS: 'CACHE_SUCCESS',
   BATTLE_ENDED: 'BATTLE_ENDED',
   STATE_CHANGED: 'STATE_CHANGED',
+  PASSIVE_ACTIVATED: 'PASSIVE_ACTIVATED',
 };
 
 export const eventBus = new EventBus();

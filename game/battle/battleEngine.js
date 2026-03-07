@@ -100,33 +100,47 @@ function handleFaint(name, side, callback) {
   }
 }
 
+function doPlayerAttack(playerMove, afterAttack) {
+  doAttack(battle.playerMon, playerMove, battle.enemy, () => {
+    if (battle.enemy.currentHP <= 0) {
+      handleFaint(battle.enemy.name, 'enemy', () => endBattle());
+    } else if (shouldDoubleTurn(battle.playerMon)) {
+      showMessage(`${battle.playerMon.name}'s NonDeterministic triggers!`, () => {
+        doAttack(battle.playerMon, playerMove, battle.enemy, () => {
+          if (battle.enemy.currentHP <= 0) {
+            handleFaint(battle.enemy.name, 'enemy', () => endBattle());
+          } else {
+            afterAttack();
+          }
+        });
+      });
+    } else {
+      afterAttack();
+    }
+  });
+}
+
 function executeTurn(playerMove) {
   const playerFirst = battle.playerMon.speed >= battle.enemy.speed;
 
   if (playerFirst) {
-    doAttack(battle.playerMon, playerMove, battle.enemy, () => {
-      if (battle.enemy.currentHP <= 0) {
-        handleFaint(battle.enemy.name, 'enemy', () => endBattle());
-      } else {
-        enemyTurn();
-      }
-    });
+    doPlayerAttack(playerMove, () => enemyTurn());
   } else {
     enemyTurn(() => {
       if (battle.playerMon.currentHP <= 0) {
         handleFaint(battle.playerMon.name, 'player', () => endBattle());
       } else {
-        doAttack(battle.playerMon, playerMove, battle.enemy, () => {
-          if (battle.enemy.currentHP <= 0) {
-            handleFaint(battle.enemy.name, 'enemy', () => endBattle());
-          } else {
-            battle.state = 'menu';
-            battle.menuIndex = 0;
-          }
+        doPlayerAttack(playerMove, () => {
+          battle.state = 'menu';
+          battle.menuIndex = 0;
         });
       }
     });
   }
+}
+
+function shouldDoubleTurn(mon) {
+  return mon.passive?.name === 'NonDeterministic' && Math.random() < 0.25;
 }
 
 function doAttack(attacker, move, defender, callback) {
@@ -143,6 +157,14 @@ function doAttack(attacker, move, defender, callback) {
 
   const typeChart = typeData ? typeData.effectiveness : null;
   const { damage, effectiveness, critical } = calcDamage(attacker, move, defender, typeChart);
+
+  // RandomFailure: defender may negate damage
+  if (defender.passive?.name === 'RandomFailure' && Math.random() < 0.5) {
+    playAttack();
+    showMessage(`${attacker.name} used ${move.name}! ${defender.name}'s RandomFailure negated the damage!`, callback);
+    return;
+  }
+
   defender.currentHP -= damage;
   playAttack();
 
@@ -159,6 +181,19 @@ function enemyTurn(callback) {
   doAttack(battle.enemy, move, battle.playerMon, () => {
     if (battle.playerMon.currentHP <= 0) {
       handleFaint(battle.playerMon.name, 'player', () => endBattle());
+    } else if (shouldDoubleTurn(battle.enemy)) {
+      showMessage(`${battle.enemy.name}'s NonDeterministic triggers!`, () => {
+        doAttack(battle.enemy, move, battle.playerMon, () => {
+          if (battle.playerMon.currentHP <= 0) {
+            handleFaint(battle.playerMon.name, 'player', () => endBattle());
+          } else if (callback) {
+            callback();
+          } else {
+            battle.state = 'menu';
+            battle.menuIndex = 0;
+          }
+        });
+      });
     } else if (callback) {
       callback();
     } else {

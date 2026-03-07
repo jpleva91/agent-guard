@@ -22,6 +22,42 @@ export function runBattle(monA, monB, movesData, typeChart, strategyA, strategyB
   let turns = 0;
   const MAX_TURNS = 100;
 
+  // Execute a single attack: attacker uses move on defender
+  function doAttack(attacker, move, defender) {
+    if (move.category === 'heal') {
+      const healed = Math.min(move.power, attacker.hp - attacker.currentHP);
+      attacker.currentHP = Math.min(attacker.hp, attacker.currentHP + move.power);
+      log.push({
+        turn: turns, attacker: attacker.name, move: move.name,
+        damage: 0, healing: healed, effectiveness: 1.0,
+        targetHP: attacker.currentHP
+      });
+      return false;
+    }
+
+    const result = calcDamageHeadless(attacker, move, defender, typeChart, rng);
+    let damage = result.damage;
+
+    // RandomFailure: defender may negate damage
+    if (defender.passive?.name === 'RandomFailure' && rng.random() < 0.5) {
+      damage = 0;
+      log.push({
+        turn: turns, attacker: attacker.name, move: move.name,
+        damage: 0, effectiveness: result.effectiveness,
+        targetHP: defender.currentHP, passive: 'RandomFailure'
+      });
+      return false;
+    }
+
+    defender.currentHP -= damage;
+    log.push({
+      turn: turns, attacker: attacker.name, move: move.name,
+      damage, effectiveness: result.effectiveness,
+      targetHP: Math.max(0, defender.currentHP)
+    });
+    return defender.currentHP <= 0;
+  }
+
   while (a.currentHP > 0 && b.currentHP > 0 && turns < MAX_TURNS) {
     turns++;
 
@@ -34,43 +70,24 @@ export function runBattle(monA, monB, movesData, typeChart, strategyA, strategyB
 
     // First attacker's turn
     const firstMove = firstStrategy(first, second, movesData, typeChart, rng);
-    if (firstMove.category === 'heal') {
-      const healed = Math.min(firstMove.power, first.hp - first.currentHP);
-      first.currentHP = Math.min(first.hp, first.currentHP + firstMove.power);
-      log.push({
-        turn: turns, attacker: first.name, move: firstMove.name,
-        damage: 0, healing: healed, effectiveness: 1.0,
-        targetHP: first.currentHP
-      });
-    } else {
-      const firstResult = calcDamageHeadless(first, firstMove, second, typeChart, rng);
-      second.currentHP -= firstResult.damage;
-      log.push({
-        turn: turns, attacker: first.name, move: firstMove.name,
-        damage: firstResult.damage, effectiveness: firstResult.effectiveness,
-        targetHP: Math.max(0, second.currentHP)
-      });
-      if (second.currentHP <= 0) break;
+    if (doAttack(first, firstMove, second)) break;
+
+    // NonDeterministic: first attacker may act again
+    if (first.passive?.name === 'NonDeterministic' && rng.random() < 0.25 && second.currentHP > 0) {
+      const bonusMove = firstStrategy(first, second, movesData, typeChart, rng);
+      if (doAttack(first, bonusMove, second)) break;
     }
+
+    if (second.currentHP <= 0) break;
 
     // Second attacker's turn
     const secondMove = secondStrategy(second, first, movesData, typeChart, rng);
-    if (secondMove.category === 'heal') {
-      const healed = Math.min(secondMove.power, second.hp - second.currentHP);
-      second.currentHP = Math.min(second.hp, second.currentHP + secondMove.power);
-      log.push({
-        turn: turns, attacker: second.name, move: secondMove.name,
-        damage: 0, healing: healed, effectiveness: 1.0,
-        targetHP: second.currentHP
-      });
-    } else {
-      const secondResult = calcDamageHeadless(second, secondMove, first, typeChart, rng);
-      first.currentHP -= secondResult.damage;
-      log.push({
-        turn: turns, attacker: second.name, move: secondMove.name,
-        damage: secondResult.damage, effectiveness: secondResult.effectiveness,
-        targetHP: Math.max(0, first.currentHP)
-      });
+    doAttack(second, secondMove, first);
+
+    // NonDeterministic: second attacker may act again
+    if (second.passive?.name === 'NonDeterministic' && rng.random() < 0.25 && first.currentHP > 0) {
+      const bonusMove = secondStrategy(second, first, movesData, typeChart, rng);
+      doAttack(second, bonusMove, first);
     }
   }
 

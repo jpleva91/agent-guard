@@ -2,6 +2,15 @@
 
 import { calcDamage, isHealMove, calcHealing } from './damage.js';
 
+// Passive ability activation thresholds
+const PASSIVE_THRESHOLDS = { RandomFailure: 0.5, NonDeterministic: 0.25 };
+
+function checkPassive(bugmon, passiveName, roll) {
+  const passive = bugmon.passive;
+  if (!passive || passive.name !== passiveName) return false;
+  return roll < (PASSIVE_THRESHOLDS[passiveName] ?? 0);
+}
+
 // Create a fresh battle state from two BugMon data objects
 export function createBattleState(playerMon, enemyMon) {
   return {
@@ -81,56 +90,74 @@ export function executeTurn(state, playerMove, enemyMove, typeChart, rolls = {})
     : [{ side: 'enemy', attacker: enemy, move: enemyMove, defender: playerMon },
        { side: 'player', attacker: playerMon, move: playerMove, defender: enemy }];
 
-  for (const action of attackers) {
-    // Re-read current HP (may have changed from first attack)
-    const currentAttacker = action.side === 'player' ? playerMon : enemy;
-    const currentDefender = action.side === 'player' ? enemy : playerMon;
-
-    // Skip if attacker already fainted
-    if (isFainted(currentAttacker)) continue;
-
-    const result = resolveMove(currentAttacker, action.move, currentDefender, typeChart);
+  // Apply a single move (attacker uses move on defender), returning whether defender fainted
+  function applyMove(side, move) {
+    const attacker = side === 'player' ? playerMon : enemy;
+    const defender = side === 'player' ? enemy : playerMon;
+    const result = resolveMove(attacker, move, defender, typeChart);
 
     if (result.healing !== undefined && result.healing >= 0) {
       events.push({
-        type: 'MOVE_USED',
-        side: action.side,
-        attacker: currentAttacker.name,
-        move: action.move.name,
-        damage: 0,
-        healing: result.healing,
-        effectiveness: 1.0,
+        type: 'MOVE_USED', side, attacker: attacker.name, move: move.name,
+        damage: 0, healing: result.healing, effectiveness: 1.0,
       });
-      if (action.side === 'player') {
-        playerMon = applyHealing(playerMon, result.healing);
-      } else {
-        enemy = applyHealing(enemy, result.healing);
-      }
-    } else {
-      const { damage, effectiveness } = result;
+      if (side === 'player') playerMon = applyHealing(playerMon, result.healing);
+      else enemy = applyHealing(enemy, result.healing);
+      return false;
+    }
 
+    let { damage, effectiveness } = result;
+
+    // RandomFailure: defender may negate damage
+    const passiveRoll = rolls.passive?.() ?? Math.random();
+    if (checkPassive(defender, 'RandomFailure', passiveRoll)) {
+      damage = 0;
       events.push({
-        type: 'MOVE_USED',
-        side: action.side,
-        attacker: currentAttacker.name,
-        move: action.move.name,
-        damage,
-        effectiveness,
+        type: 'PASSIVE_ACTIVATED',
+        side: side === 'player' ? 'enemy' : 'player',
+        passive: 'RandomFailure',
+        message: `${defender.name}'s RandomFailure negated the damage!`,
       });
+    }
 
-      if (action.side === 'player') {
-        enemy = applyDamage(enemy, damage);
-      } else {
-        playerMon = applyDamage(playerMon, damage);
-      }
+    events.push({
+      type: 'MOVE_USED', side, attacker: attacker.name, move: move.name,
+      damage, effectiveness,
+    });
 
-      if (action.side === 'player' && isFainted(enemy)) {
-        events.push({ type: 'BUGMON_FAINTED', side: 'enemy', name: enemy.name });
-        break;
-      }
-      if (action.side === 'enemy' && isFainted(playerMon)) {
-        events.push({ type: 'BUGMON_FAINTED', side: 'player', name: playerMon.name });
-        break;
+    if (side === 'player') enemy = applyDamage(enemy, damage);
+    else playerMon = applyDamage(playerMon, damage);
+
+    const target = side === 'player' ? enemy : playerMon;
+    if (isFainted(target)) {
+      const faintSide = side === 'player' ? 'enemy' : 'player';
+      events.push({ type: 'BUGMON_FAINTED', side: faintSide, name: target.name });
+      return true;
+    }
+    return false;
+  }
+
+  for (const action of attackers) {
+    const currentAttacker = action.side === 'player' ? playerMon : enemy;
+    if (isFainted(currentAttacker)) continue;
+
+    const fainted = applyMove(action.side, action.move);
+    if (fainted) break;
+
+    // NonDeterministic: attacker may act twice
+    const updatedAttacker = action.side === 'player' ? playerMon : enemy;
+    const updatedDefender = action.side === 'player' ? enemy : playerMon;
+    if (!isFainted(updatedDefender)) {
+      const doubleRoll = rolls.passive?.() ?? Math.random();
+      if (checkPassive(updatedAttacker, 'NonDeterministic', doubleRoll)) {
+        events.push({
+          type: 'PASSIVE_ACTIVATED',
+          side: action.side,
+          passive: 'NonDeterministic',
+          message: `${updatedAttacker.name}'s NonDeterministic triggered a bonus action!`,
+        });
+        const bonusFainted = applyMove(action.side, action.move);
+        if (bonusFainted) break;
       }
     }
   }

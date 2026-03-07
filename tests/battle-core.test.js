@@ -222,4 +222,59 @@ suite('Battle Core (game/battle/battle-core.js)', () => {
     assert.strictEqual(result.healing, 10);
     assert.strictEqual(result.effectiveness, 1.0);
   });
+
+  // Passive ability tests
+  const flakyMon = {
+    id: 11, name: 'FlakyTest', type: 'testing', hp: 24, attack: 7, defense: 4, speed: 2,
+    moves: ['segfault'], passive: { name: 'RandomFailure', description: '50% chance to ignore damage' }
+  };
+  const raceMon = {
+    id: 3, name: 'RaceCondition', type: 'backend', hp: 25, attack: 6, defense: 3, speed: 10,
+    moves: ['segfault'], passive: { name: 'NonDeterministic', description: 'Randomly acts twice per turn' }
+  };
+
+  test('RandomFailure passive negates damage when roll < 0.5', () => {
+    const state = createBattleState(monA, flakyMon);
+    const result = executeTurn(state, movesData[0], movesData[0], typeChart, { passive: () => 0.1 });
+    const passiveEvent = result.events.find(e => e.type === 'PASSIVE_ACTIVATED');
+    assert.ok(passiveEvent, 'should have passive activation event');
+    assert.strictEqual(passiveEvent.passive, 'RandomFailure');
+    // FlakyTest is defender (enemy), player attacks first (speed 6 > 2)
+    assert.strictEqual(result.state.enemy.currentHP, 24, 'FlakyTest should take no damage');
+  });
+
+  test('RandomFailure passive does not trigger when roll >= 0.5', () => {
+    const state = createBattleState(monA, flakyMon);
+    const result = executeTurn(state, movesData[0], movesData[0], typeChart, { passive: () => 0.9 });
+    const passiveEvent = result.events.find(e => e.type === 'PASSIVE_ACTIVATED');
+    assert.ok(!passiveEvent, 'should not have passive activation event');
+    assert.ok(result.state.enemy.currentHP < 24, 'FlakyTest should take damage');
+  });
+
+  test('NonDeterministic passive triggers bonus attack when roll < 0.25', () => {
+    const state = createBattleState(raceMon, monB);
+    // First passive roll is for RandomFailure check on defender (monB has no passive, won't trigger)
+    // Second passive roll is for NonDeterministic check on attacker
+    const result = executeTurn(state, movesData[0], movesData[1], typeChart, { passive: () => 0.1 });
+    const passiveEvent = result.events.find(e => e.type === 'PASSIVE_ACTIVATED' && e.passive === 'NonDeterministic');
+    assert.ok(passiveEvent, 'should have NonDeterministic activation event');
+    const playerMoveEvents = result.events.filter(e => e.type === 'MOVE_USED' && e.side === 'player');
+    assert.strictEqual(playerMoveEvents.length, 2, 'should have two player attack events');
+  });
+
+  test('NonDeterministic passive does not trigger when roll >= 0.25', () => {
+    const state = createBattleState(raceMon, monB);
+    const result = executeTurn(state, movesData[0], movesData[1], typeChart, { passive: () => 0.9 });
+    const passiveEvent = result.events.find(e => e.type === 'PASSIVE_ACTIVATED' && e.passive === 'NonDeterministic');
+    assert.ok(!passiveEvent, 'should not have NonDeterministic activation event');
+    const playerMoveEvents = result.events.filter(e => e.type === 'MOVE_USED' && e.side === 'player');
+    assert.strictEqual(playerMoveEvents.length, 1, 'should have only one player attack event');
+  });
+
+  test('No passive activation for BugMon without passive', () => {
+    const state = createBattleState(monA, monB);
+    const result = executeTurn(state, movesData[0], movesData[1], typeChart);
+    const passiveEvent = result.events.find(e => e.type === 'PASSIVE_ACTIVATED');
+    assert.ok(!passiveEvent, 'should not have passive activation event');
+  });
 });
