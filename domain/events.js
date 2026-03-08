@@ -38,6 +38,14 @@ export const BLAST_RADIUS_EXCEEDED = 'BlastRadiusExceeded';
 export const MERGE_GUARD_FAILURE = 'MergeGuardFailure';
 export const EVIDENCE_PACK_GENERATED = 'EvidencePackGenerated';
 
+// Reference Monitor (Agent Action Boundary)
+export const ACTION_REQUESTED = 'ActionRequested';
+export const ACTION_ALLOWED = 'ActionAllowed';
+export const ACTION_DENIED = 'ActionDenied';
+export const ACTION_ESCALATED = 'ActionEscalated';
+export const ACTION_EXECUTED = 'ActionExecuted';
+export const ACTION_FAILED = 'ActionFailed';
+
 // Developer Signals
 export const FILE_SAVED = 'FileSaved';
 export const TEST_COMPLETED = 'TestCompleted';
@@ -149,6 +157,30 @@ const EVENT_SCHEMAS = {
   [EVIDENCE_PACK_GENERATED]: {
     required: ['packId', 'eventIds'],
     optional: ['summary', 'metadata'],
+  },
+  [ACTION_REQUESTED]: {
+    required: ['actionType', 'target', 'justification'],
+    optional: ['actionId', 'agentId', 'metadata'],
+  },
+  [ACTION_ALLOWED]: {
+    required: ['actionType', 'target', 'capability'],
+    optional: ['actionId', 'reason', 'policyHash', 'metadata'],
+  },
+  [ACTION_DENIED]: {
+    required: ['actionType', 'target', 'reason'],
+    optional: ['actionId', 'policyHash', 'metadata'],
+  },
+  [ACTION_ESCALATED]: {
+    required: ['actionType', 'target', 'reason'],
+    optional: ['actionId', 'policyHash', 'metadata'],
+  },
+  [ACTION_EXECUTED]: {
+    required: ['actionType', 'target', 'result'],
+    optional: ['actionId', 'duration', 'metadata'],
+  },
+  [ACTION_FAILED]: {
+    required: ['actionType', 'target', 'error'],
+    optional: ['actionId', 'duration', 'metadata'],
   },
   [FILE_SAVED]: {
     required: ['file'],

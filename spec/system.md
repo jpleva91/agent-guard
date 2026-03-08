@@ -1,12 +1,40 @@
-# System Spec — AgentGuard + BugMon
+# System Specification
 
-## Purpose
+BugMon is a roguelike developer telemetry game. It monitors software bugs and converts them into interactive encounters. AgentGuard provides deterministic governance for AI coding agents. Together they form a unified platform where all system activity flows through the canonical event model.
 
-AgentGuard + BugMon is a unified platform where developer errors become gameplay. AgentGuard provides deterministic governance for AI coding agents. BugMon renders all system events as a roguelike game.
+## Core Event Flow
 
-## Architectural Spine
+```
+watcher detects failure (stderr, CI output, agent action)
+↓
+ingestion pipeline: parse → fingerprint → classify → map
+↓
+canonical event emitted (e.g., ERROR_OBSERVED)
+↓
+game engine spawns BugMon enemy
+↓
+developer fixes the bug
+↓
+BugMon enemy defeated → recorded in Bug Grimoire
+```
 
-The **canonical event model** is the single integration point. Every system activity produces or consumes events. There are no other integration mechanisms.
+## Gameplay Model
+
+- Coding sessions are dungeon **runs**
+- Bugs are **enemies** with stats derived from error severity
+- CI failures are **bosses** requiring active engagement
+- Minor errors (severity 1-2) **auto-resolve** in idle mode
+- Severe errors (severity 3+) require **player interaction**
+- The Bug Grimoire records defeated enemy types (compendium, not collection)
+
+## Two-Layer System
+
+| Layer | Role | Produces |
+|-------|------|----------|
+| **AgentGuard** | Governance runtime — evaluates agent actions against policies | Policy violation events |
+| **BugMon** | Roguelike game — renders events as interactive encounters | Gameplay state |
+
+Both layers share the **canonical event model** as their architectural spine.
 
 ## System Boundaries
 
@@ -43,11 +71,14 @@ The **canonical event model** is the single integration point. Every system acti
 | Progression | `ActivityRecorded`, `EvolutionTriggered` | Dev activity tracker | Progression engine |
 | Session | `RunStarted`, `RunEnded`, `CheckpointReached` | Run engine | Scoring, save system |
 | Governance | `PolicyDenied`, `UnauthorizedAction`, `InvariantViolation` | AgentGuard | Boss encounters |
+| Reference Monitor | `ActionRequested`, `ActionAllowed`, `ActionDenied`, `ActionExecuted` | Agent Action Boundary | Audit trail, governance |
 | Developer Signals | `FileSaved`, `TestCompleted`, `CommitCreated` | Git hooks, watchers | Encounter triggers |
 
-## Technology Constraints
+## Technical Constraints
 
+- 100% client-side browser game, zero runtime dependencies
 - Vanilla JavaScript (ES6 modules), HTML5 Canvas 2D, Web Audio API
+- All audio synthesized at runtime (no audio files)
 - Build: esbuild + terser (dev dependencies only)
 - Deployed to GitHub Pages
 - ESLint + Prettier enforced
