@@ -101,6 +101,15 @@ async function main() {
   await import('./pipeline/test-stages.js');
   await import('./pipeline/test-orchestrator.js');
 
+  // AgentGuard — Runtime Assurance Architecture tests
+  await import('./policy-loader.test.js');
+  await import('./policy-evaluator.test.js');
+  await import('./aab.test.js');
+  await import('./invariant-checker.test.js');
+  await import('./evidence-pack.test.js');
+  await import('./rta-engine.test.js');
+  await import('./runtime-monitor.test.js');
+
   console.log('\n' + '='.repeat(40));
   if (totalFailed === 0) {
     console.log(`${GREEN}${BOLD}All ${totalPassed} tests passed${RESET}`);
