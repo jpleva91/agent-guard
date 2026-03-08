@@ -1,6 +1,6 @@
-# AgentGuard + BugMon
+# BugMon
 
-**Deterministic AI agent governance. Roguelike developer telemetry.**
+**Every bug is an enemy. Every fix is a victory.**
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -11,11 +11,18 @@
 
 ---
 
-**AgentGuard** is a deterministic governance runtime for AI coding agents. It evaluates agent actions against declared policies and invariants, produces structured evidence of every decision, and emits canonical events when violations occur. No inference. No heuristics. Pure policy evaluation.
+BugMon is a developer experience platform that turns debugging into gameplay. Wrap any command — errors spawn enemies, fixes defeat them, and your progress persists across sessions.
 
-**BugMon** is a roguelike developer telemetry game. It consumes events — developer errors, CI failures, governance violations — and turns them into interactive encounters. Your coding session is a dungeon run. Your bugs are enemies. Your CI failures are bosses.
+```
+test fails  -->  monster spawns  -->  fix bug  -->  monster defeated  -->  XP gained
+```
 
-The system has one architectural spine: the **canonical event model**. All system activity becomes events. AgentGuard produces governance events. BugMon consumes all events and renders them as gameplay.
+<p align="center">
+  <img src="game/sprites/nullpointer.png" width="64" alt="NullPointer">
+  <img src="game/sprites/racecondition.png" width="64" alt="RaceCondition">
+  <img src="game/sprites/memoryleak.png" width="64" alt="MemoryLeak">
+  <img src="game/sprites/deadlock.png" width="64" alt="Deadlock">
+</p>
 
 ## Try it now
 
@@ -28,32 +35,18 @@ No install. No config. No dependencies. A wild bug appears.
 ### Wrap your dev command
 
 ```bash
-npx bugmon watch -- npm run dev
+npx bugmon watch -- npm test
 ```
 
 Every error spawns an enemy. Fix the bug, defeat the enemy. Minor enemies auto-resolve in the background. Bosses interrupt your session and demand attention.
 
-<p align="center">
-  <img src="game/sprites/nullpointer.png" width="64" alt="NullPointer">
-  <img src="game/sprites/racecondition.png" width="64" alt="RaceCondition">
-  <img src="game/sprites/memoryleak.png" width="64" alt="MemoryLeak">
-  <img src="game/sprites/deadlock.png" width="64" alt="Deadlock">
-</p>
-
 ## How It Works
 
-```
-Developer Signals / Agent Actions
-    → Event Normalization Pipeline
-    → Canonical Event Model
-    → Policy + Invariant Evaluation (AgentGuard)
-    → Event Store
-    → Subscribers (BugMon, Grimoire, stats, replay)
-```
+1. **Wrap your command** — `bugmon watch -- npm run dev`
+2. **Errors spawn enemies** — a TypeError becomes a NullPointer, a missing import becomes an ImportError
+3. **Fix the bug to defeat it** — run `bugmon resolve` to earn XP and record it in your Bug Grimoire
 
-A TypeError in your code becomes a canonical event. That event flows through the pipeline, gets classified by severity, and spawns a BugMon enemy. Minor enemies (severity 1-2) auto-resolve in idle mode. Bosses and elites (severity 3+) demand active engagement.
-
-An AI agent trying to modify production config triggers AgentGuard. The policy evaluator denies the action. An `InvariantViolation` event is emitted. BugMon spawns an elite governance boss. The evidence pack records exactly what happened and why.
+40+ error patterns recognized across Node.js, TypeScript, Python, Go, Rust, Java, ESLint, Jest/Vitest, merge conflicts, security findings, and CI output.
 
 ### Examples
 
@@ -67,17 +60,59 @@ An AI agent trying to modify production config triggers AgentGuard. The policy e
   Pipeline failed: deploy job exited with code 1
   .github/workflows/deploy.yml
   [1] Fight  [2] Run
-
-  ⚠ GOVERNANCE: Invariant Titan appeared!         InvariantViolation
-  ██████████████████████████████  HP: 600/600    severity: 5
-  Agent modified production schema outside scope
-  src/database/schema.sql
-  [1] Fight  [2] Run
 ```
+
+## Plugin Architecture
+
+BugMon uses a **SourceRegistry** to manage where bug signals come from. Any tool, service, or workflow that produces error output can be a source.
+
+### Built-in Sources
+
+| Source | Description |
+|--------|-------------|
+| `watch` | Wraps a child process, captures stderr errors |
+| `scan` | Runs linters/compilers (eslint, tsc), captures output |
+| `claude-hook` | Captures errors from Claude Code sessions |
+
+### Write a Custom Source
+
+```javascript
+import { SourceRegistry } from './domain/source-registry.js';
+import { EventBus } from './domain/event-bus.js';
+import { ingest } from './domain/ingestion/pipeline.js';
+
+const registry = new SourceRegistry({ eventBus: new EventBus(), ingest });
+
+registry.register({
+  name: 'my-ci-watcher',
+  start(onRawSignal) {
+    // Feed raw error text into the pipeline
+    onRawSignal('TypeError: Cannot read properties of undefined');
+  },
+  stop() {},
+});
+
+registry.start();
+```
+
+Any raw text fed to `onRawSignal` goes through the ingestion pipeline (parse, fingerprint, classify) and becomes a canonical event on the EventBus.
+
+See [Plugin API](docs/plugin-api.md) for the full extension guide.
+
+## Features
+
+- **40+ error patterns** — JavaScript, TypeScript, Python, Go, Rust, Java, ESLint, CI output
+- **Bug Grimoire** — compendium of every enemy type defeated, with encounter history
+- **Dev-activity progression** — commits, PRs, and bug fixes drive level-ups via git hooks
+- **31 named enemies** across 7 types — community-contributed creatures with sprites and lore
+- **Hybrid idle/active** — minor enemies auto-resolve, bosses demand engagement
+- Turn-based combat with speed priority, type effectiveness, critical hits, and passive abilities
+- Synthesized sound effects (Web Audio API — zero audio files)
+- **Zero runtime dependencies** — vanilla JS, HTML5 Canvas, no framework ([Lightweight Manifesto](LIGHTWEIGHT.md))
 
 ## The Roguelike Model
 
-Coding sessions are **runs**. Errors are **enemies**. CI failures are **bosses**. Governance violations are **elite bosses**.
+Coding sessions are **runs**. Errors are **enemies**. CI failures are **bosses**.
 
 | Software Development | Roguelike Mechanic |
 |---------------------|-------------------|
@@ -86,23 +121,14 @@ Coding sessions are **runs**. Errors are **enemies**. CI failures are **bosses**
 | Type error | Minor enemy (idle) |
 | Test failure | Strong enemy (active) |
 | CI failure | Boss (active) |
-| Invariant violation | Elite boss (active) |
 | Bug fix | Enemy defeated |
 | Cascading failures | Run death |
 
-Minor enemies auto-resolve in the background while you code. Boss encounters interrupt your session and require active input. The **Bug Grimoire** records every enemy type you've defeated — a compendium of all the bugs you've conquered.
+Minor enemies auto-resolve while you code. Boss encounters interrupt your session and require active input. The **Bug Grimoire** records every enemy type you've defeated.
 
 Difficulty scales within a session. Unresolved errors compound. Boss encounters escalate from repeated failures. Meta-progression (Grimoire, XP, achievements) persists across runs.
 
 See [docs/roguelike-design.md](docs/roguelike-design.md) for the full design.
-
-## Claude Code Integration
-
-Using [Claude Code](https://docs.anthropic.com/en/docs/claude-code)? BugMon hooks into your sessions — errors trigger encounters automatically.
-
-```bash
-npx bugmon claude-init
-```
 
 ## CLI
 
@@ -112,12 +138,16 @@ npx bugmon watch -- npm run dev
 npx bugmon watch -- node server.js
 npx bugmon watch -- tsc --watch
 
+# Interactive mode — battle and cache BugMon
+npx bugmon watch --cache -- npm test
+
 # Scan mode — find bugs in your project
 npx bugmon scan
 
 # Grimoire and stats
 npx bugmon dex                    # View your Bug Grimoire
 npx bugmon stats                  # Bug hunter level and XP
+npx bugmon sources                # List registered event sources
 
 # Sync CLI ↔ browser game
 npx bugmon sync
@@ -125,7 +155,13 @@ npx bugmon sync
 
 Install globally for the shorter `bugmon` command: `npm i -g bugmon`
 
-40+ error patterns recognized across Node.js, TypeScript, Python, Go, Rust, Java, ESLint, Jest/Vitest, merge conflicts, security findings, and CI output. Zero runtime dependencies.
+## Claude Code Integration
+
+Using [Claude Code](https://docs.anthropic.com/en/docs/claude-code)? BugMon hooks into your sessions — errors trigger encounters automatically.
+
+```bash
+npx bugmon claude-init
+```
 
 ## Browser Game
 
@@ -146,52 +182,60 @@ The optional browser companion provides a visual roguelike experience — explor
 - **Fight** — Pick a move. Faster combatant acts first.
 - **Run** — Always succeeds.
 
+## Governance Integration
+
+BugMon integrates with **AgentGuard**, a deterministic governance runtime for AI coding agents. AgentGuard evaluates agent actions against declared policies and invariants, producing canonical events when violations occur. These governance violations become elite boss encounters in BugMon.
+
+```
+  ⚠ GOVERNANCE: Invariant Titan appeared!         InvariantViolation
+  ██████████████████████████████  HP: 600/600    severity: 5
+  Agent modified production schema outside scope
+  src/database/schema.sql
+  [1] Fight  [2] Run
+```
+
+See [docs/agentguard.md](docs/agentguard.md) for the governance runtime specification.
+
 ## Architecture
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│                      Event Sources                         │
-│  stderr │ test output │ linter │ CI │ agent actions        │
+│                    Event Sources (plugins)                   │
+│  stderr │ test output │ linter │ CI │ claude-hook │ custom  │
 └────────────────────────┬───────────────────────────────────┘
-                         │
+                         │ raw text
                          ▼
               ┌──────────────────────┐
-              │  Normalization       │
-              │  Pipeline            │
-              │  parse → classify    │
-              │  → dedupe → emit     │
+              │  SourceRegistry      │
+              │  register / start    │
+              │  / stop / list       │
               └──────────┬───────────┘
-                         │
+                         │ onRawSignal
+                         ▼
+              ┌──────────────────────┐
+              │  Ingestion Pipeline  │
+              │  parse → fingerprint │
+              │  → classify → emit   │
+              └──────────┬───────────┘
+                         │ canonical events
             ┌────────────┼────────────┐
             ▼            ▼            ▼
      ┌───────────┐ ┌──────────┐ ┌──────────┐
-     │ AgentGuard│ │  Event   │ │ EventBus │
-     │           │ │  Store   │ │          │
-     │ policies  │ │          │ │ pub/sub  │
-     │ invariants│ │ persist  │ │ broadcast│
-     │ evidence  │ │ replay   │ │          │
-     └─────┬─────┘ └──────────┘ └────┬─────┘
-           │                         │
-           │ governance events       │ all events
-           └────────────┬────────────┘
-                        ▼
-              ┌──────────────────────┐
-              │    Subscribers       │
-              │                      │
-              │  Terminal renderer   │
-              │  Browser game        │
-              │  Bug Grimoire        │
-              │  Stats engine        │
-              │  Replay engine       │
-              └──────────────────────┘
+     │ Terminal  │ │ Browser  │ │  Bug     │
+     │ Renderer  │ │ Game     │ │ Grimoire │
+     │           │ │          │ │          │
+     │ encounters│ │ dungeon  │ │ history  │
+     │ battles   │ │ battles  │ │ stats    │
+     └───────────┘ └──────────┘ └──────────┘
 ```
 
-### Current Repository Structure
+### Repository Structure
 
 ```
 BugMon/
 ├── core/                # CLI encounter engine (Node.js)
 │   ├── cli/             # CLI tool (bugmon command, watch, sync)
+│   ├── sources/         # Event source adapters (plugin contract)
 │   ├── matcher.js       # Error → enemy matching
 │   └── error-parser.js  # Error & stack trace parsing (40+ patterns)
 ├── game/                # Browser game (client-side)
@@ -201,6 +245,7 @@ BugMon/
 │   ├── evolution/       # Dev-activity progression system
 │   └── sprites/         # Sprites + procedural generation
 ├── domain/              # Pure domain logic (no DOM, no Node.js APIs)
+│   ├── source-registry.js # Event source plugin registry
 │   ├── battle.js        # Deterministic battle engine
 │   ├── events.js        # Canonical event definitions
 │   ├── event-bus.js     # Universal EventBus
@@ -210,46 +255,10 @@ BugMon/
 │   ├── bugdex.js        # Bug Grimoire system
 │   └── bosses.js        # Boss encounter definitions
 ├── simulation/          # Headless battle simulation
-├── tests/               # Test suite (52 test files)
+├── tests/               # Test suite
 ├── docs/                # System documentation
 └── scripts/             # Build tooling
 ```
-
-### Target Structure
-
-```
-agentguard/              # Governance runtime
-├── core/                # AAB, evaluation loop
-├── policies/            # Policy definitions
-├── invariants/          # Invariant monitoring
-└── evidence/            # Evidence packs
-
-bugmon/                  # Roguelike game layer
-├── core/                # Run engine, encounter generation
-├── battle-engine/       # Turn-based combat
-├── grimoire/            # Enemy compendium and progression
-└── renderers/           # Terminal, browser, mobile
-
-shared/                  # Canonical event model
-├── events/              # Event schema
-├── fingerprints/        # Deduplication
-└── replay/              # Event stream replay
-```
-
-## Features
-
-- **31 named enemies** across 7 types — community-contributed creatures with sprites and lore
-- **Hybrid idle/active** — minor enemies auto-resolve, bosses demand engagement
-- **CLI encounter engine** — wraps your dev commands, classifies real errors, spawns matching enemies
-- **40+ error patterns** — JavaScript, TypeScript, Python, Go, Rust, Java, ESLint, CI output
-- **Bug Grimoire** — compendium of every enemy type defeated, with encounter history and fix strategies
-- **Dev-activity progression** — your commits, PRs, and bug fixes drive level-ups via git hooks
-- Turn-based combat with speed priority, type effectiveness, critical hits, and passive abilities
-- Browser roguelike with tile-based dungeon exploration and random encounters
-- Synthesized sound effects (Web Audio API — zero audio files)
-- Mobile touch controls
-- Save/load with auto-save
-- **Zero runtime dependencies** — vanilla JS, HTML5 Canvas, no framework ([Lightweight Manifesto](LIGHTWEIGHT.md))
 
 ## Type System
 
@@ -306,7 +315,7 @@ Any static file server works. No build step, no `npm install` required, no bundl
 ### Development Commands
 
 ```bash
-npm test                               # Run test suite (52 test files)
+npm test                               # Run test suite
 npm run simulate                       # Random battle matchup
 npm run simulate -- --all --runs 100   # Full roster balance analysis
 npm run build                          # Build single-file dist (~12 KB gzipped)
@@ -321,15 +330,15 @@ npm run format                         # Check formatting (Prettier)
 | Document | Description |
 |----------|-------------|
 | [Architecture](ARCHITECTURE.md) | Technical architecture and system design |
-| [Unified Architecture](docs/unified-architecture.md) | How AgentGuard and BugMon integrate |
-| [AgentGuard](docs/agentguard.md) | Governance runtime specification |
+| [Plugin API](docs/plugin-api.md) | Event sources, content packs, renderers |
+| [Roguelike Design](docs/roguelike-design.md) | Debugging-as-roguelike mechanics |
 | [Event Model](docs/event-model.md) | Canonical event schema and lifecycle |
 | [Bug Event Pipeline](docs/bug-event-pipeline.md) | Signal normalization pipeline |
-| [Roguelike Design](docs/roguelike-design.md) | Debugging-as-roguelike mechanics |
-| [Plugin API](docs/plugin-api.md) | Extension points |
-| [Sequence Diagrams](docs/sequence-diagrams.md) | System flow diagrams |
 | [Agent-Native SDLC](docs/agent-sdlc-architecture.md) | Formal architecture brief and academic foundations |
 | [Product Positioning](docs/product-positioning.md) | What this is and isn't |
+| [Unified Architecture](docs/unified-architecture.md) | How AgentGuard and BugMon integrate |
+| [AgentGuard](docs/agentguard.md) | Governance runtime specification |
+| [Sequence Diagrams](docs/sequence-diagrams.md) | System flow diagrams |
 | [Current Priorities](docs/current-priorities.md) | Active development phase |
 | [Roadmap](ROADMAP.md) | Phased development plan |
 | [Contributing](CONTRIBUTING.md) | How to contribute |

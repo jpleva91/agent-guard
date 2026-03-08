@@ -115,6 +115,10 @@ async function main() {
   await import('./recorder.test.js');
   await import('./replay.test.js');
 
+  // Source registry and adapters
+  await import('./source-registry.test.js');
+  await import('./sources.test.js');
+
   console.log('\n' + '='.repeat(40));
   if (totalFailed === 0) {
     console.log(`${GREEN}${BOLD}All ${totalPassed} tests passed${RESET}`);

@@ -8,16 +8,46 @@ The system supports extension through five plugin categories: event sources, con
 
 Event sources feed raw signals into the normalization pipeline. Any system that produces error output, failure notifications, or action traces can be an event source.
 
-**Contract:** An event source adapter must produce raw text that the parser can consume, or pre-parsed error objects conforming to the parse output schema.
+**Contract:** An event source must implement `{ name, start(onRawSignal), stop() }`. The `onRawSignal(rawText)` callback feeds raw text into the ingestion pipeline.
 
-**Integration point:** Feed into Stage 1 (Source) of the [Bug Event Pipeline](bug-event-pipeline.md).
+**Implementation:** `domain/source-registry.js` — the `SourceRegistry` class manages source lifecycle.
+
+**Quick Start:**
+
+```javascript
+import { SourceRegistry } from '../domain/source-registry.js';
+import { EventBus } from '../domain/event-bus.js';
+import { ingest } from '../domain/ingestion/pipeline.js';
+
+const registry = new SourceRegistry({ eventBus: new EventBus(), ingest });
+
+registry.register({
+  name: 'my-custom-source',
+  start(onRawSignal) {
+    // onRawSignal(rawText) feeds into the pipeline
+  },
+  stop() {},
+});
+
+registry.start();
+```
 
 **Built-in sources:**
 | Source | Adapter | Path |
 |--------|---------|------|
-| stderr (watch mode) | CLI watch adapter | `core/cli/adapter.js` |
-| Claude Code errors | PostToolUse hook | `core/cli/claude-hook.js` |
-| Project scan | Scan command | `core/cli/scan.js` |
+| stderr (watch mode) | Watch source | `core/sources/watch-source.js` |
+| Claude Code errors | Claude hook source | `core/sources/claude-hook-source.js` |
+| Project scan | Scan source | `core/sources/scan-source.js` |
+
+**SourceRegistry API:**
+
+| Method | Description |
+|--------|-------------|
+| `register(config)` | Register a source. Returns an unregister function. |
+| `start(name?)` | Start one source by name, or all if omitted. |
+| `stop(name?)` | Stop one source by name, or all if omitted. |
+| `list()` | Returns `[{ name, running, meta }]` for all sources. |
+| `unregister(name)` | Remove a source. Stops it first if running. |
 
 **Planned sources:**
 | Source | Description |
@@ -32,18 +62,26 @@ Event sources feed raw signals into the normalization pipeline. Any system that 
 **Implementing a custom event source:**
 
 ```javascript
-// Example: custom event source adapter
-export function createSource(options) {
-  return {
-    name: 'my-custom-source',
+// Example: GitHub Actions webhook source
+export function createGitHubActionsSource(options) {
+  let server = null;
 
-    // Start monitoring for events
+  return {
+    name: 'github-actions',
+
     start(onRawSignal) {
-      // onRawSignal(rawText) feeds into the pipeline
+      // Start a webhook listener
+      // When a workflow fails, call:
+      // onRawSignal(failureOutput)
     },
 
-    // Stop monitoring
-    stop() {}
+    stop() {
+      if (server) server.close();
+    },
+
+    meta: {
+      description: 'Receives CI failure events from GitHub Actions webhooks',
+    },
   };
 }
 ```

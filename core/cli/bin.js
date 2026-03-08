@@ -93,6 +93,13 @@ const COMMANDS = {
       'bugmon replay --last --stats',
     ],
   },
+  sources: {
+    name: 'bugmon sources',
+    description: 'List registered event sources and their status',
+    usage: 'bugmon sources',
+    flags: [],
+    examples: ['bugmon sources'],
+  },
   sync: {
     name: 'bugmon sync',
     description: 'Start WebSocket sync server (bridges CLI and browser game)',
@@ -265,6 +272,30 @@ switch (command) {
     break;
   }
 
+  case 'sources': {
+    if (wantsHelp) { console.log(formatHelp(COMMANDS.sources)); break; }
+    const { SourceRegistry } = await import('../../domain/source-registry.js');
+    const { EventBus } = await import('../../domain/event-bus.js');
+    const { ingest } = await import('../../domain/ingestion/pipeline.js');
+    const { createWatchSource } = await import('../sources/watch-source.js');
+    const { createScanSource } = await import('../sources/scan-source.js');
+    const { createClaudeHookSource } = await import('../sources/claude-hook-source.js');
+
+    const registry = new SourceRegistry({ eventBus: new EventBus(), ingest });
+    registry.register(createWatchSource({ command: 'echo' }));
+    registry.register(createScanSource());
+    registry.register(createClaudeHookSource());
+
+    console.log('\n  \x1b[1mRegistered Event Sources\x1b[0m\n');
+    for (const src of registry.list()) {
+      const status = src.running ? '\x1b[32mrunning\x1b[0m' : '\x1b[2mstopped\x1b[0m';
+      const desc = src.meta?.description ? ` — ${src.meta.description}` : '';
+      console.log(`  ${src.name} [${status}]${desc}`);
+    }
+    console.log('');
+    break;
+  }
+
   case 'claude-init': {
     const { claudeInit } = await import('./claude-init.js');
     await claudeInit(args.slice(1));
@@ -330,6 +361,7 @@ function printHelp() {
   \x1b[1mTools:\x1b[0m
     bugmon init                          Install git hooks for evolution tracking
     bugmon scan [path]                   Scan files for bugs (eslint/tsc)
+    bugmon sources                       List registered event sources
     bugmon sync                          Start sync server (CLI ↔ browser)
     bugmon claude-init                   Set up Claude Code integration
     bugmon help                          Show this help
