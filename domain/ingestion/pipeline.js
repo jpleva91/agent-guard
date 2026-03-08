@@ -6,6 +6,7 @@ import { parseStackTrace, getUserFrame } from './parser.js';
 import { fingerprint, deduplicateErrors } from './fingerprint.js';
 import { classify } from './classifier.js';
 import { ERROR_OBSERVED, BUG_CLASSIFIED, createEvent } from '../events.js';
+import { assertShape } from '../shapes.js';
 
 /**
  * Process raw stderr/stdout text through the full ingestion pipeline.
@@ -21,6 +22,9 @@ export function ingest(rawText) {
   const parsed = parseErrors(rawText);
   if (parsed.length === 0) return events;
 
+  // Assert parsed errors conform to ParsedError shape
+  for (const p of parsed) assertShape('ParsedError', p);
+
   // Stage 2: Deduplicate via fingerprinting
   const unique = deduplicateErrors(parsed);
 
@@ -34,6 +38,7 @@ export function ingest(rawText) {
       file: frame?.file || null,
       line: frame?.line || null,
     });
+    assertShape('BugEvent', bugEvent);
 
     events.push(createEvent(ERROR_OBSERVED, {
       source: 'unknown',
