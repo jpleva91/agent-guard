@@ -55,7 +55,7 @@ Establish the conceptual architecture, documentation, and event model that conne
 
 > **Theme:** Formalize the event spine
 
-Extend the existing event system (`domain/events.js`, `domain/event-bus.js`) into the formal canonical event model.
+Extend the existing event system (`src/domain/events.ts`, `src/core/event-bus.ts`) into the formal canonical event model.
 
 - [x] Full event type taxonomy (developer signals, governance events, session events)
 - [x] Event schema validation
@@ -191,9 +191,9 @@ AI features are intentionally placed last. The system must be useful without AI 
 
 ---
 
-## Current Enemy Roster (31 BugMon)
+## Current Enemy Roster (34 BugMon)
 
-### Base Forms (21)
+### Base Forms (24)
 
 | # | Name | Type | Rarity |
 |---|------|------|--------|
@@ -218,6 +218,9 @@ AI features are intentionally placed last. The system must be useful without AI 
 | 19 | TheSingularity | ai | legendary |
 | 20 | TheLegacySystem | architecture | legendary |
 | 31 | TodoComment | testing | common |
+| 32 | InvariantBeast | testing | uncommon |
+| 33 | RogueAgent | security | uncommon |
+| 34 | ChaosHydra | architecture | uncommon |
 
 ### Evolved Forms (10)
 
@@ -271,11 +274,11 @@ Run `npm run budget` to check compliance.
 A parallel TypeScript implementation exists in `src/` (see `src/README.md` for architecture). This is an incremental migration — the JavaScript implementation remains the production system.
 
 **Current state:**
-- `src/` directory with 17 TypeScript files across `cli/`, `core/`, `game/`, `watchers/`, `ai/`
+- `src/` directory with 48 TypeScript files across `cli/`, `core/`, `game/`, `domain/`, `agentguard/`, `ecosystem/`, `watchers/`, `ai/`
 - `tsconfig.json` — strict mode, ES2022 target, rootDir: `src/`, outDir: `dist/`
 - `vitest.config.ts` — test runner for TypeScript tests
 - `esbuild.config.ts` — builds CLI and game bundles from TS sources
-- 4 TypeScript tests in `tests/ts/` (run via `npm run ts:test`)
+- 16 TypeScript tests in `tests/ts/` (run via `npm run ts:test`)
 - Runtime dependencies introduced for CLI: `chokidar`, `commander`, `pino`
 
 **Commands:**
@@ -284,12 +287,10 @@ A parallel TypeScript implementation exists in `src/` (see `src/README.md` for a
 - `npm run build:ts` — Build TS (tsc + esbuild)
 
 **Known issues:**
-- `build:ts` script requires `tsx` which is not in devDependencies — add `tsx` before running
 - Runtime deps (`chokidar`, `commander`, `pino`) are only used by TS code in `src/`, not by the JS CLI
-- `game/engine/events.js` duplicates `domain/event-bus.js` — consolidate during migration
+- `src/game/engine/events.ts` duplicates `src/core/event-bus.ts` — consolidate during migration
 
 **Remaining work:**
-- [ ] Add `tsx` to devDependencies (required for `build:ts`)
 - [ ] Migrate remaining `core/` modules to TypeScript
 - [ ] Migrate `domain/` modules to TypeScript
 - [ ] Migrate `agentguard/` modules to TypeScript

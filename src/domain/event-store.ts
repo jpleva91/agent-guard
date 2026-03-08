@@ -1,5 +1,9 @@
 // Event store interface and in-memory reference implementation.
 // No DOM, no Node.js APIs — pure domain logic.
+//
+// TODO(roadmap): Phase 4 — File-based event store (.bugmon/events/)
+// TODO(roadmap): Phase 4 — Event stream serialization format
+// TODO(roadmap): Phase 4 — Event export/import for sharing sessions
 
 import type { DomainEvent, EventFilter, EventStore, ValidationResult } from '../core/types.js';
 import { validateEvent } from './events.js';

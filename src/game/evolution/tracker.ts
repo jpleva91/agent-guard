@@ -1,4 +1,7 @@
 // Dev Activity Tracker — tracks git/developer events for evolution triggers
+//
+// TODO(roadmap): Phase 5 — Achievement system (first boss, perfect run, 100% Grimoire, etc.)
+// TODO(roadmap): Phase 5 — Dev-activity progression via git hooks (commits, PRs, bug fixes)
 
 const STORAGE_KEY = 'bugmon_dev_events';
 

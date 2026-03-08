@@ -20,6 +20,11 @@ const args = process.argv.slice(2);
 const command = args[0];
 const wantsHelp = args.includes('--help') || args.includes('-h');
 
+// TODO(roadmap): Phase 2 — Add 'bugmon guard' and 'bugmon audit' CLI governance commands
+// TODO(roadmap): Phase 4 — Add 'bugmon replay <run-id>' CLI replay command
+// TODO(roadmap): Phase 8 — Editor integrations (VS Code extension, JetBrains plugin, Claude Code deep integration)
+// TODO(roadmap): TS Migration — Integrate TS CLI as primary CLI entry point
+
 const COMMANDS: Record<string, CommandHelp> = {
   watch: {
     name: 'bugmon watch',

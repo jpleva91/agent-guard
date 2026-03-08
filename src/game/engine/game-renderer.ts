@@ -1,4 +1,8 @@
 // Canvas rendering
+//
+// TODO(roadmap): Phase 6 — Renderer plugin interface
+// TODO(roadmap): Phase 7 — Idle encounter log in browser UI
+// TODO(roadmap): Phase 7 — Mobile-optimized responsive renderer
 
 import { drawSprite } from '../sprites/sprites.js';
 import { getTileTexture, getGrassFrame, getBattleBackground } from '../sprites/tiles.js';

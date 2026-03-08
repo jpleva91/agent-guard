@@ -1,4 +1,6 @@
 // Web Audio API sound effects — all synthesized, no audio files
+//
+// TODO(roadmap): Phase 7 — Sound effects for idle/active transitions
 
 declare global {
   interface Window {

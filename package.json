@@ -1,7 +1,7 @@
 {
   "name": "bugmon",
   "version": "1.0.0",
-  "description": "A Pokémon-style browser RPG themed around software bugs",
+  "description": "Deterministic governance runtime and roguelike developer telemetry game — errors become enemies, fixes are victories",
   "type": "module",
   "bin": {
     "bugmon": "./dist/cli/bin.js"
@@ -52,15 +52,18 @@
     "ts:test:watch": "vitest"
   },
   "keywords": [
-    "game",
-    "rpg",
-    "pokemon",
-    "simulation",
-    "debugging",
+    "bugmon",
+    "agentguard",
+    "roguelike",
+    "governance",
     "developer-tools",
-    "cli"
+    "debugging",
+    "telemetry",
+    "cli",
+    "developer-experience",
+    "canonical-events"
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^25.3.5",
     "c8": "^11.0.0",

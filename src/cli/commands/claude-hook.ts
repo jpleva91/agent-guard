@@ -1,5 +1,6 @@
 // BugMon Claude Code hook — triggers encounters on errors during Claude Code sessions
 // Always exits 0 — hooks must never fail.
+// TODO(roadmap): Phase 2 — Integrate with AgentGuard governance (emit governance events from agent actions)
 
 import { parseErrors } from '../../core/error-parser.js';
 import { matchMonster, getAllMonsters } from '../../core/matcher.js';

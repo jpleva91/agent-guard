@@ -5,6 +5,13 @@
  *   - name, type, ascii art, HP, rarity
  *   - XP reward for defeating it
  *   - The real error it represents
+ *
+ * TODO(roadmap): Phase 3 — Bug Grimoire terminal display (enemy compendium)
+ * TODO(roadmap): Phase 5 — Bug Grimoire: enemy compendium with defeat history, error patterns, fix strategies
+ * TODO(roadmap): Phase 5 — Grimoire completion tracking and unlock rewards
+ * TODO(roadmap): Phase 6 — Content pack loading system (community enemies, moves, bosses)
+ * TODO(roadmap): Phase 6 — Language-specific content packs (Python BugMon, Go BugMon, Rust BugMon)
+ * TODO(roadmap): Phase 7 — Bug Grimoire browser UI
  */
 
 export interface BugDexEntry {

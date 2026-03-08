@@ -1,4 +1,6 @@
 // Map tile queries
+//
+// TODO(roadmap): Phase 7 — Roguelike dungeon renderer (procedural floor layouts)
 
 interface MapData {
   width: number;

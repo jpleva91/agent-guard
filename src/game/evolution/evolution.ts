@@ -1,4 +1,6 @@
 // Browser evolution adapter — delegates to domain/evolution.js
+//
+// TODO(roadmap): Phase 5 — Developer level with title progression
 
 import { getEvents } from './tracker.js';
 import type { GameMon } from '../world/player.js';

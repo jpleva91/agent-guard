@@ -86,8 +86,8 @@ BugMon/
 │   └── ecosystem/          # Individual modules (tsc)
 │
 ├── ecosystem/data/         # Game content (JSON source + inlined JS modules)
-│   ├── monsters.json       # 31+ BugMon enemy definitions
-│   ├── moves.json          # 72 move definitions
+│   ├── monsters.json       # 34 BugMon enemy definitions
+│   ├── moves.json          # 76 move definitions
 │   ├── types.json          # 7 types + effectiveness chart
 │   ├── evolutions.json     # Progression chains
 │   ├── map.json            # 15x10 tile grid

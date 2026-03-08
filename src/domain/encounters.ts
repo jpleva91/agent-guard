@@ -1,5 +1,12 @@
 // Pure encounter logic — no DOM, no audio
 // Returns encounter data; callers handle audio/UI.
+//
+// TODO(roadmap): Phase 3 — Idle mode: auto-resolve minor enemies (severity 1-2) in background
+// TODO(roadmap): Phase 3 — Active mode: interrupt for bosses and elites (severity 3+)
+// TODO(roadmap): Phase 3 — Configurable idle/active threshold
+// TODO(roadmap): Phase 3 — Encounter difficulty scaling based on session context
+// TODO(roadmap): Phase 5 — Difficulty scaling based on developer level
+// TODO(roadmap): Phase 5 — Idle combat effectiveness scaling with level
 
 import type { Bugmon, Rarity, EncounterContext } from '../core/types.js';
 

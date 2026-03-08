@@ -1,6 +1,10 @@
 // Source registry — manages event source plugins.
 // Sources feed raw signals into the ingestion pipeline.
 // No DOM, no Node.js APIs — pure domain logic.
+//
+// TODO(roadmap): Phase 6 — Formalize event source plugin interface
+// TODO(roadmap): Phase 6 — Plugin validation and sandboxing
+// TODO(roadmap): Phase 6 — Plugin registry / discovery mechanism
 
 import type { SourceConfig, DomainEvent } from '../core/types.js';
 import { EventBus } from '../core/event-bus.js';

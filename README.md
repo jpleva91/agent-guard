@@ -104,7 +104,7 @@ See [Plugin API](docs/plugin-api.md) for the full extension guide.
 - **40+ error patterns** — JavaScript, TypeScript, Python, Go, Rust, Java, ESLint, CI output
 - **Bug Grimoire** — compendium of every enemy type defeated, with encounter history
 - **Dev-activity progression** — commits, PRs, and bug fixes drive level-ups via git hooks
-- **31 named enemies** across 7 types — community-contributed creatures with sprites and lore
+- **34 named enemies** across 7 types — community-contributed creatures with sprites and lore
 - **Hybrid idle/active** — minor enemies auto-resolve, bosses demand engagement
 - Turn-based combat with speed priority, type effectiveness, critical hits, and passive abilities
 - Synthesized sound effects (Web Audio API — zero audio files)
@@ -233,41 +233,37 @@ See [docs/agentguard.md](docs/agentguard.md) for the governance runtime specific
 
 ```
 BugMon/
-├── core/                # CLI encounter engine (Node.js)
-│   ├── cli/             # CLI tool (bugmon command, watch, sync)
-│   ├── sources/         # Event source adapters (plugin contract)
-│   ├── matcher.js       # Error → enemy matching
-│   └── error-parser.js  # Error & stack trace parsing (40+ patterns)
-├── game/                # Browser game (client-side)
-│   ├── engine/          # State machine, input, rendering
-│   ├── battle/          # Turn-based battle engine
-│   ├── world/           # Map, player, encounters
-│   ├── evolution/       # Dev-activity progression system
-│   └── sprites/         # Sprites + procedural generation
-├── domain/              # Pure domain logic (no DOM, no Node.js APIs)
-│   ├── source-registry.js # Event source plugin registry
-│   ├── battle.js        # Deterministic battle engine
-│   ├── events.js        # Canonical event definitions
-│   ├── event-bus.js     # Universal EventBus
-│   ├── ingestion/       # Error normalization pipeline
-│   └── pipeline/        # Multi-agent pipeline orchestration
-├── agentguard/          # Governance runtime (deterministic RTA)
-│   ├── core/            # AAB + RTA engine
-│   ├── policies/        # Policy evaluation + loading
-│   ├── invariants/      # Invariant checking
-│   └── evidence/        # Evidence pack generation
-├── ecosystem/           # Game content & metagame
-│   ├── data/            # JSON + JS modules (monsters, moves, types)
-│   ├── bugdex.js        # Bug Grimoire system
-│   └── bosses.js        # Boss encounter definitions
-├── src/                 # TypeScript refactoring (in progress)
-│   ├── cli/             # Commander-based CLI
-│   ├── core/            # Typed EventBus, BugEngine, BugRegistry
-│   ├── game/            # Game engine modules
-│   └── watchers/        # Environment watchers
+├── src/                 # TypeScript source (single source of truth)
+│   ├── cli/             # Commander-based CLI (bugmon command)
+│   │   └── commands/    # CLI subcommands (watch, scan, demo, etc.)
+│   ├── core/            # Shared logic (EventBus, BugEngine, BugRegistry)
+│   │   └── sources/     # Event source adapters
+│   ├── game/            # Browser roguelike (client-side)
+│   │   ├── engine/      # State machine, input, rendering
+│   │   ├── battle/      # Turn-based battle engine
+│   │   ├── world/       # Map, player, encounters
+│   │   ├── evolution/   # Dev-activity progression system
+│   │   ├── audio/       # Synthesized sounds (Web Audio API)
+│   │   ├── sync/        # Save/load + CLI sync
+│   │   └── sprites/     # Sprites + procedural generation
+│   ├── domain/          # Pure domain logic (no DOM, no Node.js APIs)
+│   │   ├── ingestion/   # Error normalization pipeline
+│   │   └── pipeline/    # Multi-agent pipeline orchestration
+│   ├── agentguard/      # Governance runtime (deterministic RTA)
+│   │   ├── core/        # AAB + RTA engine
+│   │   ├── policies/    # Policy evaluation + loading
+│   │   ├── invariants/  # Invariant checking
+│   │   └── evidence/    # Evidence pack generation
+│   ├── ecosystem/       # Game content & metagame
+│   ├── watchers/        # Environment watchers
+│   └── ai/              # AI integration interface
+├── dist/                # Compiled output (tsc + esbuild)
+├── ecosystem/data/      # Game content (JSON + JS modules)
 ├── simulation/          # Headless battle simulation
-├── tests/               # Test suite (77 JS + 4 TS)
+├── tests/               # Test suite (77 JS + 16 TS)
 ├── docs/                # System documentation
+├── policy/              # Policy configuration (JSON)
+├── hooks/               # Git hooks (post-commit, post-merge)
 └── scripts/             # Build tooling
 ```
 
@@ -358,14 +354,13 @@ npm run format                         # Check formatting (Prettier)
 
 ## Tech Stack
 
-- Vanilla JavaScript (ES6 modules) — browser game
-- TypeScript (in-progress refactoring) — `src/` directory
+- TypeScript (source of truth in `src/`, compiled to `dist/` via tsc + esbuild)
 - HTML5 Canvas 2D
 - Web Audio API (synthesized sounds)
 - Zero browser runtime dependencies; CLI uses `chokidar`, `commander`, `pino`
-- Dev tooling: esbuild + terser (build), TypeScript + vitest (TS), custom test runner (JS)
+- Dev tooling: esbuild + terser (build), vitest (TS tests), custom test runner (JS tests)
 - CI: GitHub Actions (deploy, validate, size check, CodeQL)
 
 ## License
 
-Apache 2.0
+[Apache 2.0](LICENSE)

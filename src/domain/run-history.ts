@@ -1,6 +1,10 @@
 // Pure run history aggregation for BugMon
 // Takes an array of completed run summaries and computes cross-session stats.
 // No DOM, no Node.js APIs — pure functions.
+//
+// TODO(roadmap): Phase 3 — Run statistics (encounters, defeats, score, duration)
+// TODO(roadmap): Phase 5 — Lifetime statistics aggregation
+// TODO(roadmap): Phase 5 — Session leaderboard (best scores, fastest boss defeats)
 
 import type { RunHistory, RunSummaryEntry, AllTimeStats, RunSession } from '../core/types.js';
 

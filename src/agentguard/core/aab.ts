@@ -164,6 +164,8 @@ export function authorize(
     }
   }
 
+  // TODO(roadmap): Phase 2 — Implement full blast radius computation engine
+  // (dependency graph analysis, transitive impact scoring, configurable thresholds)
   if (intent.filesAffected !== undefined) {
     let tightestLimit = Infinity;
     for (const policy of policies) {

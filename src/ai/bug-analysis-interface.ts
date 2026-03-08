@@ -6,6 +6,12 @@
  * can be swapped without changing consuming code.
  *
  * The StubAnalyzer provides a no-op default for testing and development.
+ *
+ * TODO(roadmap): Phase 9 — Context-aware fix suggestions based on error type + stack trace
+ * TODO(roadmap): Phase 9 — AI-suggested battle strategies based on error context
+ * TODO(roadmap): Phase 9 — Automated fix verification (does the fix resolve the event?)
+ * TODO(roadmap): Phase 9 — AI pattern detection (recurring error clusters across sessions)
+ * TODO(roadmap): Phase 9 — Team observability (aggregate Grimoire across a dev team)
  */
 
 import type { BugAnalysis, BugAnalyzer, BugEvent } from '../core/types.js';

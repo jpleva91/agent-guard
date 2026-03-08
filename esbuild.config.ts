@@ -1,3 +1,5 @@
+// TODO(roadmap): TS Migration — Update build pipeline to produce TS-based bundles as primary output
+
 import * as esbuild from 'esbuild';
 import { cpSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';

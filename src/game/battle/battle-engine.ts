@@ -1,5 +1,7 @@
 // Battle UI controller — thin adapter over domain/battle.ts
 // Maps domain battle events to input/audio/state/messages.
+//
+// TODO(roadmap): Phase 3 — Governance boss encounters from AgentGuard events
 
 import {
   createBattleState,

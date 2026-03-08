@@ -1,5 +1,7 @@
 // Browser-side sync client
 // Connects to the local BugMon sync server (started via `bugmon sync`)
+//
+// TODO(roadmap): Phase 7 — CLI ↔ browser sync for run state
 
 import {
   SYNC_PORT,

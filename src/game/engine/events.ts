@@ -1,5 +1,7 @@
 // Event Bus — game-specific event names + canonical EventBus from domain/
 // Consolidates game/engine/events.js — uses src/core/event-bus.ts as canonical impl
+//
+// TODO(roadmap): TS Migration — Consolidate this module with src/core/event-bus.ts
 
 import { EventBus } from '../../core/event-bus.js';
 

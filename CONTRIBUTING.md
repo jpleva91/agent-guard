@@ -7,11 +7,11 @@ Thanks for wanting to contribute! BugMon is designed so you can add content with
 ```bash
 git clone https://github.com/jpleva91/BugMon.git
 cd BugMon
-python3 -m http.server
+npm install
+npm run build:ts
+npm run serve
 # Open http://localhost:8000
 ```
-
-No dependencies. No build step. That's it.
 
 ## Ways to Contribute
 
@@ -19,7 +19,7 @@ No dependencies. No build step. That's it.
 |------|-----------|---------------|
 | Add a new BugMon | Easy | `ecosystem/data/monsters.json` |
 | Add a new move | Easy | `ecosystem/data/moves.json` |
-| Add a sprite | Easy | `game/sprites/` |
+| Add a sprite | Easy | `src/game/sprites/` |
 | Balance stats | Easy | `ecosystem/data/monsters.json` |
 | Fix a bug | Medium | Source files |
 | Add a feature | Medium-Hard | Source files |
@@ -33,7 +33,7 @@ No dependencies. No build step. That's it.
 
 ```json
 {
-  "id": 32,
+  "id": 35,
   "name": "YourBugName",
   "type": "frontend",
   "hp": 30,
@@ -122,12 +122,10 @@ Aim for a total stat sum (HP + ATK + DEF + SPD) between 40 and 55.
 Sprites are 64x64 PNG images with transparent backgrounds.
 
 1. Create a 64x64 pixel art sprite
-2. Save as `game/sprites/<name>.png` (lowercase, matching the `sprite` field in monsters.json)
+2. Save as `src/game/sprites/<name>.png` (lowercase, matching the `sprite` field in monsters.json)
 3. The game will automatically load it
 
 If no sprite exists, the game falls back to a colored rectangle -- so sprites are optional.
-
-See `game/sprites/SPRITE_GUIDE.md` for art style guidelines and color palettes.
 
 ---
 
@@ -146,31 +144,37 @@ Use the [Bug Report](../../issues/new?template=bug-report.yml) issue template, o
 ### Project Structure
 
 ```
-core/                # CLI companion & shared logic (Node.js)
-game/                # Browser game (client-side)
-├── game.js          # Entry point, game loop
-├── engine/          # Core framework (state, input, rendering)
-├── battle/          # Battle engine + damage formula
-├── world/           # Map, player, encounters
-├── evolution/       # Dev-activity evolution system
-├── audio/           # Synthesized sounds
-├── sync/            # Save/load + CLI sync
-└── sprites/         # Sprite images + procedural tiles
-ecosystem/           # Game content & metagame
-└── data/            # All game content (JSON + JS modules)
+src/                 # TypeScript source (single source of truth)
+├── cli/             # Commander-based CLI (bugmon command)
+│   └── commands/    # CLI subcommands (watch, scan, demo, etc.)
+├── core/            # Shared logic (EventBus, BugEngine, BugRegistry)
+├── game/            # Browser game (client-side)
+│   ├── engine/      # Core framework (state, input, rendering)
+│   ├── battle/      # Battle engine + damage formula
+│   ├── world/       # Map, player, encounters
+│   ├── evolution/   # Dev-activity evolution system
+│   ├── audio/       # Synthesized sounds
+│   ├── sync/        # Save/load + CLI sync
+│   └── sprites/     # Sprite images + procedural tiles
+├── domain/          # Pure domain logic (no DOM, no Node.js APIs)
+├── agentguard/      # Governance runtime
+└── ecosystem/       # Game content modules
+ecosystem/data/      # All game content (JSON + JS modules)
+dist/                # Compiled output (tsc + esbuild)
 ```
 
 ### How It Works
 
+- TypeScript source in `src/` compiles to `dist/` via `tsc` + `esbuild`
 - All game content is loaded from JSON at startup
-- Modules receive data via setter functions (e.g., `setMonstersData()`)
 - The game is a state machine: EXPLORE → BATTLE_TRANSITION → BATTLE → EXPLORE
 - See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical breakdown
 
 ### Code Style
 
-- Vanilla ES6 modules (no framework, no build tools)
-- No external dependencies
+- TypeScript with strict mode (source in `src/`, compiled to `dist/`)
+- Zero browser runtime dependencies; CLI uses `chokidar`, `commander`, `pino`
+- ESLint + Prettier enforced
 - Prefer simple, readable code over abstractions
 
 ---
@@ -179,7 +183,7 @@ ecosystem/           # Game content & metagame
 
 1. Fork the repo and create your branch from `main`
 2. Make your changes
-3. Test locally (`python3 -m http.server`)
+3. Test locally (`npm run build:ts && npm run serve`)
 4. Open a PR with a clear description
 
 For BugMon/move additions, the CI will automatically validate your JSON.

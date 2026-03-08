@@ -2,6 +2,11 @@
 // A "run" = one debugging session (one `bugmon watch` invocation).
 // Tracks encounters, resolutions, combos, duration, and score.
 // No DOM, no Node.js APIs — pure data transformations.
+//
+// TODO(roadmap): Phase 3 — Implement full run engine (session-scoped gameplay lifecycle)
+// TODO(roadmap): Phase 3 — Session escalation (unresolved errors compound difficulty)
+// TODO(roadmap): Phase 3 — Stability collapse detection (run death from cascading failures)
+// TODO(roadmap): Phase 4 — Session metadata (run ID, RNG seed, timestamps) for replay
 
 import type {
   ComboTier,

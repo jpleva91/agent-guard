@@ -1,5 +1,7 @@
 // Terminal renderer — ANSI-colored output for BugMon encounters
 // Zero dependencies: raw ANSI escape codes
+//
+// TODO(roadmap): Phase 3 — Run summary and scoring display at session end
 
 import { TYPE_COLORS, color, bold, dim, padVis } from './colors.js';
 

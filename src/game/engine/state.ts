@@ -1,4 +1,6 @@
 // Game state machine with explicit transitions
+//
+// TODO(roadmap): Phase 7 — Run-based browser gameplay (session → run mapping)
 
 import { eventBus, Events } from './events.js';
 

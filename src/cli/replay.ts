@@ -1,4 +1,9 @@
 // Replay CLI — flight recorder playback for debugging sessions.
+//
+// TODO(roadmap): Phase 4 — Full replay engine: feed stored event stream through encounter generator
+// TODO(roadmap): Phase 4 — Deterministic replay with seeded RNG
+// TODO(roadmap): Phase 4 — Replay comparator (verify original vs replayed outcomes)
+// TODO(roadmap): Phase 6 — Replay processor plugin interface
 
 import { loadSession, listSessions } from './session-store.js';
 import { color, bold, dim } from './colors.js';
