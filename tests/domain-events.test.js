@@ -21,11 +21,17 @@ import {
   RUN_STARTED,
   RUN_ENDED,
   CHECKPOINT_REACHED,
+  POLICY_DENIED,
+  UNAUTHORIZED_ACTION,
+  INVARIANT_VIOLATION,
+  BLAST_RADIUS_EXCEEDED,
+  MERGE_GUARD_FAILURE,
+  EVIDENCE_PACK_GENERATED,
 } from '../domain/events.js';
 
 suite('Domain Events — Schema Validation', () => {
-  test('ALL_EVENT_KINDS contains all 17 event kinds', () => {
-    assert.strictEqual(ALL_EVENT_KINDS.size, 17);
+  test('ALL_EVENT_KINDS contains all 23 event kinds', () => {
+    assert.strictEqual(ALL_EVENT_KINDS.size, 23);
     assert.ok(ALL_EVENT_KINDS.has(ERROR_OBSERVED));
     assert.ok(ALL_EVENT_KINDS.has(BATTLE_ENDED));
     assert.ok(ALL_EVENT_KINDS.has(STATE_CHANGED));
@@ -322,5 +328,142 @@ suite('Domain Events — Schema Validation', () => {
     const invalid = validateEvent({ kind: RUN_STARTED });
     assert.strictEqual(invalid.valid, false);
     assert.ok(invalid.errors.some((e) => e.includes('runId')));
+  });
+
+  // --- Governance event types ---
+
+  test('POLICY_DENIED constant is defined', () => {
+    assert.strictEqual(POLICY_DENIED, 'PolicyDenied');
+    assert.ok(ALL_EVENT_KINDS.has(POLICY_DENIED));
+  });
+
+  test('createEvent succeeds for POLICY_DENIED with required fields', () => {
+    const event = createEvent(POLICY_DENIED, {
+      policy: 'no-force-push',
+      action: 'git push --force',
+      reason: 'Force push is prohibited on protected branches',
+    });
+    assert.strictEqual(event.kind, POLICY_DENIED);
+    assert.strictEqual(event.policy, 'no-force-push');
+    assert.strictEqual(event.action, 'git push --force');
+    assert.strictEqual(event.reason, 'Force push is prohibited on protected branches');
+  });
+
+  test('createEvent succeeds for POLICY_DENIED with optional fields', () => {
+    const event = createEvent(POLICY_DENIED, {
+      policy: 'no-force-push',
+      action: 'git push --force',
+      reason: 'Prohibited',
+      agentId: 'agent-001',
+      file: 'deploy.sh',
+      line: 10,
+      metadata: { branch: 'main' },
+    });
+    assert.strictEqual(event.agentId, 'agent-001');
+    assert.strictEqual(event.file, 'deploy.sh');
+    assert.deepStrictEqual(event.metadata, { branch: 'main' });
+  });
+
+  test('createEvent throws when POLICY_DENIED missing required fields', () => {
+    assert.throws(
+      () => createEvent(POLICY_DENIED, { policy: 'no-force-push' }),
+      (err) => err.message.includes('action'),
+    );
+  });
+
+  test('createEvent succeeds for UNAUTHORIZED_ACTION with required fields', () => {
+    const event = createEvent(UNAUTHORIZED_ACTION, {
+      action: 'delete-database',
+      reason: 'Action outside agent scope',
+    });
+    assert.strictEqual(event.kind, UNAUTHORIZED_ACTION);
+    assert.strictEqual(event.action, 'delete-database');
+  });
+
+  test('createEvent throws when UNAUTHORIZED_ACTION missing required fields', () => {
+    assert.throws(
+      () => createEvent(UNAUTHORIZED_ACTION, { action: 'delete-database' }),
+      (err) => err.message.includes('reason'),
+    );
+  });
+
+  test('createEvent succeeds for INVARIANT_VIOLATION with required fields', () => {
+    const event = createEvent(INVARIANT_VIOLATION, {
+      invariant: 'size-budget',
+      expected: '17KB',
+      actual: '22KB',
+    });
+    assert.strictEqual(event.kind, INVARIANT_VIOLATION);
+    assert.strictEqual(event.invariant, 'size-budget');
+    assert.strictEqual(event.expected, '17KB');
+    assert.strictEqual(event.actual, '22KB');
+  });
+
+  test('createEvent throws when INVARIANT_VIOLATION missing required fields', () => {
+    assert.throws(
+      () => createEvent(INVARIANT_VIOLATION, { invariant: 'size-budget' }),
+      (err) => err.message.includes('expected') && err.message.includes('actual'),
+    );
+  });
+
+  test('createEvent succeeds for BLAST_RADIUS_EXCEEDED with required fields', () => {
+    const event = createEvent(BLAST_RADIUS_EXCEEDED, {
+      filesAffected: 25,
+      limit: 10,
+    });
+    assert.strictEqual(event.kind, BLAST_RADIUS_EXCEEDED);
+    assert.strictEqual(event.filesAffected, 25);
+    assert.strictEqual(event.limit, 10);
+  });
+
+  test('createEvent succeeds for BLAST_RADIUS_EXCEEDED with optional fields', () => {
+    const event = createEvent(BLAST_RADIUS_EXCEEDED, {
+      filesAffected: 25,
+      limit: 10,
+      files: ['a.js', 'b.js'],
+      action: 'refactor',
+    });
+    assert.deepStrictEqual(event.files, ['a.js', 'b.js']);
+    assert.strictEqual(event.action, 'refactor');
+  });
+
+  test('createEvent throws when BLAST_RADIUS_EXCEEDED missing required fields', () => {
+    assert.throws(
+      () => createEvent(BLAST_RADIUS_EXCEEDED, { filesAffected: 25 }),
+      (err) => err.message.includes('limit'),
+    );
+  });
+
+  test('createEvent succeeds for MERGE_GUARD_FAILURE with required fields', () => {
+    const event = createEvent(MERGE_GUARD_FAILURE, {
+      branch: 'main',
+      reason: 'Direct push to protected branch',
+    });
+    assert.strictEqual(event.kind, MERGE_GUARD_FAILURE);
+    assert.strictEqual(event.branch, 'main');
+  });
+
+  test('createEvent throws when MERGE_GUARD_FAILURE missing required fields', () => {
+    assert.throws(
+      () => createEvent(MERGE_GUARD_FAILURE, { branch: 'main' }),
+      (err) => err.message.includes('reason'),
+    );
+  });
+
+  test('createEvent succeeds for EVIDENCE_PACK_GENERATED with required fields', () => {
+    const event = createEvent(EVIDENCE_PACK_GENERATED, {
+      packId: 'pack-001',
+      eventIds: ['evt-1', 'evt-2', 'evt-3'],
+    });
+    assert.strictEqual(event.kind, EVIDENCE_PACK_GENERATED);
+    assert.strictEqual(event.packId, 'pack-001');
+    assert.deepStrictEqual(event.eventIds, ['evt-1', 'evt-2', 'evt-3']);
+  });
+
+  test('createEvent throws when EVIDENCE_PACK_GENERATED missing required fields', () => {
+    assert.throws(
+      () => createEvent(EVIDENCE_PACK_GENERATED, { packId: 'pack-001' }),
+      (err) => err.message.includes('eventIds'),
+    );
   });
 });

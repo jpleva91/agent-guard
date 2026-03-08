@@ -66,7 +66,7 @@ The following systems are built and operational:
 ### Phase 1 — Canonical Event Model
 - Extend `domain/events.js` with the full event type taxonomy (governance events, session events)
 - Implement formal event schema validation
-- Add governance event types: `InvariantViolation`, `UnauthorizedAction`, `PolicyDenied`, `BlastRadiusExceeded`, `MergeGuardFailure`
+- ~~Add governance event types: `InvariantViolation`, `UnauthorizedAction`, `PolicyDenied`, `BlastRadiusExceeded`, `MergeGuardFailure`~~ (done)
 - Define event persistence format for replay
 
 ### Phase 2 — AgentGuard Governance Runtime

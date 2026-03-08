@@ -28,6 +28,14 @@ export const RUN_STARTED = 'RunStarted';
 export const RUN_ENDED = 'RunEnded';
 export const CHECKPOINT_REACHED = 'CheckpointReached';
 
+// Governance
+export const POLICY_DENIED = 'PolicyDenied';
+export const UNAUTHORIZED_ACTION = 'UnauthorizedAction';
+export const INVARIANT_VIOLATION = 'InvariantViolation';
+export const BLAST_RADIUS_EXCEEDED = 'BlastRadiusExceeded';
+export const MERGE_GUARD_FAILURE = 'MergeGuardFailure';
+export const EVIDENCE_PACK_GENERATED = 'EvidencePackGenerated';
+
 // --- Event Schemas ---
 // Maps each event kind to its required and optional data fields.
 const EVENT_SCHEMAS = {
@@ -106,6 +114,30 @@ const EVENT_SCHEMAS = {
   [CHECKPOINT_REACHED]: {
     required: ['runId', 'checkpoint'],
     optional: ['encounterCount', 'playerHp', 'score'],
+  },
+  [POLICY_DENIED]: {
+    required: ['policy', 'action', 'reason'],
+    optional: ['agentId', 'file', 'line', 'metadata'],
+  },
+  [UNAUTHORIZED_ACTION]: {
+    required: ['action', 'reason'],
+    optional: ['agentId', 'scope', 'file', 'line', 'metadata'],
+  },
+  [INVARIANT_VIOLATION]: {
+    required: ['invariant', 'expected', 'actual'],
+    optional: ['file', 'line', 'metadata'],
+  },
+  [BLAST_RADIUS_EXCEEDED]: {
+    required: ['filesAffected', 'limit'],
+    optional: ['files', 'action', 'metadata'],
+  },
+  [MERGE_GUARD_FAILURE]: {
+    required: ['branch', 'reason'],
+    optional: ['protectedBranches', 'metadata'],
+  },
+  [EVIDENCE_PACK_GENERATED]: {
+    required: ['packId', 'eventIds'],
+    optional: ['summary', 'metadata'],
   },
 };
 
