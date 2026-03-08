@@ -40,7 +40,7 @@ await esbuild.build({
 });
 
 // Copy sprites to dist/game/sprites/ for browser serving
-const srcSprites = join(__dirname, 'game', 'sprites');
+const srcSprites = join(__dirname, 'src', 'game', 'sprites');
 const destSprites = join(__dirname, 'dist', 'game', 'sprites');
 if (existsSync(srcSprites)) {
   mkdirSync(destSprites, { recursive: true });

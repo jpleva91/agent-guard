@@ -2,7 +2,7 @@ import tseslint from 'typescript-eslint';
 
 export default [
   {
-    ignores: ['node_modules/**', 'dist/**', '**/*.cjs', 'core/cli/bugmon-legacy.js'],
+    ignores: ['node_modules/**', 'dist/**', '**/*.cjs'],
   },
   {
     files: ['**/*.js'],
