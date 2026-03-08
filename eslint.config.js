@@ -1,3 +1,5 @@
+import tseslint from 'typescript-eslint';
+
 export default [
   {
     ignores: ['node_modules/**', 'dist/**', '**/*.cjs', 'core/cli/bugmon-legacy.js'],
@@ -66,6 +68,24 @@ export default [
       'no-sparse-arrays': 'error',
       'use-isnan': 'error',
       'valid-typeof': 'error',
+    },
+  },
+  ...tseslint.configs.recommended.map((config) => ({
+    ...config,
+    files: ['**/*.ts'],
+  })),
+  {
+    files: ['**/*.ts'],
+    rules: {
+      'no-var': 'error',
+      'prefer-const': 'warn',
+      'eqeqeq': ['error', 'always'],
+      'no-console': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
 ];

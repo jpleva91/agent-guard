@@ -60,7 +60,8 @@ export class ConsoleWatcher implements Watcher {
   start(): void {
     this.originalWrite = process.stderr.write;
 
-    const self = this;
+    const eventBus = this.eventBus;
+    const originalWrite = this.originalWrite;
     process.stderr.write = function (
       this: NodeJS.WriteStream,
       chunk: string | Uint8Array,
@@ -73,12 +74,12 @@ export class ConsoleWatcher implements Watcher {
         const parsed = parseError(line);
         if (parsed) {
           const bug = createBugEvent(parsed);
-          self.eventBus.emit('BugDetected', { bug });
+          eventBus.emit('BugDetected', { bug });
         }
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (self.originalWrite as any).apply(process.stderr, [chunk, ...args]);
+      return (originalWrite as any).apply(process.stderr, [chunk, ...args]);
     } as typeof process.stderr.write;
   }
 

@@ -19,6 +19,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run format
+      - run: npm run ts:check
+      - run: npm run ts:test
 
   audit:
     runs-on: ubuntu-latest

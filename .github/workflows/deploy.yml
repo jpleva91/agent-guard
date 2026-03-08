@@ -27,6 +27,8 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm test
+      - run: npm run ts:check
+      - run: npm run ts:test
       - run: node .github/scripts/validate-data.mjs
       - run: node scripts/build.js --no-sprites
       - uses: actions/configure-pages@v5
