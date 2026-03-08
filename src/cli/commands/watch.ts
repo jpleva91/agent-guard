@@ -4,6 +4,9 @@
  * Main developer workflow: monitors console, tests, and builds
  * for errors and converts them to BugMon encounters.
  *
+ * Each watch session is a dungeon **run**: encounters are tracked,
+ * combos accumulate, and a run summary is displayed on exit.
+ *
  * With --governance: also starts the AgentGuard runtime monitor,
  * evaluating watcher events against policies and invariants.
  * Policy violations spawn boss-tier encounters.
@@ -17,16 +20,27 @@ import { BugRegistry } from '../../core/bug-registry.js';
 import { ConsoleWatcher } from '../../watchers/console-watcher.js';
 import { TestWatcher } from '../../watchers/test-watcher.js';
 import { BuildWatcher } from '../../watchers/build-watcher.js';
-import type { BugEvent, EventMap, Severity } from '../../core/types.js';
+import type { BugEvent, EventMap, RunSession, Severity } from '../../core/types.js';
 import { createMonitor, ESCALATION } from '../../agentguard/monitor.js';
 import type { Monitor } from '../../agentguard/monitor.js';
+import {
+  createRun,
+  addEncounter,
+  addResolution,
+  endRun,
+  getRunStats,
+  getEncounterMode,
+} from '../../domain/run-session.js';
+import { renderStatusLine, renderRunSummary } from './run-summary.js';
 
 /** Default policies for governance mode — derived from project conventions. */
 const DEFAULT_POLICIES = [
   {
     id: 'deny-force-push',
     name: 'Deny Force Push',
-    rules: [{ action: 'git.force-push', effect: 'deny' as const, reason: 'Force pushes are forbidden' }],
+    rules: [
+      { action: 'git.force-push', effect: 'deny' as const, reason: 'Force pushes are forbidden' },
+    ],
     severity: 5,
   },
   {
@@ -78,11 +92,7 @@ function governanceSeverityToBugSeverity(severity: number): Severity {
 }
 
 /** Create a BugEvent from a governance violation for the BugEngine. */
-function createGovernanceBugEvent(
-  kind: string,
-  reason: string,
-  severity: number,
-): BugEvent {
+function createGovernanceBugEvent(kind: string, reason: string, severity: number): BugEvent {
   return {
     id: `gov-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     type: `governance:${kind}`,
@@ -93,10 +103,18 @@ function createGovernanceBugEvent(
   };
 }
 
+/** Default interval for periodic status display (ms). */
+const STATUS_INTERVAL_MS = 30_000;
+
+/** Auto-resolve delay range for idle encounters (ms). */
+const IDLE_RESOLVE_MIN_MS = 2_000;
+const IDLE_RESOLVE_MAX_MS = 5_000;
+
 interface WatchOptions {
   testDir: string;
   buildDir: string;
   governance: boolean;
+  idleThreshold: string;
 }
 
 export function registerWatchCommand(program: Command): void {
@@ -106,26 +124,76 @@ export function registerWatchCommand(program: Command): void {
     .option('-t, --test-dir <dir>', 'Test directory to watch', './tests')
     .option('-b, --build-dir <dir>', 'Build output directory to watch', './dist')
     .option('-g, --governance', 'Enable AgentGuard governance monitoring', false)
+    .option('--idle-threshold <n>', 'Severity threshold for idle auto-resolve (1-5)', '2')
     .action((options: WatchOptions) => {
       const logger = pino({ name: 'bugmon' });
       const eventBus = new EventBus<EventMap>();
       const registry = new BugRegistry();
       const engine = new BugEngine(eventBus, registry);
 
-      // Log all events
+      // --- Run session ---
+      const idleThreshold = Math.max(1, Math.min(5, parseInt(options.idleThreshold, 10) || 2));
+      let run: RunSession = createRun({
+        repo: process.cwd(),
+        idleThreshold,
+      });
+
+      // Track pending idle auto-resolve timers so we can clear on shutdown
+      const idleTimers: ReturnType<typeof setTimeout>[] = [];
+      // Track monster names for resolution logging (MonsterDefeated only has id)
+      const monsterNames = new Map<number, string>();
+
+      // Log all events and track encounters in the run
       eventBus.on('BugDetected', ({ bug }) => {
         logger.info({ bugId: bug.id, type: bug.type, severity: bug.severity }, 'Bug detected!');
       });
 
       eventBus.on('MonsterSpawned', ({ monster, bug }) => {
-        logger.info(
-          { monster: monster.name, hp: monster.maxHp, bugType: bug.type },
-          'Monster spawned!'
-        );
+        monsterNames.set(monster.id, monster.name);
+        const mode = getEncounterMode(run, bug.severity);
+        const result = addEncounter(run, {
+          monsterId: monster.id,
+          monsterName: monster.name,
+          error: bug.errorMessage,
+          file: bug.file,
+          line: bug.line,
+        });
+        run = result.run;
+
+        if (mode === 'idle') {
+          logger.info(
+            { monster: monster.name, severity: bug.severity, mode: 'idle' },
+            `[Idle] ${monster.name} appeared (severity ${bug.severity}) — auto-resolving...`
+          );
+          // Auto-resolve after a short delay
+          const delay =
+            IDLE_RESOLVE_MIN_MS + Math.random() * (IDLE_RESOLVE_MAX_MS - IDLE_RESOLVE_MIN_MS);
+          const timer = setTimeout(() => {
+            engine.resolveBug(bug.id);
+          }, delay);
+          idleTimers.push(timer);
+        } else {
+          logger.warn(
+            { monster: monster.name, hp: monster.maxHp, severity: bug.severity, mode: 'active' },
+            `[BOSS] ${monster.name} appeared! Severity ${bug.severity} — fix required`
+          );
+        }
       });
 
       eventBus.on('MonsterDefeated', ({ monsterId, xp }) => {
-        logger.info({ monsterId, xp }, 'Monster defeated!');
+        const monsterName = monsterNames.get(monsterId) || `Monster#${monsterId}`;
+        const result = addResolution(run, { monsterId, monsterName, baseXP: xp });
+        run = result.run;
+
+        const comboInfo = result.tier
+          ? ` (${result.tier.label} x${result.multiplier})`
+          : result.multiplier > 1
+            ? ` (x${result.multiplier})`
+            : '';
+        logger.info(
+          { monsterId, xp: result.totalXP, combo: run.combo.streak },
+          `Defeated! +${result.totalXP} XP${comboInfo}`
+        );
       });
 
       // Governance monitor (optional)
@@ -165,7 +233,12 @@ export function registerWatchCommand(program: Command): void {
 
           if (kind === 'InvariantViolation') {
             logger.warn(
-              { kind, invariantId: event.invariantId, expected: event.expected, actual: event.actual },
+              {
+                kind,
+                invariantId: event.invariantId,
+                expected: event.expected,
+                actual: event.actual,
+              },
               'Invariant violation'
             );
 
@@ -206,18 +279,38 @@ export function registerWatchCommand(program: Command): void {
       buildWatcher.start();
 
       if (monitor) {
-        logger.info('BugMon watchers + AgentGuard governance started. Listening...');
+        logger.info(
+          { runId: run.runId, idleThreshold },
+          'Dungeon run started — watchers + AgentGuard governance active'
+        );
       } else {
-        logger.info('BugMon watchers started. Listening for bugs...');
+        logger.info(
+          { runId: run.runId, idleThreshold },
+          'Dungeon run started — listening for bugs...'
+        );
       }
 
-      // Graceful shutdown
+      // Periodic status display
+      const statusInterval = setInterval(() => {
+        const stats = getRunStats(run);
+        if (stats.encounters > 0) {
+          console.log(renderStatusLine(stats));
+        }
+      }, STATUS_INTERVAL_MS);
+
+      // Graceful shutdown — end the run and display summary
       const shutdown = () => {
-        logger.info('Shutting down...');
+        clearInterval(statusInterval);
+        for (const timer of idleTimers) clearTimeout(timer);
+
         consoleWatcher.stop();
         testWatcher.stop();
         buildWatcher.stop();
         engine.stop();
+
+        // End the run and display the report card
+        run = endRun(run);
+        console.log(renderRunSummary(run));
 
         if (monitor) {
           const status = monitor.getStatus();
