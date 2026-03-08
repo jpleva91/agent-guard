@@ -24,6 +24,9 @@ export const EVOLUTION_TRIGGERED = 'EvolutionTriggered';
 
 // Session
 export const STATE_CHANGED = 'StateChanged';
+export const RUN_STARTED = 'RunStarted';
+export const RUN_ENDED = 'RunEnded';
+export const CHECKPOINT_REACHED = 'CheckpointReached';
 
 // --- Event Schemas ---
 // Maps each event kind to its required and optional data fields.
@@ -91,6 +94,18 @@ const EVENT_SCHEMAS = {
   [STATE_CHANGED]: {
     required: ['from', 'to'],
     optional: [],
+  },
+  [RUN_STARTED]: {
+    required: ['runId'],
+    optional: ['seed', 'sessionStart', 'playerLevel'],
+  },
+  [RUN_ENDED]: {
+    required: ['runId', 'result'],
+    optional: ['score', 'encounterCount', 'duration', 'defeatedBosses'],
+  },
+  [CHECKPOINT_REACHED]: {
+    required: ['runId', 'checkpoint'],
+    optional: ['encounterCount', 'playerHp', 'score'],
   },
 };
 

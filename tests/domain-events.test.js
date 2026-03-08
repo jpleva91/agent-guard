@@ -18,11 +18,14 @@ import {
   ACTIVITY_RECORDED,
   EVOLUTION_TRIGGERED,
   STATE_CHANGED,
+  RUN_STARTED,
+  RUN_ENDED,
+  CHECKPOINT_REACHED,
 } from '../domain/events.js';
 
 suite('Domain Events — Schema Validation', () => {
-  test('ALL_EVENT_KINDS contains all 14 event kinds', () => {
-    assert.strictEqual(ALL_EVENT_KINDS.size, 14);
+  test('ALL_EVENT_KINDS contains all 17 event kinds', () => {
+    assert.strictEqual(ALL_EVENT_KINDS.size, 17);
     assert.ok(ALL_EVENT_KINDS.has(ERROR_OBSERVED));
     assert.ok(ALL_EVENT_KINDS.has(BATTLE_ENDED));
     assert.ok(ALL_EVENT_KINDS.has(STATE_CHANGED));
@@ -197,5 +200,127 @@ suite('Domain Events — Schema Validation', () => {
     const result = validateEvent({ message: 'no kind' });
     assert.strictEqual(result.valid, false);
     assert.ok(result.errors[0].includes('kind'));
+  });
+
+  // --- Session event types ---
+
+  test('RUN_STARTED constant is defined', () => {
+    assert.strictEqual(RUN_STARTED, 'RunStarted');
+    assert.ok(ALL_EVENT_KINDS.has(RUN_STARTED));
+  });
+
+  test('RUN_ENDED constant is defined', () => {
+    assert.strictEqual(RUN_ENDED, 'RunEnded');
+    assert.ok(ALL_EVENT_KINDS.has(RUN_ENDED));
+  });
+
+  test('CHECKPOINT_REACHED constant is defined', () => {
+    assert.strictEqual(CHECKPOINT_REACHED, 'CheckpointReached');
+    assert.ok(ALL_EVENT_KINDS.has(CHECKPOINT_REACHED));
+  });
+
+  test('createEvent succeeds for RUN_STARTED with required fields', () => {
+    const event = createEvent(RUN_STARTED, { runId: 'run-001' });
+    assert.strictEqual(event.kind, RUN_STARTED);
+    assert.strictEqual(event.runId, 'run-001');
+    assert.strictEqual(typeof event.timestamp, 'number');
+  });
+
+  test('createEvent succeeds for RUN_STARTED with optional fields', () => {
+    const event = createEvent(RUN_STARTED, {
+      runId: 'run-002',
+      seed: 42,
+      sessionStart: 1700000000000,
+      playerLevel: 5,
+    });
+    assert.strictEqual(event.seed, 42);
+    assert.strictEqual(event.sessionStart, 1700000000000);
+    assert.strictEqual(event.playerLevel, 5);
+  });
+
+  test('createEvent throws when RUN_STARTED missing runId', () => {
+    assert.throws(
+      () => createEvent(RUN_STARTED, {}),
+      (err) => err.message.includes('runId'),
+    );
+  });
+
+  test('createEvent succeeds for RUN_ENDED with required fields', () => {
+    const event = createEvent(RUN_ENDED, {
+      runId: 'run-001',
+      result: 'victory',
+    });
+    assert.strictEqual(event.kind, RUN_ENDED);
+    assert.strictEqual(event.runId, 'run-001');
+    assert.strictEqual(event.result, 'victory');
+  });
+
+  test('createEvent succeeds for RUN_ENDED with optional fields', () => {
+    const event = createEvent(RUN_ENDED, {
+      runId: 'run-001',
+      result: 'defeat',
+      score: 1500,
+      encounterCount: 12,
+      duration: 3600000,
+      defeatedBosses: ['TheLegacySystem'],
+    });
+    assert.strictEqual(event.score, 1500);
+    assert.strictEqual(event.encounterCount, 12);
+    assert.strictEqual(event.duration, 3600000);
+    assert.deepStrictEqual(event.defeatedBosses, ['TheLegacySystem']);
+  });
+
+  test('createEvent throws when RUN_ENDED missing required fields', () => {
+    assert.throws(
+      () => createEvent(RUN_ENDED, { runId: 'run-001' }),
+      (err) => err.message.includes('result'),
+    );
+    assert.throws(
+      () => createEvent(RUN_ENDED, { result: 'victory' }),
+      (err) => err.message.includes('runId'),
+    );
+  });
+
+  test('createEvent succeeds for CHECKPOINT_REACHED with required fields', () => {
+    const event = createEvent(CHECKPOINT_REACHED, {
+      runId: 'run-001',
+      checkpoint: 'floor-3',
+    });
+    assert.strictEqual(event.kind, CHECKPOINT_REACHED);
+    assert.strictEqual(event.runId, 'run-001');
+    assert.strictEqual(event.checkpoint, 'floor-3');
+  });
+
+  test('createEvent succeeds for CHECKPOINT_REACHED with optional fields', () => {
+    const event = createEvent(CHECKPOINT_REACHED, {
+      runId: 'run-001',
+      checkpoint: 'boss-room',
+      encounterCount: 8,
+      playerHp: 25,
+      score: 900,
+    });
+    assert.strictEqual(event.encounterCount, 8);
+    assert.strictEqual(event.playerHp, 25);
+    assert.strictEqual(event.score, 900);
+  });
+
+  test('createEvent throws when CHECKPOINT_REACHED missing required fields', () => {
+    assert.throws(
+      () => createEvent(CHECKPOINT_REACHED, { runId: 'run-001' }),
+      (err) => err.message.includes('checkpoint'),
+    );
+    assert.throws(
+      () => createEvent(CHECKPOINT_REACHED, { checkpoint: 'floor-1' }),
+      (err) => err.message.includes('runId'),
+    );
+  });
+
+  test('validateEvent validates RUN_STARTED correctly', () => {
+    const valid = validateEvent({ kind: RUN_STARTED, runId: 'run-001' });
+    assert.strictEqual(valid.valid, true);
+
+    const invalid = validateEvent({ kind: RUN_STARTED });
+    assert.strictEqual(invalid.valid, false);
+    assert.ok(invalid.errors.some((e) => e.includes('runId')));
   });
 });

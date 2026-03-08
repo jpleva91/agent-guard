@@ -60,7 +60,7 @@ Extend the existing event system (`domain/events.js`, `domain/event-bus.js`) int
 - [ ] Full event type taxonomy (developer signals, governance events, session events)
 - [x] Event schema validation
 - [ ] Governance event types: `InvariantViolation`, `UnauthorizedAction`, `PolicyDenied`, `BlastRadiusExceeded`, `MergeGuardFailure`
-- [ ] Session event types: `RunStarted`, `RunEnded`, `CheckpointReached`
+- [x] Session event types: `RunStarted`, `RunEnded`, `CheckpointReached`
 - [ ] Event factory with fingerprint generation
 - [ ] Event store interface (persist, query, replay)
 - [ ] Tests for all event types and lifecycle
