@@ -58,7 +58,7 @@ Establish the conceptual architecture, documentation, and event model that conne
 Extend the existing event system (`domain/events.js`, `domain/event-bus.js`) into the formal canonical event model.
 
 - [ ] Full event type taxonomy (developer signals, governance events, session events)
-- [ ] Event schema validation
+- [x] Event schema validation
 - [ ] Governance event types: `InvariantViolation`, `UnauthorizedAction`, `PolicyDenied`, `BlastRadiusExceeded`, `MergeGuardFailure`
 - [ ] Session event types: `RunStarted`, `RunEnded`, `CheckpointReached`
 - [ ] Event factory with fingerprint generation

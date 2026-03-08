@@ -25,12 +25,122 @@ export const EVOLUTION_TRIGGERED = 'EvolutionTriggered';
 // Session
 export const STATE_CHANGED = 'StateChanged';
 
+// --- Event Schemas ---
+// Maps each event kind to its required and optional data fields.
+const EVENT_SCHEMAS = {
+  [ERROR_OBSERVED]: {
+    required: ['message'],
+    optional: [
+      'source',
+      'errorType',
+      'file',
+      'line',
+      'severity',
+      'fingerprint',
+      'bugEvent',
+    ],
+  },
+  [BUG_CLASSIFIED]: {
+    required: ['severity', 'speciesId'],
+    optional: ['fingerprint', 'name'],
+  },
+  [ENCOUNTER_STARTED]: {
+    required: ['enemy'],
+    optional: ['playerLevel'],
+  },
+  [MOVE_USED]: {
+    required: ['move', 'attacker'],
+    optional: ['defender'],
+  },
+  [DAMAGE_DEALT]: {
+    required: ['amount', 'target'],
+    optional: ['effectiveness'],
+  },
+  [HEALING_APPLIED]: {
+    required: ['amount', 'target'],
+    optional: [],
+  },
+  [PASSIVE_ACTIVATED]: {
+    required: ['passive', 'owner'],
+    optional: [],
+  },
+  [BUGMON_FAINTED]: {
+    required: ['bugmon'],
+    optional: [],
+  },
+  [CACHE_ATTEMPTED]: {
+    required: ['target'],
+    optional: [],
+  },
+  [CACHE_SUCCESS]: {
+    required: ['target'],
+    optional: [],
+  },
+  [BATTLE_ENDED]: {
+    required: ['result'],
+    optional: [],
+  },
+  [ACTIVITY_RECORDED]: {
+    required: ['activity'],
+    optional: [],
+  },
+  [EVOLUTION_TRIGGERED]: {
+    required: ['from', 'to'],
+    optional: [],
+  },
+  [STATE_CHANGED]: {
+    required: ['from', 'to'],
+    optional: [],
+  },
+};
+
+export const ALL_EVENT_KINDS = new Set(Object.keys(EVENT_SCHEMAS));
+
+/**
+ * Validate an event object against its schema.
+ * @param {{ kind: string }} event - The event to validate
+ * @returns {{ valid: boolean, errors: string[] }}
+ */
+export function validateEvent(event) {
+  const errors = [];
+
+  if (!event || typeof event !== 'object') {
+    return { valid: false, errors: ['Event must be a non-null object'] };
+  }
+
+  if (!event.kind) {
+    errors.push('Event is missing required field: kind');
+    return { valid: false, errors };
+  }
+
+  const schema = EVENT_SCHEMAS[event.kind];
+  if (!schema) {
+    errors.push(`Unknown event kind: ${event.kind}`);
+    return { valid: false, errors };
+  }
+
+  for (const field of schema.required) {
+    if (event[field] === undefined) {
+      errors.push(`Event "${event.kind}" is missing required field: ${field}`);
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
 /**
  * Create a canonical domain event.
+ * Validates that the kind is known and required fields are present.
  * @param {string} kind - One of the event kind constants
  * @param {object} data - Event-specific payload
- * @returns {{ kind: string, timestamp: number, data: object }}
+ * @returns {{ kind: string, timestamp: number }}
+ * @throws {Error} If kind is unknown or required fields are missing
  */
 export function createEvent(kind, data = {}) {
-  return { kind, timestamp: Date.now(), ...data };
+  const event = { kind, timestamp: Date.now(), ...data };
+  const { valid, errors } = validateEvent(event);
+  if (!valid) {
+    throw new Error(`Invalid event: ${errors.join('; ')}`);
+  }
+  return event;
 }
