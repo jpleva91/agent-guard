@@ -7,7 +7,7 @@ import {
   applyComboXP,
   getTier,
   formatCombo,
-} from '../domain/combo.js';
+} from '../dist/domain/combo.js';
 
 suite('Combo/Streak System (domain/combo.js)', () => {
   // --- createComboState ---

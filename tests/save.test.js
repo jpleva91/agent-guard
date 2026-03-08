@@ -13,7 +13,7 @@ if (typeof globalThis.localStorage === 'undefined') {
 }
 
 const { saveGame, loadGame, hasSave, applySave, recordBrowserCache } =
-  await import('../game/sync/save.js');
+  await import('../dist/game/sync/save.js');
 
 const MOCK_PLAYER = {
   x: 3,

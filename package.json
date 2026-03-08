@@ -4,13 +4,11 @@
   "description": "A Pokémon-style browser RPG themed around software bugs",
   "type": "module",
   "bin": {
-    "bugmon": "./core/cli/bin.js"
+    "bugmon": "./dist/cli/bin.js"
   },
   "files": [
-    "core/",
-    "domain/",
-    "ecosystem/",
-    "agentguard/",
+    "dist/",
+    "ecosystem/data/",
     "hooks/",
     "LICENSE",
     "README.md"
@@ -30,10 +28,10 @@
   "scripts": {
     "test": "node tests/run.js",
     "test:coverage": "c8 --check-coverage --lines 50 node tests/run.js",
-    "lint": "eslint game/ core/ domain/ agentguard/ ecosystem/ simulation/ tests/",
-    "lint:fix": "eslint --fix game/ core/ domain/ agentguard/ ecosystem/ simulation/ tests/",
-    "format": "prettier --check game/ core/ domain/ agentguard/ ecosystem/ simulation/",
-    "format:fix": "prettier --write game/ core/ domain/ agentguard/ ecosystem/ simulation/",
+    "lint": "eslint ecosystem/ simulation/ tests/ src/",
+    "lint:fix": "eslint --fix ecosystem/ simulation/ tests/ src/",
+    "format": "prettier --check ecosystem/ simulation/ src/",
+    "format:fix": "prettier --write ecosystem/ simulation/ src/",
     "simulate": "node simulate.js",
     "simulate:quick": "node simulation/cli.js --battles 1000",
     "simulate:full": "node simulation/cli.js --battles 50000",
@@ -45,8 +43,10 @@
     "build:debug": "node scripts/build.js --sourcemap",
     "budget": "node scripts/build.js --no-sprites",
     "serve": "node scripts/dev-server.js",
-    "dev": "node core/cli/bin.js",
-    "build:ts": "tsc --noEmit && tsx esbuild.config.ts",
+    "dev": "node dist/cli/bin.js",
+    "dev:legacy": "node dist/cli/bin.js",
+    "prepublishOnly": "npm run build:ts",
+    "build:ts": "tsc && tsx esbuild.config.ts",
     "ts:check": "tsc --noEmit",
     "ts:test": "vitest run",
     "ts:test:watch": "vitest"
@@ -70,6 +70,7 @@
     "terser": "^5.46.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.18"
   },
   "dependencies": {

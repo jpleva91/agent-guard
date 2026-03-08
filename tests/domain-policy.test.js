@@ -7,8 +7,8 @@ import {
   validatePolicy,
   createDenyAllPolicy,
   createDevPolicy,
-} from '../domain/policy.js';
-import { DECISION } from '../domain/actions.js';
+} from '../dist/domain/policy.js';
+import { DECISION } from '../dist/domain/actions.js';
 
 suite('Domain Policy — Capability-Based Policy Engine', () => {
   // --- matchScope ---

@@ -27,13 +27,13 @@ if (typeof globalThis.localStorage === 'undefined') {
   };
 }
 
-import { eventBus, Events } from '../game/engine/events.js';
-import { simulatePress, simulateRelease, clearJustPressed } from '../game/engine/input.js';
+import { eventBus, Events } from '../dist/game/engine/events.js';
+import { simulatePress, simulateRelease, clearJustPressed } from '../dist/game/engine/input.js';
 
 const { setMovesData, setTypeData, startBattle, getBattle, updateBattle } =
-  await import('../game/battle/battleEngine.js');
+  await import('../dist/game/battle/battle-engine.js');
 
-const playerMod = await import('../game/world/player.js');
+const playerMod = await import('../dist/game/world/player.js');
 const _player = playerMod.getPlayer();
 
 suite('Battle Engine UI (game/battle/battleEngine.js)', () => {

@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { createRecorder } from '../core/cli/recorder.js';
-import { loadSession } from '../core/cli/session-store.js';
+import { createRecorder } from '../dist/cli/recorder.js';
+import { loadSession } from '../dist/cli/session-store.js';
 
 suite('Session Recorder', () => {
   test('createRecorder returns recorder with sessionId and methods', () => {

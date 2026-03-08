@@ -1,49 +1,50 @@
 // Ingestion pipeline orchestrator: parse → fingerprint → classify → event
 // No DOM, no Node.js APIs — pure functions.
 
-import type { DomainEvent, ParsedError } from '../../core/types.js';
+import type { DomainEvent } from '../../core/types.js';
 import { createEvent, ERROR_OBSERVED } from '../events.js';
 import { assertShape } from '../shapes.js';
 import { fingerprint, deduplicateErrors } from './fingerprint.js';
 import { classify } from './classifier.js';
+import { parseErrors, parseStackTrace, getUserFrame } from './parser.js';
 
 /**
  * Ingest raw text through the full pipeline.
  * Returns an array of ERROR_OBSERVED domain events.
- *
- * Note: parseErrors is injected because the actual parser lives in core/
- * (which depends on Node.js for the full 40+ pattern implementation).
- * In the TS version, callers must provide the parse function.
  */
-export function ingest(
-  rawText: string,
-  parseErrors: (text: string) => ParsedError[],
-): DomainEvent[] {
-  // Stage 1: Parse
-  const parsed = parseErrors(rawText);
-  if (parsed.length === 0) return [];
-
-  // Stage 2: Fingerprint + deduplicate
-  const fingerprintedErrors = parsed.map((err) => ({
-    ...err,
-    fingerprint: fingerprint(err),
-  }));
-  const deduped = deduplicateErrors(fingerprintedErrors);
-
-  // Stage 3: Classify + create events
+export function ingest(rawText: string): DomainEvent[] {
   const events: DomainEvent[] = [];
-  for (const error of deduped) {
-    assertShape('ParsedError', error);
-    const bugEvent = classify(error);
+
+  // Stage 1: Parse raw text into structured errors
+  const parsed = parseErrors(rawText);
+  if (parsed.length === 0) return events;
+
+  for (const p of parsed) assertShape('ParsedError', p);
+
+  // Stage 2: Deduplicate via fingerprinting
+  const unique = deduplicateErrors(parsed);
+
+  // Stage 3: Classify each error into a BugEvent
+  for (const error of unique) {
+    const rawLines = (error as unknown as { rawLines?: string[] }).rawLines ?? [];
+    const stack = parseStackTrace(rawLines);
+    const frame = getUserFrame(stack);
+
+    const bugEvent = classify(error, {
+      file: frame?.file || undefined,
+      line: frame?.line || undefined,
+    });
     assertShape('BugEvent', bugEvent);
 
     events.push(
       createEvent(ERROR_OBSERVED, {
-        message: error.message,
+        source: 'unknown',
         errorType: error.type,
-        file: error.file,
-        line: error.line,
-        fingerprint: error.fingerprint,
+        message: error.message,
+        file: bugEvent.file,
+        line: bugEvent.line,
+        severity: bugEvent.severity,
+        fingerprint: (error as { fingerprint?: string }).fingerprint || fingerprint(error),
         bugEvent,
       }),
     );
@@ -52,4 +53,6 @@ export function ingest(
   return events;
 }
 
-export { fingerprint, deduplicateErrors, classify };
+export { parseErrors } from './parser.js';
+export { fingerprint, deduplicateErrors } from './fingerprint.js';
+export { classify };

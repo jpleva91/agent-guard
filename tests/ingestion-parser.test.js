@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { parseErrors, parseStackTrace, getUserFrame } from '../domain/ingestion/parser.js';
+import { parseErrors, parseStackTrace, getUserFrame } from '../dist/domain/ingestion/parser.js';
 
 suite('Ingestion Parser (domain/ingestion/parser.js)', () => {
   test('parseErrors extracts TypeError from raw text', () => {

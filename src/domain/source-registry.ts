@@ -13,7 +13,7 @@ interface SourceEntry {
 interface SourceInfo {
   name: string;
   running: boolean;
-  meta?: Record<string, unknown>;
+  meta?: Record<string, unknown> | null;
 }
 
 interface SourceEventMap {
@@ -24,20 +24,28 @@ interface SourceEventMap {
 
 export class SourceRegistry {
   private sources = new Map<string, SourceEntry>();
-  private bus: EventBus<SourceEventMap>;
-  private ingestFn: ((raw: string) => DomainEvent[]) | null;
+  private eventBus: EventBus<SourceEventMap>;
+  private ingest: (raw: string) => DomainEvent[];
 
-  constructor(
-    eventBus: EventBus<SourceEventMap>,
-    ingest: ((raw: string) => DomainEvent[]) | null = null,
-  ) {
-    this.bus = eventBus;
-    this.ingestFn = ingest;
+  constructor({ eventBus, ingest }: { eventBus?: EventBus<SourceEventMap>; ingest?: (raw: string) => DomainEvent[] }) {
+    if (!eventBus) throw new Error('SourceRegistry requires an eventBus');
+    if (typeof ingest !== 'function') throw new Error('SourceRegistry requires an ingest function');
+    this.eventBus = eventBus;
+    this.ingest = ingest;
   }
 
   register(config: SourceConfig): () => void {
+    if (!config || typeof config.name !== 'string' || !config.name) {
+      throw new Error('Source config must have a non-empty name');
+    }
+    if (typeof config.start !== 'function') {
+      throw new Error(`Source "${config.name}" must have a start function`);
+    }
+    if (typeof config.stop !== 'function') {
+      throw new Error(`Source "${config.name}" must have a stop function`);
+    }
     if (this.sources.has(config.name)) {
-      throw new Error(`Source already registered: ${config.name}`);
+      throw new Error(`Source "${config.name}" is already registered`);
     }
 
     this.sources.set(config.name, { config, running: false });
@@ -49,6 +57,7 @@ export class SourceRegistry {
     if (!entry) return;
     if (entry.running) {
       entry.config.stop();
+      entry.running = false;
     }
     this.sources.delete(name);
   }
@@ -75,11 +84,11 @@ export class SourceRegistry {
 
   list(): SourceInfo[] {
     const result: SourceInfo[] = [];
-    for (const [_name, entry] of this.sources) {
+    for (const [name, entry] of this.sources) {
       result.push({
-        name: entry.config.name,
+        name,
         running: entry.running,
-        meta: entry.config.meta,
+        meta: entry.config.meta || null,
       });
     }
     return result;
@@ -87,14 +96,13 @@ export class SourceRegistry {
 
   private _startOne(name: string): void {
     const entry = this.sources.get(name);
-    if (!entry) throw new Error(`Unknown source: ${name}`);
+    if (!entry) throw new Error(`Source "${name}" is not registered`);
     if (entry.running) return;
 
     const onRawSignal = (rawText: string): void => {
-      if (!this.ingestFn) return;
-      const events = this.ingestFn(rawText);
+      const events = this.ingest(rawText);
       for (const event of events) {
-        this.bus.emit('event', event);
+        this.eventBus.emit((event as DomainEvent & { kind: string }).kind, event);
       }
     };
 
@@ -104,7 +112,8 @@ export class SourceRegistry {
 
   private _stopOne(name: string): void {
     const entry = this.sources.get(name);
-    if (!entry || !entry.running) return;
+    if (!entry) throw new Error(`Source "${name}" is not registered`);
+    if (!entry.running) return;
     entry.config.stop();
     entry.running = false;
   }

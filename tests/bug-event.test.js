@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { createBugEvent, bugEventToMonster, resetFrequencies, SEVERITY } from '../core/bug-event.js';
+import { createBugEvent, bugEventToMonster, resetFrequencies, SEVERITY } from '../dist/core/bug-event.js';
 
 suite('Bug Event (core/bug-event.js)', () => {
   // Reset frequency tracking before tests

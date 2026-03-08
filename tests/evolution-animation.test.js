@@ -34,7 +34,7 @@ const {
   updateEvolutionAnimation,
   getEvolutionAnimation,
   clearEvolutionAnimation,
-} = await import('../game/evolution/animation.js');
+} = await import('../dist/game/evolution/animation.js');
 
 const FROM_MON = { id: 1, name: 'BaseMon', color: '#e74c3c', sprite: 'base' };
 const TO_MON = { id: 2, name: 'EvolvedMon', color: '#3498db', sprite: 'evolved' };

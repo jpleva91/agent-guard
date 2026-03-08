@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { BOSSES, BOSS_TRIGGERS, checkBossEncounter } from '../ecosystem/bosses.js';
+import { BOSSES, BOSS_TRIGGERS, checkBossEncounter } from '../dist/ecosystem/bosses.js';
 
 suite('Boss encounters (ecosystem/bosses.js)', () => {
   test('all bosses have required fields', () => {

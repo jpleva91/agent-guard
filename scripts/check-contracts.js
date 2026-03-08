@@ -5,22 +5,22 @@
 
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { MODULE_CONTRACTS, validateContract } from '../domain/contracts.js';
+import { MODULE_CONTRACTS, validateContract } from '../dist/domain/contracts.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
 
 // Map contract module names to import paths
 const MODULE_PATHS = {
-  'domain/battle': '../domain/battle.js',
-  'domain/encounters': '../domain/encounters.js',
-  'domain/evolution': '../domain/evolution.js',
-  'domain/events': '../domain/events.js',
-  'domain/event-bus': '../domain/event-bus.js',
-  'domain/event-store': '../domain/event-store.js',
-  'domain/ingestion/pipeline': '../domain/ingestion/pipeline.js',
-  'domain/ingestion/fingerprint': '../domain/ingestion/fingerprint.js',
-  'domain/ingestion/classifier': '../domain/ingestion/classifier.js',
+  'domain/battle': '../dist/domain/battle.js',
+  'domain/encounters': '../dist/domain/encounters.js',
+  'domain/evolution': '../dist/domain/evolution.js',
+  'domain/events': '../dist/domain/events.js',
+  'domain/event-bus': '../dist/core/event-bus.js',
+  'domain/event-store': '../dist/domain/event-store.js',
+  'domain/ingestion/pipeline': '../dist/domain/ingestion/pipeline.js',
+  'domain/ingestion/fingerprint': '../dist/domain/ingestion/fingerprint.js',
+  'domain/ingestion/classifier': '../dist/domain/ingestion/classifier.js',
 };
 
 console.log('Checking module contracts...\n');

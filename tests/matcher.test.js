@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { matchMonster, getAllMonsters } from '../core/matcher.js';
+import { matchMonster, getAllMonsters } from '../dist/core/matcher.js';
 
 suite('Matcher (core/matcher.js)', () => {
   test('getAllMonsters returns an array of monsters', () => {

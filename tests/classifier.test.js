@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { classify, SEVERITY, ERROR_TO_MONSTER_TYPE, resetFrequencies } from '../domain/ingestion/classifier.js';
+import { classify, SEVERITY, ERROR_TO_MONSTER_TYPE, resetFrequencies } from '../dist/domain/ingestion/classifier.js';
 
 suite('Classifier (domain/ingestion/classifier.js)', () => {
   test('classify returns a BugEvent with correct type and message', () => {

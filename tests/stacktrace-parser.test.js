@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { parseStackTrace, getUserFrame, extractLocation } from '../core/stacktrace-parser.js';
+import { parseStackTrace, getUserFrame, extractLocation } from '../dist/core/stacktrace-parser.js';
 
 suite('Stacktrace Parser (core/stacktrace-parser.js)', () => {
   test('parses standard Node.js stack frame with function name', () => {

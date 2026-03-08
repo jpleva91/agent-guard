@@ -174,7 +174,7 @@ export function evaluateInvariant(
     expected: result.expected,
     actual: result.actual,
     metadata: {
-      name: invariant.description,
+      name: invariant.name || invariant.description,
       type: invariant.type,
       severity: invariant.severity || SEVERITY.MEDIUM,
       description: invariant.description || null,

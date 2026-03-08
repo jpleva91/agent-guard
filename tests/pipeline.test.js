@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { ingest } from '../domain/ingestion/pipeline.js';
+import { ingest } from '../dist/domain/ingestion/pipeline.js';
 
 suite('Ingestion Pipeline (domain/ingestion/pipeline.js)', () => {
   test('ingest returns empty array for non-error text', () => {

@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { getState, setState, STATES } from '../game/engine/state.js';
-import { eventBus, Events } from '../game/engine/events.js';
+import { getState, setState, STATES } from '../dist/game/engine/state.js';
+import { eventBus, Events } from '../dist/game/engine/events.js';
 
 suite('Game state machine (game/engine/state.js)', () => {
   test('STATES contains all expected states', () => {

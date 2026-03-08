@@ -13,7 +13,7 @@ if (typeof globalThis.AudioContext === 'undefined') {
 }
 
 const { simulatePress, simulateRelease, isDown, wasPressed, clearJustPressed } =
-  await import('../game/engine/input.js');
+  await import('../dist/game/engine/input.js');
 
 suite('Input system (game/engine/input.js)', () => {
   // Reset state before each test by clearing and releasing

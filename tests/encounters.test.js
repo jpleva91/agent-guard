@@ -9,7 +9,7 @@ if (typeof globalThis.AudioContext === 'undefined') {
   globalThis.AudioContext = class { constructor() { this.state = 'running'; } };
 }
 
-const { setMonstersData, checkEncounter } = await import('../game/world/encounters.js');
+const { setMonstersData, checkEncounter } = await import('../dist/game/world/encounters.js');
 
 const MOCK_MONSTERS = [
   { id: 1, name: 'CommonBug', type: 'backend', hp: 30, attack: 8, defense: 4, speed: 6, moves: ['m1'], rarity: 'common' },

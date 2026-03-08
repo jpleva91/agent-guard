@@ -22,9 +22,9 @@ if (typeof globalThis.localStorage === 'undefined') {
 
 // We need to test updateTitle which depends on wasPressed (from input.js) and hasSave (from save.js).
 // Since these are module-level imports, we test through the actual modules.
-import { simulatePress, simulateRelease, clearJustPressed } from '../game/engine/input.js';
-import { saveGame } from '../game/sync/save.js';
-const { updateTitle } = await import('../game/engine/title.js');
+import { simulatePress, simulateRelease, clearJustPressed } from '../dist/game/engine/input.js';
+import { saveGame } from '../dist/game/sync/save.js';
+const { updateTitle } = await import('../dist/game/engine/title.js');
 
 suite('Title screen (game/engine/title.js)', () => {
   test('updateTitle returns null when no key pressed', () => {

@@ -9,8 +9,8 @@ import {
   validateStageInput,
   isRoleAuthorizedForStage,
   validateFileScope,
-} from '../../domain/pipeline/stages.js';
-import { ROLES } from '../../domain/pipeline/roles.js';
+} from '../../dist/domain/pipeline/stages.js';
+import { ROLES } from '../../dist/domain/pipeline/roles.js';
 
 suite('Pipeline Stages', () => {
   test('defines five stages in order', () => {

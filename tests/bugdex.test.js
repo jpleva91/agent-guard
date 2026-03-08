@@ -1,20 +1,7 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 
-// ecosystem/bugdex.js uses module.exports (CommonJS) but package.json has "type": "module"
-// so we can't import it directly. Instead, we eval it in a CJS-compatible context.
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const bugdexPath = join(__dirname, '..', 'ecosystem', 'bugdex.js');
-const bugdexSrc = readFileSync(bugdexPath, 'utf8');
-
-const mod = { exports: {} };
-const fn = new Function('module', 'exports', bugdexSrc);
-fn(mod, mod.exports);
-const { identify, getAllMonsters, BUGDEX } = mod.exports;
+const { identify, getAllMonsters, BUGDEX } = await import('../dist/ecosystem/bugdex.js');
 
 suite('BugDex identification (ecosystem/bugdex.js)', () => {
   test('BUGDEX is a non-empty array', () => {

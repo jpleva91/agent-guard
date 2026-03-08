@@ -10,7 +10,7 @@ if (typeof globalThis.AudioContext === 'undefined') {
 }
 
 const { startTransition, updateTransition } =
-  await import('../game/engine/transition.js');
+  await import('../dist/game/engine/transition.js');
 
 const MOCK_WILD_MON = {
   id: 1, name: 'TestMon', type: 'backend', hp: 30,

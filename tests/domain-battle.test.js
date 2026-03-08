@@ -6,7 +6,7 @@ import {
   applyDamage, applyHealing,
   cacheChance, attemptCache, pickEnemyMove,
   executeTurn, simulateBattle
-} from '../domain/battle.js';
+} from '../dist/domain/battle.js';
 
 suite('Domain Battle Engine (domain/battle.js)', () => {
   const monA = { id: 1, name: 'TestA', type: 'backend', hp: 30, attack: 8, defense: 4, speed: 6, moves: ['segfault'], passive: null };

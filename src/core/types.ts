@@ -584,6 +584,7 @@ export type InvariantType = 'test_result' | 'action' | 'dependency';
 /** Invariant definition for domain/invariants.js */
 export interface DomainInvariantDef {
   readonly id: string;
+  readonly name?: string;
   readonly type: InvariantType;
   readonly description: string;
   readonly severity: Severity;
@@ -640,8 +641,8 @@ export interface ClassifiedBugEvent {
   readonly severity: Severity;
   readonly type: string;
   readonly message: string;
-  readonly file?: string;
-  readonly line?: number;
+  readonly file?: string | null;
+  readonly line?: number | null;
   readonly frequency?: number;
 }
 

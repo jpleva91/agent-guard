@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import { test, suite } from './run.js';
 import {
   shouldEncounter, pickWeightedRandom, checkEncounter, scaleEncounter, RARITY_WEIGHTS
-} from '../domain/encounters.js';
+} from '../dist/domain/encounters.js';
 
 suite('Domain Encounters (domain/encounters.js)', () => {
   const monsters = [

@@ -30,7 +30,7 @@ if (typeof globalThis.document === 'undefined') {
 }
 
 const { initTileTextures, getTileTexture, getGrassFrame, getBattleBackground } =
-  await import('../game/sprites/tiles.js');
+  await import('../dist/game/sprites/tiles.js');
 
 suite('Procedural Tile Textures (game/sprites/tiles.js)', () => {
   test('initTileTextures runs without error', () => {

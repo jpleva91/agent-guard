@@ -39,7 +39,7 @@ if (typeof globalThis.window === 'undefined') {
   globalThis.window = { addEventListener() {}, bugmon: null };
 }
 
-const { getSyncStatus, pushToCLI, pullFromCLI } = await import('../game/sync/client.js');
+const { getSyncStatus, pushToCLI, pullFromCLI } = await import('../dist/game/sync/client.js');
 
 suite('Sync client (game/sync/client.js)', () => {
   test('getSyncStatus returns object with expected fields', () => {

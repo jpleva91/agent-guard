@@ -1,8 +1,8 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { replay } from '../core/cli/replay.js';
-import { createRecorder } from '../core/cli/recorder.js';
-import { loadSession, listSessions } from '../core/cli/session-store.js';
+import { replay } from '../dist/cli/replay.js';
+import { createRecorder } from '../dist/cli/recorder.js';
+import { loadSession, listSessions } from '../dist/cli/session-store.js';
 
 suite('Replay CLI', () => {
   test('replay module exports a replay function', () => {

@@ -1,11 +1,11 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { createInMemoryStore } from '../domain/event-store.js';
+import { createInMemoryStore } from '../dist/domain/event-store.js';
 import {
   createEvent,
   DAMAGE_DEALT,
   BATTLE_ENDED,
-} from '../domain/events.js';
+} from '../dist/domain/events.js';
 
 suite('Event Store — In-Memory Implementation', () => {
   test('append and count', () => {

@@ -194,11 +194,10 @@
       </div>
     </div>
   </div>
-  <!-- Serve with: python3 -m http.server -->
-  <script type="module" src="game/game.js"></script>
+  <!-- Serve with: npm run serve (requires npm run build:ts first) -->
+  <script type="module" src="dist/game/game.js"></script>
   <script type="module">
-    import { simulatePress, simulateRelease } from './game/engine/input.js';
-    import { unlock, toggleMute } from './game/audio/sound.js';
+    import { simulatePress, simulateRelease, unlock, toggleMute } from './dist/game/game.js';
 
     // Dev Activity Panel
     const devEvents = [

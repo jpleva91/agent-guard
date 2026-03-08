@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { bugEventToMonster, matchMonster, getAllMonsters } from '../domain/ingestion/species-mapper.js';
+import { bugEventToMonster, matchMonster, getAllMonsters } from '../dist/domain/ingestion/species-mapper.js';
 
 suite('Species Mapper (domain/ingestion/species-mapper.js)', () => {
   test('bugEventToMonster is a function', () => {

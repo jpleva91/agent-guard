@@ -7,7 +7,7 @@ import {
   drawBattle,
   clear,
 } from './engine/game-renderer.js';
-import { clearJustPressed } from './engine/input.js';
+import { clearJustPressed, simulatePress, simulateRelease } from './engine/input.js';
 import { getState, setState, STATES } from './engine/state.js';
 import { getMap, setMapData } from './world/map.js';
 import { getPlayer, updatePlayer } from './world/player.js';
@@ -42,7 +42,22 @@ import {
 import { saveGame, loadGame, applySave, recordBrowserCache } from './sync/save.js';
 import { eventBus, Events } from './engine/events.js';
 import { updateTitle, drawTitle } from './engine/title.js';
+import { unlock, toggleMute } from './audio/sound.js';
 import type { GameMon } from './world/player.js';
+
+// @ts-expect-error — JS data modules (no .d.ts), bundled by esbuild
+import { MONSTERS as MONSTERS_DATA } from '../../ecosystem/data/monsters.js';
+// @ts-expect-error — JS data module
+import { MOVES as MOVES_DATA } from '../../ecosystem/data/moves.js';
+// @ts-expect-error — JS data module
+import { TYPES as TYPES_DATA } from '../../ecosystem/data/types.js';
+// @ts-expect-error — JS data module
+import { EVOLUTIONS as EVOLUTIONS_DATA } from '../../ecosystem/data/evolutions.js';
+// @ts-expect-error — JS data module
+import { MAP_DATA } from '../../ecosystem/data/mapData.js';
+
+// Re-export for inline script in index.html
+export { simulatePress, simulateRelease, unlock, toggleMute };
 
 interface MonsterData extends GameMon {
   sprite?: string;
@@ -217,5 +232,20 @@ function render(): void {
     const canvas = document.getElementById('game') as HTMLCanvasElement;
     const ctx = canvas.getContext('2d')!;
     drawEvolutionAnimation(ctx, 480, 320);
+  }
+}
+
+// Auto-initialize when loaded in browser (mirrors JS game/game.js behavior)
+if (typeof document !== 'undefined') {
+  const canvas = document.getElementById('game') as HTMLCanvasElement;
+  if (canvas) {
+    init(
+      canvas,
+      MONSTERS_DATA as MonsterData[],
+      MOVES_DATA as Array<{ id: string; name: string; power: number; type: string }>,
+      TYPES_DATA as TypesData,
+      EVOLUTIONS_DATA as unknown,
+      MAP_DATA as { width: number; height: number; tiles: number[][] },
+    ).catch((err: unknown) => console.error('BugMon failed to start:', err));
   }
 }

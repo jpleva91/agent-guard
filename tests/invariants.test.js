@@ -10,8 +10,8 @@ import {
   violationToEncounterParams,
   INVARIANT_TYPES,
   SEVERITY,
-} from '../domain/invariants.js';
-import { INVARIANT_VIOLATION } from '../domain/events.js';
+} from '../dist/domain/invariants.js';
+import { INVARIANT_VIOLATION } from '../dist/domain/events.js';
 
 const root = new URL('../', import.meta.url);
 const monsters = JSON.parse(

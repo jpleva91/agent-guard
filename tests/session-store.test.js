@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { createSession, loadSession, listSessions } from '../core/cli/session-store.js';
-import { createEvent, ERROR_OBSERVED } from '../domain/events.js';
+import { createSession, loadSession, listSessions } from '../dist/cli/session-store.js';
+import { createEvent, ERROR_OBSERVED } from '../dist/domain/events.js';
 
 suite('Session Store', () => {
   let sessionId = null;

@@ -5,7 +5,7 @@ import {
   violationToMonster,
   isViolationEvent,
   VIOLATION_MONSTER_MAP,
-} from '../domain/ingestion/invariant-mapper.js';
+} from '../dist/domain/ingestion/invariant-mapper.js';
 
 const root = new URL('../', import.meta.url);
 const monsters = JSON.parse(

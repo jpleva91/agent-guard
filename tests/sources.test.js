@@ -1,8 +1,8 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { createWatchSource } from '../core/sources/watch-source.js';
-import { createScanSource } from '../core/sources/scan-source.js';
-import { createClaudeHookSource } from '../core/sources/claude-hook-source.js';
+import { createWatchSource } from '../dist/core/sources/watch-source.js';
+import { createScanSource } from '../dist/core/sources/scan-source.js';
+import { createClaudeHookSource } from '../dist/core/sources/claude-hook-source.js';
 
 suite('Source Adapters (core/sources/)', () => {
   test('createWatchSource returns correct shape', () => {

@@ -4,8 +4,8 @@ import {
   createAdapterRegistry,
   createDryRunAdapter,
   createDryRunRegistry,
-} from '../domain/execution/adapters.js';
-import { createAction, resetActionCounter, DECISION } from '../domain/actions.js';
+} from '../dist/domain/execution/adapters.js';
+import { createAction, resetActionCounter, DECISION } from '../dist/domain/actions.js';
 
 suite('Domain Execution Adapters', () => {
   // --- Adapter Registry ---

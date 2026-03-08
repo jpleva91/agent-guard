@@ -3,7 +3,7 @@ import { test, suite } from './run.js';
 import {
   findTrigger, checkEvolution, checkPartyEvolutions,
   applyEvolution, getEvolutionProgress
-} from '../domain/evolution.js';
+} from '../dist/domain/evolution.js';
 
 suite('Domain Evolution (domain/evolution.js)', () => {
   const monstersData = [

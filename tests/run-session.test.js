@@ -8,7 +8,7 @@ import {
   endRun,
   getRunStats,
   getEncounterMode,
-} from '../domain/run-session.js';
+} from '../dist/domain/run-session.js';
 
 suite('Run Session Tracker (domain/run-session.js)', () => {
   // --- createRun ---

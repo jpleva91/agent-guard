@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { parseErrors } from '../core/error-parser.js';
+import { parseErrors } from '../dist/core/error-parser.js';
 
 suite('Error Parser (core/error-parser.js)', () => {
   test('parses TypeError null reference', () => {

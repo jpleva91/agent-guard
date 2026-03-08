@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { fingerprint, deduplicateErrors } from '../domain/ingestion/fingerprint.js';
+import { fingerprint, deduplicateErrors } from '../dist/domain/ingestion/fingerprint.js';
 
 suite('Fingerprint (domain/ingestion/fingerprint.js)', () => {
   test('same input produces same fingerprint', () => {

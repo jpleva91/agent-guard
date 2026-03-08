@@ -60,10 +60,7 @@ export function createMonitor(policy: Policy, options: MonitorOptions = {}): Mon
   const onEscalate = options.onEscalate || null;
 
   const trail: DecisionRecord[] = [];
-  let decisionCounter = 0;
-
   function createDecisionRecordFn(action: CanonicalAction, result: { decision: Decision; reason: string; capability?: unknown }): DecisionRecord {
-    decisionCounter++;
     const record: DecisionRecord = {
       actionId: action.id,
       decision: result.decision,

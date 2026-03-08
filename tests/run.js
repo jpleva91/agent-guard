@@ -3,7 +3,7 @@
 // Minimal test harness — zero dependencies, uses node:assert
 // Usage: node tests/run.js
 
-import { FG, DIM, BOLD, RESET } from '../core/cli/colors.js';
+import { FG, DIM, BOLD, RESET } from '../dist/cli/colors.js';
 
 let totalPassed = 0;
 let totalFailed = 0;

@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { resetEventCounter, createEvent, POLICY_DENIED } from '../domain/events.js';
-import { createEvidencePack } from '../agentguard/evidence/pack.js';
+import { resetEventCounter, createEvent, POLICY_DENIED } from '../dist/domain/events.js';
+import { createEvidencePack } from '../dist/agentguard/evidence/pack.js';
 
 suite('AgentGuard — Evidence Pack', () => {
   test('creates a valid evidence pack', () => {

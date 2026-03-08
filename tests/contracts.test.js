@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { MODULE_CONTRACTS, validateContract } from '../domain/contracts.js';
+import { MODULE_CONTRACTS, validateContract } from '../dist/domain/contracts.js';
 
 suite('Domain Contracts — Contract Validation', () => {
   // --- MODULE_CONTRACTS structure ---
@@ -88,37 +88,37 @@ suite('Domain Contracts — Contract Validation', () => {
   // --- Live contract verification against actual modules ---
 
   test('domain/encounters module satisfies its contract', async () => {
-    const mod = await import('../domain/encounters.js');
+    const mod = await import('../dist/domain/encounters.js');
     const result = validateContract('domain/encounters', mod);
     assert.strictEqual(result.valid, true, `Failures: ${result.errors.join(', ')}`);
   });
 
   test('domain/events module satisfies its contract', async () => {
-    const mod = await import('../domain/events.js');
+    const mod = await import('../dist/domain/events.js');
     const result = validateContract('domain/events', mod);
     assert.strictEqual(result.valid, true, `Failures: ${result.errors.join(', ')}`);
   });
 
   test('domain/event-bus module satisfies its contract', async () => {
-    const mod = await import('../domain/event-bus.js');
+    const mod = await import('../dist/core/event-bus.js');
     const result = validateContract('domain/event-bus', mod);
     assert.strictEqual(result.valid, true, `Failures: ${result.errors.join(', ')}`);
   });
 
   test('domain/evolution module satisfies its contract', async () => {
-    const mod = await import('../domain/evolution.js');
+    const mod = await import('../dist/domain/evolution.js');
     const result = validateContract('domain/evolution', mod);
     assert.strictEqual(result.valid, true, `Failures: ${result.errors.join(', ')}`);
   });
 
   test('domain/event-store module satisfies its contract', async () => {
-    const mod = await import('../domain/event-store.js');
+    const mod = await import('../dist/domain/event-store.js');
     const result = validateContract('domain/event-store', mod);
     assert.strictEqual(result.valid, true, `Failures: ${result.errors.join(', ')}`);
   });
 
   test('domain/ingestion/fingerprint module satisfies its contract', async () => {
-    const mod = await import('../domain/ingestion/fingerprint.js');
+    const mod = await import('../dist/domain/ingestion/fingerprint.js');
     const result = validateContract('domain/ingestion/fingerprint', mod);
     assert.strictEqual(result.valid, true, `Failures: ${result.errors.join(', ')}`);
   });

@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { SHAPES, validateShape, assertShape } from '../domain/shapes.js';
+import { SHAPES, validateShape, assertShape } from '../dist/domain/shapes.js';
 
 suite('Domain Shapes — Shape Validation', () => {
   // --- SHAPES registry ---

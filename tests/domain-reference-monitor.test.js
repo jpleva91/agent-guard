@@ -1,8 +1,8 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { createMonitor, MONITOR_EVENTS } from '../domain/reference-monitor.js';
-import { DECISION, resetActionCounter } from '../domain/actions.js';
-import { EventBus } from '../domain/event-bus.js';
+import { createMonitor, MONITOR_EVENTS } from '../dist/domain/reference-monitor.js';
+import { DECISION, resetActionCounter } from '../dist/domain/actions.js';
+import { EventBus } from '../dist/core/event-bus.js';
 
 suite('Domain Reference Monitor — Agent Action Boundary', () => {
   // --- Construction ---

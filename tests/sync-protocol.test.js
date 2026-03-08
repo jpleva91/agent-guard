@@ -4,7 +4,7 @@ import {
   SYNC_PORT, PING_INTERVAL, RECONNECT_INTERVAL, MAX_RECONNECT_ATTEMPTS,
   MSG_PULL_CLI_STATE, MSG_BROWSER_STATE, MSG_PONG,
   MSG_CLI_STATE, MSG_CLI_EVENT, MSG_PING,
-} from '../ecosystem/sync-protocol.js';
+} from '../dist/ecosystem/sync-protocol.js';
 
 suite('Sync Protocol Constants (ecosystem/sync-protocol.js)', () => {
   test('SYNC_PORT is 9876', () => {

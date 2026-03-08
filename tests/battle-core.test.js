@@ -4,8 +4,8 @@ import {
   createBattleState, getTurnOrder, resolveMove, applyDamage, applyHealing,
   isFainted, cacheChance, attemptCache, pickEnemyMove, executeTurn,
   simulateBattle
-} from '../game/battle/battle-core.js';
-import { isHealMove, calcHealing } from '../game/battle/damage.js';
+} from '../dist/game/battle/battle-core.js';
+import { isHealMove, calcHealing } from '../dist/game/battle/damage.js';
 
 suite('Battle Core (game/battle/battle-core.js)', () => {
   const movesData = [

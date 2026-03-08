@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { eventBus, Events } from '../game/engine/events.js';
+import { eventBus, Events } from '../dist/game/engine/events.js';
 
 suite('EventBus (game/engine/events.js)', () => {
   test('Events constants are defined', () => {

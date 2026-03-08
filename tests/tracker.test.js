@@ -15,7 +15,7 @@ if (typeof globalThis.localStorage === 'undefined') {
 // Fresh import each time we need to reset module state is hard with ES modules,
 // so we test what we can with the singleton pattern.
 const { initTracker, logEvent, getEvents } =
-  await import('../game/evolution/tracker.js');
+  await import('../dist/game/evolution/tracker.js');
 
 suite('Dev Activity Tracker (game/evolution/tracker.js)', () => {
   test('initTracker loads without error when localStorage is empty', () => {
@@ -121,7 +121,7 @@ suite('Dev Activity Tracker (game/evolution/tracker.js)', () => {
   test('importFromFile handles missing fetch gracefully', async () => {
     localStorage.clear();
     initTracker();
-    const { importFromFile } = await import('../game/evolution/tracker.js');
+    const { importFromFile } = await import('../dist/game/evolution/tracker.js');
     const result = await importFromFile();
     assert.strictEqual(result, false, 'should return false when fetch fails');
   });

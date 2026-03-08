@@ -19,11 +19,11 @@ const movesData = JSON.parse(readFileSync(new URL('ecosystem/data/moves.json', r
 const typesData = JSON.parse(readFileSync(new URL('ecosystem/data/types.json', root), 'utf-8'));
 const evolutionsData = JSON.parse(readFileSync(new URL('ecosystem/data/evolutions.json', root), 'utf-8'));
 
-import { parseErrors } from '../core/error-parser.js';
-import { matchMonster } from '../core/matcher.js';
+import { parseErrors } from '../dist/core/error-parser.js';
+import { matchMonster } from '../dist/core/matcher.js';
 import {
   createBattleState, executeTurn, resolveMove, simulateBattle
-} from '../game/battle/battle-core.js';
+} from '../dist/game/battle/battle-core.js';
 
 suite('Integration: Error → Monster Matching (error-parser + matcher)', () => {
   test('TypeError produces a valid monster match', () => {

@@ -5,15 +5,22 @@
  *   - name, type, ascii art, HP, rarity
  *   - XP reward for defeating it
  *   - The real error it represents
- *
- * TODO(roadmap/phase-5): Add defeat history and error pattern recording per entry
- * TODO(roadmap/phase-5): Add fix strategies compendium per enemy type
- * TODO(roadmap/phase-5): Add Grimoire completion tracking and unlock rewards
  */
 
-const BUGDEX = [
-  // ── COMMON ──────────────────────────────────────────────
+export interface BugDexEntry {
+  id: number;
+  name: string;
+  errorType: string;
+  patterns: RegExp[];
+  type: string;
+  rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
+  hp: number;
+  xp: number;
+  ascii: string[];
+}
 
+const BUGDEX: BugDexEntry[] = [
+  // ── COMMON ──────────────────────────────────────────────
   {
     id: 1,
     name: 'NullPointerMon',
@@ -34,7 +41,6 @@ const BUGDEX = [
       '    ╰──────╯    ',
     ],
   },
-
   {
     id: 2,
     name: 'ParseDragon',
@@ -55,7 +61,6 @@ const BUGDEX = [
       '      \\_____/    ',
     ],
   },
-
   {
     id: 3,
     name: 'GhostVarMon',
@@ -76,7 +81,6 @@ const BUGDEX = [
       '     ~ ~ ~ ~     ',
     ],
   },
-
   {
     id: 4,
     name: 'StackOverflow',
@@ -97,7 +101,6 @@ const BUGDEX = [
       '    ╚════════╝   ',
     ],
   },
-
   {
     id: 5,
     name: 'IndexOutOfBounds',
@@ -120,7 +123,6 @@ const BUGDEX = [
   },
 
   // ── UNCOMMON ────────────────────────────────────────────
-
   {
     id: 6,
     name: 'AsyncPhantom',
@@ -141,7 +143,6 @@ const BUGDEX = [
       '     ░░░░░░░      ',
     ],
   },
-
   {
     id: 7,
     name: 'InfiniteLoop',
@@ -162,7 +163,6 @@ const BUGDEX = [
       '    ╰─┤ ∞ ├─╯    ',
     ],
   },
-
   {
     id: 8,
     name: 'JSONGoblin',
@@ -183,7 +183,6 @@ const BUGDEX = [
       '    ~corrupt~     ',
     ],
   },
-
   {
     id: 9,
     name: 'ImportWraith',
@@ -212,7 +211,6 @@ const BUGDEX = [
   },
 
   // ── RARE ────────────────────────────────────────────────
-
   {
     id: 10,
     name: 'RaceGremlin',
@@ -233,7 +231,6 @@ const BUGDEX = [
       '    ~R A C E~    ',
     ],
   },
-
   {
     id: 11,
     name: 'LeakHydra',
@@ -256,7 +253,6 @@ const BUGDEX = [
   },
 
   // ── LEGENDARY ───────────────────────────────────────────
-
   {
     id: 12,
     name: 'Heisenbug',
@@ -277,7 +273,6 @@ const BUGDEX = [
       '   ~~quantum~~    ',
     ],
   },
-
   {
     id: 13,
     name: 'ForkBomb',
@@ -302,7 +297,7 @@ const BUGDEX = [
 
 // ── FALLBACK ──────────────────────────────────────────────
 
-const UNKNOWN_BUG = {
+const UNKNOWN_BUG: BugDexEntry = {
   id: 0,
   name: 'UnknownBug',
   errorType: 'Error',
@@ -327,9 +322,8 @@ const UNKNOWN_BUG = {
  * Match a stderr/error string to the best BugMon.
  * Returns a copy of the matched monster.
  */
-function identify(errorText) {
-  // Try each monster in order (rarer ones are later, so we iterate all and pick best)
-  let best = null;
+export function identify(errorText: string): BugDexEntry {
+  let best: BugDexEntry | null = null;
   let bestScore = 0;
 
   for (const mon of BUGDEX) {
@@ -339,7 +333,6 @@ function identify(errorText) {
         score++;
       }
     }
-    // Boost score for exact error type match in the text
     if (errorText.includes(mon.errorType)) {
       score += 3;
     }
@@ -355,8 +348,8 @@ function identify(errorText) {
 /**
  * Return the full BugDex for display.
  */
-function getAllMonsters() {
+export function getAllMonsters(): BugDexEntry[] {
   return BUGDEX.map((m) => ({ ...m }));
 }
 
-module.exports = { identify, getAllMonsters, BUGDEX };
+export { BUGDEX };

@@ -39,7 +39,7 @@ if (typeof globalThis.document === 'undefined') {
   };
 }
 
-const { generateMonster, generateEgg } = await import('../game/sprites/monsterGen.js');
+const { generateMonster, generateEgg } = await import('../dist/game/sprites/monster-gen.js');
 
 suite('Procedural Monster Sprites (game/sprites/monsterGen.js)', () => {
   test('generateMonster returns a canvas-like object', () => {

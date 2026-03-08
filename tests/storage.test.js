@@ -31,21 +31,21 @@ suite('Storage utilities (ecosystem/storage.js)', () => {
 
   test('XP constants match expected values', () => {
     // Verify by reading the source file
-    const src = readFileSync(join(import.meta.dirname, '..', 'ecosystem', 'storage.js'), 'utf8');
+    const src = readFileSync(join(import.meta.dirname, '..', 'dist', 'ecosystem', 'storage.js'), 'utf8');
     assert.ok(src.includes('XP_ENCOUNTER = 10'));
     assert.ok(src.includes('XP_NEW_DISCOVERY = 100'));
     assert.ok(src.includes('XP_RESOLVED = 50'));
   });
 
   test('encounters are capped at 500', () => {
-    const src = readFileSync(join(import.meta.dirname, '..', 'ecosystem', 'storage.js'), 'utf8');
+    const src = readFileSync(join(import.meta.dirname, '..', 'dist', 'ecosystem', 'storage.js'), 'utf8');
     assert.ok(src.includes('500'), 'Should cap encounters at 500');
     assert.ok(src.includes('slice(-500)'), 'Should keep last 500 encounters');
   });
 
   test('createEmpty returns correct structure', () => {
     // Verify by examining file structure
-    const src = readFileSync(join(import.meta.dirname, '..', 'ecosystem', 'storage.js'), 'utf8');
+    const src = readFileSync(join(import.meta.dirname, '..', 'dist', 'ecosystem', 'storage.js'), 'utf8');
     assert.ok(src.includes('encounters: []'));
     assert.ok(src.includes('totalEncounters: 0'));
     assert.ok(src.includes('totalResolved: 0'));
@@ -55,19 +55,19 @@ suite('Storage utilities (ecosystem/storage.js)', () => {
   });
 
   test('recordEncounter awards new discovery bonus', () => {
-    const src = readFileSync(join(import.meta.dirname, '..', 'ecosystem', 'storage.js'), 'utf8');
+    const src = readFileSync(join(import.meta.dirname, '..', 'dist', 'ecosystem', 'storage.js'), 'utf8');
     // Verify logic: if new, xpGained = XP_ENCOUNTER + XP_NEW_DISCOVERY = 110
     assert.ok(src.includes('isNew') && src.includes('XP_NEW_DISCOVERY'));
   });
 
   test('resolveEncounter awards XP_RESOLVED', () => {
-    const src = readFileSync(join(import.meta.dirname, '..', 'ecosystem', 'storage.js'), 'utf8');
+    const src = readFileSync(join(import.meta.dirname, '..', 'dist', 'ecosystem', 'storage.js'), 'utf8');
     assert.ok(src.includes('XP_RESOLVED'));
     assert.ok(src.includes('totalResolved++'));
   });
 
   test('error messages are truncated to 200 chars', () => {
-    const src = readFileSync(join(import.meta.dirname, '..', 'ecosystem', 'storage.js'), 'utf8');
+    const src = readFileSync(join(import.meta.dirname, '..', 'dist', 'ecosystem', 'storage.js'), 'utf8');
     assert.ok(src.includes('slice(0, 200)'));
   });
 

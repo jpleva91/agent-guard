@@ -9,8 +9,15 @@ if (typeof globalThis.AudioContext === 'undefined') {
   globalThis.AudioContext = class { constructor() { this.state = 'running'; } };
 }
 
-const { getPlayer, updatePlayer } = await import('../game/world/player.js');
-const input = await import('../game/engine/input.js');
+const { getPlayer, updatePlayer } = await import('../dist/game/world/player.js');
+const input = await import('../dist/game/engine/input.js');
+const { setMapData } = await import('../dist/game/world/map.js');
+
+// Set up a simple 10x10 map with all walkable tiles
+setMapData({
+  width: 10, height: 10,
+  tiles: Array.from({ length: 10 }, () => Array(10).fill(0)),
+});
 
 suite('Player state & movement (game/world/player.js)', () => {
   test('getPlayer returns player object with expected defaults', () => {

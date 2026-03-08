@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { resetEventCounter } from '../domain/events.js';
-import { createMonitor, ESCALATION } from '../agentguard/monitor.js';
+import { resetEventCounter } from '../dist/domain/events.js';
+import { createMonitor, ESCALATION } from '../dist/agentguard/monitor.js';
 
 suite('AgentGuard — Runtime Monitor', () => {
   test('monitor allows safe actions', () => {

@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { calcDamage, isHealMove, calcHealing } from '../game/battle/damage.js';
+import { calcDamage, isHealMove, calcHealing } from '../dist/game/battle/damage.js';
 
 suite('Game damage module (game/battle/damage.js)', () => {
   const attacker = { attack: 10, type: 'backend' };

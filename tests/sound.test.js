@@ -59,7 +59,7 @@ const {
   playMenuNav, playMenuConfirm, playMenuCancel, playFootstep,
   playEncounterAlert, playTransitionFlash, playAttack, playFaint,
   playCaptureSuccess, playCaptureFailure, playBattleVictory, playEvolution,
-} = await import('../game/audio/sound.js');
+} = await import('../dist/game/audio/sound.js');
 
 suite('Audio system (game/audio/sound.js)', () => {
   test('unlock does not throw', () => {

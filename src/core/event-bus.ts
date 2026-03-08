@@ -11,20 +11,23 @@
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class EventBus<T extends Record<string, any>> {
-  private readonly listeners = new Map<keyof T, Set<(payload: never) => void>>();
+  private readonly listeners = new Map<keyof T, Array<(payload: never) => void>>();
 
   /** Subscribe to an event. Returns an unsubscribe function. */
   on<K extends keyof T>(event: K, handler: (payload: T[K]) => void): () => void {
-    let set = this.listeners.get(event);
-    if (!set) {
-      set = new Set();
-      this.listeners.set(event, set);
+    let arr = this.listeners.get(event);
+    if (!arr) {
+      arr = [];
+      this.listeners.set(event, arr);
     }
-    set.add(handler as (payload: never) => void);
+    arr.push(handler as (payload: never) => void);
 
     return () => {
-      set!.delete(handler as (payload: never) => void);
-      if (set!.size === 0) {
+      const list = this.listeners.get(event);
+      if (!list) return;
+      const idx = list.indexOf(handler as (payload: never) => void);
+      if (idx !== -1) list.splice(idx, 1);
+      if (list.length === 0) {
         this.listeners.delete(event);
       }
     };
@@ -32,20 +35,21 @@ export class EventBus<T extends Record<string, any>> {
 
   /** Remove a specific handler for an event. */
   off<K extends keyof T>(event: K, handler: (payload: T[K]) => void): void {
-    const set = this.listeners.get(event);
-    if (!set) return;
-    set.delete(handler as (payload: never) => void);
-    if (set.size === 0) {
+    const list = this.listeners.get(event);
+    if (!list) return;
+    const idx = list.indexOf(handler as (payload: never) => void);
+    if (idx !== -1) list.splice(idx, 1);
+    if (list.length === 0) {
       this.listeners.delete(event);
     }
   }
 
   /** Emit an event synchronously to all subscribers. */
-  emit<K extends keyof T>(event: K, payload: T[K]): void {
-    const set = this.listeners.get(event);
-    if (!set) return;
-    for (const handler of set) {
-      (handler as (payload: T[K]) => void)(payload);
+  emit<K extends keyof T>(event: K, payload?: T[K]): void {
+    const list = this.listeners.get(event);
+    if (!list) return;
+    for (const handler of [...list]) {
+      (handler as (payload: T[K]) => void)(payload as T[K]);
     }
   }
 
@@ -56,6 +60,6 @@ export class EventBus<T extends Record<string, any>> {
 
   /** Get the count of listeners for a specific event. */
   listenerCount<K extends keyof T>(event: K): number {
-    return this.listeners.get(event)?.size ?? 0;
+    return this.listeners.get(event)?.length ?? 0;
   }
 }

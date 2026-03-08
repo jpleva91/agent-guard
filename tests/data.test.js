@@ -160,7 +160,7 @@ suite('Data Validation (data/*.json)', () => {
     // Verify that PNG files in sprites/ correspond to actual monsters
     // (Not all monsters have sprites yet — fallback rectangles are used)
     const monsterSprites = new Set(monsters.filter(m => m.sprite).map(m => m.sprite));
-    const spritesDir = new URL('game/sprites/', root);
+    const spritesDir = new URL('dist/game/sprites/', root);
     for (const mon of monsters) {
       if (mon.sprite) {
         const spritePath = new URL(`${mon.sprite}.png`, spritesDir);

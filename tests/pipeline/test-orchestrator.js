@@ -7,9 +7,9 @@ import {
   getAuditViolations,
   getPipelineSummary,
   resetRunCounter,
-} from '../../domain/pipeline/orchestrator.js';
-import { STAGE_STATUS } from '../../domain/pipeline/stages.js';
-import { ROLES } from '../../domain/pipeline/roles.js';
+} from '../../dist/domain/pipeline/orchestrator.js';
+import { STAGE_STATUS } from '../../dist/domain/pipeline/stages.js';
+import { ROLES } from '../../dist/domain/pipeline/roles.js';
 
 const fixedNow = () => 1000;
 

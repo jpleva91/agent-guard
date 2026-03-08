@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { resetEventCounter } from '../domain/events.js';
-import { createEngine, INTERVENTION } from '../agentguard/core/engine.js';
+import { resetEventCounter } from '../dist/domain/events.js';
+import { createEngine, INTERVENTION } from '../dist/agentguard/core/engine.js';
 
 suite('AgentGuard — Runtime Assurance Engine', () => {
   test('engine allows safe action with no policies', () => {

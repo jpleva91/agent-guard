@@ -3,7 +3,10 @@
 // No DOM, no Node.js APIs — pure functions.
 
 import type { ParsedError, ClassifiedBugEvent, Severity } from '../../core/types.js';
+import { ERROR_TO_MONSTER_TYPE } from '../../core/bug-event.js';
 import { simpleHash } from '../hash.js';
+
+export { ERROR_TO_MONSTER_TYPE };
 
 // --- Severity mapping (mirrors core/bug-event.js) ---
 export const SEVERITY = {
@@ -55,10 +58,13 @@ export function resetFrequencies(): void {
  */
 export function classify(
   parsedError: ParsedError,
-  _context?: Record<string, unknown>,
+  context?: { file?: string; line?: number },
 ): ClassifiedBugEvent {
+  const file = context?.file || parsedError.file || null;
+  const line = context?.line || parsedError.line || null;
+
   const id = simpleHash(
-    `${parsedError.type}:${parsedError.message}:${parsedError.file || ''}:${parsedError.line || ''}`,
+    `${parsedError.type}:${parsedError.message}:${file || ''}:${line || ''}`,
   );
 
   const freq = (frequencyMap.get(id) || 0) + 1;
@@ -68,8 +74,8 @@ export function classify(
     id,
     type: parsedError.type,
     message: parsedError.message,
-    file: parsedError.file,
-    line: parsedError.line,
+    file,
+    line,
     severity: TYPE_SEVERITY[parsedError.type] ?? SEVERITY.LOW,
     frequency: freq,
   };

@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { validateBugDexEntry, VALID_TYPES, VALID_RARITIES, BUGDEX_SCHEMA } from '../ecosystem/bugdex-spec.js';
+import { validateBugDexEntry, VALID_TYPES, VALID_RARITIES, BUGDEX_SCHEMA } from '../dist/ecosystem/bugdex-spec.js';
 
 const VALID_ENTRY = {
   id: 'test-bug',

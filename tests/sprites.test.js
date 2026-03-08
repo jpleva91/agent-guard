@@ -22,7 +22,7 @@ if (typeof globalThis.Image === 'undefined') {
   };
 }
 
-const { preloadSprite, getSprite, drawSprite, preloadAll } = await import('../game/sprites/sprites.js');
+const { preloadSprite, getSprite, drawSprite, preloadAll } = await import('../dist/game/sprites/sprites.js');
 
 suite('Sprite loader (game/sprites/sprites.js)', () => {
   test('getSprite returns null for unloaded sprite', () => {

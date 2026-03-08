@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { SourceRegistry } from '../domain/source-registry.js';
-import { EventBus } from '../domain/event-bus.js';
+import { SourceRegistry } from '../dist/domain/source-registry.js';
+import { EventBus } from '../dist/core/event-bus.js';
 
 /** Create a mock source with spied start/stop. */
 function mockSource(name = 'test-source') {

@@ -105,3 +105,56 @@ export function validateBugDexEntry(entry: Record<string, unknown>): {
 
   return { valid: errors.length === 0, errors };
 }
+
+/**
+ * The full BugDex schema definition for documentation/tooling.
+ */
+export const BUGDEX_SCHEMA = {
+  type: 'object',
+  required: [
+    'id',
+    'name',
+    'errorType',
+    'type',
+    'rarity',
+    'hp',
+    'attack',
+    'defense',
+    'speed',
+    'moves',
+    'description',
+  ],
+  properties: {
+    id: { type: ['string', 'number'], description: 'Unique identifier' },
+    name: { type: 'string', description: 'Display name' },
+    errorType: { type: 'string', description: 'JS/runtime error type it represents' },
+    type: { type: 'string', enum: VALID_TYPES, description: 'Game type category' },
+    rarity: { type: 'string', enum: VALID_RARITIES, description: 'Rarity tier' },
+    hp: { type: 'number', minimum: 10, maximum: 100, description: 'Base hit points' },
+    attack: { type: 'number', minimum: 1, maximum: 20, description: 'Attack stat' },
+    defense: { type: 'number', minimum: 1, maximum: 20, description: 'Defense stat' },
+    speed: { type: 'number', minimum: 1, maximum: 15, description: 'Speed stat' },
+    moves: {
+      type: 'array',
+      items: { type: 'string' },
+      minItems: 1,
+      maxItems: 4,
+      description: 'Move IDs',
+    },
+    description: { type: 'string', description: 'What this bug is and when it occurs' },
+    sprite: { type: 'string', description: 'Sprite filename (32x32 PNG, no extension)' },
+    color: {
+      type: 'string',
+      pattern: '^#[0-9a-fA-F]{6}$',
+      description: 'Hex color for fallback rendering',
+    },
+    habitat: { type: 'string', description: 'Where this bug commonly occurs' },
+    weakness: { type: 'string', description: 'What fixes or prevents this bug' },
+    fixTip: { type: 'string', description: 'Practical developer fix advice' },
+    errorPatterns: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'Strings to match in error messages',
+    },
+  },
+} as const;

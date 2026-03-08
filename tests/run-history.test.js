@@ -7,7 +7,7 @@ import {
   deserializeHistory,
   getRecentRuns,
   formatDuration,
-} from '../domain/run-history.js';
+} from '../dist/domain/run-history.js';
 
 suite('Run History (domain/run-history.js)', () => {
   function makeFakeRun(overrides = {}) {

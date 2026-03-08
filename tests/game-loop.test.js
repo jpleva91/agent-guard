@@ -5,8 +5,8 @@ import { test, suite } from './run.js';
 // We test the update/render logic patterns by testing the state machine dispatch
 // and integration between modules that game.js orchestrates.
 
-import { getState, setState, STATES } from '../game/engine/state.js';
-import { eventBus, Events } from '../game/engine/events.js';
+import { getState, setState, STATES } from '../dist/game/engine/state.js';
+import { eventBus, Events } from '../dist/game/engine/events.js';
 
 suite('Game Loop Integration (game/game.js patterns)', () => {
 
