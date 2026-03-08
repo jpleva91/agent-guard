@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-// BugMon CLI — cache bugs by actually hitting bugs
+// AgentGuard CLI — Deterministic runtime guardrails for AI-assisted software systems
+// BugMon Mode — Gamified interface that visualizes system failures as monsters
 
 import { watch } from './commands/adapter.js';
 import { loadBugDex, saveBugDex } from '../ecosystem/storage.js';
@@ -20,62 +21,42 @@ const args = process.argv.slice(2);
 const command = args[0];
 const wantsHelp = args.includes('--help') || args.includes('-h');
 
-// TODO(roadmap): Phase 2 — Add 'bugmon guard' and 'bugmon audit' CLI governance commands
-// TODO(roadmap): Phase 4 — Add 'bugmon replay <run-id>' CLI replay command
+// Detect whether invoked as `bugmon` or `agentguard`
+const binName = process.argv[1]?.endsWith('bugmon') ? 'bugmon' : 'agentguard';
+
+// TODO(roadmap): Phase 2 — Add 'agentguard guard' and 'agentguard audit' CLI governance commands
+// TODO(roadmap): Phase 4 — Add 'agentguard replay <run-id>' CLI replay command
 // TODO(roadmap): Phase 8 — Editor integrations (VS Code extension, JetBrains plugin, Claude Code deep integration)
 // TODO(roadmap): TS Migration — Integrate TS CLI as primary CLI entry point
 
 const COMMANDS: Record<string, CommandHelp> = {
+  // === AgentGuard Core Commands ===
   watch: {
-    name: 'bugmon watch',
-    description: 'Wrap a command and catch BugMon from errors',
-    usage: 'bugmon watch [flags] -- <command> [args...]',
+    name: `${binName} watch`,
+    description: 'Wrap a command and monitor for errors and policy violations',
+    usage: `${binName} watch [flags] -- <command> [args...]`,
     flags: [
       { flag: '--cache, -c', description: 'Interactive mode — battle and cache BugMon' },
       { flag: '--open, -o', description: 'Open the browser game on encounter' },
       { flag: '--walk, -w', description: 'Auto-walk syncs movement to browser game' },
     ],
     examples: [
-      'bugmon watch -- npm test',
-      'bugmon watch --cache -- npm run dev',
-      'bugmon watch -c -w -- node server.js',
+      `${binName} watch -- npm test`,
+      `${binName} watch --cache -- npm run dev`,
+      `${binName} watch -c -w -- node server.js`,
     ],
-  },
-  demo: {
-    name: 'bugmon demo',
-    description: 'Run a demo BugMon encounter',
-    usage: 'bugmon demo [scenario]',
-    flags: [],
-    examples: ['bugmon demo', 'bugmon demo null-error', 'bugmon demo syntax-error'],
-  },
-  init: {
-    name: 'bugmon init',
-    description: 'Install git hooks for evolution tracking',
-    usage: 'bugmon init [flags]',
-    flags: [{ flag: '--force, -f', description: 'Overwrite existing hooks' }],
-    examples: ['bugmon init', 'bugmon init --force'],
-  },
-  resolve: {
-    name: 'bugmon resolve',
-    description: 'Mark encounters as resolved and earn XP',
-    usage: 'bugmon resolve [flags]',
-    flags: [
-      { flag: '--last', description: 'Resolve the most recent encounter (default)' },
-      { flag: '--all', description: 'Resolve all unresolved encounters' },
-    ],
-    examples: ['bugmon resolve', 'bugmon resolve --all'],
   },
   scan: {
-    name: 'bugmon scan',
+    name: `${binName} scan`,
     description: 'Scan files for bugs using linters/compilers',
-    usage: 'bugmon scan [path]',
+    usage: `${binName} scan [path]`,
     flags: [],
-    examples: ['bugmon scan', 'bugmon scan ./src'],
+    examples: [`${binName} scan`, `${binName} scan ./src`],
   },
   replay: {
-    name: 'bugmon replay',
+    name: `${binName} replay`,
     description: 'Replay a debugging session timeline (flight recorder)',
-    usage: 'bugmon replay [session-id] [flags]',
+    usage: `${binName} replay [session-id] [flags]`,
     flags: [
       { flag: '--last, -l', description: 'Replay the most recent session' },
       { flag: '--step, -s', description: 'Step through events one at a time' },
@@ -83,18 +64,41 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--filter <kind>', description: 'Filter events by kind (e.g. ErrorObserved)' },
     ],
     examples: [
-      'bugmon replay',
-      'bugmon replay --last',
-      'bugmon replay 1709913600-a3f2',
-      'bugmon replay --last --step',
+      `${binName} replay`,
+      `${binName} replay --last`,
+      `${binName} replay 1709913600-a3f2`,
+      `${binName} replay --last --step`,
     ],
   },
+  init: {
+    name: `${binName} init`,
+    description: 'Install git hooks for evolution tracking',
+    usage: `${binName} init [flags]`,
+    flags: [{ flag: '--force, -f', description: 'Overwrite existing hooks' }],
+    examples: [`${binName} init`, `${binName} init --force`],
+  },
   sync: {
-    name: 'bugmon sync',
+    name: `${binName} sync`,
     description: 'Start WebSocket sync server (bridges CLI and browser game)',
-    usage: 'bugmon sync',
+    usage: `${binName} sync`,
     flags: [],
-    examples: ['bugmon sync'],
+    examples: [`${binName} sync`],
+  },
+
+  // === BugMon Mode Commands ===
+  play: {
+    name: `${binName} play`,
+    description: 'Launch BugMon mode — gamified debugging interface',
+    usage: `${binName} play [scenario]`,
+    flags: [],
+    examples: [`${binName} play`, `${binName} play null-error`, `${binName} play syntax-error`],
+  },
+  demo: {
+    name: `${binName} demo`,
+    description: 'Run a demo BugMon encounter',
+    usage: `${binName} demo [scenario]`,
+    flags: [],
+    examples: [`${binName} demo`, `${binName} demo null-error`, `${binName} demo syntax-error`],
   },
 };
 
@@ -211,7 +215,7 @@ async function main() {
       try {
         const { port, stop } = await startSyncServer();
         console.log('');
-        console.log('  \x1b[1m\x1b[32m⚡ BugMon Sync Server\x1b[0m');
+        console.log('  \x1b[1m\x1b[32m⚡ AgentGuard Sync Server\x1b[0m');
         console.log(`  Listening on \x1b[36mws://localhost:${port}\x1b[0m`);
         console.log('');
         console.log('  Open the BugMon browser game — it will auto-connect.');
@@ -251,6 +255,30 @@ async function main() {
       break;
     }
 
+    // BugMon Mode — `agentguard play` launches the gamified interface
+    case 'play': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.play));
+        break;
+      }
+      // `play` is an alias for `demo` — launches BugMon mode
+      const scenario = args[1];
+      const { demo } = await import('./commands/demo-runner.js');
+      await demo(scenario);
+      break;
+    }
+
+    case 'demo': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.demo));
+        break;
+      }
+      const scenario = args[1];
+      const { demo } = await import('./commands/demo-runner.js');
+      await demo(scenario);
+      break;
+    }
+
     case 'claude-init': {
       const { claudeInit } = await import('./commands/claude-init.js');
       await claudeInit(args.slice(1));
@@ -272,7 +300,7 @@ async function main() {
       const pkg = JSON.parse(
         readFileSync(join(__dir, '..', '..', 'package.json'), 'utf8'),
       ) as { version: string };
-      console.log(`bugmon v${pkg.version}`);
+      console.log(`agentguard v${pkg.version}`);
       break;
     }
 
@@ -291,38 +319,39 @@ async function main() {
 
 function printHelp(): void {
   console.log(`
-  \x1b[1mBugMon\x1b[0m — Cache bugs by hitting bugs
+  \x1b[1mAgentGuard\x1b[0m — Deterministic runtime guardrails for AI-assisted software systems
 
-  \x1b[1mPlay:\x1b[0m
-    bugmon watch -- <command>             Wrap a command (passive mode)
-    bugmon watch --cache -- <command>     Interactive: battle & cache BugMon!
-    bugmon demo [scenario]               Try a demo encounter instantly
+  \x1b[1mGuard:\x1b[0m
+    ${binName} watch -- <command>             Monitor a command for errors and violations
+    ${binName} watch --cache -- <command>     Interactive: battle & cache BugMon!
+    ${binName} scan [path]                    Scan files for bugs (eslint/tsc)
+    ${binName} replay                         Replay a debugging session
 
-  \x1b[1mProgress:\x1b[0m
-    bugmon resolve                       Mark last encounter as resolved (+XP)
-    bugmon resolve --all                 Resolve all unresolved encounters
-    bugmon heal                          Restore your party to full HP
-    bugmon party                         View your BugMon party
-    bugmon dex                           View your BugDex
-    bugmon stats                         View your bug hunter stats
+  \x1b[1mBugMon Mode:\x1b[0m
+    ${binName} play [scenario]               Launch BugMon — gamified debugging
+    ${binName} demo [scenario]               Run a demo encounter
+    ${binName} party                         View your BugMon party
+    ${binName} dex                           View your Bug Grimoire
+    ${binName} heal                          Restore your party to full HP
+    ${binName} stats                         View your bug hunter stats
 
   \x1b[1mReplay:\x1b[0m
-    bugmon replay                        List recorded sessions
-    bugmon replay --last                 Replay most recent session
-    bugmon replay <session-id> --step    Step through events interactively
+    ${binName} replay                        List recorded sessions
+    ${binName} replay --last                 Replay most recent session
+    ${binName} replay <session-id> --step    Step through events interactively
 
   \x1b[1mTools:\x1b[0m
-    bugmon init                          Install git hooks for evolution tracking
-    bugmon scan [path]                   Scan files for bugs (eslint/tsc)
-    bugmon sync                          Start sync server (CLI ↔ browser)
-    bugmon claude-init                   Set up Claude Code integration
-    bugmon help                          Show this help
+    ${binName} init                          Install git hooks for evolution tracking
+    ${binName} resolve                       Mark encounters as resolved (+XP)
+    ${binName} sync                          Start sync server (CLI <-> browser)
+    ${binName} claude-init                   Set up Claude Code integration
+    ${binName} help                          Show this help
 `);
 }
 
 function printUsage(error: string): void {
   console.error(`  Error: ${error}`);
-  console.error('  Run "bugmon help" for usage info.');
+  console.error(`  Run "${binName} help" for usage info.`);
 }
 
 main();

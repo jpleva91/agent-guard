@@ -1,9 +1,10 @@
 {
-  "name": "bugmon",
+  "name": "agentguard",
   "version": "1.0.0",
-  "description": "Deterministic governance runtime and roguelike developer telemetry game — errors become enemies, fixes are victories",
+  "description": "Deterministic runtime guardrails for AI-assisted software systems. BugMon mode visualizes failures as monsters you battle.",
   "type": "module",
   "bin": {
+    "agentguard": "./dist/cli/bin.js",
     "bugmon": "./dist/cli/bin.js"
   },
   "files": [
@@ -44,6 +45,7 @@
     "budget": "node scripts/build.js --no-sprites",
     "serve": "node scripts/dev-server.js",
     "dev": "node dist/cli/bin.js",
+    "agentguard": "node dist/cli/bin.js",
     "dev:legacy": "node dist/cli/bin.js",
     "prepublishOnly": "npm run build:ts",
     "build:ts": "tsc && tsx esbuild.config.ts",
@@ -52,10 +54,12 @@
     "ts:test:watch": "vitest"
   },
   "keywords": [
-    "bugmon",
     "agentguard",
+    "bugmon",
+    "ai-governance",
+    "runtime-guardrails",
+    "agent-safety",
     "roguelike",
-    "governance",
     "developer-tools",
     "debugging",
     "telemetry",

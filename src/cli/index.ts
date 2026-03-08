@@ -1,8 +1,8 @@
 /**
- * BugMon CLI — Entry point.
+ * AgentGuard CLI — Commander-based entry point.
  *
  * Uses commander for subcommand routing.
- * Available commands: watch, status, demo.
+ * Available commands: watch, status, demo, play.
  */
 
 import { Command } from 'commander';
@@ -14,8 +14,8 @@ import { BugRegistry } from '../core/bug-registry.js';
 const program = new Command();
 
 program
-  .name('bugmon')
-  .description('BugMon — Bug detection turned into roguelike encounters')
+  .name('agentguard')
+  .description('AgentGuard — Deterministic runtime guardrails for AI-assisted software systems')
   .version('0.1.0');
 
 const registry = new BugRegistry();

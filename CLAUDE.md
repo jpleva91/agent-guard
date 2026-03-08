@@ -2,12 +2,12 @@
 
 ## Project Overview
 
-AgentGuard + BugMon is a unified platform consisting of two layers:
+**AgentGuard** is a deterministic runtime guardrails platform for AI-assisted software systems. It uses a dual-layer naming strategy:
 
-- **AgentGuard** — Deterministic governance runtime for AI coding agents. Evaluates agent actions against declared policies and invariants. Produces canonical events when violations occur.
-- **BugMon** — Roguelike developer telemetry game. Consumes canonical events (developer errors, CI failures, governance violations) and renders them as interactive encounters. Coding sessions are dungeon runs. Bugs are enemies. CI failures are bosses.
+- **AgentGuard** (platform layer) — The serious infrastructure. Deterministic governance runtime for AI coding agents. Evaluates agent actions against declared policies and invariants. Produces canonical events when violations occur.
+- **BugMon** (UX layer) — The gamified interface. Consumes canonical events (developer errors, CI failures, governance violations) and renders them as interactive roguelike encounters. Coding sessions are dungeon runs. Bugs are enemies. CI failures are bosses. BugMon is a *mode* within AgentGuard, not the platform itself.
 
-The system has one architectural spine: the **canonical event model**. All system activity becomes events. AgentGuard produces governance events. BugMon consumes all events as gameplay.
+The system has one architectural spine: the **canonical event model**. All system activity becomes events. AgentGuard produces governance events. BugMon mode consumes all events as gameplay.
 
 **Key characteristics:**
 - Hybrid idle/active roguelike — minor enemies auto-resolve, bosses demand engagement
@@ -41,7 +41,7 @@ BugMon/
 ├── package.json            # Node.js config for scripts
 │
 ├── src/                    # TypeScript source (single source of truth)
-│   ├── cli/                # Commander-based CLI (bugmon command)
+│   ├── cli/                # Commander-based CLI (agentguard command)
 │   │   ├── bin.ts          # CLI entry point
 │   │   ├── index.ts        # CLI exports
 │   │   └── commands/       # CLI subcommands (watch, scan, demo, etc.)
@@ -166,7 +166,7 @@ npm run format           # Check formatting (Prettier)
 npm run format:fix       # Fix formatting (Prettier)
 npm run test:coverage    # Run tests with coverage (c8, 50% line threshold)
 
-# Run CLI companion tool
+# Run AgentGuard CLI
 npm run dev
 
 # TypeScript build (required before running JS tests or serving)
@@ -178,10 +178,13 @@ npm run ts:test:watch      # Run TypeScript tests in watch mode
 
 ## Architecture & Key Patterns
 
-### Unified System Model
-The system has one architectural spine: the canonical event model.
-- **AgentGuard** (governance runtime) produces events from policy violations
-- **BugMon** (roguelike game) consumes events as encounters
+### Dual-Layer Naming
+The platform uses a dual-layer naming strategy:
+- **AgentGuard** (platform) — serious infrastructure name for governance, policies, events
+- **BugMon** (mode) — fun viral UX layer for the gamified debugging interface
+- CLI binary is `agentguard` (with `bugmon` as backward-compatible alias)
+- `agentguard watch`, `agentguard scan`, `agentguard guard` = infrastructure commands
+- `agentguard play`, `agentguard demo` = BugMon mode commands
 - See `docs/unified-architecture.md` for the full integration model
 
 ### Layered Architecture
