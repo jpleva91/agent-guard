@@ -4,13 +4,11 @@
   "description": "A Pokémon-style browser RPG themed around software bugs",
   "type": "module",
   "bin": {
-    "bugmon": "./core/cli/bin.js"
+    "bugmon": "./dist/cli/bin.js"
   },
   "files": [
-    "core/",
-    "domain/",
-    "ecosystem/",
-    "agentguard/",
+    "dist/",
+    "ecosystem/data/",
     "hooks/",
     "LICENSE",
     "README.md"
@@ -45,7 +43,9 @@
     "build:debug": "node scripts/build.js --sourcemap",
     "budget": "node scripts/build.js --no-sprites",
     "serve": "node scripts/dev-server.js",
-    "dev": "node core/cli/bin.js",
+    "dev": "node dist/cli/bin.js",
+    "dev:legacy": "node core/cli/bin.js",
+    "prepublishOnly": "npm run build:ts",
     "build:ts": "tsc --noEmit && tsx esbuild.config.ts",
     "ts:check": "tsc --noEmit",
     "ts:test": "vitest run",

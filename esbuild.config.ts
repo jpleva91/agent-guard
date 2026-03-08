@@ -1,4 +1,9 @@
 import * as esbuild from 'esbuild';
+import { cpSync, existsSync, mkdirSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const shared: esbuild.BuildOptions = {
   bundle: true,
@@ -83,5 +88,13 @@ await esbuild.build({
   outdir: 'dist/game',
   packages: undefined,
 });
+
+// Copy sprites to dist/game/sprites/ for browser serving
+const srcSprites = join(__dirname, 'game', 'sprites');
+const destSprites = join(__dirname, 'dist', 'game', 'sprites');
+if (existsSync(srcSprites)) {
+  mkdirSync(destSprites, { recursive: true });
+  cpSync(srcSprites, destSprites, { recursive: true, filter: (src) => !src.endsWith('.js') && !src.endsWith('.md') });
+}
 
 console.log('Build complete.');
