@@ -78,6 +78,17 @@ async function main() {
   await import('./catch.test.js');
   await import('./integration.test.js');
 
+  // Domain layer tests
+  await import('./fingerprint.test.js');
+  await import('./classifier.test.js');
+  await import('./ingestion-parser.test.js');
+  await import('./species-mapper.test.js');
+  await import('./pipeline.test.js');
+  await import('./domain-battle.test.js');
+  await import('./domain-encounters.test.js');
+  await import('./domain-event-bus.test.js');
+  await import('./domain-evolution.test.js');
+
   console.log('\n' + '='.repeat(40));
   if (totalFailed === 0) {
     console.log(`${GREEN}${BOLD}All ${totalPassed} tests passed${RESET}`);

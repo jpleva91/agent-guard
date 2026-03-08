@@ -25,8 +25,24 @@ suite('Matcher (core/matcher.js)', () => {
       rawLines: ["TypeError: Cannot read properties of null (reading 'x')"],
     });
     assert.ok(result.monster, 'should return a monster');
+    assert.strictEqual(typeof result.monster.name, 'string');
+    assert.strictEqual(typeof result.monster.type, 'string');
     assert.ok(typeof result.confidence === 'number');
     assert.ok(result.confidence >= 0 && result.confidence <= 1);
+  });
+
+  test('matchMonster returns monster with all required fields', () => {
+    const result = matchMonster({
+      type: 'null-reference',
+      message: "Cannot read properties of null",
+      rawLines: ["TypeError: Cannot read properties of null"],
+    });
+    const mon = result.monster;
+    assert.ok(typeof mon.id === 'number', 'monster should have numeric id');
+    assert.ok(typeof mon.hp === 'number', 'monster should have hp');
+    assert.ok(typeof mon.attack === 'number', 'monster should have attack');
+    assert.ok(typeof mon.defense === 'number', 'monster should have defense');
+    assert.ok(Array.isArray(mon.moves), 'monster should have moves array');
   });
 
   test('matchMonster always returns something (never null)', () => {
