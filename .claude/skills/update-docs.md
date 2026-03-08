@@ -5,20 +5,20 @@ Synchronize all project documentation to reflect the current state of the codeba
 ## Source of Truth Files
 
 Read these files first to determine current state:
-- `data/monsters.json` — all BugMon (count, names, types, rarity, fields)
-- `data/moves.json` — all moves (count, names, types, power)
-- `data/types.json` — valid types list and effectiveness chart
-- `data/evolutions.json` — evolution chains with stages and triggers
-- `data/map.json` — map dimensions
+- `ecosystem/data/monsters.json` — all BugMon (count, names, types, rarity, fields)
+- `ecosystem/data/moves.json` — all moves (count, names, types, power)
+- `ecosystem/data/types.json` — valid types list and effectiveness chart
+- `ecosystem/data/evolutions.json` — evolution chains with stages and triggers
+- `ecosystem/data/map.json` — map dimensions
 - `package.json` — version, scripts
 
 Also scan these source directories for new/removed files:
-- `engine/`, `battle/`, `world/`, `audio/`, `sprites/`, `evolution/`, `cli/`, `scripts/`, `simulation/`, `hooks/`, `.github/`
+- `core/cli/`, `game/engine/`, `game/battle/`, `game/world/`, `game/audio/`, `game/sprites/`, `game/evolution/`, `game/sync/`, `domain/`, `domain/ingestion/`, `simulation/`, `scripts/`, `hooks/`, `.github/`
 
 ## Documentation Files to Update
 
 ### README.md
-- Update BugMon count (e.g., "30 BugMon across 7 types")
+- Update BugMon count (e.g., "31 BugMon across 7 types")
 - Update move count
 - Update type list if types changed
 - Verify the project structure tree matches actual directories

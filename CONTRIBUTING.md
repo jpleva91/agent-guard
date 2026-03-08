@@ -33,7 +33,7 @@ No dependencies. No build step. That's it.
 
 ```json
 {
-  "id": 21,
+  "id": 32,
   "name": "YourBugName",
   "type": "frontend",
   "hp": 30,
@@ -58,7 +58,7 @@ No dependencies. No build step. That's it.
 | `attack` | number | Attack power. Range: 3-10. |
 | `defense` | number | Defense. Range: 2-8. |
 | `speed` | number | Turn priority. Range: 1-10. |
-| `moves` | string[] | Array of 2 move IDs from `data/moves.json`. |
+| `moves` | string[] | Array of 2-3 move IDs from `data/moves.json`. |
 | `color` | string | Hex color for the fallback sprite. |
 | `sprite` | string | Lowercase filename (without `.png`). |
 | `description` | string | Art prompt for sprite generation. |

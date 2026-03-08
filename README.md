@@ -26,14 +26,10 @@ npx bugmon watch -- npm run dev
 Every error spawns a monster. Fix the bug, defeat the monster. Your real coding activity (commits, PRs merged, bugs fixed) drives their evolution.
 
 <p align="center">
-  <img src="sprites/nullpointer.png" width="64" alt="NullPointer">
-  <img src="sprites/racecondition.png" width="64" alt="RaceCondition">
-  <img src="sprites/memoryleak.png" width="64" alt="MemoryLeak">
-  <img src="sprites/deadlock.png" width="64" alt="Deadlock">
-  <img src="sprites/offbyone.png" width="64" alt="OffByOne">
-  <img src="sprites/mergeconflict.png" width="64" alt="MergeConflict">
-  <img src="sprites/callbackhell.png" width="64" alt="CallbackHell">
-  <img src="sprites/heisenbug.png" width="64" alt="Heisenbug">
+  <img src="game/sprites/nullpointer.png" width="64" alt="NullPointer">
+  <img src="game/sprites/racecondition.png" width="64" alt="RaceCondition">
+  <img src="game/sprites/memoryleak.png" width="64" alt="MemoryLeak">
+  <img src="game/sprites/deadlock.png" width="64" alt="Deadlock">
 </p>
 
 ### Claude Code integration
@@ -94,7 +90,7 @@ BugMon is data-driven. Add a new monster by editing a single JSON file — no co
 
 ```json
 {
-  "id": 31,
+  "id": 32,
   "name": "YourBugName",
   "type": "frontend",
   "hp": 30, "attack": 7, "defense": 5, "speed": 6,
@@ -108,7 +104,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## Features
 
-- **30 BugMon** across 7 types with 7 evolution chains (10 evolved forms)
+- **31 BugMon** across 7 types with 7 evolution chains (10 evolved forms)
 - **CLI encounter engine** — wraps your dev commands, classifies real errors, spawns matching BugMon
 - **Dev-activity evolution** — your commits, PRs, and bug fixes trigger monster evolutions via git hooks
 - **Browser ↔ CLI sync** — cache BugMon in your terminal, see them in the browser game instantly
@@ -188,7 +184,8 @@ BugMon/
 │   ├── data/            # JSON + JS modules (monsters, moves, types, evolutions, map)
 │   ├── bugdex.js        # BugDex collection system
 │   └── bosses.js        # Boss definitions
-├── tests/               # Test suite (battle, damage, data, build, simulation)
+├── domain/              # Pure domain logic (battle, encounters, evolution, ingestion)
+├── tests/               # Test suite (52 test files)
 ├── scripts/             # Build tooling (single-file builder, data sync)
 └── simulation/          # Headless battle simulation (strategies, RNG, reports)
 ```

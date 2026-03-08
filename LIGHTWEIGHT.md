@@ -2,7 +2,7 @@
 
 **How small can a game be?**
 
-BugMon is a complete monster-taming RPG — 30 creatures, 69 moves, 7 types, evolution chains, turn-based battles, tile-based exploration, synthesized audio, mobile touch controls — and the whole thing fits in a single HTML file.
+BugMon is a complete monster-taming RPG — 31 creatures, 72 moves, 7 types, evolution chains, turn-based battles, tile-based exploration, synthesized audio, mobile touch controls — and the whole thing fits in a single HTML file.
 
 No npm. No webpack. No React. No Babel. No transpiler. No bundler. No framework. No polyfills. No node_modules.
 
@@ -45,7 +45,7 @@ Build it yourself: `node scripts/build.js`
 | Average website hero image | ~200-500 KB |
 | `create-react-app` node_modules | ~300,000 KB |
 
-BugMon has 30 monsters, 69 moves, 7 types, evolution chains, procedural terrain, synthesized audio, a full battle system, and mobile controls. Still smaller than jQuery.
+BugMon has 31 monsters, 72 moves, 7 types, evolution chains, procedural terrain, synthesized audio, a full battle system, and mobile controls. Still smaller than jQuery.
 
 `node_modules` for dev tooling: esbuild + terser only. Zero runtime dependencies.
 

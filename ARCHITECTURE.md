@@ -13,7 +13,7 @@ Also deployable to GitHub Pages — see `.github/workflows/deploy.yml`.
 
 ## Project Structure
 
-The codebase follows a **layered architecture** with three top-level directories separating concerns:
+The codebase follows a **layered architecture** with four top-level directories separating concerns:
 
 ```
 BugMon/
@@ -29,13 +29,22 @@ BugMon/
 │   └── cli/                CLI tool (bugmon command)
 │       ├── bin.js           Entry point (bugmon command)
 │       ├── adapter.js       CLI watch adapter
+│       ├── args.js          Lightweight CLI argument parser (zero deps)
+│       ├── auto-walk.js     Auto-walk feature
+│       ├── boss-battle.js   Boss battle interactive encounter
 │       ├── catch.js         Catch/cache mechanic
-│       ├── contribute.js    Contribution helper
+│       ├── claude-hook.js   Claude Code PostToolUse hook (error encounters)
+│       ├── claude-init.js   Claude Code integration setup
+│       ├── colors.js        Shared ANSI color constants
+│       ├── contribute.js    Contribution prompt
+│       ├── demo.js          Demo encounter launcher
 │       ├── encounter.js     CLI encounter logic
+│       ├── init.js          Git hooks installer for evolution tracking
 │       ├── renderer.js      Terminal renderer (ANSI)
-│       ├── auto-walk.js     Auto-walk mode
+│       ├── resolve.js       Bug resolve/XP mechanic
+│       ├── scan.js          Error scanning feature
 │       ├── sync-server.js   WebSocket sync server (zero deps)
-│       └── bugmon-legacy.js Legacy CLI entry
+│       └── bugmon-legacy.js Legacy CLI version
 │
 ├── game/                   Browser game (client-side)
 │   ├── game.js             Game loop, data loading, orchestration
@@ -85,14 +94,30 @@ BugMon/
 │   ├── bugdex.js           BugDex collection system
 │   ├── bugdex-spec.js      BugDex specification
 │   ├── bosses.js           Boss encounter definitions
-│   └── storage.js          Shared storage utilities
+│   ├── storage.js          Shared storage utilities
+│   └── sync-protocol.js    Shared WebSocket sync protocol constants
 │
-├── tests/                  Test suite
+├── domain/                 Pure domain logic (no DOM, no Node.js-specific APIs)
+│   ├── battle.js           Pure battle engine (deterministic with injected RNG)
+│   ├── encounters.js       Pure encounter logic (rarity weights, trigger checks)
+│   ├── event-bus.js        Universal EventBus (works in Node.js and browser)
+│   ├── events.js           Canonical domain event definitions
+│   ├── evolution.js        Pure evolution engine (no localStorage)
+│   └── ingestion/          Error ingestion pipeline
+│       ├── pipeline.js     Orchestrates: parse → fingerprint → classify → map
+│       ├── parser.js       Error message and stack trace parsing
+│       ├── fingerprint.js  Error deduplication via stable fingerprinting
+│       ├── classifier.js   Parsed error → BugEvent classification
+│       └── species-mapper.js BugEvent → BugMon species mapping
+│
+├── tests/                  Test suite (52 test files)
 │   ├── run.js              Test runner
-│   └── *.test.js           Tests (battle, damage, data, build, simulation, strategies, rng, report)
+│   └── *.test.js           Tests covering all modules (battle, damage, data, encounters,
+│                           evolution, ingestion pipeline, CLI, game loop, and more)
 │
 ├── scripts/                Build tooling
 │   ├── build.js            Single-file builder (esbuild + terser → dist/index.html)
+│   ├── dev-server.js       Zero-dependency dev server with live reload
 │   ├── sync-data.js        JSON → JS module converter
 │   └── prune-merged-branches.sh  Git branch cleanup
 │
@@ -122,7 +147,10 @@ BugMon/
     │   ├── validate-bugmon.yml Validates community BugMon submissions
     │   ├── approve-bugmon.yml  Auto-adds approved BugMon to game data
     │   ├── validate.yml        General data validation
-    │   └── size-check.yml      Bundle size check (enforces byte budget)
+    │   ├── size-check.yml      Bundle size check (enforces byte budget)
+    │   ├── codeql.yml          CodeQL security scanning
+    │   ├── publish.yml         npm package publishing
+    │   └── release.yml         Release automation
     ├── scripts/
     │   ├── validate-submission.cjs  Parses + validates issue form data
     │   ├── battle-preview.cjs       Generates battle preview for submissions
@@ -137,7 +165,7 @@ BugMon/
 
 ## Layered Architecture
 
-The codebase is organized into three layers:
+The codebase is organized into four layers:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -162,6 +190,16 @@ The codebase is organized into three layers:
 │                                                         │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
+│  domain/                   Pure domain logic (no deps)   │
+│  ├── battle.js             Pure battle engine            │
+│  ├── encounters.js         Encounter logic               │
+│  ├── evolution.js          Evolution engine               │
+│  ├── event-bus.js          Universal EventBus            │
+│  ├── events.js             Domain event definitions      │
+│  └── ingestion/*           Error ingestion pipeline      │
+│                                                         │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
 │  ecosystem/                Game content & metagame        │
 │  ├── data/*.json           Source data (monsters, moves)  │
 │  ├── data/*.js             Inlined JS modules            │
@@ -174,6 +212,7 @@ The codebase is organized into three layers:
 **Key separation:**
 - **core/** — Node.js code for the CLI companion tool. Parses errors, matches them to BugMon, renders to terminal. Runs in Node.js only.
 - **game/** — Browser game code. Engine, battle, world, evolution, audio, sprites. Runs in the browser only.
+- **domain/** — Pure domain logic with no DOM or Node.js-specific APIs. Battle engine, encounter logic, evolution engine, event bus, and error ingestion pipeline. All functions are pure and deterministic (when RNG is injected). Consumed by both core/ and game/.
 - **ecosystem/** — Shared game content (JSON data, BugDex, bosses). Consumed by both core/ and game/.
 
 ## Module Dependency Graph
@@ -433,12 +472,12 @@ Size budget enforcement is defined in `size-budget.json` with per-subsystem targ
 ## Testing
 
 ```bash
-npm test               # Run all tests (8 test files)
+npm test               # Run all tests (52 test files)
 npm run simulate       # Random battle matchup
 npm run simulate -- --all --runs 100   # Full roster balance analysis
 ```
 
-Test suite covers: battle logic, damage formula, data integrity, build output, simulation, strategies, RNG, reporting.
+Test suite covers: auto-walk, battle-core, battle logic, battleEngine, bosses, bug events, bugdex, bugdex-spec, build output, catch, classifier, damage formula, data integrity, domain battle, domain encounters, domain event-bus, domain evolution, encounters, error-parser, events, evolution, evolution-animation, fingerprint, game-damage, game-loop, headless-battle, ingestion-parser, input, integration, map, matcher, monsterGen, pipeline, player, renderer, reporting, RNG, save, simulator, sound, species-mapper, sprites, stacktrace-parser, state, storage, strategies, sync-client, sync-protocol, tiles, title, tracker, transition.
 
 ## Architectural Invariants
 

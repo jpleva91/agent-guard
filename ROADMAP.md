@@ -82,7 +82,7 @@ Every feature must fit within the byte budget. Run `npm run budget` to check.
 
 | Metric | Target | Hard Cap |
 |--------|-------:|--------:|
-| Bundle (gzipped, no sprites) | 10 KB | 16 KB |
+| Bundle (gzipped, no sprites) | 10 KB | 17 KB |
 | Bundle (gzipped, with sprites) | ~19 KB | 32 KB |
 
 See `size-budget.json` for per-subsystem budgets and `CONSTRAINTS.md` for design rules.
@@ -148,7 +148,7 @@ V1 ──> V1.1 ──> V2 ──> V2.5 ──> V2.9 ──> V2.95 ──> V3 �
 - [x] 7x7 type effectiveness chart (super effective 1.5x / not very effective 0.5x)
 - [x] Types assigned to all BugMon and moves
 - [x] 20 base BugMon across all 7 types (including 2 legendaries)
-- [x] 69 moves across all 7 types
+- [x] 72 moves across all 7 types
 - [x] Rarity system: common, uncommon, legendary, evolved
 - [x] Rarity-weighted encounter tables
 
@@ -211,7 +211,7 @@ This was originally V5 but was built ahead of schedule due to being the game's u
 
 - [x] Save/load via localStorage — `[L]` *(done in V2.9)*
 - [x] BugDex / collection tracker — `[M]` *(done in V2.9)*
-- [x] Test suite (`npm test`) — `[M]` *(8 test files covering battle, damage, data, build, simulation, strategies, RNG, reporting)*
+- [x] Test suite (`npm test`) — `[M]` *(52 test files covering all modules)*
 - [x] Build system with size budget enforcement (`npm run build`, `npm run budget`) — `[M]`
 - [x] CI workflows for data validation and size checks — `[S]`
 - [x] Layered architecture restructure (`core/`, `game/`, `ecosystem/`) — `[L]`
@@ -222,7 +222,7 @@ This was originally V5 but was built ahead of schedule due to being the game's u
 - [ ] Settings menu (volume slider, text speed) — `[M]` *Should-have*
 - [ ] Smooth tile-to-tile movement animation (lerp between tiles) — `[M]` *Should-have*
 - [ ] PP system for moves (limited uses, restored at healing stations) — `[M]` *Should-have*
-- [ ] More sprite art — only 4/30 BugMon have PNG sprites, rest use fallback — `[L]` *Should-have*
+- [ ] More sprite art — only 4/31 BugMon have PNG sprites, rest use fallback — `[L]` *Should-have*
 
 ## V4 — Status Effects & Battle Depth
 
@@ -428,9 +428,9 @@ The frontier. BugMon evolves from a game into a genuinely novel developer tool �
 
 ---
 
-## Current Roster (30 BugMon)
+## Current Roster (31 BugMon)
 
-### Base Forms (20)
+### Base Forms (21)
 
 | # | Name | Type | Rarity | Evolves To |
 |---|------|------|--------|------------|
@@ -454,6 +454,7 @@ The frontier. BugMon evolves from a game into a genuinely novel developer tool �
 | 18 | HalluciBot | ai | common | — |
 | 19 | TheSingularity | ai | legendary | — |
 | 20 | TheLegacySystem | architecture | legendary | — |
+| 31 | TodoComment | testing | common | — |
 
 ### Evolved Forms (10)
 
@@ -482,7 +483,6 @@ The frontier. BugMon evolves from a game into a genuinely novel developer tool �
 | KernelPanic | backend | The nuclear option |
 | DarkPattern | frontend | Manipulative, tricks opponents |
 | TabsVsSpaces | architecture | The eternal debate — dual-type? |
-| TodoComment | testing | "I'll fix this later" — never does |
 | LeftPadCollapse | devops | One small removal breaks everything |
 | CopilotShadow | ai | Writes code that almost works |
 

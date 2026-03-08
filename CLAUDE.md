@@ -93,7 +93,7 @@ BugMon/
 │   ├── data/               # Game content (JSON source + JS modules)
 │   │   ├── monsters.json   # 31 BugMon definitions (stats, moves, types, evolutions)
 │   │   ├── monsters.js     # Inlined JS module (imported by game)
-│   │   ├── moves.json      # 71 move definitions
+│   │   ├── moves.json      # 72 move definitions
 │   │   ├── moves.js        # Inlined JS module
 │   │   ├── types.json      # 7 types + effectiveness chart
 │   │   ├── types.js        # Inlined JS module
@@ -136,13 +136,15 @@ BugMon/
 │   ├── stack-overflow.js
 │   └── syntax-error.js
 │
-├── tests/                  # Test suite (43 test files)
+├── tests/                  # Test suite (52 test files)
 │   ├── run.js              # Test runner
 │   └── *.test.js           # Tests (auto-walk, battle-core, battle, battleEngine, bosses, bug-event,
-│                           #   bugdex, bugdex-spec, build, catch, damage, data, encounters,
-│                           #   error-parser, events, evolution, evolution-animation, game-damage,
-│                           #   game-loop, headless-battle, input, integration, map, matcher,
-│                           #   monsterGen, player, renderer, report, rng, save, simulator, sound,
+│                           #   bugdex, bugdex-spec, build, catch, classifier, damage, data,
+│                           #   domain-battle, domain-encounters, domain-event-bus, domain-evolution,
+│                           #   encounters, error-parser, events, evolution, evolution-animation,
+│                           #   fingerprint, game-damage, game-loop, headless-battle, ingestion-parser,
+│                           #   input, integration, map, matcher, monsterGen, pipeline, player,
+│                           #   renderer, report, rng, save, simulator, sound, species-mapper,
 │                           #   sprites, stacktrace-parser, state, storage, strategies, sync-client,
 │                           #   sync-protocol, tiles, title, tracker, transition)
 │
@@ -399,12 +401,12 @@ Run `npm run budget` to check compliance locally.
 ## Testing
 
 ```bash
-npm test                               # Run all tests (43 test files)
+npm test                               # Run all tests (52 test files)
 npm run test:coverage                  # Run with coverage (c8, 50% line threshold)
 npm run simulate -- --all --runs 100   # Round-robin roster balance analysis
 ```
 
-Test suite covers: auto-walk, battle-core, battle logic, battleEngine, bosses, bug events, bugdex, bugdex-spec, build output, catch, damage formula, data integrity, encounters, error parsing, event bus, evolution, evolution-animation, game-damage, game-loop, headless-battle, input, integration, map, matcher, monsterGen, player, renderer, reporting, RNG, save, simulator, sound, sprites, stacktrace parsing, state, storage, strategies, sync-client, sync-protocol, tiles, title, tracker, transition.
+Test suite covers: auto-walk, battle-core, battle logic, battleEngine, bosses, bug events, bugdex, bugdex-spec, build output, catch, classifier, damage formula, data integrity, domain-battle, domain-encounters, domain-event-bus, domain-evolution, encounters, error parsing, event bus, evolution, evolution-animation, fingerprint, game-damage, game-loop, headless-battle, ingestion-parser, input, integration, map, matcher, monsterGen, pipeline, player, renderer, reporting, RNG, save, simulator, sound, species-mapper, sprites, stacktrace parsing, state, storage, strategies, sync-client, sync-protocol, tiles, title, tracker, transition.
 
 ## Claude Code Skills
 
