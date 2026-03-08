@@ -303,6 +303,86 @@ export function renderBossEncounter(boss) {
   process.stderr.write(lines.join('\n') + '\n');
 }
 
+/**
+ * Render a combo notification.
+ * @param {number} streak
+ * @param {{ label: string, multiplier: number } | null} tier
+ * @param {number} bonusXP
+ */
+export function renderCombo(streak, tier, bonusXP) {
+  if (!tier) return;
+
+  const comboColors = {
+    DOUBLE: 'cyan',
+    COMBO: 'yellow',
+    'ON FIRE': 'red',
+    UNSTOPPABLE: 'magenta',
+  };
+  const cc = comboColors[tier.label] || 'yellow';
+
+  const lines = [];
+  lines.push('');
+  lines.push(bold(color(`  ★ ${tier.label} x${streak}! ★`, cc)));
+  lines.push(color(`  ${tier.multiplier}x XP multiplier! +${bonusXP} bonus XP`, cc));
+  lines.push('');
+  process.stderr.write(lines.join('\n') + '\n');
+}
+
+/**
+ * Render a combo break notification.
+ * @param {number} brokenStreak
+ */
+export function renderComboBreak(brokenStreak) {
+  if (brokenStreak < 2) return;
+  process.stderr.write(dim(`  Combo broken at x${brokenStreak}\n`));
+}
+
+/**
+ * Render a run summary at the end of a session.
+ * @param {object} summary - From endRun().summary
+ * @param {number} duration - Run duration in ms
+ */
+export function renderRunSummary(summary) {
+  const lines = [];
+  lines.push('');
+  lines.push(bold(color('  ╔══════════════════════════════════════╗', 'cyan')));
+  lines.push(bold(color('  ║         R U N   C O M P L E T E     ║', 'cyan')));
+  lines.push(bold(color('  ╚══════════════════════════════════════╝', 'cyan')));
+  lines.push('');
+  lines.push(`  Duration:    ${bold(formatDurationLocal(summary.duration))}`);
+  lines.push(`  Encounters:  ${bold(String(summary.totalEncounters))}`);
+  lines.push(`  Resolved:    ${bold(color(String(summary.totalResolved), 'green'))}`);
+  if (summary.unresolvedCount > 0) {
+    lines.push(`  Unresolved:  ${bold(color(String(summary.unresolvedCount), 'red'))}`);
+  }
+  if (summary.bossesDefeated > 0) {
+    lines.push(`  Bosses:      ${bold(color(String(summary.bossesDefeated), 'yellow'))}`);
+  }
+  lines.push(`  Best Combo:  ${bold(`x${summary.maxCombo}`)}`);
+  lines.push(`  Total XP:    ${bold(color(String(summary.totalXP), 'yellow'))}`);
+  if (summary.totalBonusXP > 0) {
+    lines.push(`  Bonus XP:    ${bold(color(`+${summary.totalBonusXP}`, 'cyan'))} (from combos)`);
+  }
+  lines.push(`  Score:       ${bold(String(summary.score))}`);
+  if (summary.uniqueMonsters > 0) {
+    lines.push(`  Unique Bugs: ${bold(String(summary.uniqueMonsters))}`);
+  }
+  lines.push('');
+  process.stderr.write(lines.join('\n') + '\n');
+}
+
+function formatDurationLocal(ms) {
+  if (ms < 1000) return `${ms}ms`;
+  const seconds = Math.floor(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  if (minutes < 60) return `${minutes}m ${secs}s`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours}h ${mins}m`;
+}
+
 function getXPForLevel(level) {
   // 0, 100, 300, 600, 1000, 1500, 2100, ...
   return level <= 1 ? 0 : (level * (level - 1)) / 2 * 100;

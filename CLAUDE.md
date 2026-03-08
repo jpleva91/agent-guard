@@ -127,6 +127,13 @@ BugMon/
 │       ├── classifier.js   # Parsed error → BugEvent classification
 │       └── species-mapper.js # BugEvent → BugMon species mapping
 │
+├── spec/                   # Artifact-first development specs
+│   ├── system.md           # System spec (boundaries, invariants)
+│   ├── TEMPLATE-feature.md # Feature spec template
+│   ├── TEMPLATE-interface.md # Interface contract template
+│   ├── features/           # Feature specs (fill before implementing)
+│   └── interfaces/         # Interface contracts (module boundaries)
+│
 ├── simulation/             # Headless battle simulation
 ├── tests/                  # Test suite (52 test files)
 ├── scripts/                # Build tooling
@@ -273,6 +280,49 @@ npm test                               # Run all tests (52 test files)
 npm run test:coverage                  # Run with coverage (c8, 50% line threshold)
 npm run simulate -- --all --runs 100   # Round-robin roster balance analysis
 ```
+
+## Artifact-First Development
+
+When implementing new features or systems, agents must produce structured artifacts before writing code. This enforces staged reasoning and produces more consistent, architecturally sound implementations.
+
+### The Pipeline
+
+```
+prompt → spec artifact → interface contract → implementation → verification
+```
+
+Never skip directly to implementation. Each stage constrains the next.
+
+### Artifact Types
+
+| Artifact | Location | Purpose |
+|----------|----------|---------|
+| System spec | `spec/system.md` | Defines system boundaries, invariants, constraints |
+| Feature spec | `spec/features/<name>.md` | Requirements, events produced/consumed, dependencies |
+| Interface contract | `spec/interfaces/<name>.md` | Module exports, types, anti-dependencies |
+| Templates | `spec/TEMPLATE-feature.md`, `spec/TEMPLATE-interface.md` | Starting point for new artifacts |
+
+### Workflow for New Features
+
+1. **Spec first**: Copy `spec/TEMPLATE-feature.md` to `spec/features/<name>.md`. Fill in requirements, events, interface contract, layer placement, and constraints.
+2. **Interface definition**: If the feature introduces a new module, copy `spec/TEMPLATE-interface.md` to `spec/interfaces/<name>.md`. Define exports, types, invariants, and anti-dependencies.
+3. **Review**: Verify the spec is consistent with `spec/system.md` invariants and the canonical event model in `domain/events.js`.
+4. **Implement**: Write code that fulfills the spec. The spec constrains naming, API surface, layer placement, and event usage.
+5. **Verify**: Run tests. Confirm the implementation matches the interface contract.
+
+### Why This Matters
+
+- Agents reason better in stages than in a single leap
+- Specs prevent architectural drift and naming inconsistency
+- Interface contracts act as boundaries between agents working on different modules
+- The canonical event model (`domain/events.js`) is the architectural spine — specs must reference it
+
+### Rules
+
+- Feature specs must list all events produced and consumed
+- Interface contracts must declare anti-dependencies (what the module must NOT import)
+- Domain layer modules must remain pure — no DOM, no Node.js APIs
+- Specs are living documents — update them when implementations evolve
 
 ## When Adding New Content
 

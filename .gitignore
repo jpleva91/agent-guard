@@ -1,3 +1,7 @@
 dist/
 node_modules/
 .events.json
+runtime/events/*
+runtime/replay/*
+!runtime/events/.gitkeep
+!runtime/replay/.gitkeep
