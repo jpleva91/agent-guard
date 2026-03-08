@@ -165,6 +165,110 @@ export const MODULE_CONTRACTS: Record<string, ModuleContract> = {
     ],
     dependencies: ['core/bug-event'],
   },
+
+  'domain/dev-event': {
+    exports: {
+      createDevEvent: { params: ['input'], returns: 'object' },
+      validateDevEvent: { params: ['event'], returns: 'object' },
+      resetDevEventCounter: { params: [], returns: 'void' },
+      devEventKindToDomainKind: { params: ['kind'], returns: 'string' },
+    },
+    invariants: [
+      'createDevEvent assigns unique monotonic ID',
+      'createDevEvent computes content fingerprint deterministically',
+      'validateDevEvent checks source, actor, kind, and required fields',
+      'DevEvent envelope works for all signal types (error, test, build, git, agent, governance)',
+    ],
+    dependencies: ['domain/hash'],
+  },
+
+  'domain/entities': {
+    exports: {
+      createBugEntity: { params: ['input'], returns: 'object' },
+      recordOccurrence: { params: ['bug', 'event'], returns: 'object' },
+      resolveBug: { params: ['bug', 'commit'], returns: 'object' },
+      createIncident: { params: ['bugs', 'correlationKeys'], returns: 'object' },
+      addBugToIncident: { params: ['incident', 'bug'], returns: 'object' },
+      resolveIncident: { params: ['incident', 'rootCause'], returns: 'object' },
+      resetIncidentCounter: { params: [], returns: 'void' },
+    },
+    invariants: [
+      'BugEntity ID is derived from fingerprint (stable)',
+      'recordOccurrence returns new object (no mutation)',
+      'IncidentEntity maxSeverity is always the highest among constituent bugs',
+      'createIncident throws on empty bug array',
+    ],
+    dependencies: ['domain/hash', 'domain/dev-event'],
+  },
+
+  'domain/correlation': {
+    exports: {
+      createCorrelationEngine: { params: ['options'], returns: 'object' },
+      extractCorrelationKeys: { params: ['event'], returns: 'array' },
+      correlateByFile: { params: ['bugs'], returns: 'object' },
+      correlateByErrorType: { params: ['bugs'], returns: 'object' },
+      correlateByBranch: { params: ['bugs'], returns: 'object' },
+    },
+    invariants: [
+      'Correlation engine groups events by configurable primary dimensions',
+      'extractCorrelationKeys is deterministic for same event',
+      'Cluster IDs are deterministic for same correlation keys',
+    ],
+    dependencies: ['domain/hash', 'domain/dev-event'],
+  },
+
+  'domain/risk': {
+    exports: {
+      assessRisk: { params: ['event', 'context'], returns: 'object' },
+      assessBugRisk: { params: ['bug'], returns: 'object' },
+      isSensitiveFile: { params: ['filePath'], returns: 'boolean' },
+      riskToGameSeverity: { params: ['level'], returns: 'number' },
+    },
+    invariants: [
+      'Risk score is always 0-100',
+      'Governance violations are always high risk',
+      'Agent actions get elevated scrutiny',
+      'Regressions are always at least issue level',
+      'isSensitiveFile detects auth, secrets, billing, and config files',
+    ],
+    dependencies: ['domain/dev-event', 'domain/entities'],
+  },
+
+  'domain/projections': {
+    exports: {
+      projectActiveBugs: { params: ['bugs'], returns: 'object' },
+      projectHotspots: { params: ['bugs'], returns: 'object' },
+      projectFlakyTests: { params: ['events'], returns: 'object' },
+      projectRepoHealth: { params: ['bugs', 'events'], returns: 'object' },
+      projectAgentTrust: { params: ['events'], returns: 'object' },
+      projectTimeline: { params: ['events', 'limit'], returns: 'array' },
+      projectIncidentSummary: { params: ['incidents'], returns: 'object' },
+      projectFixRegressionRatio: { params: ['events'], returns: 'object' },
+      projectDeveloperStreak: { params: ['events'], returns: 'object' },
+    },
+    invariants: [
+      'All projections are pure functions of their inputs',
+      'Repo health score is 0-100',
+      'Agent trust score is 0-100',
+      'Active bug queue is sorted by risk score descending',
+      'Hotspots are sorted by total occurrences descending',
+    ],
+    dependencies: ['domain/dev-event', 'domain/entities', 'domain/risk'],
+  },
+
+  'domain/platform-store': {
+    exports: {
+      createPlatformStore: { params: ['options'], returns: 'object' },
+    },
+    invariants: [
+      'Append-only: events are never modified or deleted',
+      'Validates DevEvents before appending',
+      'Automatically creates/updates BugEntity on error events',
+      'Automatically correlates events via CorrelationEngine',
+      'Auto-creates incidents when file cluster reaches threshold',
+    ],
+    dependencies: ['domain/dev-event', 'domain/entities', 'domain/correlation', 'domain/risk'],
+  },
 };
 
 /**
@@ -172,7 +276,7 @@ export const MODULE_CONTRACTS: Record<string, ModuleContract> = {
  */
 export function validateContract(
   moduleName: string,
-  moduleExports: Record<string, unknown>,
+  moduleExports: Record<string, unknown>
 ): ValidationResult {
   const errors: string[] = [];
   const contract = MODULE_CONTRACTS[moduleName];
@@ -190,7 +294,7 @@ export function validateContract(
       if (spec.returns === 'class') {
         if (typeof exported !== 'function') {
           errors.push(
-            `${moduleName}.${exportName} expected class/constructor, got ${typeof exported}`,
+            `${moduleName}.${exportName} expected class/constructor, got ${typeof exported}`
           );
         }
       } else if (typeof exported !== 'function') {
