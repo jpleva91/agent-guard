@@ -1,15 +1,22 @@
-# CLAUDE.md — AI Assistant Guide for BugMon
+# CLAUDE.md — AI Assistant Guide
 
 ## Project Overview
 
-BugMon is a Pokémon-style monster-taming RPG browser game themed around software bugs. Players explore a tile-based world, encounter wild "BugMon" (creatures named after programming bugs like NullPointer, MergeConflict, StackOverflow), battle them with turn-based combat, and catch them for their party. BugMon evolve based on real developer activity (commits, PRs merged, bugs fixed) instead of XP grinding.
+AgentGuard + BugMon is a unified platform consisting of two layers:
+
+- **AgentGuard** — Deterministic governance runtime for AI coding agents. Evaluates agent actions against declared policies and invariants. Produces canonical events when violations occur.
+- **BugMon** — Roguelike developer telemetry game. Consumes canonical events (developer errors, CI failures, governance violations) and renders them as interactive encounters. Coding sessions are dungeon runs. Bugs are enemies. CI failures are bosses.
+
+The system has one architectural spine: the **canonical event model**. All system activity becomes events. AgentGuard produces governance events. BugMon consumes all events as gameplay.
 
 **Key characteristics:**
-- 100% client-side, zero runtime dependencies
+- Hybrid idle/active roguelike — minor enemies auto-resolve, bosses demand engagement
+- Bug Grimoire instead of collection — compendium of defeated enemy types
+- 100% client-side browser game, zero runtime dependencies
 - Vanilla JavaScript (ES6 modules), HTML5 Canvas 2D, Web Audio API
 - Build tooling: esbuild + terser (dev dependencies only)
 - Deployed to GitHub Pages
-- Community BugMon submissions via GitHub Issues + automated validation
+- Community enemy submissions via GitHub Issues + automated validation
 - Layered architecture: `core/` (CLI), `game/` (browser), `ecosystem/` (shared data), `domain/` (pure logic)
 
 ## Quick Start
@@ -32,23 +39,23 @@ BugMon/
 ├── package.json            # Node.js config for scripts
 │
 ├── core/                   # CLI companion & shared logic (Node.js)
-│   ├── matcher.js          # Error → BugMon matching logic
-│   ├── error-parser.js     # Error message parser
+│   ├── matcher.js          # Error → BugMon enemy matching logic
+│   ├── error-parser.js     # Error message parser (40+ patterns, 6+ languages)
 │   ├── stacktrace-parser.js # Stack trace analysis
-│   ├── bug-event.js        # Bug event definitions
+│   ├── bug-event.js        # Bug event definitions and severity mapping
 │   └── cli/                # CLI tool (bugmon command)
 │       ├── bin.js           # Entry point (bugmon command)
-│       ├── adapter.js       # CLI watch adapter
+│       ├── adapter.js       # CLI watch adapter (event source)
 │       ├── auto-walk.js     # Auto-walk feature
 │       ├── boss-battle.js   # Boss battle interactive encounter
-│       ├── catch.js         # Catch/cache mechanic
+│       ├── catch.js         # Combat resolution mechanic
 │       ├── claude-hook.js   # Claude Code PostToolUse hook (error encounters)
 │       ├── claude-init.js   # Claude Code integration setup
 │       ├── colors.js        # Shared ANSI color constants
 │       ├── contribute.js    # Contribution prompt
 │       ├── demo.js          # Demo encounter launcher
 │       ├── encounter.js     # CLI encounter logic
-│       ├── init.js          # Git hooks installer for evolution tracking
+│       ├── init.js          # Git hooks installer for progression tracking
 │       ├── renderer.js      # Terminal renderer (ANSI)
 │       ├── resolve.js       # Bug resolve/XP mechanic
 │       ├── args.js          # Lightweight CLI argument parser (zero deps)
@@ -56,7 +63,7 @@ BugMon/
 │       ├── sync-server.js   # WebSocket sync server (zero deps)
 │       └── bugmon-legacy.js # Legacy CLI version
 │
-├── game/                   # Browser game (client-side)
+├── game/                   # Browser roguelike (client-side)
 │   ├── game.js             # Game loop orchestration (entry point for JS)
 │   ├── engine/             # Core framework systems
 │   │   ├── state.js        # Game state machine (TITLE, EXPLORE, BATTLE_TRANSITION, BATTLE, EVOLVING, MENU)
@@ -65,18 +72,18 @@ BugMon/
 │   │   ├── transition.js   # Battle transition animation
 │   │   ├── title.js        # Title screen (ASCII logo, starfield, menu)
 │   │   └── events.js       # EventBus for decoupled communication between systems
-│   ├── world/              # Overworld / exploration
+│   ├── world/              # Dungeon / exploration
 │   │   ├── map.js          # Map data, tile queries, collision
-│   │   ├── player.js       # Player state, movement, party
-│   │   └── encounters.js   # Random wild encounter logic (10% in tall grass)
+│   │   ├── player.js       # Player state, movement
+│   │   └── encounters.js   # Random encounter logic (10% in tall grass)
 │   ├── battle/             # Combat systems
-│   │   ├── battle-core.js  # Pure battle engine (no UI/audio/DOM) — two APIs
+│   │   ├── battle-core.js  # Pure battle engine (no UI/audio/DOM)
 │   │   ├── battleEngine.js # UI-connected battle state machine
 │   │   └── damage.js       # Damage calculation formula
-│   ├── evolution/          # Evolution system
-│   │   ├── evolution.js    # Checks conditions, triggers evolutions
+│   ├── evolution/          # Progression system
+│   │   ├── evolution.js    # Checks conditions, triggers progressions
 │   │   ├── tracker.js      # Dev activity tracker (localStorage + .events.json)
-│   │   └── animation.js    # Evolution visual sequence (flash, morph, reveal)
+│   │   └── animation.js    # Progression visual sequence (flash, morph, reveal)
 │   ├── audio/              # Sound synthesis (no audio files)
 │   │   └── sound.js        # Web Audio API synthesized effects
 │   ├── sync/               # Save/sync system
@@ -91,18 +98,18 @@ BugMon/
 │
 ├── ecosystem/              # Game content & metagame systems
 │   ├── data/               # Game content (JSON source + JS modules)
-│   │   ├── monsters.json   # 31 BugMon definitions (stats, moves, types, evolutions)
+│   │   ├── monsters.json   # 31 BugMon enemy definitions (stats, moves, types)
 │   │   ├── monsters.js     # Inlined JS module (imported by game)
 │   │   ├── moves.json      # 72 move definitions
 │   │   ├── moves.js        # Inlined JS module
 │   │   ├── types.json      # 7 types + effectiveness chart
 │   │   ├── types.js        # Inlined JS module
-│   │   ├── evolutions.json # Evolution chains with dev-activity triggers
+│   │   ├── evolutions.json # Progression chains with dev-activity triggers
 │   │   ├── evolutions.js   # Inlined JS module
 │   │   ├── map.json        # 15x10 tile grid
 │   │   └── mapData.js      # Inlined JS module
-│   ├── bugdex.js           # BugDex collection system
-│   ├── bugdex-spec.js      # BugDex specification
+│   ├── bugdex.js           # Bug Grimoire system
+│   ├── bugdex-spec.js      # Grimoire specification
 │   ├── bosses.js           # Boss encounter definitions
 │   ├── storage.js          # Shared storage utilities
 │   └── sync-protocol.js    # Shared WebSocket sync protocol constants
@@ -112,7 +119,7 @@ BugMon/
 │   ├── encounters.js       # Pure encounter logic (rarity weights, trigger checks)
 │   ├── event-bus.js        # Universal EventBus (works in Node.js and browser)
 │   ├── events.js           # Canonical domain event definitions
-│   ├── evolution.js        # Pure evolution engine (no localStorage)
+│   ├── evolution.js        # Pure progression engine (no localStorage)
 │   └── ingestion/          # Error ingestion pipeline
 │       ├── pipeline.js     # Orchestrates: parse → fingerprint → classify → map
 │       ├── parser.js       # Error message and stack trace parsing
@@ -121,93 +128,11 @@ BugMon/
 │       └── species-mapper.js # BugEvent → BugMon species mapping
 │
 ├── simulation/             # Headless battle simulation
-│   ├── cli.js              # CLI entry point (seeded RNG version)
-│   ├── simulator.js        # Battle simulator engine
-│   ├── headlessBattle.js   # Headless battle runner
-│   ├── strategies.js       # AI battle strategies
-│   ├── report.js           # Simulation report generator
-│   └── rng.js              # Seeded random number generator
-│
-├── examples/               # Error examples for CLI testing
-│   ├── async-error.js
-│   ├── module-error.js
-│   ├── null-error.js
-│   ├── reference-error.js
-│   ├── stack-overflow.js
-│   └── syntax-error.js
-│
 ├── tests/                  # Test suite (52 test files)
-│   ├── run.js              # Test runner
-│   └── *.test.js           # Tests (auto-walk, battle-core, battle, battleEngine, bosses, bug-event,
-│                           #   bugdex, bugdex-spec, build, catch, classifier, damage, data,
-│                           #   domain-battle, domain-encounters, domain-event-bus, domain-evolution,
-│                           #   encounters, error-parser, events, evolution, evolution-animation,
-│                           #   fingerprint, game-damage, game-loop, headless-battle, ingestion-parser,
-│                           #   input, integration, map, matcher, monsterGen, pipeline, player,
-│                           #   renderer, report, rng, save, simulator, sound, species-mapper,
-│                           #   sprites, stacktrace-parser, state, storage, strategies, sync-client,
-│                           #   sync-protocol, tiles, title, tracker, transition)
-│
 ├── scripts/                # Build tooling
-│   ├── build.js            # Single-file builder (esbuild + terser → dist/index.html)
-│   ├── dev-server.js       # Zero-dependency dev server with live reload
-│   ├── sync-data.js        # JSON → JS module converter
-│   └── prune-merged-branches.sh  # Git branch cleanup script
-│
+├── docs/                   # System documentation
 ├── hooks/                  # Git hooks for dev activity tracking
-│   ├── post-commit         # Increments commit counter in .events.json
-│   └── post-merge          # Increments merge counter in .events.json
-│
-├── .github/
-│   ├── dependabot.yml          # Dependabot configuration
-│   ├── workflows/
-│   │   ├── deploy.yml          # GitHub Pages auto-deploy on push to main
-│   │   ├── validate-bugmon.yml # Validates community BugMon submissions
-│   │   ├── approve-bugmon.yml  # Auto-adds approved BugMon to game data
-│   │   ├── validate.yml        # General data validation
-│   │   ├── size-check.yml      # Bundle size check (enforces byte budget)
-│   │   ├── codeql.yml          # CodeQL security scanning
-│   │   ├── publish.yml         # npm package publishing
-│   │   └── release.yml         # Release automation
-│   ├── scripts/
-│   │   ├── validate-submission.cjs  # Parses + validates issue form data
-│   │   ├── battle-preview.cjs       # Generates battle preview for submissions
-│   │   ├── generate-bugmon.cjs      # Generates BugMon JSON from approved issue
-│   │   └── validate-data.mjs        # Data validation script
-│   └── ISSUE_TEMPLATE/
-│       ├── new-bugmon.yml      # Issue form for community BugMon submissions
-│       ├── new-move.yml        # Issue form for new move submissions
-│       ├── bug-report.yml      # Bug report template
-│       └── balance-report.yml  # Balance issue reports
-│
-├── .claude/                # Claude Code custom skills & configuration
-│   └── skills/             # Skill definitions
-│       ├── add-bugmon.md       # Guided BugMon creation skill
-│       ├── add-evolution.md    # Evolution chain skill
-│       ├── add-move.md         # Move creation skill
-│       ├── balance-check.md    # Balance analysis skill
-│       ├── bugmon.md           # BugMon encounter skill
-│       ├── full-test.md        # Full test suite skill
-│       ├── roster-report.md    # Roster analysis skill
-│       ├── update-docs.md      # Documentation update skill
-│       ├── validate-data.md    # Data validation skill
-│       ├── 21st-dev-magic/     # UI component generation via 21st.dev Magic MCP
-│       └── ui-ux-pro-max/      # Comprehensive UI/UX design intelligence
-│
-├── .editorconfig           # Editor configuration
-├── .prettierrc             # Prettier configuration
-├── .prettierignore         # Prettier ignore rules
-├── eslint.config.js        # ESLint flat config (no-var, prefer-const, eqeqeq, no-undef)
-├── size-budget.json        # Bundle size budget (subsystem-level caps)
-├── ARCHITECTURE.md         # Detailed technical architecture
-├── CHANGELOG.md            # Project changelog
-├── CODE_OF_CONDUCT.md      # Community guidelines
-├── CONSTRAINTS.md          # Project constraints
-├── CONTRIBUTING.md         # Contribution guide
-├── LIGHTWEIGHT.md          # Lightweight implementation guide
-├── ROADMAP.md              # Milestone planning and feature backlog
-├── LICENSE                 # MIT license
-└── README.md               # User-facing guide
+└── .github/                # CI/CD workflows and issue templates
 ```
 
 ## Development Commands
@@ -231,11 +156,6 @@ npm run simulate -- NullPointer Deadlock --runs 1000
 # Full roster round-robin
 npm run simulate -- --all
 
-# Legacy simulation (seeded RNG)
-npm run simulate:quick   # 1,000 battles
-npm run simulate:full    # 50,000 battles
-npm run simulate:compare # Compare battle strategies
-
 # Build single-file distribution
 npm run build            # Full build with inline sprites
 npm run build:tiny       # Build without sprites (smallest)
@@ -258,76 +178,46 @@ npm run dev
 
 ## Architecture & Key Patterns
 
+### Unified System Model
+The system has one architectural spine: the canonical event model.
+- **AgentGuard** (governance runtime) produces events from policy violations
+- **BugMon** (roguelike game) consumes events as encounters
+- See `docs/unified-architecture.md` for the full integration model
+
 ### Layered Architecture
 The codebase is organized into four layers:
 - **core/** — Node.js code for the CLI companion tool. Runs in Node.js only.
-- **game/** — Browser game code (engine, battle, world, evolution, audio, sprites). Runs in the browser only.
-- **ecosystem/** — Shared game content (JSON data, inlined JS modules, BugDex, bosses). Consumed by both core/ and game/.
-- **domain/** — Pure domain logic with no DOM or Node.js-specific APIs. Contains the canonical battle engine, encounter logic, evolution engine, event definitions, and the error ingestion pipeline. All functions are pure and deterministic (when RNG is injected). Consumed by both core/ and game/.
+- **game/** — Browser roguelike (engine, battle, dungeon, progression, audio, sprites). Runs in the browser only.
+- **ecosystem/** — Shared game content (JSON data, inlined JS modules, Bug Grimoire, bosses). Consumed by both core/ and game/.
+- **domain/** — Pure domain logic with no DOM or Node.js-specific APIs. Contains the canonical battle engine, encounter logic, progression engine, event definitions, and the error ingestion pipeline. All functions are pure and deterministic (when RNG is injected). Consumed by both core/ and game/.
+
+### Roguelike Model
+- Coding sessions are dungeon **runs**
+- Minor enemies (severity 1-2) **auto-resolve** in idle mode
+- Bosses (severity 3+) require **active engagement**
+- **Bug Grimoire** records defeated enemy types (not a collection game)
 
 ### Domain Layer & Ingestion Pipeline
 The `domain/` layer provides environment-agnostic logic:
 - **`domain/events.js`** — Canonical event kinds (e.g., `ERROR_OBSERVED`, `MOVE_USED`, `EVOLUTION_TRIGGERED`)
 - **`domain/event-bus.js`** — Universal EventBus that works in both Node.js and browser
 - **`domain/battle.js`** — Pure battle engine with passive abilities, healing, and damage calculation
-- **`domain/encounters.js`** — Encounter trigger checks with rarity-weighted monster selection
-- **`domain/evolution.js`** — Evolution condition checking (takes event counts as input, no storage dependency)
-- **`domain/ingestion/`** — Multi-stage pipeline: raw stderr → parsed errors → fingerprinted → classified → mapped to BugMon species. Each stage is independently testable and replaceable.
+- **`domain/encounters.js`** — Encounter trigger checks with rarity-weighted enemy selection
+- **`domain/evolution.js`** — Progression condition checking (takes event counts as input, no storage dependency)
+- **`domain/ingestion/`** — Multi-stage pipeline: raw stderr → parsed errors → fingerprinted → classified → mapped to BugMon species
 
 ### ES6 Modules
-All source uses ES6 `import`/`export`. No CommonJS, no bundler. Browser loads `game/game.js` as a module via `<script type="module">`. GitHub scripts use `.cjs` extension for CommonJS (Node.js workflow context).
+All source uses ES6 `import`/`export`. No CommonJS, no bundler. Browser loads `game/game.js` as a module via `<script type="module">`.
 
 ### Data as Inlined JS Modules
-Game data lives in `ecosystem/data/` as both JSON (source of truth) and JS modules (imported by the game). The game imports JS modules directly — no runtime `fetch()` needed:
-```js
-// In game/game.js
-import { MONSTERS } from '../ecosystem/data/monsters.js';
-import { MOVES } from '../ecosystem/data/moves.js';
-```
-To regenerate JS modules from JSON: `npm run sync-data`
-
-Some modules still use setter functions (e.g., `setMonstersData()`) for flexibility.
-
-### Event Bus
-`game/engine/events.js` provides a decoupled pub/sub system for cross-module communication:
-```js
-import { eventBus, Events } from './engine/events.js';
-eventBus.on(Events.BUGMON_FAINTED, (data) => { ... });
-eventBus.emit(Events.BUGMON_FAINTED, { name: 'NullPointer' });
-```
-
-### Game State Machine
-Defined in `game/engine/state.js`. States:
-- **TITLE** — title screen with ASCII logo, starfield, and menu
-- **EXPLORE** — grid-based overworld movement
-- **BATTLE_TRANSITION** — flash + fade animation (860ms)
-- **BATTLE** — turn-based combat with menu system
-- **EVOLVING** — evolution animation sequence (flash, morph, reveal)
-- **MENU** — settings/party management (future)
+Game data lives in `ecosystem/data/` as both JSON (source of truth) and JS modules (imported by the game). To regenerate JS modules from JSON: `npm run sync-data`
 
 ### Battle System
-Two battle APIs coexist in `game/battle/battle-core.js`:
-1. **Original API** (`executeTurn`, `simulateBattle`) — used by `simulate.js` and `battleEngine.js`
-2. **Spec-based API** (`resolveTurn`, `createPureBattleState`) — fully immutable, PP tracking, accuracy
-
-Turn order: faster BugMon goes first (ties: player wins). Battle uses a message queue pattern with callbacks for action chaining.
-
-### Damage Formula
+Turn order: faster combatant goes first (ties: player wins). Damage formula:
 ```
 damage = (power + attack - floor(defense / 2) + random(1-3)) * typeMultiplier
 ```
 Type multipliers: 0.5x (not effective), 1.0x (neutral), 1.5x (super effective).
-
-### Evolution System
-BugMon evolve based on real developer activity tracked via git hooks and localStorage:
-- `game/evolution/tracker.js` — tracks events (commits, PRs merged, bugs fixed, etc.)
-- `game/evolution/evolution.js` — checks if conditions are met for evolution
-- `game/evolution/animation.js` — renders the evolution visual sequence
-- `ecosystem/data/evolutions.json` — defines evolution chains and trigger conditions
-- `hooks/post-commit` / `hooks/post-merge` — write to `.events.json` for the tracker
-
-### Sprite System
-PNG sprites are preloaded at startup. If a sprite fails to load, a colored rectangle fallback is rendered. Tile textures are procedurally generated at runtime (no tile image files).
 
 ## Coding Conventions
 
@@ -338,8 +228,6 @@ PNG sprites are preloaded at startup. If a sprite fails to load, a colored recta
 - No external dependencies — keep it zero-dependency
 - `imageSmoothingEnabled = false` on canvas for crisp pixel art
 - All audio is synthesized at runtime via Web Audio API (no audio files)
-- Try-catch around AudioContext creation (browser compatibility)
-- Console.error for startup failures, null checks for optional data
 - **ESLint** enforced via `eslint.config.js` (flat config): `no-var`, `prefer-const`, `eqeqeq`, `no-undef`
 - **Prettier** enforced via `.prettierrc` for consistent formatting
 - Run `npm run lint` and `npm run format` before committing
@@ -353,10 +241,8 @@ PNG sprites are preloaded at startup. If a sprite fails to load, a colored recta
   "moves": ["segfault", "unhandledexception", "memoryaccess"],
   "color": "#e74c3c", "sprite": "nullpointer",
   "rarity": "common", "theme": "runtime error",
-  "evolution": "OptionalChaining", "evolvesTo": 21,
   "passive": null, "description": "..." }
 ```
-Rarities: `common`, `uncommon`, `legendary`, `evolved`.
 
 ### moves.json
 ```json
@@ -367,7 +253,6 @@ Rarities: `common`, `uncommon`, `legendary`, `evolved`.
 7 types: `frontend`, `backend`, `devops`, `testing`, `architecture`, `security`, `ai`. Effectiveness chart is a nested object mapping attacker type → defender type → multiplier.
 
 ### evolutions.json
-Defines evolution chains with dev-activity triggers:
 ```json
 { "id": "callback_chain", "name": "Async Evolution",
   "stages": [{ "monsterId": 2, "name": "CallbackHell" }, ...],
@@ -376,27 +261,10 @@ Defines evolution chains with dev-activity triggers:
     "description": "Make 10 commits" }] }
 ```
 
-### map.json
-`{ "width": 15, "height": 10, "tiles": [[...], ...] }` — tile values: 0=ground, 1=wall, 2=grass.
-
-## CI/CD
-
-- **Deploy**: GitHub Pages auto-deploy on push to `main` or `master` (`.github/workflows/deploy.yml`). Uses esbuild + terser build pipeline.
-- **Data Validation**: `.github/workflows/validate.yml` validates game data on push.
-- **Size Check**: `.github/workflows/size-check.yml` enforces byte budget on every push.
-- **BugMon Submissions**: Community can submit new BugMon via GitHub Issue template. `validate-bugmon.yml` auto-validates and previews. `approve-bugmon.yml` auto-adds approved submissions to game data.
-- **Security Scanning**: `.github/workflows/codeql.yml` runs CodeQL analysis.
-- **Publishing**: `.github/workflows/publish.yml` handles npm package publishing.
-- **Releases**: `.github/workflows/release.yml` automates release creation.
-
 ## Size Budget
-
-The project enforces strict bundle size limits via `size-budget.json` and the `size-check.yml` CI workflow:
 
 - **Main bundle**: 10 KB target / 17 KB cap (gzipped, built with `--no-sprites`)
 - **Subsystem caps** (raw bytes): engine (7.5 KB), rendering (15.5 KB), battle (14.5 KB), data (13.2 KB), game-logic (19.5 KB), infrastructure (7 KB)
-
-Run `npm run budget` to check compliance locally.
 
 ## Testing
 
@@ -406,24 +274,13 @@ npm run test:coverage                  # Run with coverage (c8, 50% line thresho
 npm run simulate -- --all --runs 100   # Round-robin roster balance analysis
 ```
 
-Test suite covers: auto-walk, battle-core, battle logic, battleEngine, bosses, bug events, bugdex, bugdex-spec, build output, catch, classifier, damage formula, data integrity, domain-battle, domain-encounters, domain-event-bus, domain-evolution, encounters, error parsing, event bus, evolution, evolution-animation, fingerprint, game-damage, game-loop, headless-battle, ingestion-parser, input, integration, map, matcher, monsterGen, pipeline, player, renderer, reporting, RNG, save, simulator, sound, species-mapper, sprites, stacktrace parsing, state, storage, strategies, sync-client, sync-protocol, tiles, title, tracker, transition.
-
-## Claude Code Skills
-
-Custom skills are defined in `.claude/skills/` for guided workflows:
-- **add-bugmon** / **add-move** / **add-evolution** — Step-by-step content creation
-- **balance-check** / **roster-report** — Game balance analysis
-- **bugmon** — BugMon encounter skill
-- **full-test** / **validate-data** — Testing and validation
-- **update-docs** — Documentation maintenance
-
 ## When Adding New Content
 
-### New BugMon
-1. Add entry to `ecosystem/data/monsters.json` following existing schema (include `rarity`, `theme`, `passive`, `evolution` fields)
+### New BugMon Enemy
+1. Add entry to `ecosystem/data/monsters.json` following existing schema
 2. Add 64x64 PNG sprite to `game/sprites/` (filename matches `sprite` field)
 3. Ensure moves referenced exist in `ecosystem/data/moves.json`
-4. If it has an evolution, add the evolved form and update `ecosystem/data/evolutions.json`
+4. If it has a progression chain, update `ecosystem/data/evolutions.json`
 5. Run `npm run sync-data` to regenerate JS modules from JSON
 6. Run simulation to verify balance: `npm run simulate -- --all`
 
@@ -432,14 +289,7 @@ Custom skills are defined in `.claude/skills/` for guided workflows:
 2. Ensure the move's `type` exists in `ecosystem/data/types.json`
 3. Run `npm run sync-data` to regenerate JS modules
 
-### New Evolution Chain
+### New Progression Chain
 1. Add chain to `ecosystem/data/evolutions.json` with stages and trigger conditions
-2. Add evolved BugMon entries to `ecosystem/data/monsters.json` with `rarity: "evolved"` and `evolvedFrom` field
-3. Set `evolvesTo` on the base BugMon pointing to the evolved form's ID
-4. Run `npm run sync-data` to regenerate JS modules
-
-### New Map Tiles
-1. Add tile type constant and collision logic in `game/world/map.js`
-2. Add procedural texture generation in `game/sprites/tiles.js`
-3. Update `ecosystem/data/map.json` with new tile values
-4. Run `npm run sync-data` to regenerate JS modules
+2. Add evolved BugMon entries to `ecosystem/data/monsters.json` with `rarity: "evolved"`
+3. Run `npm run sync-data` to regenerate JS modules
