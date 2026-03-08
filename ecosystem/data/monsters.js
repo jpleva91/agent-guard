@@ -883,5 +883,89 @@ export const MONSTERS = [
       'XXX'
     ],
     fixTip: 'Stop adding TODO comments and just fix the issue. Future you will thank present you.'
+  },
+  {
+    id: 32,
+    name: 'InvariantBeast',
+    type: 'testing',
+    hp: 35,
+    attack: 9,
+    defense: 6,
+    speed: 5,
+    moves: [
+      'invariantbreak',
+      'expectedmismatch',
+      'strictmode'
+    ],
+    color: '#e74c3c',
+    sprite: 'invariantbeast',
+    rarity: 'uncommon',
+    theme: 'broken system invariant',
+    evolution: null,
+    passive: null,
+    errorPatterns: [
+      'invariant',
+      'constraint violated',
+      'postcondition failed',
+      'precondition failed',
+      'tests failed'
+    ],
+    fixTip: 'A system invariant has been violated. Check the invariant definition and ensure the system property holds true.'
+  },
+  {
+    id: 33,
+    name: 'RogueAgent',
+    type: 'security',
+    hp: 38,
+    attack: 10,
+    defense: 4,
+    speed: 9,
+    moves: [
+      'unauthorizedexec',
+      'privilegeescalation',
+      'scopebreak'
+    ],
+    color: '#ff006e',
+    sprite: 'rogueagent',
+    rarity: 'uncommon',
+    theme: 'unauthorized agent action',
+    evolution: null,
+    passive: null,
+    errorPatterns: [
+      'unauthorized',
+      'forbidden action',
+      'shell.exec',
+      'scope violation',
+      'permission denied'
+    ],
+    fixTip: 'An agent attempted an unauthorized action. Review the action scope and ensure agents operate within declared boundaries.'
+  },
+  {
+    id: 34,
+    name: 'ChaosHydra',
+    type: 'architecture',
+    hp: 45,
+    attack: 8,
+    defense: 8,
+    speed: 3,
+    moves: [
+      'dependencyweb',
+      'couplingstrike',
+      'layerbreach'
+    ],
+    color: '#6c3483',
+    sprite: 'chaoshydra',
+    rarity: 'uncommon',
+    theme: 'dependency cycle violation',
+    evolution: null,
+    passive: null,
+    errorPatterns: [
+      'dependency cycle',
+      'circular import',
+      'layer violation',
+      'core depends on game',
+      'architecture violation'
+    ],
+    fixTip: 'A dependency boundary has been crossed. Ensure modules respect the layered architecture and dependencies flow in the correct direction.'
   }
 ];

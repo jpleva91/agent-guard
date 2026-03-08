@@ -1,0 +1,28 @@
+{
+  "invariants": [
+    {
+      "id": "tests_pass",
+      "name": "Tests Must Pass",
+      "type": "test_result",
+      "condition": "result === 'pass'",
+      "severity": 4,
+      "description": "All tests must pass before changes are accepted"
+    },
+    {
+      "id": "no_shell_execution",
+      "name": "No Unauthorized Shell Execution",
+      "type": "action",
+      "condition": "action !== 'shell.exec'",
+      "severity": 5,
+      "description": "Shell execution is forbidden without explicit authorization"
+    },
+    {
+      "id": "core_isolation",
+      "name": "Core Module Isolation",
+      "type": "dependency",
+      "condition": "source.layer !== 'core' || target.layer !== 'game'",
+      "severity": 3,
+      "description": "Core modules must not depend on game/UI modules"
+    }
+  ]
+}

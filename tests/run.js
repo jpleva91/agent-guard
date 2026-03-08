@@ -90,6 +90,8 @@ async function main() {
   await import('./domain-evolution.test.js');
   await import('./domain-events.test.js');
   await import('./event-store.test.js');
+  await import('./invariants.test.js');
+  await import('./invariant-mapper.test.js');
   await import('./combo.test.js');
   await import('./run-session.test.js');
   await import('./run-history.test.js');
