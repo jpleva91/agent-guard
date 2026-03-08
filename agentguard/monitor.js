@@ -1,6 +1,9 @@
 // Runtime Monitor — closed-loop feedback system.
 // Pure domain logic. No DOM, no Node.js-specific APIs.
 //
+// TODO(roadmap/phase-2): Integrate with Claude Code hook for governance events from agent actions
+// TODO(roadmap/ts-migration): Migrate to TypeScript (src/agentguard/)
+//
 // The monitor sits between the engine and the execution environment.
 // It tracks cumulative state across multiple evaluations and detects
 // patterns that individual evaluations cannot see:

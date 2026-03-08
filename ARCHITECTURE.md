@@ -65,7 +65,7 @@ For the full integration model, see [docs/unified-architecture.md](docs/unified-
 
 ## Project Structure
 
-The codebase follows a **layered architecture** with four top-level directories:
+The codebase follows a **layered architecture** with five top-level directories plus supporting infrastructure:
 
 ```
 BugMon/
@@ -78,6 +78,7 @@ BugMon/
 │   ├── error-parser.js     Error message parser (40+ patterns, 6+ languages)
 │   ├── stacktrace-parser.js Stack trace analysis
 │   ├── bug-event.js        Bug event definitions and severity mapping
+│   ├── sources/            Event source adapters (watch, scan, claude-hook)
 │   └── cli/                CLI tool (bugmon command)
 │       ├── bin.js           Entry point (bugmon command)
 │       ├── adapter.js       CLI watch adapter (event source)
@@ -153,13 +154,62 @@ BugMon/
 │   ├── encounters.js       Pure encounter logic (rarity weights, trigger checks)
 │   ├── event-bus.js        Universal EventBus (works in Node.js and browser)
 │   ├── events.js           Canonical domain event definitions
+│   ├── event-store.js      Event persistence interface
 │   ├── evolution.js        Pure progression engine (no localStorage)
-│   └── ingestion/          Error ingestion pipeline
-│       ├── pipeline.js     Orchestrates: parse → fingerprint → classify → map
-│       ├── parser.js       Error message parsing
-│       ├── fingerprint.js  Error deduplication via stable fingerprinting
-│       ├── classifier.js   Parsed error → BugEvent classification
-│       └── species-mapper.js BugEvent → BugMon species mapping
+│   ├── source-registry.js  Event source plugin registry
+│   ├── actions.js          Action definitions
+│   ├── invariants.js       Invariant definitions
+│   ├── policy.js           Policy evaluation logic
+│   ├── reference-monitor.js Reference monitor for governance
+│   ├── run-history.js      Run history tracking
+│   ├── run-session.js      Run session management
+│   ├── combo.js            Combo system logic
+│   ├── hash.js             Hashing utilities
+│   ├── contracts.js        Module contract registry
+│   ├── shapes.js           Runtime shape definitions
+│   ├── ingestion/          Error ingestion pipeline
+│   │   ├── pipeline.js     Orchestrates: parse → fingerprint → classify → map
+│   │   ├── parser.js       Error message parsing
+│   │   ├── fingerprint.js  Error deduplication via stable fingerprinting
+│   │   ├── classifier.js   Parsed error → BugEvent classification
+│   │   ├── species-mapper.js BugEvent → BugMon species mapping
+│   │   └── invariant-mapper.js Invariant violation → event mapping
+│   ├── pipeline/           Multi-agent pipeline orchestration
+│   │   ├── index.js        Pipeline entry point
+│   │   ├── orchestrator.js Pipeline orchestrator
+│   │   ├── stages.js       Pipeline stage definitions
+│   │   └── roles.js        Pipeline role definitions
+│   └── execution/          Execution adapters
+│       └── adapters.js     Execution environment adapters
+│
+├── agentguard/             Governance runtime (deterministic RTA)
+│   ├── monitor.js          Closed-loop feedback (escalation, violation tracking)
+│   ├── core/               Core governance engine
+│   │   ├── aab.js          Action Authorization Boundary
+│   │   └── engine.js       Runtime Assurance (RTA) engine
+│   ├── policies/           Policy evaluation
+│   │   ├── evaluator.js    Policy compliance checking
+│   │   └── loader.js       Policy loader from JSON
+│   ├── invariants/         Invariant verification
+│   │   ├── checker.js      Runtime invariant checker
+│   │   └── definitions.js  Invariant registry
+│   └── evidence/           Audit trail
+│       └── pack.js         Evidence collection & reporting
+│
+├── policy/                 Policy configuration (JSON)
+│   ├── action_rules.json   Capability rules per agent action
+│   └── capabilities.json   Available action categories
+│
+├── runtime/                Event tracing & replay
+│   ├── events/             Event log storage
+│   └── replay/             Replay data
+│
+├── src/                    TypeScript refactoring (in progress)
+│   ├── cli/                Commander-based CLI (index.ts, commands/)
+│   ├── core/               Typed core (types.ts, event-bus.ts, bug-engine.ts)
+│   ├── game/               Game engine modules (engine.ts, renderer.ts, loop.ts)
+│   ├── watchers/           Environment watchers (console, test, build)
+│   └── ai/                 AI integration interface
 │
 ├── simulation/             Headless battle simulation
 │   ├── cli.js              CLI entry point (seeded RNG)
@@ -169,7 +219,7 @@ BugMon/
 │   ├── report.js           Simulation report generator
 │   └── rng.js              Seeded random number generator
 │
-├── tests/                  Test suite (52 test files)
+├── tests/                  Test suite (77 JS + 4 TS test files)
 │   ├── run.js              Test runner
 │   └── *.test.js           Tests covering all modules
 │
@@ -208,6 +258,7 @@ BugMon/
 ├─────────────────────────────────────────────────────────┤
 │  core/                     CLI companion & shared logic  │
 │  ├── cli/*                 Terminal UI, watch adapter    │
+│  ├── sources/*             Event source adapters         │
 │  ├── matcher.js            Error → enemy matching        │
 │  └── error-parser.js       Error parsing (40+ patterns)  │
 ├─────────────────────────────────────────────────────────┤
@@ -220,26 +271,42 @@ BugMon/
 │  ├── sync/*                Save/load + CLI sync          │
 │  └── sprites/*             Sprite loading + generation   │
 ├─────────────────────────────────────────────────────────┤
+│  agentguard/               Governance runtime (RTA)      │
+│  ├── core/*                AAB + RTA engine              │
+│  ├── policies/*            Policy evaluation + loading   │
+│  ├── invariants/*          Invariant checking            │
+│  ├── evidence/*            Evidence pack generation      │
+│  └── monitor.js            Closed-loop feedback          │
+├─────────────────────────────────────────────────────────┤
 │  domain/                   Pure domain logic (no deps)   │
 │  ├── battle.js             Pure battle engine            │
 │  ├── encounters.js         Encounter logic               │
 │  ├── evolution.js          Progression engine            │
 │  ├── event-bus.js          Universal EventBus            │
 │  ├── events.js             Domain event definitions      │
-│  └── ingestion/*           Error ingestion pipeline      │
+│  ├── source-registry.js    Event source plugin registry  │
+│  ├── ingestion/*           Error ingestion pipeline      │
+│  └── pipeline/*            Multi-agent orchestration     │
 ├─────────────────────────────────────────────────────────┤
 │  ecosystem/                Game content & metagame        │
 │  ├── data/*.json           Source data (monsters, moves)  │
 │  ├── data/*.js             Inlined JS modules            │
 │  ├── bugdex.js             Bug Grimoire                  │
 │  └── bosses.js             Boss definitions              │
+├─────────────────────────────────────────────────────────┤
+│  src/ (TypeScript)         In-progress TS refactoring    │
+│  ├── cli/*                 Commander-based CLI           │
+│  ├── core/*                Typed EventBus, BugEngine     │
+│  ├── game/*                Game engine modules           │
+│  └── watchers/*            Environment watchers          │
 └─────────────────────────────────────────────────────────┘
 ```
 
 **Key separation:**
-- **core/** — Node.js code for the CLI. Parses errors, matches them to enemies, renders to terminal. Runs in Node.js only.
+- **core/** — Node.js code for the CLI. Parses errors, matches them to enemies, renders to terminal. Includes `sources/` for event source adapters. Runs in Node.js only.
 - **game/** — Browser roguelike. Engine, battle, dungeon, progression, audio, sprites. Runs in the browser only.
-- **domain/** — Pure domain logic with no DOM or Node.js-specific APIs. Battle engine, encounter logic, progression engine, event bus, and error ingestion pipeline. All functions are pure and deterministic (when RNG is injected). Consumed by both core/ and game/.
+- **agentguard/** — Governance runtime implementing the Runtime Assurance Architecture. Evaluates agent actions against policies and invariants. Produces canonical governance events.
+- **domain/** — Pure domain logic with no DOM or Node.js-specific APIs. Battle engine, encounter logic, progression engine, event bus, error ingestion pipeline, multi-agent pipeline orchestration, governance primitives, and source registry. All functions are pure and deterministic (when RNG is injected). Consumed by both core/ and game/.
 - **ecosystem/** — Shared game content (JSON data, Bug Grimoire, bosses). Consumed by both core/ and game/.
 
 **Invariant:** `core/` and `game/` have no cross-imports. Both consume from `ecosystem/` and `domain/`.
@@ -445,12 +512,13 @@ Subsystem caps (raw bytes): engine (7.5 KB), rendering (15.5 KB), battle (14.5 K
 ## Testing
 
 ```bash
-npm test               # Run all tests (52 test files)
+npm test               # Run JS tests (77 test files)
+npm run ts:test        # Run TypeScript tests (4 test files, vitest)
 npm run test:coverage  # Run with coverage (c8, 50% threshold)
 npm run simulate -- --all --runs 100   # Balance analysis
 ```
 
-52 test files covering: battle, damage, encounters, evolution, ingestion pipeline, event bus, game loop, input, map, renderer, save, simulation, sprites, sync, and more.
+81 test files (77 JS + 4 TS) covering: battle, damage, encounters, evolution, ingestion pipeline, event bus, game loop, input, map, renderer, save, simulation, sprites, sync, governance (AAB, RTA, invariants, monitor), and more.
 
 ## Architectural Invariants
 
@@ -458,6 +526,6 @@ npm run simulate -- --all --runs 100   # Balance analysis
 2. **`battle-core.js` must stay pure.** Zero UI, audio, or DOM dependencies.
 3. **JSON is the source of truth.** `.js` data modules are generated artifacts.
 4. **Contributed enemies require no code changes.** New BugMon are added entirely through JSON edits.
-5. **Zero runtime dependencies.** No npm packages in shipped code.
+5. **Zero runtime dependencies in browser game.** No npm packages in shipped browser code. CLI has runtime deps (`chokidar`, `commander`, `pino`).
 6. **Deterministic battle engine.** Same inputs + same RNG seed = same outputs.
 7. **Universal EventBus.** Works identically in Node.js and browser.

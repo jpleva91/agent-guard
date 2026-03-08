@@ -1,5 +1,10 @@
 // Pure encounter logic — no DOM, no audio
 // Returns encounter data; callers handle audio/UI.
+//
+// TODO(roadmap/phase-3): Add idle/active encounter mode (severity 1-2 auto-resolve, 3+ require input)
+// TODO(roadmap/phase-3): Add encounter difficulty scaling based on session context
+// TODO(roadmap/phase-3): Add session escalation (unresolved errors compound difficulty)
+// TODO(roadmap/ts-migration): Migrate to TypeScript (src/domain/)
 
 const RARITY_WEIGHTS = {
   common: 10,

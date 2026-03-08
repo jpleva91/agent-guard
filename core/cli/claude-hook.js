@@ -6,6 +6,8 @@
 //
 // Performance: no-error path < 10ms, error path < 50ms.
 // Always exits 0 — hooks must never fail or they block Claude Code.
+//
+// TODO(roadmap/phase-2): Emit governance events when agent actions trigger policy violations
 
 import { parseErrors } from '../error-parser.js';
 import { matchMonster, getAllMonsters } from '../matcher.js';

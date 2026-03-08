@@ -5,6 +5,10 @@
  *   - name, type, ascii art, HP, rarity
  *   - XP reward for defeating it
  *   - The real error it represents
+ *
+ * TODO(roadmap/phase-5): Add defeat history and error pattern recording per entry
+ * TODO(roadmap/phase-5): Add fix strategies compendium per enemy type
+ * TODO(roadmap/phase-5): Add Grimoire completion tracking and unlock rewards
  */
 
 const BUGDEX = [

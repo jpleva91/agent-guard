@@ -2,6 +2,12 @@
 // A "run" = one debugging session (one `bugmon watch` invocation).
 // Tracks encounters, resolutions, combos, duration, and score.
 // No DOM, no Node.js APIs — pure data transformations.
+//
+// TODO(roadmap/phase-3): Add configurable idle/active threshold
+// TODO(roadmap/phase-3): Add stability collapse detection (run death from cascading failures)
+// TODO(roadmap/phase-3): Add run summary and scoring at session end
+// TODO(roadmap/phase-3): Add governance boss encounters from AgentGuard events
+// TODO(roadmap/ts-migration): Migrate to TypeScript (src/domain/)
 
 import { simpleHash } from './hash.js';
 import { createComboState, recordResolution, recordFailure, applyComboXP, getTier } from './combo.js';

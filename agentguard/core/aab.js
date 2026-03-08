@@ -4,6 +4,9 @@
 // and produces canonical governance events.
 //
 // Pure domain logic. No DOM, no Node.js-specific APIs.
+//
+// TODO(roadmap/phase-2): Add blast radius computation to authorization decisions
+// TODO(roadmap/ts-migration): Migrate to TypeScript (src/agentguard/)
 
 import { evaluate } from '../policies/evaluator.js';
 import {

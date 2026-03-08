@@ -296,6 +296,9 @@ switch (command) {
     break;
   }
 
+  // TODO(roadmap/phase-2): Add 'guard' command — evaluate agent actions against policies
+  // TODO(roadmap/phase-2): Add 'audit' command — review governance event history
+
   case 'claude-init': {
     const { claudeInit } = await import('./claude-init.js');
     await claudeInit(args.slice(1));

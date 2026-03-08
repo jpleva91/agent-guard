@@ -1,6 +1,8 @@
 // Pure battle engine — no DOM, no audio, no Node.js-specific APIs
 // Deterministic when RNG is injected. All functions are pure (no mutation).
 // This is the single source of truth for all battle logic across CLI, browser, and simulation.
+//
+// TODO(roadmap/ts-migration): Migrate to TypeScript (src/domain/)
 
 import {
   MOVE_USED, DAMAGE_DEALT, HEALING_APPLIED,

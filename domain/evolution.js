@@ -1,5 +1,10 @@
 // Pure evolution engine — no localStorage, no DOM
 // Takes event counts as input; callers provide storage.
+//
+// TODO(roadmap/phase-5): Add achievement system (first boss, perfect run, 100% Grimoire)
+// TODO(roadmap/phase-5): Add difficulty scaling based on developer level
+// TODO(roadmap/phase-5): Add idle combat effectiveness scaling with level
+// TODO(roadmap/ts-migration): Migrate to TypeScript (src/domain/)
 
 /**
  * Find the evolution trigger for a given monster ID.

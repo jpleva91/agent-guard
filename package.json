@@ -8,7 +8,9 @@
   },
   "files": [
     "core/",
+    "domain/",
     "ecosystem/",
+    "agentguard/",
     "hooks/",
     "LICENSE",
     "README.md"
@@ -28,10 +30,10 @@
   "scripts": {
     "test": "node tests/run.js",
     "test:coverage": "c8 --check-coverage --lines 50 node tests/run.js",
-    "lint": "eslint game/ core/ ecosystem/ simulation/ tests/",
-    "lint:fix": "eslint --fix game/ core/ ecosystem/ simulation/ tests/",
-    "format": "prettier --check game/ core/ ecosystem/ simulation/",
-    "format:fix": "prettier --write game/ core/ ecosystem/ simulation/",
+    "lint": "eslint game/ core/ domain/ agentguard/ ecosystem/ simulation/ tests/",
+    "lint:fix": "eslint --fix game/ core/ domain/ agentguard/ ecosystem/ simulation/ tests/",
+    "format": "prettier --check game/ core/ domain/ agentguard/ ecosystem/ simulation/",
+    "format:fix": "prettier --write game/ core/ domain/ agentguard/ ecosystem/ simulation/",
     "simulate": "node simulate.js",
     "simulate:quick": "node simulation/cli.js --battles 1000",
     "simulate:full": "node simulation/cli.js --battles 50000",

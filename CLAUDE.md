@@ -12,12 +12,14 @@ The system has one architectural spine: the **canonical event model**. All syste
 **Key characteristics:**
 - Hybrid idle/active roguelike — minor enemies auto-resolve, bosses demand engagement
 - Bug Grimoire instead of collection — compendium of defeated enemy types
-- 100% client-side browser game, zero runtime dependencies
+- 100% client-side browser game with zero runtime dependencies
 - Vanilla JavaScript (ES6 modules), HTML5 Canvas 2D, Web Audio API
-- Build tooling: esbuild + terser (dev dependencies only)
+- TypeScript refactoring in progress (`src/`) — parallel implementation, not yet replacing JS
+- CLI has runtime dependencies (`chokidar`, `commander`, `pino`); browser game remains zero-dep
+- Build tooling: esbuild + terser + TypeScript + vitest (dev dependencies only)
 - Deployed to GitHub Pages
 - Community enemy submissions via GitHub Issues + automated validation
-- Layered architecture: `core/` (CLI), `game/` (browser), `ecosystem/` (shared data), `domain/` (pure logic)
+- Layered architecture: `core/` (CLI), `game/` (browser), `ecosystem/` (shared data), `domain/` (pure logic), `agentguard/` (governance)
 
 ## Quick Start
 
@@ -43,6 +45,10 @@ BugMon/
 │   ├── error-parser.js     # Error message parser (40+ patterns, 6+ languages)
 │   ├── stacktrace-parser.js # Stack trace analysis
 │   ├── bug-event.js        # Bug event definitions and severity mapping
+│   ├── sources/            # Event source adapters (plugin contract)
+│   │   ├── watch-source.js  # Watch mode event source
+│   │   ├── scan-source.js   # Scan mode event source
+│   │   └── claude-hook-source.js # Claude Code hook event source
 │   └── cli/                # CLI tool (bugmon command)
 │       ├── bin.js           # Entry point (bugmon command)
 │       ├── adapter.js       # CLI watch adapter (event source)
@@ -119,13 +125,62 @@ BugMon/
 │   ├── encounters.js       # Pure encounter logic (rarity weights, trigger checks)
 │   ├── event-bus.js        # Universal EventBus (works in Node.js and browser)
 │   ├── events.js           # Canonical domain event definitions
+│   ├── event-store.js      # Event persistence interface
 │   ├── evolution.js        # Pure progression engine (no localStorage)
-│   └── ingestion/          # Error ingestion pipeline
-│       ├── pipeline.js     # Orchestrates: parse → fingerprint → classify → map
-│       ├── parser.js       # Error message and stack trace parsing
-│       ├── fingerprint.js  # Error deduplication via stable fingerprinting
-│       ├── classifier.js   # Parsed error → BugEvent classification
-│       └── species-mapper.js # BugEvent → BugMon species mapping
+│   ├── source-registry.js  # Event source plugin registry
+│   ├── actions.js          # Action definitions
+│   ├── invariants.js       # Invariant definitions
+│   ├── policy.js           # Policy evaluation logic
+│   ├── reference-monitor.js # Reference monitor for governance
+│   ├── run-history.js      # Run history tracking
+│   ├── run-session.js      # Run session management
+│   ├── combo.js            # Combo system logic
+│   ├── hash.js             # Hashing utilities
+│   ├── contracts.js        # Module contract registry
+│   ├── shapes.js           # Runtime shape definitions
+│   ├── ingestion/          # Error ingestion pipeline
+│   │   ├── pipeline.js     # Orchestrates: parse → fingerprint → classify → map
+│   │   ├── parser.js       # Error message and stack trace parsing
+│   │   ├── fingerprint.js  # Error deduplication via stable fingerprinting
+│   │   ├── classifier.js   # Parsed error → BugEvent classification
+│   │   ├── species-mapper.js # BugEvent → BugMon species mapping
+│   │   └── invariant-mapper.js # Invariant violation → event mapping
+│   ├── pipeline/           # Multi-agent pipeline orchestration
+│   │   ├── index.js        # Pipeline entry point
+│   │   ├── orchestrator.js # Pipeline orchestrator
+│   │   ├── stages.js       # Pipeline stage definitions
+│   │   └── roles.js        # Pipeline role definitions
+│   └── execution/          # Execution adapters
+│       └── adapters.js     # Execution environment adapters
+│
+├── agentguard/             # Governance runtime (deterministic RTA)
+│   ├── monitor.js          # Closed-loop feedback (escalation, violation tracking)
+│   ├── core/               # Core governance engine
+│   │   ├── aab.js          # Action Authorization Boundary
+│   │   └── engine.js       # Runtime Assurance (RTA) engine
+│   ├── policies/           # Policy evaluation
+│   │   ├── evaluator.js    # Policy compliance checking
+│   │   └── loader.js       # Policy loader from JSON
+│   ├── invariants/         # Invariant verification
+│   │   ├── checker.js      # Runtime invariant checker
+│   │   └── definitions.js  # Invariant registry
+│   └── evidence/           # Audit trail
+│       └── pack.js         # Evidence collection & reporting
+│
+├── policy/                 # Policy configuration (JSON)
+│   ├── action_rules.json   # Capability rules per agent action
+│   └── capabilities.json   # Available action categories
+│
+├── runtime/                # Event tracing & replay
+│   ├── events/             # Event log storage
+│   └── replay/             # Replay data
+│
+├── src/                    # TypeScript refactoring (in progress)
+│   ├── cli/                # Commander-based CLI
+│   ├── core/               # Typed core (EventBus, BugEngine, BugRegistry)
+│   ├── game/               # Game engine modules
+│   ├── watchers/           # Environment watchers (console, test, build)
+│   └── ai/                 # AI integration interface
 │
 ├── spec/                   # Artifact-first development specs
 │   ├── system.md           # System spec (boundaries, invariants)
@@ -135,7 +190,10 @@ BugMon/
 │   └── interfaces/         # Interface contracts (module boundaries)
 │
 ├── simulation/             # Headless battle simulation
-├── tests/                  # Test suite (52 test files)
+├── tests/                  # Test suite (77 JS + 4 TS test files)
+│   ├── run.js              # Custom test runner (JS tests)
+│   ├── *.test.js           # JavaScript tests
+│   └── ts/                 # TypeScript tests (run via vitest)
 ├── scripts/                # Build tooling
 ├── docs/                   # System documentation
 ├── hooks/                  # Git hooks for dev activity tracking
@@ -182,6 +240,12 @@ npm run test:coverage    # Run tests with coverage (c8, 50% line threshold)
 
 # Run CLI companion tool
 npm run dev
+
+# TypeScript (in-progress refactoring)
+npm run ts:check           # Type-check TypeScript (tsc --noEmit)
+npm run ts:test            # Run TypeScript tests (vitest)
+npm run ts:test:watch      # Run TypeScript tests in watch mode
+npm run build:ts           # Build TypeScript (tsc + esbuild)
 ```
 
 ## Architecture & Key Patterns
@@ -193,11 +257,12 @@ The system has one architectural spine: the canonical event model.
 - See `docs/unified-architecture.md` for the full integration model
 
 ### Layered Architecture
-The codebase is organized into four layers:
-- **core/** — Node.js code for the CLI companion tool. Runs in Node.js only.
+The codebase is organized into five layers:
+- **core/** — Node.js code for the CLI companion tool. Runs in Node.js only. Includes `sources/` for event source adapters.
 - **game/** — Browser roguelike (engine, battle, dungeon, progression, audio, sprites). Runs in the browser only.
 - **ecosystem/** — Shared game content (JSON data, inlined JS modules, Bug Grimoire, bosses). Consumed by both core/ and game/.
-- **domain/** — Pure domain logic with no DOM or Node.js-specific APIs. Contains the canonical battle engine, encounter logic, progression engine, event definitions, and the error ingestion pipeline. All functions are pure and deterministic (when RNG is injected). Consumed by both core/ and game/.
+- **domain/** — Pure domain logic with no DOM or Node.js-specific APIs. Contains the canonical battle engine, encounter logic, progression engine, event definitions, error ingestion pipeline, multi-agent pipeline orchestration, governance primitives, and source registry. All functions are pure and deterministic (when RNG is injected). Consumed by both core/ and game/.
+- **agentguard/** — Governance runtime implementing the Runtime Assurance Architecture. Evaluates agent actions against policies and invariants. Produces canonical governance events.
 
 ### Roguelike Model
 - Coding sessions are dungeon **runs**
@@ -209,10 +274,14 @@ The codebase is organized into four layers:
 The `domain/` layer provides environment-agnostic logic:
 - **`domain/events.js`** — Canonical event kinds (e.g., `ERROR_OBSERVED`, `MOVE_USED`, `EVOLUTION_TRIGGERED`)
 - **`domain/event-bus.js`** — Universal EventBus that works in both Node.js and browser
+- **`domain/event-store.js`** — Event persistence interface
 - **`domain/battle.js`** — Pure battle engine with passive abilities, healing, and damage calculation
 - **`domain/encounters.js`** — Encounter trigger checks with rarity-weighted enemy selection
 - **`domain/evolution.js`** — Progression condition checking (takes event counts as input, no storage dependency)
+- **`domain/source-registry.js`** — Event source plugin registry
 - **`domain/ingestion/`** — Multi-stage pipeline: raw stderr → parsed errors → fingerprinted → classified → mapped to BugMon species
+- **`domain/pipeline/`** — Multi-agent pipeline orchestration (orchestrator, stages, roles)
+- **`domain/invariants.js`**, **`domain/policy.js`**, **`domain/reference-monitor.js`** — Governance primitives consumed by agentguard/
 
 ### ES6 Modules
 All source uses ES6 `import`/`export`. No CommonJS, no bundler. Browser loads `game/game.js` as a module via `<script type="module">`.
@@ -233,7 +302,7 @@ Type multipliers: 0.5x (not effective), 1.0x (neutral), 1.5x (super effective).
 - **UPPER_SNAKE_CASE** for constants (e.g., `STATES`, `TILE`, `Events`)
 - **const/let** only, no `var`
 - Arrow functions preferred
-- No external dependencies — keep it zero-dependency
+- No external dependencies in browser game code — CLI may use runtime deps (`chokidar`, `commander`, `pino`)
 - `imageSmoothingEnabled = false` on canvas for crisp pixel art
 - All audio is synthesized at runtime via Web Audio API (no audio files)
 - **ESLint** enforced via `eslint.config.js` (flat config): `no-var`, `prefer-const`, `eqeqeq`, `no-undef`
@@ -302,7 +371,8 @@ When adding new features or domain modules, follow this order:
 ## Testing
 
 ```bash
-npm test                               # Run all tests (52 test files)
+npm test                               # Run JS tests (77 test files)
+npm run ts:test                        # Run TypeScript tests (4 test files, vitest)
 npm run test:coverage                  # Run with coverage (c8, 50% line threshold)
 npm run simulate -- --all --runs 100   # Round-robin roster balance analysis
 ```

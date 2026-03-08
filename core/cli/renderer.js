@@ -1,5 +1,9 @@
 // Terminal renderer — ANSI-colored output for BugMon encounters
 // Zero dependencies: raw ANSI escape codes
+//
+// TODO(roadmap/phase-3): Add run statistics display (encounters, defeats, score, duration)
+// TODO(roadmap/phase-3): Add Bug Grimoire terminal display (enemy compendium)
+// TODO(roadmap/phase-6): Extract renderer plugin interface for third-party renderers
 
 import { renderBugDexContributionPrompt, BUGDEX_CONTRIBUTION_MIN } from './contribute.js';
 import { RESET, BOLD, DIM, TYPE_COLORS, color, bold, dim, padVis } from './colors.js';

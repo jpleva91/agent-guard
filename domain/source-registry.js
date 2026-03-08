@@ -2,6 +2,11 @@
 // Pure domain logic: no DOM, no Node.js-specific APIs.
 // Sources feed raw signals into the ingestion pipeline,
 // which produces canonical events on the EventBus.
+//
+// TODO(roadmap/phase-6): Add plugin validation and sandboxing
+// TODO(roadmap/phase-6): Add plugin registry / discovery mechanism
+// TODO(roadmap/phase-6): Add content pack loading system (community enemies, moves, bosses)
+// TODO(roadmap/ts-migration): Migrate to TypeScript (src/domain/)
 
 export class SourceRegistry {
   /**

@@ -7,7 +7,7 @@
 [![npm](https://img.shields.io/badge/npm-bugmon-cb3837.svg)](https://www.npmjs.com/package/bugmon)
 [![Play Now](https://img.shields.io/badge/Play-GitHub%20Pages-orange.svg)](https://jpleva91.github.io/BugMon/)
 [![Size](https://img.shields.io/badge/gzipped-12_KB-brightgreen.svg)](LIGHTWEIGHT.md)
-[![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](LIGHTWEIGHT.md)
+[![Dependencies](https://img.shields.io/badge/browser_deps-0-brightgreen.svg)](LIGHTWEIGHT.md)
 
 ---
 
@@ -108,7 +108,7 @@ See [Plugin API](docs/plugin-api.md) for the full extension guide.
 - **Hybrid idle/active** — minor enemies auto-resolve, bosses demand engagement
 - Turn-based combat with speed priority, type effectiveness, critical hits, and passive abilities
 - Synthesized sound effects (Web Audio API — zero audio files)
-- **Zero runtime dependencies** — vanilla JS, HTML5 Canvas, no framework ([Lightweight Manifesto](LIGHTWEIGHT.md))
+- **Zero browser runtime dependencies** — vanilla JS, HTML5 Canvas, no framework ([Lightweight Manifesto](LIGHTWEIGHT.md)); CLI uses `chokidar`, `commander`, `pino`
 
 ## The Roguelike Model
 
@@ -249,13 +249,24 @@ BugMon/
 │   ├── battle.js        # Deterministic battle engine
 │   ├── events.js        # Canonical event definitions
 │   ├── event-bus.js     # Universal EventBus
-│   └── ingestion/       # Error normalization pipeline
+│   ├── ingestion/       # Error normalization pipeline
+│   └── pipeline/        # Multi-agent pipeline orchestration
+├── agentguard/          # Governance runtime (deterministic RTA)
+│   ├── core/            # AAB + RTA engine
+│   ├── policies/        # Policy evaluation + loading
+│   ├── invariants/      # Invariant checking
+│   └── evidence/        # Evidence pack generation
 ├── ecosystem/           # Game content & metagame
 │   ├── data/            # JSON + JS modules (monsters, moves, types)
 │   ├── bugdex.js        # Bug Grimoire system
 │   └── bosses.js        # Boss encounter definitions
+├── src/                 # TypeScript refactoring (in progress)
+│   ├── cli/             # Commander-based CLI
+│   ├── core/            # Typed EventBus, BugEngine, BugRegistry
+│   ├── game/            # Game engine modules
+│   └── watchers/        # Environment watchers
 ├── simulation/          # Headless battle simulation
-├── tests/               # Test suite
+├── tests/               # Test suite (77 JS + 4 TS)
 ├── docs/                # System documentation
 └── scripts/             # Build tooling
 ```
@@ -310,7 +321,7 @@ npm run serve
 # Open http://localhost:8000
 ```
 
-Any static file server works. No build step, no `npm install` required, no bundler.
+Any static file server works for the browser game. No build step, no bundler. Run `npm install` for CLI features.
 
 ### Development Commands
 
@@ -347,11 +358,12 @@ npm run format                         # Check formatting (Prettier)
 
 ## Tech Stack
 
-- Vanilla JavaScript (ES6 modules)
+- Vanilla JavaScript (ES6 modules) — browser game
+- TypeScript (in-progress refactoring) — `src/` directory
 - HTML5 Canvas 2D
 - Web Audio API (synthesized sounds)
-- Zero runtime dependencies
-- Dev tooling: esbuild + terser (build), custom test runner
+- Zero browser runtime dependencies; CLI uses `chokidar`, `commander`, `pino`
+- Dev tooling: esbuild + terser (build), TypeScript + vitest (TS), custom test runner (JS)
 - CI: GitHub Actions (deploy, validate, size check, CodeQL)
 
 ## License

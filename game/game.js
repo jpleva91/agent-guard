@@ -1,4 +1,9 @@
 // BugMon - Entry point and game loop
+//
+// TODO(roadmap/phase-7): Add roguelike dungeon renderer (procedural floor layouts)
+// TODO(roadmap/phase-7): Add run-based browser gameplay (session → run mapping)
+// TODO(roadmap/phase-7): Add idle encounter log in browser UI
+// TODO(roadmap/phase-7): Add Bug Grimoire browser UI
 import { initRenderer, drawMap, drawPlayer, drawBattle, clear } from './engine/renderer.js';
 import { clearJustPressed } from './engine/input.js';
 import { getState, setState, STATES } from './engine/state.js';

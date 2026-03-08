@@ -1,6 +1,8 @@
 // Canonical domain events for BugMon
 // All systems emit and consume these event types.
 // No DOM, no Node.js APIs — pure data definitions.
+//
+// TODO(roadmap/ts-migration): Migrate to TypeScript with discriminated union types (src/core/types.ts)
 
 import { simpleHash } from './hash.js';
 

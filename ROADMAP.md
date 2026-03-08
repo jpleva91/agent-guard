@@ -34,7 +34,7 @@ XP accumulates across runs
 
 ---
 
-## Phase 0 — Architecture Clarity `CURRENT`
+## Phase 0 — Architecture Clarity `COMPLETE`
 
 > **Theme:** Define the unified system model
 
@@ -66,22 +66,22 @@ Extend the existing event system (`domain/events.js`, `domain/event-bus.js`) int
 - [x] Event store interface (persist, query, replay)
 - [x] Tests for all event types and lifecycle
 
-## Phase 2 — AgentGuard Governance Runtime
+## Phase 2 — AgentGuard Governance Runtime `CURRENT`
 
 > **Theme:** Deterministic agent governance
 
 Build the governance runtime that evaluates agent actions against policies and invariants.
 
-- [ ] Action Authorization Boundary (AAB) implementation
-- [ ] Policy definition format (YAML/JSON)
-- [ ] Policy loader and parser
-- [ ] Deterministic policy evaluator
-- [ ] Invariant monitoring engine
-- [ ] Built-in invariants (layer boundaries, size budget, test suite)
+- [x] Action Authorization Boundary (AAB) implementation (`agentguard/core/aab.js`)
+- [x] Policy definition format (JSON) (`policy/action_rules.json`, `policy/capabilities.json`)
+- [x] Policy loader and parser (`agentguard/policies/loader.js`)
+- [x] Deterministic policy evaluator (`agentguard/policies/evaluator.js`)
+- [x] Invariant monitoring engine (`agentguard/invariants/checker.js`)
+- [x] Built-in invariants (`agentguard/invariants/definitions.js`)
 - [ ] Blast radius computation
-- [ ] Evidence pack generation and persistence
+- [x] Evidence pack generation and persistence (`agentguard/evidence/pack.js`)
 - [ ] CLI governance commands (`bugmon guard`, `bugmon audit`)
-- [ ] Governance event emission into canonical event model
+- [x] Governance event emission into canonical event model (via `domain/events.js`)
 - [ ] Integration with Claude Code hook (governance events from agent actions)
 
 ## Phase 3 — BugMon Terminal Roguelike MVP
@@ -263,6 +263,33 @@ Every feature must fit within the byte budget:
 | Bundle (gzipped, with sprites) | ~19 KB | 32 KB |
 
 Run `npm run budget` to check compliance.
+
+## Cross-Cutting: TypeScript Migration `IN PROGRESS`
+
+> **Theme:** Incremental migration to TypeScript
+
+A parallel TypeScript implementation exists in `src/` (see `src/README.md` for architecture). This is an incremental migration — the JavaScript implementation remains the production system.
+
+**Current state:**
+- `src/` directory with 17 TypeScript files across `cli/`, `core/`, `game/`, `watchers/`, `ai/`
+- `tsconfig.json` — strict mode, ES2022 target, rootDir: `src/`, outDir: `dist/`
+- `vitest.config.ts` — test runner for TypeScript tests
+- `esbuild.config.ts` — builds CLI and game bundles from TS sources
+- 4 TypeScript tests in `tests/ts/` (run via `npm run ts:test`)
+- Runtime dependencies introduced for CLI: `chokidar`, `commander`, `pino`
+
+**Commands:**
+- `npm run ts:check` — Type-check (tsc --noEmit)
+- `npm run ts:test` — Run TS tests (vitest)
+- `npm run build:ts` — Build TS (tsc + esbuild)
+
+**Remaining work:**
+- [ ] Migrate remaining `core/` modules to TypeScript
+- [ ] Migrate `domain/` modules to TypeScript
+- [ ] Migrate `agentguard/` modules to TypeScript
+- [ ] Integrate TS CLI as primary CLI entry point
+- [ ] Unify JS and TS test suites
+- [ ] Update build pipeline to produce TS-based bundles
 
 ## Legend
 

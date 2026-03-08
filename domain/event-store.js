@@ -1,5 +1,11 @@
 // Event store interface and in-memory reference implementation.
 // No DOM, no Node.js APIs — pure domain logic.
+//
+// TODO(roadmap/phase-4): Add file-based event store (.bugmon/events/)
+// TODO(roadmap/phase-4): Add event stream serialization format
+// TODO(roadmap/phase-4): Add session metadata (run ID, RNG seed, timestamps)
+// TODO(roadmap/phase-4): Add deterministic replay with seeded RNG
+// TODO(roadmap/ts-migration): Migrate to TypeScript (src/domain/)
 
 import { validateEvent } from './events.js';
 
