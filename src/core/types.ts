@@ -564,7 +564,7 @@ export interface Capability {
 
 /** Policy definition */
 export interface Policy {
-  readonly capabilities: readonly Capability[];
+  readonly capabilities: readonly string[];
   readonly deny?: readonly string[];
   readonly maxBlastRadius?: number;
   readonly protectedPaths?: readonly string[];
