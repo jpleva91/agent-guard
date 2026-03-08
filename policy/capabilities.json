@@ -1,0 +1,59 @@
+{
+  "version": "1.0.0",
+  "description": "Agent capability policy for BugMon repository operations",
+  "allowed_actions": [
+    "file.read",
+    "file.write",
+    "file.create",
+    "test.run",
+    "lint.run",
+    "git.diff",
+    "git.status",
+    "git.commit",
+    "git.branch",
+    "build.run",
+    "simulate.run",
+    "sync-data.run"
+  ],
+  "restricted_actions": [
+    "shell.exec.arbitrary",
+    "network.call.external",
+    "git.push.force",
+    "git.rebase.interactive",
+    "git.reset.hard",
+    "file.delete.bulk",
+    "dependency.add",
+    "dependency.remove",
+    "ci.modify"
+  ],
+  "file_policies": {
+    "read_any": true,
+    "write_allowed_paths": [
+      "src/**",
+      "core/**",
+      "game/**",
+      "domain/**",
+      "ecosystem/**",
+      "tests/**",
+      "scripts/**",
+      "simulation/**",
+      "spec/**",
+      "policy/**",
+      "runtime/**"
+    ],
+    "write_denied_paths": [
+      ".github/workflows/**",
+      ".env",
+      "*.secret",
+      "credentials.*"
+    ]
+  },
+  "test_policy": {
+    "must_pass_before_commit": true,
+    "command": "npm test"
+  },
+  "lint_policy": {
+    "must_pass_before_commit": true,
+    "commands": ["npm run lint", "npm run format"]
+  }
+}

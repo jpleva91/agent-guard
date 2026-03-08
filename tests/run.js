@@ -92,6 +92,14 @@ async function main() {
   await import('./event-store.test.js');
   await import('./invariants.test.js');
   await import('./invariant-mapper.test.js');
+  await import('./combo.test.js');
+  await import('./run-session.test.js');
+  await import('./run-history.test.js');
+
+  // Pipeline tests
+  await import('./pipeline/test-roles.js');
+  await import('./pipeline/test-stages.js');
+  await import('./pipeline/test-orchestrator.js');
 
   console.log('\n' + '='.repeat(40));
   if (totalFailed === 0) {

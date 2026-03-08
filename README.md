@@ -328,6 +328,7 @@ npm run format                         # Check formatting (Prettier)
 | [Roguelike Design](docs/roguelike-design.md) | Debugging-as-roguelike mechanics |
 | [Plugin API](docs/plugin-api.md) | Extension points |
 | [Sequence Diagrams](docs/sequence-diagrams.md) | System flow diagrams |
+| [Agent-Native SDLC](docs/agent-sdlc-architecture.md) | Formal architecture brief and academic foundations |
 | [Product Positioning](docs/product-positioning.md) | What this is and isn't |
 | [Current Priorities](docs/current-priorities.md) | Active development phase |
 | [Roadmap](ROADMAP.md) | Phased development plan |

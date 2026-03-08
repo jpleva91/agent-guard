@@ -1,0 +1,55 @@
+{
+  "version": "1.0.0",
+  "description": "Action request schema and validation rules for agent operations",
+  "action_schema": {
+    "required_fields": ["intent_id", "action", "target", "reason"],
+    "optional_fields": ["context", "rollback_strategy"],
+    "example": {
+      "intent_id": "bugfix_102",
+      "action": "file.write",
+      "target": "domain/battle.js",
+      "reason": "Fix HP bounds check allowing negative values",
+      "context": {
+        "invariants_affected": ["HP bounds"],
+        "tests_to_run": ["tests/domain/battle.test.js"]
+      }
+    }
+  },
+  "validation_rules": [
+    {
+      "rule": "invariant_check",
+      "description": "Before modifying domain/ files, verify no invariants from spec/invariants.md are violated",
+      "applies_to": ["domain/**"]
+    },
+    {
+      "rule": "layer_boundary_check",
+      "description": "Verify imports respect layer boundaries: core/ and game/ never import each other",
+      "applies_to": ["core/**", "game/**", "domain/**", "ecosystem/**"]
+    },
+    {
+      "rule": "zero_dependency_check",
+      "description": "No production dependencies may be added to package.json",
+      "applies_to": ["package.json"]
+    },
+    {
+      "rule": "data_sync_check",
+      "description": "After modifying ecosystem/data/*.json, run npm run sync-data to regenerate JS modules",
+      "applies_to": ["ecosystem/data/*.json"]
+    },
+    {
+      "rule": "size_budget_check",
+      "description": "After modifying game/ or domain/ files, run npm run budget to verify size compliance",
+      "applies_to": ["game/**", "domain/**"]
+    },
+    {
+      "rule": "balance_check",
+      "description": "After modifying monster stats or moves, run simulation to verify game balance",
+      "applies_to": ["ecosystem/data/monsters.json", "ecosystem/data/moves.json"]
+    }
+  ],
+  "severity_escalation": {
+    "auto_approve": ["file.read", "test.run", "lint.run", "git.diff", "git.status"],
+    "require_review": ["file.write", "file.create", "git.commit"],
+    "require_explicit_approval": ["git.push.force", "dependency.add", "ci.modify", "file.delete.bulk"]
+  }
+}

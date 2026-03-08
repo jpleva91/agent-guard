@@ -1,0 +1,51 @@
+{
+  "description": "Defines what actions autonomous agents may perform inside this repository.",
+  "allowed": [
+    "file.read:**/*",
+    "file.write:domain/**",
+    "file.write:core/**",
+    "file.write:game/**",
+    "file.write:ecosystem/**",
+    "file.write:simulation/**",
+    "file.write:tests/**",
+    "file.write:scripts/**",
+    "file.write:.agent/**",
+    "file.write:index.html",
+    "file.write:simulate.js",
+    "test.run:npm test",
+    "test.run:npm run test:coverage",
+    "lint.run:npm run lint",
+    "lint.fix:npm run lint:fix",
+    "format.check:npm run format",
+    "format.fix:npm run format:fix",
+    "build.run:npm run build",
+    "build.run:npm run build:tiny",
+    "build.run:npm run build:debug",
+    "budget.check:npm run budget",
+    "simulate.run:npm run simulate",
+    "data.sync:npm run sync-data",
+    "serve.dev:npm run serve",
+    "git.diff",
+    "git.status",
+    "git.log",
+    "git.add",
+    "git.commit",
+    "git.branch"
+  ],
+  "restricted": [
+    "file.write:ecosystem/data/*.js",
+    "shell.exec:arbitrary",
+    "network.call:external",
+    "git.push:main",
+    "git.push:--force",
+    "git.rebase:main",
+    "file.delete:game/sprites/*.png",
+    "npm.install:production-dependency"
+  ],
+  "notes": {
+    "ecosystem/data/*.js": "Generated files. Run 'npm run sync-data' instead of editing directly.",
+    "npm.install": "Zero runtime dependencies policy. Only dev dependencies allowed.",
+    "git.push:main": "Requires human review. Push to feature branches only.",
+    "file.delete:sprites": "Sprites are hand-crafted pixel art. Do not delete without explicit permission."
+  }
+}

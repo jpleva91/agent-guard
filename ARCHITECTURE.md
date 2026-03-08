@@ -11,7 +11,7 @@ All system activity — developer tooling failures, runtime errors, CI failures,
 
 Neither system exists in isolation. AgentGuard produces governance events. BugMon consumes all events and renders them as gameplay. The canonical event model is the contract between them.
 
-For the full integration model, see [docs/unified-architecture.md](docs/unified-architecture.md).
+For the full integration model, see [docs/unified-architecture.md](docs/unified-architecture.md). For the formal architecture brief with academic foundations, see [docs/agent-sdlc-architecture.md](docs/agent-sdlc-architecture.md).
 
 ## System Model
 
