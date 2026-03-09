@@ -76,4 +76,64 @@ describe('domain/event-store', () => {
     store.clear();
     expect(store.count()).toBe(0);
   });
+
+  describe('NDJSON serialization', () => {
+    it('toNDJSON returns empty string for empty store', () => {
+      const store = createInMemoryStore();
+      expect(store.toNDJSON()).toBe('');
+    });
+
+    it('toNDJSON serializes events as newline-delimited JSON', () => {
+      const store = createInMemoryStore();
+      const e1 = createEvent(ERROR_OBSERVED, { message: 'err1' });
+      const e2 = createEvent(MOVE_USED, { move: 'segfault', attacker: 'NullPointer' });
+      store.append(e1);
+      store.append(e2);
+
+      const ndjson = store.toNDJSON();
+      const lines = ndjson.split('\n');
+      expect(lines).toHaveLength(2);
+      expect(JSON.parse(lines[0])).toMatchObject({ kind: ERROR_OBSERVED, message: 'err1' });
+      expect(JSON.parse(lines[1])).toMatchObject({ kind: MOVE_USED, move: 'segfault' });
+    });
+
+    it('fromNDJSON loads events and returns count', () => {
+      const source = createInMemoryStore();
+      source.append(createEvent(ERROR_OBSERVED, { message: 'err1' }));
+      source.append(createEvent(ERROR_OBSERVED, { message: 'err2' }));
+      const ndjson = source.toNDJSON();
+
+      const target = createInMemoryStore();
+      const loaded = target.fromNDJSON(ndjson);
+      expect(loaded).toBe(2);
+      expect(target.count()).toBe(2);
+    });
+
+    it('fromNDJSON skips blank lines', () => {
+      const store = createInMemoryStore();
+      const e = createEvent(ERROR_OBSERVED, { message: 'test' });
+      const ndjson = '\n' + JSON.stringify(e) + '\n\n  \n';
+      const loaded = store.fromNDJSON(ndjson);
+      expect(loaded).toBe(1);
+      expect(store.count()).toBe(1);
+    });
+
+    it('round-trips events through toNDJSON and fromNDJSON', () => {
+      const source = createInMemoryStore();
+      const e1 = createEvent(ERROR_OBSERVED, { message: 'err1' });
+      const e2 = createEvent(MOVE_USED, { move: 'segfault', attacker: 'NullPointer' });
+      source.append(e1);
+      source.append(e2);
+
+      const target = createInMemoryStore();
+      target.fromNDJSON(source.toNDJSON());
+
+      expect(target.count()).toBe(source.count());
+      const replayed = target.replay();
+      expect(replayed[0].id).toBe(e1.id);
+      expect(replayed[1].id).toBe(e2.id);
+      expect(replayed[0].kind).toBe(ERROR_OBSERVED);
+      expect(replayed[1].kind).toBe(MOVE_USED);
+    });
+  });
 });

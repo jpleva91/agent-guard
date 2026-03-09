@@ -241,6 +241,8 @@ export interface EventStore {
   replay(fromId?: string): DomainEvent[];
   count(): number;
   clear(): void;
+  toNDJSON(): string;
+  fromNDJSON(ndjson: string): number;
 }
 
 // ---------------------------------------------------------------------------

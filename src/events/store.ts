@@ -2,7 +2,6 @@
 // No DOM, no Node.js APIs — pure domain logic.
 //
 // TODO(roadmap): Phase 4 — File-based event store (.agentguard/events/)
-// TODO(roadmap): Phase 4 — Event stream serialization format
 
 import type { DomainEvent, EventFilter, EventStore, ValidationResult } from '../core/types.js';
 import { validateEvent } from './schema.js';
@@ -55,6 +54,21 @@ export function createInMemoryStore(): EventStore {
 
     clear(): void {
       events = [];
+    },
+
+    toNDJSON(): string {
+      return events.map((e) => JSON.stringify(e)).join('\n');
+    },
+
+    fromNDJSON(ndjson: string): number {
+      const lines = ndjson.split('\n').filter((line) => line.trim().length > 0);
+      let loaded = 0;
+      for (const line of lines) {
+        const parsed = JSON.parse(line) as DomainEvent;
+        events.push(parsed);
+        loaded++;
+      }
+      return loaded;
     },
   };
 }

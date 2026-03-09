@@ -87,6 +87,23 @@ export function createFileEventStore(sessionId?: string): EventStore & { session
         writeFileSync(filePath, '', 'utf8');
       }
     },
+
+    toNDJSON(): string {
+      const allEvents = loadAllEvents();
+      return allEvents.map((e) => JSON.stringify(e)).join('\n');
+    },
+
+    fromNDJSON(ndjson: string): number {
+      const lines = ndjson.split('\n').filter((line) => line.trim().length > 0);
+      let loaded = 0;
+      ensureDir();
+      for (const line of lines) {
+        const parsed = JSON.parse(line) as DomainEvent;
+        appendFileSync(sessionFileName(sid), JSON.stringify(parsed) + '\n', 'utf8');
+        loaded++;
+      }
+      return loaded;
+    },
   };
 }
 
