@@ -4,11 +4,15 @@ Run security audits on project dependencies, check for known vulnerabilities, id
 
 ## Prerequisites
 
-None — standalone scheduled skill. Requires `npm` and `gh` CLI.
+Run `start-governance-runtime` first. All scheduled skills must operate under governance. Also requires `npm` and `gh` CLI.
 
 ## Steps
 
-### 1. Run npm Audit
+### 1. Start Governance Runtime
+
+Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is active and intercepting all tool calls. If governance cannot be activated, STOP — do not proceed without governance.
+
+### 2. Run npm Audit
 
 ```bash
 npm audit --json 2>/dev/null || npm audit 2>/dev/null
@@ -21,7 +25,7 @@ Parse the output to extract:
 
 If `npm audit` reports 0 vulnerabilities, note "npm audit: clean".
 
-### 2. Check for Outdated Packages
+### 3. Check for Outdated Packages
 
 ```bash
 npm outdated --json 2>/dev/null || npm outdated 2>/dev/null
@@ -37,7 +41,7 @@ Categorize by risk:
 - Major version behind on a dev dependency → **MODERATE** risk
 - Minor/patch behind → **LOW** risk
 
-### 3. Check Dependabot Alerts
+### 4. Check Dependabot Alerts
 
 ```bash
 gh api repos/{owner}/{repo}/dependabot/alerts --jq '[.[] | select(.state=="open")] | length' 2>/dev/null || echo "Dependabot API not available"
@@ -49,7 +53,7 @@ If alerts are available, list open ones:
 gh api repos/{owner}/{repo}/dependabot/alerts --jq '.[] | select(.state=="open") | {number: .number, package: .security_vulnerability.package.name, severity: .security_vulnerability.severity, summary: .security_advisory.summary}' 2>/dev/null
 ```
 
-### 4. Check for Known Supply Chain Risks
+### 5. Check for Known Supply Chain Risks
 
 Review `package-lock.json` for concerning patterns:
 
@@ -61,7 +65,7 @@ node -e "const lock = require('./package-lock.json'); const deps = Object.keys(l
 node -e "const lock = require('./package-lock.json'); const pkgs = lock.packages || {}; Object.entries(pkgs).forEach(([name, info]) => { if (info.hasInstallScript) console.log('Install script:', name) })" 2>/dev/null
 ```
 
-### 5. Check Fix Availability
+### 6. Check Fix Availability
 
 For any critical or high vulnerabilities, check if automated fixes are available:
 
@@ -71,7 +75,7 @@ npm audit fix --dry-run 2>/dev/null
 
 Report which vulnerabilities can be auto-fixed and which require manual intervention (breaking changes).
 
-### 6. Generate Report
+### 7. Generate Report
 
 Compile findings into a structured report:
 
@@ -113,7 +117,7 @@ Compile findings into a structured report:
 <Actionable remediation steps ranked by severity>
 ```
 
-### 7. Create or Update Issue (if critical/high found)
+### 8. Create or Update Issue (if critical/high found)
 
 If any critical or high-severity vulnerabilities exist, check for an existing audit issue:
 
@@ -144,7 +148,7 @@ gh issue create \
 
 Use `priority:critical` if any critical vulnerabilities exist, otherwise `priority:high`.
 
-### 8. Summary
+### 9. Summary
 
 Report:
 - **Vulnerabilities**: N critical, N high, N moderate, N low

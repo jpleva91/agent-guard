@@ -4,11 +4,15 @@ Scan the codebase for TODO/FIXME/HACK annotations and unchecked ROADMAP items, c
 
 ## Prerequisites
 
-None — standalone scheduled skill. Governance runtime is recommended but not required.
+Run `start-governance-runtime` first. All scheduled skills must operate under governance.
 
 ## Steps
 
-### 1. Scan Code Annotations
+### 1. Start Governance Runtime
+
+Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is active and intercepting all tool calls. If governance cannot be activated, STOP — do not proceed without governance.
+
+### 2. Scan Code Annotations
 
 Search the codebase for TODO, FIXME, and HACK comments:
 
@@ -21,7 +25,7 @@ For each match, extract:
 - **Annotation type** (TODO, FIXME, or HACK)
 - **Description text** (the rest of the line after the annotation keyword)
 
-### 2. Scan ROADMAP Unchecked Items
+### 3. Scan ROADMAP Unchecked Items
 
 Read `ROADMAP.md` and extract all unchecked items:
 
@@ -31,7 +35,7 @@ grep -n "\- \[ \]" ROADMAP.md
 
 For each match, extract the item description and its parent section (Phase name).
 
-### 3. Fetch Open Issues
+### 4. Fetch Open Issues
 
 Retrieve all open issues to use as a deduplication reference:
 
@@ -45,7 +49,7 @@ Also check for issues previously created by this skill:
 gh issue list --state open --label "source:backlog-steward" --json number,title
 ```
 
-### 4. Deduplicate
+### 5. Deduplicate
 
 For each discovered annotation or ROADMAP item, check whether an open issue already covers it:
 
@@ -54,7 +58,7 @@ For each discovered annotation or ROADMAP item, check whether an open issue alre
 - Also match if the file path and line reference appear in any open issue body
 - If a match is found, skip the item — do NOT create a duplicate
 
-### 5. Create Issues for New Items
+### 6. Create Issues for New Items
 
 For each unmatched item (up to **5 per run**), create a GitHub issue:
 
@@ -92,7 +96,7 @@ Ensure the `source:backlog-steward` label exists before using it:
 gh label create "source:backlog-steward" --color "C5DEF5" --description "Auto-created by Backlog Steward skill" 2>/dev/null || true
 ```
 
-### 6. Summary
+### 7. Summary
 
 Report:
 - **Annotations found**: N TODO, N FIXME, N HACK

@@ -4,11 +4,15 @@ Analyze governance event logs for anomalies, violation trends, escalation patter
 
 ## Prerequisites
 
-None — standalone scheduled skill. Does not require governance runtime to be active (reads historical logs).
+Run `start-governance-runtime` first. All scheduled skills must operate under governance — even log analysis should be auditable.
 
 ## Steps
 
-### 1. Locate Log Files
+### 1. Start Governance Runtime
+
+Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is active and intercepting all tool calls. If governance cannot be activated, STOP — do not proceed without governance.
+
+### 2. Locate Log Files
 
 ```bash
 ls -la .agentguard/events/*.jsonl 2>/dev/null
@@ -17,7 +21,7 @@ ls -la logs/runtime-events.jsonl 2>/dev/null
 
 If no log files exist, report "No governance logs found — nothing to audit" and STOP.
 
-### 2. Count Events by Type
+### 3. Count Events by Type
 
 Count each governance event type across all log files:
 
@@ -38,7 +42,7 @@ Also count total events:
 cat .agentguard/events/*.jsonl 2>/dev/null | wc -l
 ```
 
-### 3. Compute Metrics
+### 4. Compute Metrics
 
 Calculate key governance health metrics:
 
@@ -53,7 +57,7 @@ Flag these thresholds:
 - Any ActionEscalated → **WARNING**
 - Any BlastRadiusExceeded → **WARNING**
 
-### 4. Identify Patterns
+### 5. Identify Patterns
 
 Read the actual log content to identify patterns:
 
@@ -69,7 +73,7 @@ Look for:
 - **Invariant clusters**: same invariant violated repeatedly (may need stronger enforcement)
 - **Time patterns**: bursts of violations in short windows
 
-### 5. Check Escalation State
+### 6. Check Escalation State
 
 Read the most recent escalation-related events:
 
@@ -79,7 +83,7 @@ cat .agentguard/events/*.jsonl 2>/dev/null | grep -i "escalat\|lockdown" | tail 
 
 If any LOCKDOWN events exist, this is a **CRITICAL** finding.
 
-### 6. Generate Report
+### 7. Generate Report
 
 Compile the audit findings into a structured report:
 
@@ -119,7 +123,7 @@ Compile the audit findings into a structured report:
 <Actionable recommendations based on findings>
 ```
 
-### 7. Create or Update Issue (if actionable)
+### 8. Create or Update Issue (if actionable)
 
 If any WARNING or CRITICAL findings exist, check for an existing audit issue:
 
@@ -148,7 +152,7 @@ gh issue create \
   --label "source:governance-audit" --label "priority:high"
 ```
 
-### 8. Summary
+### 9. Summary
 
 Report the audit findings to the console, including:
 - Total events analyzed

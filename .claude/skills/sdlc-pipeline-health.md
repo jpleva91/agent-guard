@@ -4,11 +4,15 @@ Validate the integrity of the autonomous SDLC infrastructure: skill files, gover
 
 ## Prerequisites
 
-None — standalone scheduled skill.
+Run `start-governance-runtime` first. All scheduled skills must operate under governance.
 
 ## Steps
 
-### 1. Verify Skill Files
+### 1. Start Governance Runtime
+
+Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is active and intercepting all tool calls. If governance cannot be activated, STOP — do not proceed without governance.
+
+### 2. Verify Skill Files
 
 Check that all expected skill files exist and have valid structure:
 
@@ -24,7 +28,7 @@ grep -l "^# Skill:" .claude/skills/*.md
 
 Report any skill files missing the heading as malformed.
 
-### 2. Verify Governance Hooks
+### 3. Verify Governance Hooks
 
 Check that Claude Code hooks are configured:
 
@@ -38,7 +42,7 @@ Verify the JSON contains:
 
 If hooks are missing, flag as **CRITICAL**.
 
-### 3. Verify Policy File
+### 4. Verify Policy File
 
 ```bash
 ls agentguard.yaml 2>/dev/null && echo "Policy file exists" || echo "MISSING: agentguard.yaml"
@@ -50,7 +54,7 @@ If the policy file exists, verify it's valid YAML:
 node -e "const fs = require('fs'); const yaml = require('yaml'); yaml.parse(fs.readFileSync('agentguard.yaml', 'utf8')); console.log('Valid YAML')" 2>/dev/null || echo "YAML parse failed or yaml module not available"
 ```
 
-### 4. Verify CI Workflows
+### 5. Verify CI Workflows
 
 Check that all expected CI workflow files exist:
 
@@ -60,7 +64,7 @@ ls .github/workflows/publish.yml 2>/dev/null && echo "publish.yml: OK" || echo "
 ls .github/workflows/codeql.yml 2>/dev/null && echo "codeql.yml: OK" || echo "MISSING: codeql.yml"
 ```
 
-### 5. Verify GitHub Labels
+### 6. Verify GitHub Labels
 
 Check that all required labels exist on the repository:
 
@@ -88,7 +92,7 @@ Use these colors:
 - `role:*` → `5319E7` (purple)
 - `source:*` → `C5DEF5` (light blue)
 
-### 6. Verify Build Toolchain
+### 7. Verify Build Toolchain
 
 Run the build and test suite to verify the toolchain is healthy:
 
@@ -122,7 +126,7 @@ npm run format
 
 Report format result (clean or issue count).
 
-### 7. Check Telemetry Directories
+### 8. Check Telemetry Directories
 
 Verify telemetry output paths exist:
 
@@ -137,7 +141,7 @@ Create missing directories:
 mkdir -p .agentguard/events logs
 ```
 
-### 8. Generate Health Report
+### 9. Generate Health Report
 
 Compile results into a structured report:
 
@@ -161,7 +165,7 @@ Compile results into a structured report:
 | Telemetry dirs | OK/CREATED | present / created |
 ```
 
-### 9. Create Issue (if problems found)
+### 10. Create Issue (if problems found)
 
 If any component has CRITICAL or FAIL status, check for an existing health issue:
 
@@ -184,7 +188,7 @@ gh issue create \
   --label "source:sdlc-health" --label "priority:high"
 ```
 
-### 10. Summary
+### 11. Summary
 
 Report:
 - **Overall status**: HEALTHY / DEGRADED / BROKEN

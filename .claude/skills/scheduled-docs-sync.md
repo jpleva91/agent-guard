@@ -4,11 +4,15 @@ Detect documentation drift between the codebase and project documentation files.
 
 ## Prerequisites
 
-None — standalone scheduled skill. Governance runtime is recommended but not required.
+Run `start-governance-runtime` first. All scheduled skills must operate under governance.
 
 ## Steps
 
-### 1. Check for Existing Docs PR
+### 1. Start Governance Runtime
+
+Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is active and intercepting all tool calls. If governance cannot be activated, STOP — do not proceed without governance.
+
+### 2. Check for Existing Docs PR
 
 Before doing any work, check if an open docs-sync PR already exists:
 
@@ -18,7 +22,7 @@ gh pr list --state open --label "source:docs-sync" --json number,title,url
 
 If an open PR exists, update it instead of creating a new one. Note the PR number for step 7.
 
-### 2. Read Source of Truth
+### 3. Read Source of Truth
 
 Read the files that define the current state of the project:
 
@@ -42,7 +46,7 @@ cat package.json | grep -A 50 '"scripts"'
 grep -r "\.command(" src/cli/ --include="*.ts" | head -20
 ```
 
-### 3. Read Documentation Files
+### 4. Read Documentation Files
 
 Read the documentation files that need to stay in sync:
 
@@ -51,7 +55,7 @@ Read the documentation files that need to stay in sync:
 - `CLAUDE.md` — AI assistant guide, project structure, commands, conventions
 - `ROADMAP.md` — phase status, feature checklists
 
-### 4. Detect Drift
+### 5. Detect Drift
 
 Compare the source-of-truth data against documentation content. Check for:
 
@@ -61,7 +65,7 @@ Compare the source-of-truth data against documentation content. Check for:
 - **Stale script references**: `package.json` scripts that changed but docs still reference old names
 - **Phase status**: ROADMAP items marked `[ ]` that are now implemented in code
 
-### 5. Fix Drift
+### 6. Fix Drift
 
 If drift is detected, create a working branch:
 
@@ -91,7 +95,7 @@ git commit -m "docs: sync documentation with codebase state
 Updated by scheduled-docs-sync on $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-### 6. Push and Create PR
+### 7. Push and Create PR
 
 ```bash
 git push -u origin $(git branch --show-current)
@@ -132,13 +136,13 @@ If an existing PR was found, update it:
 gh pr edit <PR_NUMBER> --body "<updated body with new findings>"
 ```
 
-### 7. Return to Main Branch
+### 8. Return to Main Branch
 
 ```bash
 git checkout main
 ```
 
-### 8. Summary
+### 9. Summary
 
 Report:
 - **Drift detected**: yes/no
