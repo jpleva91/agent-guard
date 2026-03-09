@@ -8,7 +8,7 @@
 
 ---
 
-AgentGuard intercepts AI agent tool calls, enforces policies and invariants, and emits lifecycle events. Every action passes through a deterministic kernel that decides allow or deny before execution.
+AgentGuard intercepts AI agent tool calls, enforces policies and invariants, and produces a verifiable execution trail. Traditional AI safety focuses on model behavior — AgentGuard enforces safety at the execution layer through deterministic governance of every action.
 
 ```
 agent proposes action  →  policy evaluated  →  invariants checked  →  allow/deny  →  execute  →  events emitted
@@ -54,6 +54,17 @@ npx agentguard guard --policy agentguard.yaml
 # Inspect the last run
 npx agentguard inspect --last
 ```
+
+## Why AgentGuard Exists
+
+AI coding agents execute file writes, shell commands, and git operations autonomously — but there's no governance layer between what an agent proposes and what actually runs. One bad tool call can push to main, leak secrets, or delete production files.
+
+AgentGuard adds a **deterministic decision point** between proposal and execution:
+
+- **Safety policies** — declare what agents can and cannot do in YAML
+- **Invariant enforcement** — 6 built-in checks (secrets, protected branches, blast radius) run on every action
+- **Audit trail** — every decision is recorded as structured JSONL, inspectable after the fact
+- **Session debugging** — replay any agent session to see exactly what happened and why
 
 ## How It Works
 
@@ -122,14 +133,7 @@ Drop an `agentguard.yaml` in your repo root — the CLI picks it up automaticall
 
 ## Escalation
 
-AgentGuard tracks cumulative denials and violations. Repeated bad behavior escalates:
-
-| Level | Trigger | Effect |
-|-------|---------|--------|
-| **NORMAL** | Default state | Actions evaluated normally |
-| **ELEVATED** | Denials ≥ half threshold | Warning state |
-| **HIGH** | Denials or violations ≥ threshold | Heightened scrutiny |
-| **LOCKDOWN** | Denials or violations ≥ 2× threshold | All actions denied until human intervention |
+AgentGuard tracks repeated denials and invariant violations. If an agent repeatedly attempts blocked actions, the runtime escalates to lockdown — all actions denied until a human intervenes. See [escalation state machine](docs/unified-architecture.md) for the full detail.
 
 ## CLI
 
@@ -192,26 +196,15 @@ agentguard events --last      # Raw JSONL to stdout (pipe to jq, etc.)
 ## Architecture
 
 ```
-Claude Code Tool Call
-    │
-    ▼
-┌─────────────────────────────────────────┐
-│         Governed Action Kernel           │
-│                                         │
-│  1. Normalize (AAB)                     │
-│  2. Policy evaluation                   │
-│  3. Invariant checking                  │
-│  4. Evidence pack generation            │
-│  5. Execute via adapter                 │
-│  6. Emit lifecycle events               │
-│  7. Escalation tracking                 │
-└────────────┬────────────────────────────┘
-             │
-     ┌───────┼───────┐
-     ▼       ▼       ▼
-  TUI     JSONL   EventBus
- render    sink    pub/sub
+Agent Tool Call  →  AgentGuard Kernel  →  Policy + Invariants  →  allow / deny
+                                                                       │
+                                              ┌────────────────────────┤
+                                              ▼                        ▼
+                                     Execution Adapter           Event Stream
+                                    (file, shell, git)        (JSONL audit trail)
 ```
+
+Full kernel loop detail: [docs/unified-architecture.md](docs/unified-architecture.md)
 
 ### Repository Structure
 
@@ -229,7 +222,7 @@ src/
 │   └── sinks/              # JSONL event persistence
 ├── domain/                 # Pure domain logic (no DOM, no Node.js APIs)
 │   ├── actions.ts          # 23 canonical action types
-│   ├── events.ts           # 50+ event kinds
+│   ├── events.ts           # Structured lifecycle events
 │   ├── reference-monitor.ts
 │   └── execution/          # Adapter registry
 ├── core/                   # Shared infrastructure (EventBus, types)
