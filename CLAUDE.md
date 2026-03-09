@@ -44,7 +44,14 @@ src/
 │   ├── monitor.ts          # Escalation state machine
 │   ├── evidence.ts         # Evidence pack generation
 │   ├── decisions/          # Typed decision records
+│   │   ├── factory.ts      # Decision record factory
+│   │   └── types.ts        # Decision record type definitions
 │   └── simulation/         # Pre-execution impact simulation
+│       ├── filesystem-simulator.ts  # File system impact simulation
+│       ├── git-simulator.ts         # Git operation simulation
+│       ├── package-simulator.ts     # Package change simulation
+│       ├── registry.ts              # Simulator registry
+│       └── types.ts                 # Simulation type definitions
 ├── events/                 # Canonical event model
 │   ├── schema.ts           # Event kinds, factory, validation
 │   ├── bus.ts              # Generic typed EventBus
@@ -77,19 +84,22 @@ src/
     ├── actions.ts          # 23 canonical action types across 8 classes
     ├── hash.ts             # Content hashing utilities
     ├── adapters.ts         # Adapter registry interface
-    ├── event-log.ts        # Event logging
-    ├── event-projections.ts # Event projections
-    ├── event-schema.ts     # Event schema definitions
-    ├── index.ts            # Module re-exports
     └── execution-log/      # Execution audit log
+        ├── bridge.ts       # Bridge between event systems
+        ├── event-log.ts    # Event logging
+        ├── event-projections.ts # Event projections
+        ├── event-schema.ts # Event schema definitions
+        └── index.ts        # Module re-exports
 
-tests/                      # Test suite (JS + TS/vitest)
-policy/                     # Policy configuration (JSON)
-docs/                       # System documentation
-hooks/                      # Git hooks for event tracking
+tests/
+├── *.test.js               # 14 JS test files (custom zero-dependency harness)
+└── ts/*.test.ts            # 35 TS test files (vitest)
+policy/                     # Policy configuration (JSON: action_rules, capabilities)
+docs/                       # System documentation (architecture, event model, specs)
+hooks/                      # Git hooks (post-commit, post-merge)
 examples/                   # Example governance scenarios and error demos
 scripts/                    # Build and utility scripts
-spec/                       # Feature specifications
+spec/                       # Feature specifications and templates
 ```
 
 ## Development Commands
@@ -147,14 +157,30 @@ Each top-level directory maps to a single architectural concept:
 - `agentguard inspect [runId]` — Show action graph and decisions for a run
 - `agentguard events [runId]` — Show raw event stream for a run
 - `agentguard replay` — Replay a governance session timeline
+- `agentguard claude-hook` — Handle Claude Code PreToolUse/PostToolUse hook events
 - `agentguard claude-init` — Set up Claude Code hook integration
 
 ### Event Model
-The canonical event model is the architectural spine. Key event kinds:
-- Governance: `POLICY_DENIED`, `UNAUTHORIZED_ACTION`, `INVARIANT_VIOLATION`
-- Lifecycle: `RUN_STARTED`, `RUN_ENDED`, `CHECKPOINT_REACHED`
-- Safety: `BLAST_RADIUS_EXCEEDED`, `MERGE_GUARD_FAILURE`, `EVIDENCE_PACK_GENERATED`
-- Dev activity: `FILE_SAVED`, `TEST_COMPLETED`, `BUILD_COMPLETED`, `COMMIT_CREATED`
+The canonical event model is the architectural spine. Event kinds defined in `src/events/schema.ts`:
+- **Governance**: `PolicyDenied`, `UnauthorizedAction`, `InvariantViolation`
+- **Lifecycle**: `RunStarted`, `RunEnded`, `CheckpointReached`, `StateChanged`
+- **Safety**: `BlastRadiusExceeded`, `MergeGuardFailure`, `EvidencePackGenerated`
+- **Reference Monitor**: `ActionRequested`, `ActionAllowed`, `ActionDenied`, `ActionEscalated`, `ActionExecuted`, `ActionFailed`
+- **Decision & Simulation**: `DecisionRecorded`, `SimulationCompleted`
+- **Pipeline**: `PipelineStarted`, `StageCompleted`, `StageFailed`, `PipelineCompleted`, `PipelineFailed`, `FileScopeViolation`
+- **Dev activity**: `FileSaved`, `TestCompleted`, `BuildCompleted`, `CommitCreated`, `CodeReviewed`, `DeployCompleted`, `LintCompleted`
+- **Ingestion**: `ErrorObserved`, `BugClassified`, `ActivityRecorded`, `EvolutionTriggered`
+
+### Action Classes & Types
+23 canonical action types across 8 classes, defined in `src/core/actions.ts`:
+- **file**: `file.read`, `file.write`, `file.delete`, `file.move`
+- **test**: `test.run`, `test.run.unit`, `test.run.integration`
+- **git**: `git.diff`, `git.commit`, `git.push`, `git.branch.create`, `git.branch.delete`, `git.checkout`, `git.reset`, `git.merge`
+- **shell**: `shell.exec`
+- **npm**: `npm.install`, `npm.script.run`, `npm.publish`
+- **http**: `http.request`
+- **deploy**: `deploy.trigger`
+- **infra**: `infra.apply`, `infra.destroy`
 
 ### Build & Module System
 TypeScript source compiles via `tsc` (individual modules for tests/imports) + `esbuild` (CLI bundle).
@@ -195,8 +221,8 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 ```
 
 **Test structure:**
-- **JS tests** (`tests/*.test.js`): 11+ files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (`tests/ts/*.test.ts`): 34+ files using vitest
+- **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
+- **TypeScript tests** (`tests/ts/*.test.ts`): 35 files using vitest
 - **Coverage areas**: adapters, kernel (AAB, engine, monitor), CLI commands, decision records, domain models, events, evidence packs, execution log, invariants, JSONL persistence, policy evaluation, simulation, YAML loading
 
 ## CI/CD & Automation
