@@ -3,6 +3,8 @@
 
 import type { KernelResult } from '../kernel.js';
 import type { MonitorDecision } from '../monitor.js';
+import type { GovernanceDecisionRecord } from '../decisions/types.js';
+import type { SimulationResult } from '../simulation/types.js';
 
 const ANSI = {
   reset: '\x1b[0m',
@@ -104,6 +106,91 @@ export function renderMonitorStatus(decision: MonitorDecision): string {
           : ANSI.bold + ANSI.red;
 
   return `  ${ANSI.dim}[${levelColor}${level}${ANSI.reset}${ANSI.dim}] evals:${m.totalEvaluations} denied:${m.totalDenials} violations:${m.totalViolations}${ANSI.reset}`;
+}
+
+export function renderSimulation(simulation: SimulationResult): string {
+  const lines: string[] = [];
+  const riskColor =
+    simulation.riskLevel === 'high'
+      ? ANSI.red
+      : simulation.riskLevel === 'medium'
+        ? ANSI.yellow
+        : ANSI.green;
+
+  lines.push(`  ${ANSI.bold}${ANSI.blue}Simulation${ANSI.reset} ${ANSI.dim}(${simulation.simulatorId})${ANSI.reset}`);
+
+  for (const change of simulation.predictedChanges) {
+    lines.push(`    ${ANSI.dim}${ICONS.bullet} ${change}${ANSI.reset}`);
+  }
+
+  lines.push(
+    `    blast radius: ${ANSI.bold}${simulation.blastRadius}${ANSI.reset} | risk: ${riskColor}${simulation.riskLevel}${ANSI.reset} | ${ANSI.dim}${simulation.durationMs}ms${ANSI.reset}`
+  );
+
+  return lines.join('\n');
+}
+
+export function renderDecisionRecord(record: GovernanceDecisionRecord): string {
+  const lines: string[] = [];
+  const outcomeColor = record.outcome === 'allow' ? ANSI.green : ANSI.red;
+  const outcomeIcon = record.outcome === 'allow' ? ICONS.allowed : ICONS.denied;
+
+  lines.push(`  ${ANSI.bold}Decision Record${ANSI.reset} ${ANSI.dim}${record.recordId}${ANSI.reset}`);
+  lines.push(`    action: ${record.action.type} ${ANSI.dim}${record.action.target}${ANSI.reset}`);
+  lines.push(`    outcome: ${outcomeColor}${outcomeIcon} ${record.outcome.toUpperCase()}${ANSI.reset}`);
+  lines.push(`    reason: ${ANSI.dim}${record.reason}${ANSI.reset}`);
+
+  if (record.policy.matchedPolicyId) {
+    lines.push(`    policy: ${ANSI.dim}${record.policy.matchedPolicyName} (${record.policy.matchedPolicyId})${ANSI.reset}`);
+  }
+
+  if (record.invariants.violations.length > 0) {
+    for (const v of record.invariants.violations) {
+      lines.push(`    ${ANSI.yellow}${ICONS.warning} ${v.name}${ANSI.reset} ${ANSI.dim}(${v.actual})${ANSI.reset}`);
+    }
+  }
+
+  if (record.simulation) {
+    const sim = record.simulation;
+    const riskColor = sim.riskLevel === 'high' ? ANSI.red : sim.riskLevel === 'medium' ? ANSI.yellow : ANSI.green;
+    lines.push(`    simulation: blast=${sim.blastRadius} risk=${riskColor}${sim.riskLevel}${ANSI.reset}`);
+  }
+
+  if (record.execution.executed) {
+    const execStatus = record.execution.success
+      ? `${ANSI.green}success${ANSI.reset}`
+      : `${ANSI.red}failed${ANSI.reset}`;
+    lines.push(`    execution: ${execStatus} ${ANSI.dim}(${record.execution.durationMs}ms)${ANSI.reset}`);
+  }
+
+  return lines.join('\n');
+}
+
+export function renderDecisionTable(records: GovernanceDecisionRecord[]): string {
+  const lines: string[] = [];
+  lines.push('');
+  lines.push(`  ${ANSI.bold}Decision Records${ANSI.reset} ${ANSI.dim}(${records.length} decisions)${ANSI.reset}`);
+  lines.push(`  ${ANSI.dim}${'─'.repeat(50)}${ANSI.reset}`);
+
+  for (let i = 0; i < records.length; i++) {
+    const r = records[i];
+    const num = `${i + 1}.`.padStart(4);
+    const icon = r.outcome === 'allow'
+      ? `${ANSI.green}${ICONS.allowed}${ANSI.reset}`
+      : `${ANSI.red}${ICONS.denied}${ANSI.reset}`;
+
+    lines.push(`  ${num} ${icon} ${r.action.type} ${ANSI.dim}${r.action.target}${ANSI.reset}`);
+    lines.push(`       ${ANSI.dim}${r.reason}${ANSI.reset}`);
+
+    if (r.invariants.violations.length > 0) {
+      for (const v of r.invariants.violations) {
+        lines.push(`       ${ANSI.yellow}${ICONS.warning} ${v.name}${ANSI.reset}`);
+      }
+    }
+  }
+
+  lines.push('');
+  return lines.join('\n');
 }
 
 export function renderKernelResult(result: KernelResult, verbose?: boolean): string {

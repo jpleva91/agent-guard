@@ -3,9 +3,11 @@
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { renderEventStream } from '../../agentguard/renderers/tui.js';
+import { renderEventStream, renderDecisionTable } from '../../agentguard/renderers/tui.js';
 import { getEventFilePath } from '../../agentguard/sinks/jsonl.js';
+import { getDecisionFilePath } from '../../agentguard/sinks/decision-jsonl.js';
 import type { DomainEvent } from '../../core/types.js';
+import type { GovernanceDecisionRecord } from '../../agentguard/decisions/types.js';
 
 const BASE_DIR = '.agentguard';
 const EVENTS_DIR = join(BASE_DIR, 'events');
@@ -34,6 +36,28 @@ function loadEvents(runId: string): DomainEvent[] {
   return events;
 }
 
+function loadDecisions(runId: string): GovernanceDecisionRecord[] {
+  const filePath = getDecisionFilePath(runId);
+  if (!existsSync(filePath)) {
+    return [];
+  }
+
+  const content = readFileSync(filePath, 'utf8');
+  const records: GovernanceDecisionRecord[] = [];
+
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    try {
+      records.push(JSON.parse(trimmed) as GovernanceDecisionRecord);
+    } catch {
+      // Skip malformed lines
+    }
+  }
+
+  return records;
+}
+
 function listRuns(): string[] {
   if (!existsSync(EVENTS_DIR)) return [];
   return readdirSync(EVENTS_DIR)
@@ -44,9 +68,11 @@ function listRuns(): string[] {
 }
 
 export async function inspect(args: string[]): Promise<void> {
-  const runId = args[0];
+  const showDecisions = args.includes('--decisions');
+  const filteredArgs = args.filter((a) => a !== '--decisions');
+  const targetArg = filteredArgs[0];
 
-  if (!runId || runId === '--list') {
+  if (!targetArg || targetArg === '--list') {
     const runs = listRuns();
     if (runs.length === 0) {
       process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
@@ -65,16 +91,26 @@ export async function inspect(args: string[]): Promise<void> {
   }
 
   // Check for --last flag
-  const targetRunId = runId === '--last' ? listRuns()[0] : runId;
+  const targetRunId = targetArg === '--last' ? listRuns()[0] : targetArg;
   if (!targetRunId) {
     process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n\n');
     return;
   }
 
   const events = loadEvents(targetRunId);
-  if (events.length === 0) return;
+  if (events.length === 0 && !showDecisions) return;
 
   process.stderr.write(`\n  \x1b[1mRun:\x1b[0m ${targetRunId}\n`);
+
+  // Show decision records if --decisions flag is present
+  if (showDecisions) {
+    const decisions = loadDecisions(targetRunId);
+    if (decisions.length > 0) {
+      process.stderr.write(renderDecisionTable(decisions));
+    } else {
+      process.stderr.write('\n  \x1b[2mNo decision records found for this run.\x1b[0m\n');
+    }
+  }
 
   // Reconstruct action graph from events
   const actionEvents = events.filter(
@@ -148,7 +184,9 @@ export async function inspect(args: string[]): Promise<void> {
   }
 
   // Show event stream
-  process.stderr.write(renderEventStream(events));
+  if (events.length > 0) {
+    process.stderr.write(renderEventStream(events));
+  }
 }
 
 export async function events(args: string[]): Promise<void> {

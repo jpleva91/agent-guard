@@ -7,8 +7,18 @@ import { createKernel } from '../../agentguard/kernel.js';
 import type { KernelConfig } from '../../agentguard/kernel.js';
 import { createLiveRegistry } from '../../agentguard/adapters/registry.js';
 import { createJsonlSink } from '../../agentguard/sinks/jsonl.js';
+import { createDecisionJsonlSink } from '../../agentguard/sinks/decision-jsonl.js';
 import { loadYamlPolicy } from '../../agentguard/policies/yaml-loader.js';
-import { renderBanner, renderKernelResult, renderMonitorStatus } from '../../agentguard/renderers/tui.js';
+import {
+  renderBanner,
+  renderKernelResult,
+  renderMonitorStatus,
+  renderDecisionRecord,
+} from '../../agentguard/renderers/tui.js';
+import { createSimulatorRegistry } from '../../agentguard/simulation/registry.js';
+import { createGitSimulator } from '../../agentguard/simulation/git-simulator.js';
+import { createFilesystemSimulator } from '../../agentguard/simulation/filesystem-simulator.js';
+import { createPackageSimulator } from '../../agentguard/simulation/package-simulator.js';
 import type { RawAgentAction } from '../../agentguard/core/aab.js';
 
 export interface GuardOptions {
@@ -16,6 +26,7 @@ export interface GuardOptions {
   dryRun?: boolean;
   verbose?: boolean;
   stdin?: boolean;
+  simulate?: boolean;
 }
 
 function loadPolicyFile(policyPath: string): unknown[] {
@@ -54,29 +65,37 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
   const policyPath = options.policy || findDefaultPolicy();
   const policyDefs = policyPath ? loadPolicyFile(policyPath) : [];
 
+  // Build simulator registry (enabled by default)
+  const simulators = createSimulatorRegistry();
+  if (options.simulate !== false) {
+    simulators.register(createGitSimulator());
+    simulators.register(createFilesystemSimulator());
+    simulators.register(createPackageSimulator());
+  }
+
+  // Generate run ID early so both sinks share it
+  const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+  // Create sinks
+  const jsonlSink = createJsonlSink({ runId });
+  const decisionSink = createDecisionJsonlSink({ runId });
+
   // Build kernel config
   const kernelConfig: KernelConfig = {
+    runId,
     policyDefs,
     dryRun: options.dryRun ?? false,
     adapters: options.dryRun ? undefined : createLiveRegistry(),
+    sinks: [jsonlSink],
+    decisionSinks: [decisionSink],
+    simulators: simulators.all().length > 0 ? simulators : undefined,
   };
 
   const kernel = createKernel(kernelConfig);
-  const runId = kernel.getRunId();
-
-  // Add JSONL sink
-  const jsonlSink = createJsonlSink({ runId });
-  kernelConfig.sinks = [jsonlSink];
-
-  // Re-create kernel with sink (sinks are set at creation time)
-  const fullKernel = createKernel({
-    ...kernelConfig,
-    runId,
-    sinks: [jsonlSink],
-  });
 
   // Render banner
   const policyName = policyPath || 'default (no file)';
+  const simCount = simulators.all().length;
   process.stderr.write(
     renderBanner({
       policyName,
@@ -84,18 +103,21 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
       verbose: options.verbose,
     })
   );
-  process.stderr.write(`  ${'\x1b[2m'}run: ${runId}${'\x1b[0m'}\n\n`);
+  process.stderr.write(`  ${'\x1b[2m'}run: ${runId}${'\x1b[0m'}\n`);
+  if (simCount > 0) {
+    process.stderr.write(`  ${'\x1b[2m'}simulators: ${simCount} active${'\x1b[0m'}\n`);
+  }
+  process.stderr.write('\n');
 
   if (options.stdin) {
-    // Read actions from stdin (one JSON per line)
-    return processStdin(fullKernel, options);
+    return processStdin(kernel, options);
   }
 
   // Interactive mode: read from stdin line by line
   process.stderr.write(`  ${'\x1b[2m'}Listening for actions on stdin (JSON per line)...${'\x1b[0m'}\n`);
   process.stderr.write(`  ${'\x1b[2m'}Press Ctrl+C to stop.${'\x1b[0m'}\n\n`);
 
-  return processStdin(fullKernel, options);
+  return processStdin(kernel, options);
 }
 
 async function processStdin(kernel: ReturnType<typeof createKernel>, options: GuardOptions): Promise<number> {
@@ -118,6 +140,12 @@ async function processStdin(kernel: ReturnType<typeof createKernel>, options: Gu
 
           // Render result to stderr
           process.stderr.write(renderKernelResult(result, options.verbose) + '\n');
+
+          // Render decision record if verbose
+          if (options.verbose && result.decisionRecord) {
+            process.stderr.write(renderDecisionRecord(result.decisionRecord) + '\n');
+          }
+
           if (result.decision.violations.length > 0 || !result.allowed) {
             process.stderr.write(renderMonitorStatus(result.decision) + '\n');
           }
@@ -131,6 +159,7 @@ async function processStdin(kernel: ReturnType<typeof createKernel>, options: Gu
             reason: result.decision.decision.reason,
             violations: result.decision.violations.map((v) => v.name),
             runId: result.runId,
+            decisionRecordId: result.decisionRecord?.recordId,
           };
           process.stdout.write(JSON.stringify(output) + '\n');
         } catch (err) {

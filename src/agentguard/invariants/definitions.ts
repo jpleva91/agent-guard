@@ -25,6 +25,10 @@ export interface SystemState {
   filesAffected?: number;
   blastRadiusLimit?: number;
   protectedBranches?: string[];
+  /** Blast radius from pre-execution simulation (overrides filesAffected in blast-radius check) */
+  simulatedBlastRadius?: number;
+  /** Risk level from pre-execution simulation */
+  simulatedRiskLevel?: string;
 }
 
 export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
@@ -74,11 +78,13 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     severity: 3,
     check(state) {
       const limit = state.blastRadiusLimit || 20;
-      const count = state.filesAffected || 0;
+      // Prefer simulated blast radius over static file count when available
+      const count = state.simulatedBlastRadius ?? state.filesAffected ?? 0;
+      const source = state.simulatedBlastRadius !== undefined ? 'simulated' : 'static';
       return {
         holds: count <= limit,
         expected: `At most ${limit} files modified`,
-        actual: `${count} files modified`,
+        actual: `${count} files modified (${source})`,
       };
     },
   },

@@ -191,6 +191,10 @@ export type EventKind =
   | 'ActionEscalated'
   | 'ActionExecuted'
   | 'ActionFailed'
+  // Decision Records
+  | 'DecisionRecorded'
+  // Simulation
+  | 'SimulationCompleted'
   // Pipeline
   | 'PipelineStarted'
   | 'StageCompleted'

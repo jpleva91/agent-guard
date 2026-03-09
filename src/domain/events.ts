@@ -47,6 +47,12 @@ export const ACTION_ESCALATED: EventKind = 'ActionEscalated';
 export const ACTION_EXECUTED: EventKind = 'ActionExecuted';
 export const ACTION_FAILED: EventKind = 'ActionFailed';
 
+// Decision Records
+export const DECISION_RECORDED: EventKind = 'DecisionRecorded';
+
+// Simulation
+export const SIMULATION_COMPLETED: EventKind = 'SimulationCompleted';
+
 // Pipeline
 export const PIPELINE_STARTED: EventKind = 'PipelineStarted';
 export const STAGE_COMPLETED: EventKind = 'StageCompleted';
@@ -181,6 +187,14 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   [ACTION_FAILED]: {
     required: ['actionType', 'target', 'error'],
     optional: ['actionId', 'duration', 'metadata'],
+  },
+  [DECISION_RECORDED]: {
+    required: ['recordId', 'outcome', 'actionType'],
+    optional: ['target', 'reason', 'metadata'],
+  },
+  [SIMULATION_COMPLETED]: {
+    required: ['simulatorId', 'riskLevel', 'blastRadius'],
+    optional: ['predictedChanges', 'durationMs', 'metadata'],
   },
   [PIPELINE_STARTED]: {
     required: ['runId', 'task'],
