@@ -1,17 +1,7 @@
-// BugMon — Entry point and game loop (TypeScript)
+// BugMon — Entry point and game loop
+// Primary mode: Idle auto-dungeon runner (replaces manual exploration)
 
-import {
-  initRenderer,
-  drawMap,
-  drawPlayer,
-  drawBattle,
-  drawRunHUD,
-  drawGrimoire,
-  drawIdleOverlay,
-  setGrimoireScroll,
-  resetGrimoireScroll,
-  clear,
-} from './engine/game-renderer.js';
+import { initRenderer, drawMap, drawPlayer, drawGrimoire, clear } from './engine/game-renderer.js';
 import { clearJustPressed, simulatePress, simulateRelease, wasPressed } from './engine/input.js';
 import { getState, setState, STATES } from './engine/state.js';
 import { getMap } from './world/map.js';
@@ -28,11 +18,18 @@ import {
 import { saveGame, loadGame, applySave, recordBrowserCache } from './sync/save.js';
 import { eventBus, Events } from './engine/events.js';
 import { updateTitle, drawTitle } from './engine/title.js';
-import { unlock, toggleMute } from './audio/sound.js';
-import { playMenuCancel } from './audio/sound.js';
+import { unlock, toggleMute, playMenuCancel } from './audio/sound.js';
 import { loadGameData } from './data-loader.js';
-import { updateEffects } from './engine/effects.js';
 import { CANVAS_W, CANVAS_H } from './theme.js';
+import { setGrimoireScroll, resetGrimoireScroll, drawBattle, drawRunHUD, drawIdleOverlay } from './engine/game-renderer.js';
+import { updateEffects } from './engine/effects.js';
+
+// Dungeon runner imports
+import { createRun, updateRunner, isRunOver, setRunnerMonsters } from './dungeon/runner.js';
+import { drawDungeon } from './dungeon/dungeon-renderer.js';
+import { loadLoot } from './dungeon/loot.js';
+import type { RunnerState } from './dungeon/runner.js';
+
 import type { LoadedGameData } from './data-loader.js';
 import type { GameMon } from './world/player.js';
 import type { TitleResult } from './engine/title.js';
@@ -57,29 +54,10 @@ const AUTO_SAVE_INTERVAL = 30000;
 let MONSTERS: MonsterData[] = [];
 let TYPES: TypesData = {};
 
-// ── Run tracking ─────────────────────────────────────────────────────────
-
-let runNumber = 1;
-
-function loadRunNumber(): number {
-  try {
-    const stored = localStorage.getItem('bugmon_run_number');
-    return stored ? parseInt(stored, 10) || 1 : 1;
-  } catch {
-    return 1;
-  }
-}
-
-function saveRunNumber(): void {
-  try {
-    localStorage.setItem('bugmon_run_number', String(runNumber));
-  } catch {
-    /* ignore */
-  }
-}
+// ── Dungeon runner state ─────────────────────────────────────────────────
+let runnerState: RunnerState | null = null;
 
 // ── Grimoire tracking ────────────────────────────────────────────────────
-
 let discoveredIds: Set<number> = new Set();
 
 function loadDiscovered(): Set<number> {
@@ -116,8 +94,9 @@ export async function init(canvas: HTMLCanvasElement): Promise<void> {
   MONSTERS = data.monsters as MonsterData[];
   TYPES = data.types as TypesData;
 
-  // Load persistent state
-  runNumber = loadRunNumber();
+  // Setup dungeon runner with monster data
+  setRunnerMonsters(MONSTERS);
+  loadLoot();
   discoveredIds = loadDiscovered();
 
   const player = getPlayer();
@@ -127,23 +106,11 @@ export async function init(canvas: HTMLCanvasElement): Promise<void> {
   } else {
     const starter = { ...MONSTERS[0], currentHP: MONSTERS[0].hp } as GameMon;
     player.party.push(starter);
-    // Discover starter
-    discoverMon(starter.id);
   }
 
-  // Discover all party members
-  for (const mon of player.party) {
-    discoverMon(mon.id);
-  }
+  for (const mon of player.party) discoverMon(mon.id);
 
-  eventBus.on(Events.BATTLE_ENDED, (evtData) => {
-    autoSave();
-    // Discover defeated enemies
-    if (evtData.outcome === 'win') {
-      const battle = getBattle();
-      if (battle) discoverMon(battle.enemy.id);
-    }
-  });
+  eventBus.on(Events.BATTLE_ENDED, () => autoSave());
   eventBus.on(Events.CACHE_SUCCESS, (evtData) => {
     const mon = MONSTERS.find((m) => m.name === evtData.name);
     if (mon) {
@@ -175,7 +142,6 @@ function loop(timestamp: number): void {
 function update(dt: number): void {
   const state = getState();
 
-  // Update visual effects every frame
   updateEffects(dt);
 
   saveTimer += dt;
@@ -186,24 +152,41 @@ function update(dt: number): void {
 
   if (state === STATES.TITLE) {
     const result: TitleResult = updateTitle(dt);
-    if (result === 'continue') {
-      setState(STATES.EXPLORE);
-    } else if (result === 'new') {
-      runNumber++;
-      saveRunNumber();
+    if (result === 'continue' || result === 'new') {
+      // Start dungeon run (primary mode)
       const player = getPlayer();
-      player.party = [];
-      const starter = { ...MONSTERS[0], currentHP: MONSTERS[0].hp } as GameMon;
-      player.party.push(starter);
-      player.x = 7;
-      player.y = 5;
-      discoverMon(starter.id);
-      setState(STATES.EXPLORE);
+      if (result === 'new' && player.party.length === 0) {
+        const starter = { ...MONSTERS[0], currentHP: MONSTERS[0].hp } as GameMon;
+        player.party.push(starter);
+      }
+      const lead = player.party[0] || MONSTERS[0];
+      runnerState = createRun(lead);
+      setState(STATES.DUNGEON);
     } else if (result === 'grimoire') {
       resetGrimoireScroll();
       setState(STATES.GRIMOIRE);
     }
+  } else if (state === STATES.DUNGEON) {
+    if (runnerState) {
+      const up = wasPressed('ArrowUp');
+      const down = wasPressed('ArrowDown');
+      const confirm = wasPressed('Enter') || wasPressed(' ');
+
+      runnerState = updateRunner(runnerState, dt, up, down, confirm);
+
+      // Discover defeated enemies
+      if (runnerState.encounterEnemy === null && runnerState.defeated > 0) {
+        // We discover enemies as they're defeated via the event log
+      }
+
+      // Handle run over → return to title on confirm
+      if (isRunOver(runnerState) && confirm) {
+        runnerState = null;
+        setState(STATES.TITLE);
+      }
+    }
   } else if (state === STATES.EXPLORE) {
+    // Legacy explore mode (kept for compatibility)
     const tile = updatePlayer(dt);
     if (tile !== null) {
       const wildMon = checkEncounter(tile);
@@ -240,17 +223,19 @@ function update(dt: number): void {
 function render(): void {
   clear();
   const state = getState();
+  const canvas = document.getElementById('game') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
 
   if (state === STATES.TITLE) {
-    const canvas = document.getElementById('game') as HTMLCanvasElement;
-    const ctx = canvas.getContext('2d')!;
     drawTitle(ctx);
-    return;
+  } else if (state === STATES.DUNGEON) {
+    if (runnerState) {
+      const dt = lastTime > 0 ? 16 : 0; // approximate frame dt for renderer
+      drawDungeon(ctx, runnerState, dt);
+    }
   } else if (state === STATES.EXPLORE) {
     drawMap(getMap());
     drawPlayer(getPlayer());
-
-    // Roguelike Run HUD
     const player = getPlayer();
     const mon = player.party[0];
     const evoProgress = getEvolutionProgress(mon);
@@ -259,27 +244,19 @@ function render(): void {
       currentHP: mon.currentHP,
       maxHP: mon.hp,
       partySize: player.party.length,
-      runNumber,
+      runNumber: 1,
       evoProgress,
     });
-
-    // Idle encounter feed
     drawIdleOverlay();
   } else if (state === STATES.BATTLE_TRANSITION) {
-    const canvas = document.getElementById('game') as HTMLCanvasElement;
-    const ctx = canvas.getContext('2d')!;
     drawTransitionOverlay(ctx, CANVAS_W, CANVAS_H, () => {
       drawMap(getMap());
       drawPlayer(getPlayer());
     });
   } else if (state === STATES.BATTLE) {
     const battle = getBattle();
-    if (battle) {
-      drawBattle(battle, movesData, TYPES.typeColors);
-    }
+    if (battle) drawBattle(battle, movesData, TYPES.typeColors);
   } else if (state === STATES.EVOLVING) {
-    const canvas = document.getElementById('game') as HTMLCanvasElement;
-    const ctx = canvas.getContext('2d')!;
     drawEvolutionAnimation(ctx, CANVAS_W, CANVAS_H);
   } else if (state === STATES.GRIMOIRE) {
     const entries = MONSTERS.map((m) => ({
@@ -294,7 +271,7 @@ function render(): void {
   }
 }
 
-// Auto-initialize when loaded in browser (mirrors JS game/game.js behavior)
+// Auto-initialize when loaded in browser
 if (typeof document !== 'undefined') {
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   if (canvas) {

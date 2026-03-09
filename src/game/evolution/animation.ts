@@ -2,7 +2,7 @@
 
 import { playEvolution } from '../audio/sound.js';
 import { drawSprite } from '../sprites/sprites.js';
-import { Color, Font, applyGlow, clearGlow } from '../theme.js';
+import { Color, Font, glow, clearGlow } from '../theme.js';
 
 interface MonLike {
   name: string;
@@ -93,9 +93,9 @@ function drawMon(
 }
 
 function drawText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number): void {
-  applyGlow(ctx, Color.accentCyan, 8);
+  glow(ctx, Color.accentCyan, 8);
   ctx.fillStyle = Color.textPrimary;
-  ctx.font = Font.bodyMd;
+  ctx.font = Font.body;
   ctx.textAlign = 'center';
   ctx.fillText(text, x, y);
   clearGlow(ctx);

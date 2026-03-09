@@ -11,7 +11,7 @@ import {
   CANVAS_W,
   CANVAS_H,
   hpColor,
-  applyGlow,
+  glow,
   clearGlow,
   TypeColor,
 } from '../theme.js';
@@ -98,10 +98,10 @@ export function drawPlayer(player: PlayerLike): void {
   const spriteName = `player_${player.dir}`;
   if (drawSprite(ctx, spriteName, px, py, TILE, TILE)) return;
 
-  ctx.fillStyle = Color.playerDefault;
+  ctx.fillStyle = Color.accentCyan;
   ctx.fillRect(px + 4, py + 4, TILE - 8, TILE - 8);
 
-  ctx.fillStyle = Color.playerAccent;
+  ctx.fillStyle = Color.gold;
   const cx = px + TILE / 2;
   const cy = py + TILE / 2;
   ctx.beginPath();
@@ -141,14 +141,14 @@ export function drawRunHUD(data: RunHUDData): void {
   const h = Space.hudHeight;
 
   // Background bar
-  ctx.fillStyle = Color.hudBg;
+  ctx.fillStyle = Color.bgSurface;
   ctx.fillRect(0, 0, CANVAS_W, h);
 
   // Bottom accent line
-  ctx.fillStyle = Color.accentPrimary;
+  ctx.fillStyle = Color.accentCyan;
   ctx.fillRect(0, h - 1, CANVAS_W, 1);
 
-  ctx.font = Font.uiMd;
+  ctx.font = Font.small;
 
   // Run number (left)
   ctx.fillStyle = Color.accentCyan;
@@ -165,7 +165,7 @@ export function drawRunHUD(data: RunHUDData): void {
   const barH = 6;
   const barY = h - 14;
   const pct = Math.max(0, data.currentHP / data.maxHP);
-  ctx.fillStyle = Color.hpBarBg;
+  ctx.fillStyle = Color.bgSurface;
   ctx.fillRect(barX, barY, barW, barH);
   ctx.fillStyle = hpColor(data.currentHP, data.maxHP);
   ctx.fillRect(barX, barY, barW * pct, barH);
@@ -176,7 +176,7 @@ export function drawRunHUD(data: RunHUDData): void {
 
   // Evolution progress (right)
   if (data.evoProgress) {
-    ctx.fillStyle = Color.accentSecondary;
+    ctx.fillStyle = Color.accentPurple;
     ctx.fillText(
       `${data.evoProgress.eventLabel}:${data.evoProgress.current}/${data.evoProgress.required}`,
       400,
@@ -218,13 +218,13 @@ export function drawBattle(
   ctx.globalAlpha = 1;
 
   // Enemy name + type indicator
-  ctx.font = Font.bodyMd;
+  ctx.font = Font.body;
   ctx.fillStyle = Color.textPrimary;
   ctx.fillText(battle.enemy.name, 300, 30);
   if (battle.enemy.type) {
     const tc = TypeColor[battle.enemy.type] || Color.textSecondary;
     ctx.fillStyle = tc;
-    ctx.font = Font.uiSm;
+    ctx.font = Font.label;
     ctx.fillText(battle.enemy.type.toUpperCase(), 300, 16);
   }
 
@@ -237,19 +237,19 @@ export function drawBattle(
   const playerAlpha = getSpriteAlpha('player');
   ctx.globalAlpha = playerAlpha;
   if (!playerMon.sprite || !drawSprite(ctx, playerMon.sprite, 80, 140, 64, 64)) {
-    const playerSprite = generateMonster(playerMon.id, playerMon.color || Color.playerDefault, 64);
+    const playerSprite = generateMonster(playerMon.id, playerMon.color || Color.accentCyan, 64);
     ctx.drawImage(playerSprite, 80, 140);
   }
   ctx.globalAlpha = 1;
 
   // Player name + type
-  ctx.font = Font.bodyMd;
+  ctx.font = Font.body;
   ctx.fillStyle = Color.textPrimary;
   ctx.fillText(playerMon.name, 60, 130);
   if (playerMon.type) {
     const tc = TypeColor[playerMon.type] || Color.textSecondary;
     ctx.fillStyle = tc;
-    ctx.font = Font.uiSm;
+    ctx.font = Font.label;
     ctx.fillText(playerMon.type.toUpperCase(), 60, 218);
   }
 
@@ -263,7 +263,7 @@ export function drawBattle(
   // ── Menu area ──
   ctx.fillStyle = Color.bgSurface;
   ctx.fillRect(0, 240, CANVAS_W, Space.menuHeight);
-  ctx.strokeStyle = Color.borderAccent;
+  ctx.strokeStyle = Color.glassBorder;
   ctx.lineWidth = 2;
   ctx.strokeRect(0, 240, CANVAS_W, Space.menuHeight);
 
@@ -290,20 +290,20 @@ function drawBattleMenu(ctx: CanvasRenderingContext2D, selectedIndex: number): v
 
     if (selected) {
       // Selection indicator — neon box
-      applyGlow(ctx, Color.accentPrimary, 6);
-      ctx.strokeStyle = Color.accentPrimary;
+      glow(ctx, Color.accentCyan, 6);
+      ctx.strokeStyle = Color.accentCyan;
       ctx.lineWidth = 1;
       ctx.strokeRect(x - 8, y - 14, ctx.measureText(opt).width + 20, 22);
       clearGlow(ctx);
     }
 
-    ctx.font = selected ? Font.bodyMd : Font.bodySm;
-    ctx.fillStyle = selected ? Color.accentPrimary : Color.textPrimary;
+    ctx.font = selected ? Font.body : Font.small;
+    ctx.fillStyle = selected ? Color.accentCyan : Color.textPrimary;
     ctx.fillText(opt, x, y);
   });
 
   // Keyboard hint
-  ctx.font = Font.uiSm;
+  ctx.font = Font.label;
   ctx.fillStyle = Color.textDisabled;
   ctx.fillText('[←→] Select   [ENTER] Confirm', 120, 305);
 }
@@ -336,26 +336,26 @@ function drawMoveMenu(
 
       // Type label next to name
       if (selected) {
-        ctx.font = Font.uiSm;
+        ctx.font = Font.label;
         ctx.fillStyle = tc;
         const nameWidth = ctx.measureText(move.name).width;
         ctx.fillText(move.type.toUpperCase(), x + 12 + nameWidth + 6, y);
       }
     }
 
-    ctx.font = selected ? Font.bodyMd : Font.bodySm;
-    ctx.fillStyle = selected ? Color.accentPrimary : Color.textPrimary;
+    ctx.font = selected ? Font.body : Font.small;
+    ctx.fillStyle = selected ? Color.accentCyan : Color.textPrimary;
     ctx.fillText(move.name, x + 12, y);
   });
 
   // Keyboard hint
-  ctx.font = Font.uiSm;
+  ctx.font = Font.label;
   ctx.fillStyle = Color.textDisabled;
   ctx.fillText('[←→↑↓] Select   [ENTER] Use   [ESC] Back', 90, 305);
 }
 
 function drawBattleMessage(ctx: CanvasRenderingContext2D, message: string): void {
-  ctx.font = Font.bodyMd;
+  ctx.font = Font.body;
   ctx.fillStyle = Color.textPrimary;
 
   // Word-wrap long messages
@@ -390,7 +390,7 @@ function drawHPBar(
   const pct = Math.max(0, Math.min(1, current / max));
 
   // Background
-  ctx.fillStyle = Color.hpBarBg;
+  ctx.fillStyle = Color.bgSurface;
   ctx.fillRect(x, y, width, 8);
 
   // Fill
@@ -399,13 +399,13 @@ function drawHPBar(
   ctx.fillRect(x, y, width * pct, 8);
 
   // Border
-  ctx.strokeStyle = Color.borderDefault;
+  ctx.strokeStyle = Color.glassBorder;
   ctx.lineWidth = 1;
   ctx.strokeRect(x, y, width, 8);
 
   // HP text
   ctx.fillStyle = Color.textPrimary;
-  ctx.font = Font.uiSm;
+  ctx.font = Font.label;
   ctx.fillText(`${Math.max(0, Math.ceil(current))}/${max}`, x + width + 5, y + 8);
 }
 
@@ -442,16 +442,16 @@ export function drawGrimoire(
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
   // Title
-  ctx.font = Font.titleMd;
-  applyGlow(ctx, Color.accentSecondary, 10);
-  ctx.fillStyle = Color.accentSecondary;
+  ctx.font = Font.heading;
+  glow(ctx, Color.accentPurple, 10);
+  ctx.fillStyle = Color.accentPurple;
   ctx.textAlign = 'center';
   ctx.fillText('BUG GRIMOIRE', CANVAS_W / 2, 28);
   clearGlow(ctx);
   ctx.textAlign = 'left';
 
   // Subtitle
-  ctx.font = Font.uiMd;
+  ctx.font = Font.small;
   ctx.fillStyle = Color.textSecondary;
   ctx.textAlign = 'center';
   const discovered = entries.filter((e) => discoveredIds.has(e.id)).length;
@@ -497,13 +497,13 @@ export function drawGrimoire(
       }
 
       // Name
-      ctx.font = Font.uiSm;
+      ctx.font = Font.label;
       ctx.fillStyle = Color.textPrimary;
       ctx.fillText(entry.name, x + 42, y + 20);
 
       // Type
       ctx.fillStyle = TypeColor[entry.type] || Color.textSecondary;
-      ctx.font = Font.uiSm;
+      ctx.font = Font.label;
       ctx.fillText(entry.type, x + 42, y + 34);
 
       // Encounter count
@@ -515,7 +515,7 @@ export function drawGrimoire(
       // Unknown silhouette
       ctx.fillStyle = 'rgba(255,255,255,0.06)';
       ctx.fillRect(x + 10, y + 8, 28, 28);
-      ctx.font = Font.uiMd;
+      ctx.font = Font.small;
       ctx.fillStyle = Color.textDisabled;
       ctx.fillText('???', x + 50, y + 28);
     }
@@ -523,14 +523,14 @@ export function drawGrimoire(
 
   // Scroll indicators
   if (grimoireScroll > 0) {
-    ctx.font = Font.uiSm;
+    ctx.font = Font.label;
     ctx.fillStyle = Color.textDisabled;
     ctx.textAlign = 'center';
     ctx.fillText('▲', CANVAS_W / 2, startY - 2);
     ctx.textAlign = 'left';
   }
   if (endIdx < entries.length) {
-    ctx.font = Font.uiSm;
+    ctx.font = Font.label;
     ctx.fillStyle = Color.textDisabled;
     ctx.textAlign = 'center';
     ctx.fillText('▼', CANVAS_W / 2, CANVAS_H - 10);
@@ -538,7 +538,7 @@ export function drawGrimoire(
   }
 
   // Footer hint
-  ctx.font = Font.uiSm;
+  ctx.font = Font.label;
   ctx.fillStyle = Color.textDisabled;
   ctx.textAlign = 'center';
   ctx.fillText('[↑↓] Scroll   [ESC] Back', CANVAS_W / 2, CANVAS_H - 4);
