@@ -25,7 +25,11 @@ export async function claudeHook(hookType?: string): Promise<void> {
       (!hookType && !data.tool_output);
 
     if (isPreToolUse) {
-      await handlePreToolUse(data as unknown as ClaudeCodeHookPayload);
+      // Resolve session_id: payload field > environment variable > undefined
+      const sessionId =
+        (data.session_id as string | undefined) || process.env.CLAUDE_SESSION_ID || undefined;
+      const payload = { ...data, session_id: sessionId } as unknown as ClaudeCodeHookPayload;
+      await handlePreToolUse(payload);
     } else {
       handlePostToolUse(data);
     }
