@@ -33,6 +33,8 @@ npx agentguard events --last                    # Show raw event stream
 
 TypeScript in `src/` is the **single source of truth**. It compiles to `dist/` via `tsc` (individual modules) + `esbuild` (CLI bundle).
 
+**Top-level documentation**: `README.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `agentguard.yaml` (default policy)
+
 ```
 src/
 ├── kernel/                 # Governed action kernel
@@ -62,19 +64,32 @@ src/
 │   └── claude-code.ts      # Claude Code hook adapter
 ├── cli/                    # CLI entry point + commands
 │   ├── bin.ts              # CLI entry point
+│   ├── args.ts             # Argument parsing utilities
+│   ├── colors.ts           # Terminal color helpers
 │   ├── tui.ts              # TUI renderer (terminal action stream)
-│   └── commands/           # guard, inspect, replay, claude-hook
+│   ├── recorder.ts         # Event recording
+│   ├── replay.ts           # Session replay logic
+│   ├── session-store.ts    # Session management
+│   ├── file-event-store.ts # File-based event persistence
+│   └── commands/           # guard, inspect, replay, claude-hook, claude-init
 └── core/                   # Shared utilities
     ├── types.ts            # Shared TypeScript type definitions
     ├── actions.ts          # 23 canonical action types across 8 classes
     ├── hash.ts             # Content hashing utilities
     ├── adapters.ts         # Adapter registry interface
+    ├── event-log.ts        # Event logging
+    ├── event-projections.ts # Event projections
+    ├── event-schema.ts     # Event schema definitions
+    ├── index.ts            # Module re-exports
     └── execution-log/      # Execution audit log
 
 tests/                      # Test suite (JS + TS/vitest)
 policy/                     # Policy configuration (JSON)
 docs/                       # System documentation
 hooks/                      # Git hooks for event tracking
+examples/                   # Example governance scenarios and error demos
+scripts/                    # Build and utility scripts
+spec/                       # Feature specifications
 ```
 
 ## Development Commands
@@ -175,8 +190,14 @@ TypeScript source compiles via `tsc` (individual modules for tests/imports) + `e
 ```bash
 npm test                   # Run JS tests
 npm run ts:test            # Run TypeScript tests (vitest)
+npm run ts:test:watch      # Run TypeScript tests in watch mode
 npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 ```
+
+**Test structure:**
+- **JS tests** (`tests/*.test.js`): 11+ files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
+- **TypeScript tests** (`tests/ts/*.test.ts`): 34+ files using vitest
+- **Coverage areas**: adapters, kernel (AAB, engine, monitor), CLI commands, decision records, domain models, events, evidence packs, execution log, invariants, JSONL persistence, policy evaluation, simulation, YAML loading
 
 ## CI/CD & Automation
 
@@ -184,7 +205,6 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `size-check.yml` | PR (ignoring docs/markdown) | Runs linting and size checks |
-| `publish.yml` | GitHub Release published | Publishes npm package |
-| `release.yml` | Push to `main`/`master` | Auto-generates release PRs via release-please |
+| `size-check.yml` | PR (ignoring docs/markdown) | Runs linting, type-checking, tests, and size checks |
+| `publish.yml` | GitHub Release published | Validates version, runs tests, publishes npm package with provenance |
 | `codeql.yml` | PR to `main`/`master` + weekly schedule | CodeQL security analysis |
