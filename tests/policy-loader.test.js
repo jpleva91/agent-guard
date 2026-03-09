@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { validatePolicy, loadPolicies, VALID_ACTIONS } from '../dist/agentguard/policies/loader.js';
+import { validatePolicy, loadPolicies, VALID_ACTIONS } from '../dist/policy/loader.js';
 
 suite('AgentGuard — Policy Loader', () => {
   test('validates a correct policy', () => {

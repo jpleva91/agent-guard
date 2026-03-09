@@ -1,6 +1,6 @@
 // Tests for Filesystem Simulator
 import { describe, it, expect } from 'vitest';
-import { createFilesystemSimulator } from '../../src/agentguard/simulation/filesystem-simulator.js';
+import { createFilesystemSimulator } from '../../src/kernel/simulation/filesystem-simulator.js';
 
 describe('FilesystemSimulator', () => {
   const simulator = createFilesystemSimulator();

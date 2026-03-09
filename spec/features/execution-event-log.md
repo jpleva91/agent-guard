@@ -6,8 +6,7 @@
 ## Summary
 
 The Execution Event Log introduces a universal event stream that records not just errors
-but all significant actions in the development environment. This transforms BugMon from
-error-reactive ("bugs appear") to causally-aware ("why bugs appeared"). Every event
+but all significant actions in the development environment. Every event
 becomes part of a causal chain: agent edits, test runs, deployments, and failures are
 linked together, enabling replay, root-cause tracing, anomaly detection, and risk scoring.
 
@@ -23,7 +22,6 @@ linked together, enabling replay, root-cause tracing, anomaly detection, and ris
 - [x] Implement trace (walk causal chain from an event back to root cause)
 - [x] Implement risk scoring (score an agent run based on event patterns)
 - [x] Add CLI commands: `replay`, `trace`, `score`
-- [x] Map execution events to game encounters (RuntimeException → monster, etc.)
 - [x] Integrate with existing EventBus and domain event system
 
 ## Events Produced

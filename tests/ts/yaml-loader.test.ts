@@ -1,6 +1,6 @@
 // Tests for YAML policy loader
 import { describe, it, expect } from 'vitest';
-import { parseYamlPolicy, loadYamlPolicy } from '../../src/agentguard/policies/yaml-loader.js';
+import { parseYamlPolicy, loadYamlPolicy } from '../../src/policy/yaml-loader.js';
 
 describe('parseYamlPolicy', () => {
   it('parses basic policy', () => {

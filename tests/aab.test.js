@@ -1,12 +1,12 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { resetEventCounter } from '../dist/domain/events.js';
+import { resetEventCounter } from '../dist/events/schema.js';
 import {
   normalizeIntent,
   authorize,
   detectGitAction,
   isDestructiveCommand,
-} from '../dist/agentguard/core/aab.js';
+} from '../dist/kernel/aab.js';
 
 suite('AgentGuard — Action Authorization Boundary', () => {
   test('normalizeIntent maps Write tool to file.write', () => {

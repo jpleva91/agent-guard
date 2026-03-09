@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { EventBus } from '../dist/core/event-bus.js';
+import { EventBus } from '../dist/events/bus.js';
 
 suite('Domain EventBus (domain/event-bus.js)', () => {
   test('on registers listener and emit calls it', () => {

@@ -3,11 +3,11 @@ import { describe, it, expect } from 'vitest';
 import {
   normalizeClaudeCodeAction,
   formatHookResponse,
-} from '../../src/agentguard/adapters/claude-code.js';
-import type { ClaudeCodeHookPayload } from '../../src/agentguard/adapters/claude-code.js';
-import { createKernel } from '../../src/agentguard/kernel.js';
-import { resetActionCounter } from '../../src/domain/actions.js';
-import { resetEventCounter } from '../../src/domain/events.js';
+} from '../../src/adapters/claude-code.js';
+import type { ClaudeCodeHookPayload } from '../../src/adapters/claude-code.js';
+import { createKernel } from '../../src/kernel/kernel.js';
+import { resetActionCounter } from '../../src/core/actions.js';
+import { resetEventCounter } from '../../src/events/schema.js';
 import { beforeEach } from 'vitest';
 
 beforeEach(() => {

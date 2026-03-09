@@ -9,7 +9,7 @@ import {
   BATTLE_ENDED,
   INVARIANT_VIOLATION,
   PIPELINE_STARTED,
-} from '../../src/domain/events.js';
+} from '../../src/events/schema.js';
 
 describe('domain/events', () => {
   beforeEach(() => {

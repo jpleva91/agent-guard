@@ -1,6 +1,6 @@
 // Tests for Package Simulator
 import { describe, it, expect } from 'vitest';
-import { createPackageSimulator } from '../../src/agentguard/simulation/package-simulator.js';
+import { createPackageSimulator } from '../../src/kernel/simulation/package-simulator.js';
 
 describe('PackageSimulator', () => {
   const simulator = createPackageSimulator();

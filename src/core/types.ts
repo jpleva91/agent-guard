@@ -1,7 +1,7 @@
 /**
- * BugMon Core Type Definitions
+ * AgentGuard Core Type Definitions
  *
- * All shared types for the BugMon TypeScript system.
+ * All shared types for the AgentGuard TypeScript system.
  * This is the single source of truth for type contracts across modules.
  */
 

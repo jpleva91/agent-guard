@@ -1,72 +1,55 @@
 {
   "name": "agentguard",
   "version": "1.0.0",
-  "description": "Deterministic runtime guardrails for AI-assisted software systems. BugMon mode visualizes failures as monsters you battle.",
+  "description": "Runtime governance for AI coding agents — policy enforcement, invariant checking, and audit trails for agent tool calls.",
   "type": "module",
   "bin": {
-    "agentguard": "./dist/cli/bin.js",
-    "bugmon": "./dist/cli/bin.js"
+    "agentguard": "./dist/cli/bin.js"
   },
   "files": [
     "dist/",
-    "ecosystem/data/",
     "hooks/",
     "LICENSE",
     "README.md"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jpleva91/BugMon.git"
+    "url": "git+https://github.com/jpleva91/agent-guard.git"
   },
-  "homepage": "https://github.com/jpleva91/BugMon#readme",
+  "homepage": "https://github.com/jpleva91/agent-guard#readme",
   "bugs": {
-    "url": "https://github.com/jpleva91/BugMon/issues"
+    "url": "https://github.com/jpleva91/agent-guard/issues"
   },
   "author": "jpleva91",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "test": "node tests/run.js",
-    "test:coverage": "c8 --check-coverage --lines 50 node tests/run.js",
-    "lint": "eslint ecosystem/ tests/ src/",
-    "lint:fix": "eslint --fix ecosystem/ tests/ src/",
-    "format": "prettier --check ecosystem/ src/",
-    "format:fix": "prettier --write ecosystem/ src/",
-    "simulate": "node dist/cli/index.js simulate",
-    "simulate:quick": "node dist/cli/index.js simulate --all --battles 1000",
-    "simulate:full": "node dist/cli/index.js simulate --all --battles 50000",
-    "simulate:compare": "node dist/cli/index.js simulate --compare",
-    "contracts:check": "node scripts/check-contracts.js",
-    "sync-data": "node scripts/sync-data.js",
-    "build": "node scripts/build.js",
-    "build:tiny": "node scripts/build.js --no-sprites",
-    "build:debug": "node scripts/build.js --sourcemap",
-    "budget": "node scripts/build.js --no-sprites",
-    "serve": "node scripts/dev-server.js",
-    "demo:guard": "npm run build:ts && node scripts/demo.js",
     "dev": "node dist/cli/bin.js",
     "agentguard": "node dist/cli/bin.js",
-    "dev:legacy": "node dist/cli/bin.js",
-    "prepublishOnly": "npm run build:ts",
     "build:ts": "tsc && tsx esbuild.config.ts",
     "ts:check": "tsc --noEmit",
+    "test": "node tests/run.js",
     "ts:test": "vitest run",
-    "ts:test:watch": "vitest"
+    "ts:test:watch": "vitest",
+    "test:coverage": "c8 --check-coverage --lines 50 node tests/run.js",
+    "lint": "eslint tests/ src/",
+    "lint:fix": "eslint --fix tests/ src/",
+    "format": "prettier --check src/",
+    "format:fix": "prettier --write src/",
+    "prepublishOnly": "npm run build:ts"
   },
   "keywords": [
     "agentguard",
-    "bugmon",
     "ai-governance",
     "runtime-guardrails",
     "agent-safety",
-    "roguelike",
-    "developer-tools",
-    "debugging",
-    "telemetry",
+    "policy-enforcement",
+    "invariants",
+    "canonical-events",
+    "audit-trail",
     "cli",
-    "developer-experience",
-    "canonical-events"
+    "developer-tools"
   ],
   "license": "Apache-2.0",
   "devDependencies": {

@@ -14,14 +14,14 @@ import {
   FAILURE_KINDS,
   VIOLATION_KINDS,
   AGENT_ACTION_KINDS,
-} from '../../src/domain/execution-log/event-schema.js';
-import { createExecutionEventLog } from '../../src/domain/execution-log/event-log.js';
+} from '../../src/core/execution-log/event-schema.js';
+import { createExecutionEventLog } from '../../src/core/execution-log/event-log.js';
 import {
   buildCausalChain,
   scoreAgentRun,
   clusterFailures,
   mapToEncounter,
-} from '../../src/domain/execution-log/event-projections.js';
+} from '../../src/core/execution-log/event-projections.js';
 
 describe('execution-log/event-schema', () => {
   beforeEach(() => {

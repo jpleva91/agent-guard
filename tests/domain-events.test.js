@@ -35,7 +35,7 @@ import {
   CODE_REVIEWED,
   DEPLOY_COMPLETED,
   LINT_COMPLETED,
-} from '../dist/domain/events.js';
+} from '../dist/events/schema.js';
 
 suite('Domain Events — Schema Validation', () => {
   test('ALL_EVENT_KINDS contains all 44 event kinds', () => {

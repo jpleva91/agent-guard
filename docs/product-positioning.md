@@ -8,10 +8,6 @@ AgentGuard answers one question: **"Should this AI agent be allowed to do this?"
 
 The first integration target is **Claude Code** via its hook system (PreToolUse/PostToolUse). The architecture supports any agent framework that can normalize tool calls into the canonical action format.
 
-### Optional: BugMon Mode (Deprioritized)
-
-BugMon is a gamified visualization mode that consumes AgentGuard events and renders them as roguelike encounters. It is functional but not under active development. The governance kernel is the primary focus.
-
 ## What This Is Not
 
 ### Not monitoring or observability

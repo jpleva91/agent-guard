@@ -4,48 +4,48 @@
 
 ```
 ┌─────────────────────────────────────────┐
-│ agentguard/  (Governance Runtime)      │
-│   Kernel loop, policies, invariants,   │
-│   adapters, renderers, sinks           │
+│ kernel/  (Governance Runtime)           │
+│   Kernel loop, AAB, decision engine,    │
+│   monitor, evidence, simulation         │
 └────────────────┬────────────────────────┘
                  │ imports ↓
 ┌────────────────┴────────────────────────┐
-│ domain/  (Environment-agnostic)        │
-│   Actions, events, reference monitor,  │
-│   adapter registry, battle, encounters │
+│ events/  │ policy/  │ invariants/       │
+│ Schema,  │ Evaluator│ Checker,          │
+│ bus,     │ loader,  │ definitions       │
+│ store,   │ YAML     │                   │
+│ JSONL    │ loader   │                   │
 └────────────────┬────────────────────────┘
                  │ imports ↓
 ┌────────────────┴────────────────────────┐
-│ core/  (Shared infrastructure)         │
-│   EventBus, types, error parsing       │
+│ core/  (Shared utilities)               │
+│   Types, actions, hash, execution-log   │
 └────────────────┬────────────────────────┘
                  │ imports ↓
 ┌────────────────┴────────────────────────┐
-│ cli/  (Node.js CLI)                    │
-│   guard, inspect, events, watch, scan  │
+│ cli/  (Node.js CLI)                     │
+│   guard, inspect, events, replay        │
 └─────────────────────────────────────────┘
-
-Deprioritized:
-┌─────────────────────────────────────────┐
-│ game/  (Browser only — not active)     │
-│   Canvas rendering, audio, UI, sprites │
-├─────────────────────────────────────────┤
-│ ecosystem/  (Game content — not active)│
-│   JSON data, Grimoire, bosses, storage │
+                 │ imports ↓
+┌────────────────┴────────────────────────┐
+│ adapters/  (Execution handlers)         │
+│   file, shell, git, claude-code         │
 └─────────────────────────────────────────┘
 ```
 
 ## Dependency Rules
 
-- **domain/** has zero external dependencies. No DOM APIs, no Node.js-specific APIs.
-- **agentguard/** depends on domain/ and core/. Node.js APIs allowed (fs, child_process).
-- **cli/** depends on agentguard/, domain/, and core/.
-- **core/** depends on domain/ only.
-- **game/** and **ecosystem/** are deprioritized. They depend on domain/ and core/ but nothing depends on them in the governance flow.
+- **kernel/** may import from events/, policy/, invariants/, adapters/, core/
+- **events/** may import from core/ only
+- **policy/** may import from core/ only
+- **invariants/** may import from core/, events/ only
+- **adapters/** may import from core/, kernel/ only
+- **cli/** may import from kernel/, events/, policy/, core/
+- **core/** has no project imports (leaf layer)
 
 ## Key Subsystems
 
-### Governed Action Kernel (`agentguard/kernel.ts`)
+### Governed Action Kernel (`kernel/kernel.ts`)
 
 The orchestrator that connects all governance infrastructure:
 
@@ -59,7 +59,7 @@ propose(rawAction) →
   → KernelResult { allowed, executed, decision, execution, events, runId }
 ```
 
-### Action Authorization Boundary (`agentguard/core/aab.ts`)
+### Action Authorization Boundary (`kernel/aab.ts`)
 
 Normalizes raw tool calls into structured intents:
 - Maps tool names to action types (Write → file.write, Bash → shell.exec)
@@ -67,7 +67,7 @@ Normalizes raw tool calls into structured intents:
 - Flags destructive commands (rm -rf, chmod 777, dd if=, DROP DATABASE)
 - Computes blast radius from policy limits
 
-### Policy Engine (`agentguard/policies/`)
+### Policy Engine (`policy/`)
 
 Declarative policy evaluation:
 - JSON and YAML policy formats
@@ -76,7 +76,7 @@ Declarative policy evaluation:
 - Branch conditions, file limits, test requirements
 - Two-pass evaluation: deny rules first (highest severity), then allow rules, default allow
 
-### Invariant Checker (`agentguard/invariants/`)
+### Invariant Checker (`invariants/`)
 
 6 default system invariants:
 1. **no-secret-exposure** (sev 5) — blocks .env, credentials, .pem, .key, secret, token files
@@ -86,7 +86,7 @@ Declarative policy evaluation:
 5. **no-force-push** (sev 4) — forbids force push
 6. **lockfile-integrity** (sev 2) — ensures package.json changes sync with lockfiles
 
-### Execution Adapters (`agentguard/adapters/`)
+### Execution Adapters (`adapters/`)
 
 Action handlers registered by class:
 - **file** — fs.readFile, fs.writeFile, fs.unlink, fs.rename
@@ -94,7 +94,7 @@ Action handlers registered by class:
 - **git** — git commit, push, branch, checkout, merge (validated shell wrappers)
 - **claude-code** — normalizes PreToolUse/PostToolUse hook payloads
 
-### Escalation System (`agentguard/monitor.ts`)
+### Escalation System (`kernel/monitor.ts`)
 
 Tracks cumulative denials and violations:
 - NORMAL (0) — default state
@@ -102,7 +102,7 @@ Tracks cumulative denials and violations:
 - HIGH (2) — denials >= threshold OR violations >= threshold
 - LOCKDOWN (3) — denials >= 2×threshold OR violations >= 2×threshold → all actions denied
 
-### Event System (`domain/events.ts`, `core/event-bus.ts`)
+### Event System (`events/schema.ts`, `events/bus.ts`)
 
 50+ canonical event kinds. EventBus provides typed pub/sub. Event factory with auto-generated IDs and fingerprints.
 

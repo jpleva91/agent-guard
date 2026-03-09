@@ -1,6 +1,6 @@
 # Canonical Event Model
 
-The canonical event model is the architectural spine of the AgentGuard + BugMon system. All system activity — developer tooling failures, runtime errors, CI failures, agent actions, governance violations — is normalized into a single event schema. These events feed both the governance runtime (AgentGuard) and the developer interaction layer (BugMon).
+The canonical event model is the architectural spine of the AgentGuard system. All system activity — developer tooling failures, runtime errors, CI failures, agent actions, governance violations — is normalized into a single event schema. These events feed the governance runtime and its subscribers (TUI renderer, JSONL sink, CLI inspect).
 
 ## Event Schema
 
@@ -34,7 +34,7 @@ Every event in the system conforms to this structure:
 | `id` | string | yes | Unique event identifier. Generated from fingerprint + timestamp. |
 | `fingerprint` | string | yes | Stable hash for deduplication. Same error type + message + location = same fingerprint. |
 | `type` | string | yes | Canonical event type (see taxonomy below). |
-| `severity` | number | yes | 1-5 scale. Determines encounter difficulty in BugMon. |
+| `severity` | number | yes | 1-5 scale. Determines event priority and escalation behavior. |
 | `source` | string | yes | Origin system (e.g., `jest`, `eslint`, `tsc`, `agentguard`, `ci`). |
 | `file` | string | no | Source file path where the event originated. |
 | `line` | number | no | Line number in source file. |
@@ -50,37 +50,37 @@ Every event in the system conforms to this structure:
 
 Events originating from developer tooling, build systems, and runtime errors.
 
-| Type | Severity | Description | BugMon Encounter |
-|------|----------|-------------|------------------|
-| `LintWarning` | 1 | Linter warning (non-blocking) | Minor enemy |
-| `Deprecation` | 1 | Deprecated API usage | Minor enemy |
-| `LintError` | 2 | Linter error (blocking) | Minor enemy |
-| `TypeError` | 2 | Type mismatch or coercion failure | Minor enemy |
-| `ReferenceError` | 2 | Undefined variable or import | Minor enemy |
-| `SyntaxError` | 3 | Unparseable code | Standard enemy |
-| `TestFailure` | 3 | Test assertion failure | Strong enemy |
-| `RuntimeCrash` | 3 | Unhandled exception at runtime | Strong enemy |
-| `NetworkError` | 3 | Connection refused, timeout, DNS failure | Strong enemy |
-| `MergeConflict` | 3 | Git merge conflict markers | Strong enemy |
-| `BuildFailure` | 4 | Build system failure (webpack, esbuild, tsc) | Elite enemy |
-| `StackOverflow` | 4 | Call stack exceeded | Elite enemy |
-| `MemoryError` | 4 | Heap out of memory | Elite enemy |
-| `SecurityFinding` | 4 | Vulnerability detected | Elite enemy |
-| `CIFailure` | 4 | CI pipeline failure | Boss |
-| `DependencyConflict` | 4 | Package resolution failure | Boss |
+| Type | Severity | Description |
+|------|----------|-------------|
+| `LintWarning` | 1 | Linter warning (non-blocking) |
+| `Deprecation` | 1 | Deprecated API usage |
+| `LintError` | 2 | Linter error (blocking) |
+| `TypeError` | 2 | Type mismatch or coercion failure |
+| `ReferenceError` | 2 | Undefined variable or import |
+| `SyntaxError` | 3 | Unparseable code |
+| `TestFailure` | 3 | Test assertion failure |
+| `RuntimeCrash` | 3 | Unhandled exception at runtime |
+| `NetworkError` | 3 | Connection refused, timeout, DNS failure |
+| `MergeConflict` | 3 | Git merge conflict markers |
+| `BuildFailure` | 4 | Build system failure (webpack, esbuild, tsc) |
+| `StackOverflow` | 4 | Call stack exceeded |
+| `MemoryError` | 4 | Heap out of memory |
+| `SecurityFinding` | 4 | Vulnerability detected |
+| `CIFailure` | 4 | CI pipeline failure |
+| `DependencyConflict` | 4 | Package resolution failure |
 
 ### Governance Events
 
 Events produced by AgentGuard when evaluating agent actions.
 
-| Type | Severity | Description | BugMon Encounter |
-|------|----------|-------------|------------------|
-| `PolicyDenied` | 3 | Agent action denied by policy rule | Governance enemy |
-| `UnauthorizedAction` | 4 | Agent attempted action outside scope | Governance boss |
-| `InvariantViolation` | 5 | System invariant broken | Elite governance boss |
-| `BlastRadiusExceeded` | 4 | Action affects too many files/systems | Governance boss |
-| `MergeGuardFailure` | 4 | Protected branch modification attempted | Governance boss |
-| `EvidencePackGenerated` | 1 | Governance evaluation completed (informational) | No encounter |
+| Type | Severity | Description |
+|------|----------|-------------|
+| `PolicyDenied` | 3 | Agent action denied by policy rule |
+| `UnauthorizedAction` | 4 | Agent attempted action outside scope |
+| `InvariantViolation` | 5 | System invariant broken |
+| `BlastRadiusExceeded` | 4 | Action affects too many files/systems |
+| `MergeGuardFailure` | 4 | Protected branch modification attempted |
+| `EvidencePackGenerated` | 1 | Governance evaluation completed (informational) |
 
 ### Session Events
 
@@ -94,16 +94,14 @@ Events tracking run lifecycle. Not directly mapped to encounters.
 
 ## Severity Scale
 
-| Level | Label | Meaning | BugMon Effect |
-|-------|-------|---------|---------------|
-| 0 | Informational | System lifecycle events | No encounter |
-| 1 | Minor | Warnings, deprecations | Weak enemy (+0 HP bonus) |
-| 2 | Low | Non-critical errors | Minor enemy (+2 HP bonus) |
-| 3 | Medium | Blocking errors, test failures | Standard enemy (+4 HP bonus) |
-| 4 | High | Build/CI failures, security findings | Boss-tier enemy (+6 HP bonus) |
-| 5 | Critical | Invariant violations, system-level failures | Elite boss (+8 HP bonus) |
-
-HP bonus formula: `hp = baseHP + (severity - 1) * 2`
+| Level | Label | Meaning |
+|-------|-------|---------|
+| 0 | Informational | System lifecycle events |
+| 1 | Minor | Warnings, deprecations |
+| 2 | Low | Non-critical errors |
+| 3 | Medium | Blocking errors, test failures |
+| 4 | High | Build/CI failures, security findings |
+| 5 | Critical | Invariant violations, system-level failures |
 
 ## Event Lifecycle
 
@@ -129,7 +127,7 @@ Source (stderr, CI, agent action)
   Emitted ──── broadcast to subscribers via EventBus
     │
     ▼
-  Consumed ─── subscribers react (BugMon encounter, stats, Grimoire)
+  Consumed ─── subscribers react (TUI display, JSONL persistence, CLI inspect)
     │
     ▼
   Resolved ─── developer fixes the underlying issue
@@ -156,8 +154,8 @@ Events are immutable and ordered. A stored event stream can be replayed to recon
 
 - Events are append-only. Once persisted, an event is never modified (except `resolved` status).
 - Ordering is by `timestamp`. Ties are broken by `id`.
-- Replay produces identical encounter sequences given the same event stream and RNG seed.
-- This enables: post-session analysis, debugging of encounter generation, and "replay" mode in BugMon.
+- Replay produces identical event sequences given the same event stream.
+- This enables: post-session analysis, debugging governance decisions, and audit trail verification.
 
 ## Current Implementation
 
@@ -196,7 +194,7 @@ The canonical event model builds on existing infrastructure:
 }
 ```
 
-BugMon encounter: NullPointer appears (severity 2, +2 HP bonus).
+This event has severity 2 (Low) and would be captured in the JSONL audit trail.
 
 ### CI pipeline fails
 
@@ -220,7 +218,7 @@ BugMon encounter: NullPointer appears (severity 2, +2 HP bonus).
 }
 ```
 
-BugMon encounter: CIPhantom boss appears (severity 4, +6 HP bonus).
+This event has severity 4 (High) and triggers escalation tracking in the runtime monitor.
 
 ### Agent governance violation
 
@@ -245,4 +243,4 @@ BugMon encounter: CIPhantom boss appears (severity 4, +6 HP bonus).
 }
 ```
 
-BugMon encounter: Elite governance boss appears (severity 5, +8 HP bonus).
+This event has severity 5 (Critical) and contributes to escalation toward LOCKDOWN state.

@@ -1,10 +1,10 @@
 // Tests for the Governed Action Kernel
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createKernel } from '../../src/agentguard/kernel.js';
-import type { KernelConfig, EventSink } from '../../src/agentguard/kernel.js';
-import { createDryRunRegistry } from '../../src/domain/execution/adapters.js';
-import { resetActionCounter } from '../../src/domain/actions.js';
-import { resetEventCounter } from '../../src/domain/events.js';
+import { createKernel } from '../../src/kernel/kernel.js';
+import type { KernelConfig, EventSink } from '../../src/kernel/kernel.js';
+import { createDryRunRegistry } from '../../src/core/adapters.js';
+import { resetActionCounter } from '../../src/core/actions.js';
+import { resetEventCounter } from '../../src/events/schema.js';
 import type { DomainEvent } from '../../src/core/types.js';
 
 beforeEach(() => {

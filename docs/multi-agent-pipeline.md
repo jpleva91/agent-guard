@@ -30,9 +30,9 @@ gate check (output + file scope + invariants)
 next stage
 ```
 
-Each stage produces canonical events (`PipelineStarted`, `StageCompleted`, `StageFailed`, etc.) that flow into the BugMon event model. Pipeline failures become gameplay encounters.
+Each stage produces canonical events (`PipelineStarted`, `StageCompleted`, `StageFailed`, etc.) that flow into the canonical event model. Pipeline failures are recorded for audit and analysis.
 
-### Integration with BugMon
+### Integration with Event Model
 
 ```
 agent proposes action
@@ -41,7 +41,7 @@ AAB validates action
 ↓
 execution occurs
 ↓
-BugMon records telemetry
+events recorded to audit trail
 ↓
 agents analyze outcomes
 ```
@@ -100,7 +100,7 @@ Final safety layer. Reviews architecture boundaries, enforces invariants, detect
 ```json
 {
   "auditResult": "fail",
-  "violations": ["game module imports filesystem API"]
+  "violations": ["module imports unauthorized API"]
 }
 ```
 

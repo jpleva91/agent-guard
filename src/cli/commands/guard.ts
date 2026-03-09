@@ -3,23 +3,23 @@
 
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { createKernel } from '../../agentguard/kernel.js';
-import type { KernelConfig } from '../../agentguard/kernel.js';
-import { createLiveRegistry } from '../../agentguard/adapters/registry.js';
-import { createJsonlSink } from '../../agentguard/sinks/jsonl.js';
-import { createDecisionJsonlSink } from '../../agentguard/sinks/decision-jsonl.js';
-import { loadYamlPolicy } from '../../agentguard/policies/yaml-loader.js';
+import { createKernel } from '../../kernel/kernel.js';
+import type { KernelConfig } from '../../kernel/kernel.js';
+import { createLiveRegistry } from '../../adapters/registry.js';
+import { createJsonlSink } from '../../events/jsonl.js';
+import { createDecisionJsonlSink } from '../../events/decision-jsonl.js';
+import { loadYamlPolicy } from '../../policy/yaml-loader.js';
 import {
   renderBanner,
   renderKernelResult,
   renderMonitorStatus,
   renderDecisionRecord,
-} from '../../agentguard/renderers/tui.js';
-import { createSimulatorRegistry } from '../../agentguard/simulation/registry.js';
-import { createGitSimulator } from '../../agentguard/simulation/git-simulator.js';
-import { createFilesystemSimulator } from '../../agentguard/simulation/filesystem-simulator.js';
-import { createPackageSimulator } from '../../agentguard/simulation/package-simulator.js';
-import type { RawAgentAction } from '../../agentguard/core/aab.js';
+} from '../tui.js';
+import { createSimulatorRegistry } from '../../kernel/simulation/registry.js';
+import { createGitSimulator } from '../../kernel/simulation/git-simulator.js';
+import { createFilesystemSimulator } from '../../kernel/simulation/filesystem-simulator.js';
+import { createPackageSimulator } from '../../kernel/simulation/package-simulator.js';
+import type { RawAgentAction } from '../../kernel/aab.js';
 
 export interface GuardOptions {
   policy?: string;

@@ -7,7 +7,7 @@ import {
   validateAction,
   validateActionType,
   resetActionCounter,
-} from '../../src/domain/actions.js';
+} from '../../src/core/actions.js';
 
 describe('domain/actions', () => {
   beforeEach(() => {

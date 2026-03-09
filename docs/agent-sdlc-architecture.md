@@ -12,7 +12,7 @@ This document proposes a deterministic architecture for Agent-Native Software De
 2. Deterministic authorization boundaries for agent actions
 3. Observable runtime telemetry for agent behavior
 
-The system introduces an Action Authorization Boundary (AAB) that mediates all agent actions and a runtime observability layer (BugMon) that records and visualizes execution outcomes.
+The system introduces an Action Authorization Boundary (AAB) that mediates all agent actions and a runtime telemetry layer that records execution outcomes.
 
 Together these components create a controlled environment for safe agent-driven development.
 
@@ -38,7 +38,7 @@ Execution Adapters
         │
         ▼
 Runtime Telemetry Layer
-(BugMon event monitoring and replay)
+(event monitoring, audit, and replay)
 ```
 
 This separation ensures that probabilistic reasoning never directly controls real-world execution.
@@ -104,11 +104,11 @@ All operations must pass through the AAB before execution. Direct agent access t
 
 **Implementation:** The CLI adapter ([`core/cli/adapter.js`](../core/cli/adapter.js)) wraps child processes and intercepts stderr. The ingestion pipeline ([`domain/ingestion/pipeline.js`](../domain/ingestion/pipeline.js)) orchestrates parse → fingerprint → classify → map stages for all intercepted output.
 
-### 4. Runtime Telemetry Layer (BugMon)
+### 4. Runtime Telemetry Layer
 
-BugMon acts as the observability and feedback system for agent execution.
+The telemetry layer acts as the observability and feedback system for agent execution.
 
-Instead of relying solely on logs, BugMon records structured events that describe both agent actions and their consequences.
+Instead of relying solely on logs, it records structured events that describe both agent actions and their consequences.
 
 Example events:
 
@@ -119,19 +119,16 @@ ActionDenied
 FileModified
 TestFailed
 InvariantViolation
-BugResolved
 ```
 
-BugMon enables:
+The telemetry layer enables:
 
 - Execution replay
 - Debugging timelines
 - Anomaly detection
 - Developer feedback loops
 
-The optional game interface provides an intuitive representation of debugging events but is not required for the telemetry system itself.
-
-**Implementation:** The universal EventBus ([`domain/event-bus.js`](../domain/event-bus.js)) provides pub/sub across Node.js and browser environments. The EventStore ([`domain/event-store.js`](../domain/event-store.js)) persists events with query, replay, and filtering capabilities. The boss escalation system ([`ecosystem/bosses.js`](../ecosystem/bosses.js)) demonstrates threshold-based event aggregation.
+**Implementation:** The universal EventBus ([`domain/event-bus.js`](../domain/event-bus.js)) provides pub/sub across Node.js and browser environments. The EventStore ([`domain/event-store.js`](../domain/event-store.js)) persists events with query, replay, and filtering capabilities. The JSONL sink persists all events for audit trail and post-session analysis.
 
 ## Event Model
 
@@ -155,7 +152,7 @@ Execution adapter performs operation
 Test failure occurs
         │
         ▼
-BugMon records event
+Telemetry records event
 ```
 
 This event stream forms a complete audit trail of agent activity.
@@ -259,11 +256,11 @@ Agent-native development requires a fundamental shift in system architecture.
 
 By separating reasoning from execution and introducing deterministic enforcement boundaries, it becomes possible to safely deploy AI agents in real engineering environments.
 
-The combination of Action Authorization Boundaries (AAB) and runtime telemetry systems like BugMon provides the foundational infrastructure for this next generation of software development.
+The combination of Action Authorization Boundaries (AAB) and runtime telemetry systems provides the foundational infrastructure for this next generation of software development.
 
 ## See Also
 
 - [AgentGuard Specification](agentguard.md) — detailed governance runtime design
-- [Unified Architecture](unified-architecture.md) — how AgentGuard and BugMon integrate
+- [Unified Architecture](unified-architecture.md) — full system architecture
 - [Event Model](event-model.md) — canonical event schema and lifecycle
 - [Architecture](../ARCHITECTURE.md) — system-level technical architecture

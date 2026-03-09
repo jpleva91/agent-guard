@@ -1,12 +1,12 @@
-// File-backed session store — persists event streams to ~/.bugmon/sessions/
+// File-backed session store — persists event streams to ~/.agentguard/sessions/
 // Each session is a JSON file with metadata + ordered events.
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
-const BUGMON_DIR = join(homedir(), '.bugmon');
-const SESSIONS_DIR = join(BUGMON_DIR, 'sessions');
+const AGENTGUARD_DIR = join(homedir(), '.agentguard');
+const SESSIONS_DIR = join(AGENTGUARD_DIR, 'sessions');
 
 function ensureDir(): void {
   if (!existsSync(SESSIONS_DIR)) {

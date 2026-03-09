@@ -1,6 +1,6 @@
 // Tests for Git Simulator
 import { describe, it, expect } from 'vitest';
-import { createGitSimulator } from '../../src/agentguard/simulation/git-simulator.js';
+import { createGitSimulator } from '../../src/kernel/simulation/git-simulator.js';
 
 describe('GitSimulator', () => {
   const simulator = createGitSimulator();

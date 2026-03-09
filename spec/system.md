@@ -2,8 +2,6 @@
 
 AgentGuard is a **governed action runtime for AI coding agents**. It intercepts agent tool calls, enforces policies and invariants, executes authorized actions via adapters, and emits lifecycle events. The Action is the primary unit of computation.
 
-BugMon is a deprioritized game layer that can consume governance events as roguelike encounters. It remains functional but is not under active development.
-
 ## Core Flow: Governed Action Kernel
 
 ```
@@ -25,18 +23,9 @@ If ALLOWED → execute via adapter → emit ACTION_EXECUTED or ACTION_FAILED
 All events sunk to JSONL (.agentguard/events/<runId>.jsonl)
 ```
 
-## Two-Layer System
-
-| Layer | Role | Status |
-|-------|------|--------|
-| **AgentGuard** | Governed action runtime — kernel loop, policies, invariants, adapters | Active focus |
-| **BugMon** | Roguelike game — renders events as encounters | Deprioritized |
-
-Both layers share the **canonical event model** as their architectural spine.
-
 ## System Boundaries
 
-### AgentGuard (Governance Runtime — Active)
+### AgentGuard (Governance Runtime)
 - **Input**: Agent tool calls (file edits, shell commands, git operations)
 - **Processing**: Kernel loop — normalize → evaluate → execute → emit
 - **Output**: Allow/deny decisions, execution results, canonical events, JSONL audit trail
@@ -46,11 +35,6 @@ Both layers share the **canonical event model** as their architectural spine.
 - **Input**: Events, actions, policies, system state
 - **Output**: Decisions, event objects, validation results
 - **Constraint**: No DOM, no Node.js-specific APIs, deterministic when RNG is injected
-
-### BugMon (Game Layer — Deprioritized)
-- **Input**: Canonical events (developer signals, governance violations)
-- **Output**: Interactive encounters, Bug Grimoire entries, session scores
-- **Constraint**: Hybrid idle/active — minor enemies auto-resolve, bosses demand engagement
 
 ## Invariants
 
@@ -68,7 +52,6 @@ Both layers share the **canonical event model** as their architectural spine.
 | Action Lifecycle | `ActionRequested`, `ActionAllowed`, `ActionDenied`, `ActionExecuted`, `ActionFailed` | Kernel | TUI, JSONL sink, inspect CLI |
 | Governance | `PolicyDenied`, `UnauthorizedAction`, `InvariantViolation`, `BlastRadiusExceeded` | Engine/AAB | Kernel, monitor, evidence |
 | Evidence | `EvidencePackGenerated` | Evidence pack | JSONL sink |
-| Ingestion | `ErrorObserved`, `BugClassified` | Error watchers | (BugMon) |
 | Developer Signals | `FileSaved`, `TestCompleted`, `CommitCreated` | Git hooks, watchers | Kernel context |
 
 ## Technical Constraints
@@ -77,4 +60,3 @@ Both layers share the **canonical event model** as their architectural spine.
 - CLI runtime dependencies: `chokidar`, `commander`, `pino`
 - ESLint + Prettier enforced
 - Node.js >= 18 required
-- 345+ TypeScript tests (vitest) + 1085 JavaScript tests

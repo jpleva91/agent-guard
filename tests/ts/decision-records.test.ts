@@ -1,13 +1,13 @@
 // Tests for Governance Decision Records
 import { describe, it, expect, beforeEach } from 'vitest';
-import { buildDecisionRecord } from '../../src/agentguard/decisions/factory.js';
-import type { DecisionFactoryInput } from '../../src/agentguard/decisions/factory.js';
-import type { MonitorDecision } from '../../src/agentguard/monitor.js';
-import { createKernel } from '../../src/agentguard/kernel.js';
-import type { EventSink } from '../../src/agentguard/kernel.js';
-import type { GovernanceDecisionRecord, DecisionSink } from '../../src/agentguard/decisions/types.js';
-import { resetActionCounter } from '../../src/domain/actions.js';
-import { resetEventCounter } from '../../src/domain/events.js';
+import { buildDecisionRecord } from '../../src/kernel/decisions/factory.js';
+import type { DecisionFactoryInput } from '../../src/kernel/decisions/factory.js';
+import type { MonitorDecision } from '../../src/kernel/monitor.js';
+import { createKernel } from '../../src/kernel/kernel.js';
+import type { EventSink } from '../../src/kernel/kernel.js';
+import type { GovernanceDecisionRecord, DecisionSink } from '../../src/kernel/decisions/types.js';
+import { resetActionCounter } from '../../src/core/actions.js';
+import { resetEventCounter } from '../../src/events/schema.js';
 import type { DomainEvent } from '../../src/core/types.js';
 
 beforeEach(() => {

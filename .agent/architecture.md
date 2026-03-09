@@ -5,137 +5,125 @@
 TypeScript in `src/` is the single source of truth, compiled to `dist/` via tsc + esbuild.
 
 ```
-                ┌──────────┐    ┌──────────┐
-                │ src/cli/ │    │src/game/ │
-                │ (Node.js │    │ (Browser │
-                │   CLI)   │    │ Canvas)  │
-                └────┬─────┘    └────┬─────┘
-                     │               │
-           ┌─────────┼───────────────┼─────────┐
-           │         ▼               ▼         │
-           │    ┌────────────────────────┐     │
-           │    │   src/agentguard/      │     │
-           │    │  (Governance runtime)  │     │
-           │    └────────────────────────┘     │
-           │                                   │
-           │    ┌────────────────────────┐     │
-           │    │     src/domain/        │     │
-           │    │  (Pure domain logic)   │     │
-           │    └────────────────────────┘     │
-           │                                   │
-           │    ┌────────────────────────┐     │
-           │    │     src/core/          │     │
-           │    │  (Shared logic)        │     │
-           │    └────────────────────────┘     │
-           │                                   │
-           │    ┌────────────────────────┐     │
-           │    │  ecosystem/data/       │     │
-           │    │  (Game content JSON)   │     │
-           │    └────────────────────────┘     │
-           └───────────────────────────────────┘
+                ┌──────────┐
+                │ src/cli/ │
+                │ (Node.js │
+                │   CLI)   │
+                └────┬─────┘
+                     │
+           ┌─────────┼───────────────────────┐
+           │         ▼                        │
+           │    ┌────────────────────────┐    │
+           │    │   src/kernel/          │    │
+           │    │  (Governance runtime)  │    │
+           │    └────────────────────────┘    │
+           │                                  │
+           │    ┌────────────────────────┐    │
+           │    │   src/policy/          │    │
+           │    │  (Policy evaluation)   │    │
+           │    └────────────────────────┘    │
+           │                                  │
+           │    ┌────────────────────────┐    │
+           │    │   src/invariants/      │    │
+           │    │  (Invariant checking)  │    │
+           │    └────────────────────────┘    │
+           │                                  │
+           │    ┌────────────────────────┐    │
+           │    │   src/adapters/        │    │
+           │    │  (Execution adapters)  │    │
+           │    └────────────────────────┘    │
+           │                                  │
+           │    ┌────────────────────────┐    │
+           │    │   src/events/          │    │
+           │    │  (Canonical events)    │    │
+           │    └────────────────────────┘    │
+           │                                  │
+           │    ┌────────────────────────┐    │
+           │    │   src/core/            │    │
+           │    │  (Shared logic)        │    │
+           │    └────────────────────────┘    │
+           └──────────────────────────────────┘
 ```
 
-### src/domain/ — Pure Domain Logic
+### src/kernel/ — Governance Runtime
 
-Environment-agnostic. No DOM APIs, no Node.js-specific APIs. All functions are pure and deterministic when RNG is injected. Contains:
+Orchestrates the governed action loop: propose, normalize, evaluate, execute, emit. Contains:
 
-- `events.ts` — Canonical event schema (45+ event kinds) and factory
-- `event-bus.ts` — Universal pub/sub (works in Node.js and browser)
-- `battle.ts` — Deterministic battle engine with passive abilities, combo, healing
-- `encounters.ts` — Encounter trigger logic with rarity-weighted selection
-- `evolution.ts` — Progression condition checking
-- `ingestion/` — Multi-stage error normalization pipeline (8 files)
-- `execution/` — Execution event log with causal chains
-- `invariants.ts`, `policy.ts`, `reference-monitor.ts` — Governance primitives
+- `kernel.ts` — Governed action kernel (orchestrator)
+- `monitor.ts` — Runtime monitor (escalation tracking: NORMAL → ELEVATED → HIGH → LOCKDOWN)
+
+### src/events/ — Canonical Events
+
+All system activity becomes events conforming to a single schema. Contains:
+
+- `events.ts` — Canonical event schema (50+ event kinds) and factory
+- `event-bus.ts` — Universal pub/sub (typed EventBus)
+- `event-store.ts` — Event persistence interface
+
+### src/policy/ — Policy Evaluation
+
+YAML/JSON policy format with pattern matching, scopes, and branch conditions. Contains:
+
+- `evaluator.ts` — Policy evaluation (deny/allow with scopes, branches, limits)
+- `loader.ts` — Policy loading from JSON/YAML
+
+### src/invariants/ — Invariant Checking
+
+6 built-in invariants enforced before action execution. Contains:
+
+- `checker.ts` — Invariant checking engine
+- `definitions.ts` — Built-in invariant definitions (secret exposure, protected branches, blast radius, test-before-push, no force push, lockfile integrity)
+
+### src/adapters/ — Execution Adapters
+
+Action class to handler mapping. Contains:
+
+- `file.ts` — File system adapter
+- `shell.ts` — Shell command adapter
+- `git.ts` — Git operations adapter
+- `claude-code.ts` — Claude Code hook adapter (PreToolUse/PostToolUse)
+- `registry.ts` — Adapter registry
 
 ### src/core/ — Shared Logic
 
-Used by both CLI and game. Contains:
+Shared utilities used across layers. Contains:
 
-- `event-bus.ts` — Typed EventBus
-- `error-parser.ts` — 40+ regex patterns across 6+ languages
-- `stacktrace-parser.ts` — Stack trace analysis
-- `bug-event.ts` — BugEvent type definition and severity mapping
-- `matcher.ts` — Error-to-creature matching
-- `sources/` — Event source adapters (watch, scan, claude-hook)
+- `hash.ts` — Hashing utilities
+- `actions.ts` — Canonical action types
+- `adapters.ts` — Adapter type definitions
+- `execution-log/` — Execution event log with causal chains
 
-### src/cli/ — CLI Companion (Node.js)
+### src/cli/ — CLI (Node.js)
 
-Commander-based CLI with 20 subcommands. Depends on domain/, core/, meta/. Contains:
+Commander-based CLI for AgentGuard commands. Contains:
 
-- `bin.ts` — Entry point (agentguard + bugmon binaries)
-- `commands/` — 20 subcommands (watch, scan, play, demo, replay, etc.)
-- `renderer.ts` — Terminal renderer (ANSI)
-- `sync-server.ts` — WebSocket sync server
-
-### src/game/ — Browser Roguelike (Client-Side)
-
-Browser-only code using Canvas 2D and Web Audio API. Zero runtime dependencies. Contains:
-
-- `dungeon/` — Idle auto-dungeon runner (primary game mode)
-  - `runner.ts` — Auto-run logic, encounter resolution, phase machine
-  - `dungeon.ts` — Procedural floor generation (rooms, corridors, loot)
-  - `loot.ts` — Gold, boosts, localStorage persistence
-  - `dungeon-renderer.ts` — Premium renderer (parallax, glassmorphic HUD)
-- `theme.ts` — Design system (OLED palette, gold accents, glassmorphism)
-- `engine/` — State machine, input, renderer, effects, transitions
-- `battle/` — UI-connected battle system (delegates to domain/battle.ts)
-- `world/` — Map, player, encounter triggers (exploration mode)
-- `evolution/` — Progression UI and dev activity tracking
-- `audio/` — Synthesized sound effects (no audio files)
-- `sprites/` — Procedural and static pixel art
-- `sync/` — Save system (localStorage) and WebSocket client
-
-### src/agentguard/ — Governance Runtime
-
-Deterministic governance for AI coding agents. Contains:
-
-- `core/aab.ts` — Action Authorization Boundary
-- `core/engine.ts` — Runtime Assurance Engine
-- `policies/evaluator.ts` — Policy evaluation
-- `policies/loader.ts` — Policy loading from JSON
-- `invariants/checker.ts` — Invariant checking
-- `invariants/definitions.ts` — Built-in invariant definitions
-- `evidence/pack.ts` — Evidence pack generation
-- `monitor.ts` — Closed-loop governance monitor
-
-### Additional Layers
-
-- `src/meta/` — Metadata (bugdex.ts, bosses.ts)
-- `src/orchestration/` — Multi-agent pipeline orchestration
-- `src/protocol/` — Sync protocol definitions
-- `src/content/` — Game content validation
-- `src/watchers/` — Environment watchers (console, test, build)
-- `src/ai/` — AI integration interface
-
-### ecosystem/data/ — Game Content
-
-Consumed by both CLI and game. Contains:
-
-- `*.json` — Source of truth (monsters, moves, types, evolutions, map)
-- `*.js` — Inlined JS modules (generated by `npm run sync-data`)
+- `bin.ts` — Entry point (agentguard binary)
+- `commands/` — Subcommands (guard, inspect, replay, claude-hook)
+- `recorder.ts` — Event recording
+- `file-event-store.ts` — JSONL event persistence
+- `tui.ts` — Terminal UI renderer
 
 ## Dependency Rules
 
-1. **src/domain/ depends on nothing** — it is the pure foundation
-2. **src/core/ depends on domain/** — shared logic layer
-3. **src/agentguard/ depends on domain/** — governance layer
-4. **src/cli/ depends on domain/, core/, meta/** — never on game/
-5. **src/game/ depends on domain/, core/, meta/** — never on cli/
-6. **ecosystem/data/ depends on nothing** — pure data
-7. **No circular dependencies** between any layers
-8. **No cross-environment code** — domain/ must not use DOM or Node.js APIs
+1. **src/core/ depends on nothing** — it is the pure foundation
+2. **src/events/ depends on core/** — canonical event definitions
+3. **src/policy/ depends on core/, events/** — policy evaluation layer
+4. **src/invariants/ depends on core/, events/** — invariant checking layer
+5. **src/adapters/ depends on core/, events/** — execution adapters
+6. **src/kernel/ depends on core/, events/, policy/, invariants/, adapters/** — orchestrator
+7. **src/cli/ depends on all layers** — user-facing entry point
+8. **No circular dependencies** between any layers
 
 ## Module System
 
-All source uses ES6 `import`/`export` with TypeScript. `verbatimModuleSyntax: true` — use `import type` for type-only imports. Browser loads `dist/game/game.js` as a `<script type="module">`.
+All source uses ES6 `import`/`export` with TypeScript. `verbatimModuleSyntax: true` — use `import type` for type-only imports.
 
 ## Data Flow
 
 ```
-Event Sources (stderr, tests, CI, agent actions)
-    → src/domain/ingestion/ (parse → fingerprint → classify → map)
-    → Canonical Event (src/domain/events.ts schema)
-    → EventBus (src/core/event-bus.ts)
-    → Subscribers (Dungeon Runner, Terminal Renderer, Grimoire, Stats, AgentGuard)
+Agent Tool Call (Claude Code PreToolUse/PostToolUse hook)
+    → src/kernel/ (normalize → evaluate → execute → emit)
+    → Canonical Event (src/events/ schema)
+    → EventBus
+    → Subscribers (TUI Renderer, JSONL Sink, CLI Inspect)
 ```

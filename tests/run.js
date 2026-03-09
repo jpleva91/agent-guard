@@ -32,92 +32,31 @@ export function suite(name, fn) {
 
 // Import and run all test modules
 async function main() {
-  console.log('BugMon Test Suite\n');
+  console.log('AgentGuard Test Suite\n');
 
-  await import('./rng.test.js');
-  await import('./damage.test.js');
-  await import('./strategies.test.js');
-  await import('./battle.test.js');
-  await import('./simulator.test.js');
-  await import('./report.test.js');
-  await import('./data.test.js');
-  await import('./build.test.js');
-  await import('./battle-core.test.js');
-  await import('./evolution.test.js');
-  await import('./error-parser.test.js');
-  await import('./stacktrace-parser.test.js');
-  await import('./bug-event.test.js');
-  await import('./events.test.js');
-  await import('./matcher.test.js');
-  await import('./map.test.js');
-  await import('./input.test.js');
-  await import('./state.test.js');
-  await import('./encounters.test.js');
-  await import('./bosses.test.js');
-  await import('./bugdex-spec.test.js');
-  await import('./save.test.js');
-  await import('./storage.test.js');
-  await import('./game-damage.test.js');
-  await import('./tracker.test.js');
-  await import('./player.test.js');
-  await import('./bugdex.test.js');
-  await import('./monsterGen.test.js');
-  await import('./tiles.test.js');
-  await import('./transition.test.js');
-  await import('./evolution-animation.test.js');
-  await import('./headless-battle.test.js');
-  await import('./title.test.js');
-  await import('./sound.test.js');
-  await import('./sprites.test.js');
-  await import('./sync-client.test.js');
-  await import('./battleEngine.test.js');
-  await import('./game-loop.test.js');
-  await import('./sync-protocol.test.js');
-  await import('./renderer.test.js');
-  await import('./auto-walk.test.js');
-  await import('./catch.test.js');
-  await import('./integration.test.js');
-
-  // Domain layer tests
-  await import('./fingerprint.test.js');
-  await import('./classifier.test.js');
-  await import('./ingestion-parser.test.js');
-  await import('./species-mapper.test.js');
-  await import('./pipeline.test.js');
-  await import('./domain-battle.test.js');
-  await import('./domain-encounters.test.js');
-  await import('./domain-event-bus.test.js');
-  await import('./domain-evolution.test.js');
+  // Event model
   await import('./domain-events.test.js');
+  await import('./domain-event-bus.test.js');
   await import('./event-store.test.js');
-  await import('./invariants.test.js');
-  await import('./invariant-mapper.test.js');
-  await import('./combo.test.js');
-  await import('./run-session.test.js');
-  await import('./run-history.test.js');
+  await import('./domain-actions.test.js');
 
-  // Pipeline tests
-  await import('./pipeline/test-roles.js');
-  await import('./pipeline/test-stages.js');
-  await import('./pipeline/test-orchestrator.js');
-
-  // AgentGuard — Runtime Assurance Architecture tests
-  await import('./policy-loader.test.js');
-  await import('./policy-evaluator.test.js');
+  // Governance kernel
   await import('./aab.test.js');
-  await import('./invariant-checker.test.js');
-  await import('./evidence-pack.test.js');
   await import('./rta-engine.test.js');
   await import('./runtime-monitor.test.js');
+  await import('./evidence-pack.test.js');
 
-  // Replay system tests
+  // Policy system
+  await import('./policy-loader.test.js');
+  await import('./policy-evaluator.test.js');
+
+  // Invariant system
+  await import('./invariant-checker.test.js');
+
+  // Replay system
   await import('./session-store.test.js');
   await import('./recorder.test.js');
   await import('./replay.test.js');
-
-  // Source registry and adapters
-  await import('./source-registry.test.js');
-  await import('./sources.test.js');
 
   console.log('\n' + '='.repeat(40));
   if (totalFailed === 0) {

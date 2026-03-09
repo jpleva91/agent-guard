@@ -1,6 +1,6 @@
 #!/bin/sh
-# BugMon Git Hook - post-merge
-# Tracks merges and conflict resolutions for BugMon evolution
+# AgentGuard Git Hook - post-merge
+# Tracks merges for developer activity events
 # Install: cp hooks/post-merge .git/hooks/post-merge && chmod +x .git/hooks/post-merge
 
 EVENTS_FILE="$(git rev-parse --show-toplevel)/.events.json"
@@ -20,7 +20,7 @@ with open('$EVENTS_FILE', 'r') as f:
 data['prs_merged'] = data.get('prs_merged', 0) + 1
 with open('$EVENTS_FILE', 'w') as f:
     json.dump(data, f, indent=2)
-print('[BugMon] Merge logged! Your BugMon grow stronger.')
+print('[AgentGuard] Merge logged.')
 "
 elif command -v node > /dev/null 2>&1; then
   node -e "
@@ -28,6 +28,6 @@ const fs = require('fs');
 const data = JSON.parse(fs.readFileSync('$EVENTS_FILE', 'utf8'));
 data.prs_merged = (data.prs_merged || 0) + 1;
 fs.writeFileSync('$EVENTS_FILE', JSON.stringify(data, null, 2));
-console.log('[BugMon] Merge logged! Your BugMon grow stronger.');
+console.log('[AgentGuard] Merge logged.');
 "
 fi

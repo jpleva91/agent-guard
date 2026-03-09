@@ -9,7 +9,7 @@ import {
   BATTLE_ENDED,
   TEST_COMPLETED,
   FILE_SAVED,
-} from '../domain/events.js';
+} from '../events/schema.js';
 import type { DomainEvent } from '../core/types.js';
 
 interface ErrorLike {

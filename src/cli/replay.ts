@@ -17,12 +17,12 @@ interface EventDisplay {
 const EVENT_DISPLAY: Record<string, EventDisplay> = {
   ErrorObserved: { icon: '!', label: 'Error observed', color: 'red' },
   BugClassified: { icon: '?', label: 'Bug classified', color: 'yellow' },
-  ENCOUNTER_STARTED: { icon: '*', label: 'BugMon appeared', color: 'magenta' },
+  ENCOUNTER_STARTED: { icon: '*', label: 'Encounter started', color: 'magenta' },
   MOVE_USED: { icon: '>', label: 'Move used', color: 'white' },
   DAMAGE_DEALT: { icon: '#', label: 'Damage dealt', color: 'red' },
   HEALING_APPLIED: { icon: '+', label: 'Healing applied', color: 'green' },
   PASSIVE_ACTIVATED: { icon: '~', label: 'Passive activated', color: 'cyan' },
-  BUGMON_FAINTED: { icon: 'x', label: 'BugMon fainted', color: 'red' },
+  BUGMON_FAINTED: { icon: 'x', label: 'Fainted', color: 'red' },
   BATTLE_ENDED: { icon: 'v', label: 'Battle ended', color: 'green' },
   TestCompleted: { icon: 'T', label: 'Test completed', color: 'green' },
   FileSaved: { icon: 'F', label: 'File modified', color: 'blue' },
@@ -88,7 +88,7 @@ export async function replay(args: string[]): Promise<void> {
     const sessions = listSessions(1);
     if (sessions.length === 0) {
       process.stderr.write(
-        '\n  No sessions recorded yet.\n  Run "bugmon watch -- <command>" to start recording.\n\n'
+        '\n  No sessions recorded yet.\n  Run "agentguard guard" to start recording.\n\n'
       );
       return;
     }
@@ -103,7 +103,7 @@ export async function replay(args: string[]): Promise<void> {
   const session = loadSession(sessionId) as SessionData | null;
   if (!session) {
     process.stderr.write(
-      `\n  Session "${sessionId}" not found.\n  Run "bugmon replay" to list available sessions.\n\n`
+      `\n  Session "${sessionId}" not found.\n  Run "agentguard replay" to list available sessions.\n\n`
     );
     return;
   }
@@ -126,7 +126,7 @@ function renderSessionList(): void {
 
   if (sessions.length === 0) {
     process.stderr.write(
-      '\n  No sessions recorded yet.\n  Run "bugmon watch -- <command>" to start recording.\n\n'
+      '\n  No sessions recorded yet.\n  Run "agentguard guard" to start recording.\n\n'
     );
     return;
   }
@@ -154,9 +154,9 @@ function renderSessionList(): void {
   }
 
   lines.push('');
-  lines.push(dim('  Usage: bugmon replay <session-id>'));
-  lines.push(dim('         bugmon replay <session-id> --step'));
-  lines.push(dim('         bugmon replay --last'));
+  lines.push(dim('  Usage: agentguard replay <session-id>'));
+  lines.push(dim('         agentguard replay <session-id> --step'));
+  lines.push(dim('         agentguard replay --last'));
   lines.push('');
   process.stdout.write(lines.join('\n') + '\n');
 }

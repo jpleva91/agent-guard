@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createMonitor, ESCALATION } from '../../src/agentguard/monitor.js';
+import { createMonitor, ESCALATION } from '../../src/kernel/monitor.js';
 
 describe('agentguard/monitor', () => {
   describe('ESCALATION', () => {

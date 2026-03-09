@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createInMemoryStore } from '../../src/domain/event-store.js';
-import { createEvent, resetEventCounter, ERROR_OBSERVED, MOVE_USED } from '../../src/domain/events.js';
+import { createInMemoryStore } from '../../src/events/store.js';
+import { createEvent, resetEventCounter, ERROR_OBSERVED, MOVE_USED } from '../../src/events/schema.js';
 
 describe('domain/event-store', () => {
   beforeEach(() => {

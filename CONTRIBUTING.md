@@ -1,203 +1,109 @@
-# Contributing to BugMon
+# Contributing to AgentGuard
 
-Thanks for wanting to contribute! BugMon is designed so you can add content without touching game code.
+Thanks for your interest in contributing to AgentGuard -- a governed action runtime for AI coding agents. This guide covers how to set up the project, run tests, and submit contributions.
 
-## Quick Start
+## Getting Started
 
 ```bash
-git clone https://github.com/jpleva91/BugMon.git
-cd BugMon
+git clone https://github.com/jpleva91/agent-guard.git
+cd agent-guard
 npm install
 npm run build:ts
-npm run serve
-# Open http://localhost:8000
 ```
 
-## Ways to Contribute
-
-| What | Difficulty | Files to edit |
-|------|-----------|---------------|
-| Add a new BugMon | Easy | `ecosystem/data/monsters.json` |
-| Add a new move | Easy | `ecosystem/data/moves.json` |
-| Add a sprite | Easy | `src/game/sprites/` |
-| Balance stats | Easy | `ecosystem/data/monsters.json` |
-| Fix a bug | Medium | Source files |
-| Add a feature | Medium-Hard | Source files |
-
----
-
-## Add a New BugMon (2 minutes)
-
-1. Open `ecosystem/data/monsters.json`
-2. Add an entry at the end of the array:
-
-```json
-{
-  "id": 35,
-  "name": "YourBugName",
-  "type": "frontend",
-  "hp": 30,
-  "attack": 7,
-  "defense": 5,
-  "speed": 6,
-  "moves": ["cacheinvalidation", "hotfix"],
-  "color": "#3498db",
-  "sprite": "yourbugname",
-  "description": "A sentence describing what the sprite should look like."
-}
-```
-
-### BugMon Field Reference
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | number | Unique integer. Use the next available number. |
-| `name` | string | PascalCase name. Should be a programming concept, bug, or dev culture reference. |
-| `type` | string | One of: `frontend`, `backend`, `devops`, `testing`, `architecture`, `security`, `ai` |
-| `hp` | number | Hit points. Range: 20-50. |
-| `attack` | number | Attack power. Range: 3-10. |
-| `defense` | number | Defense. Range: 2-8. |
-| `speed` | number | Turn priority. Range: 1-10. |
-| `moves` | string[] | Array of 2-3 move IDs from `data/moves.json`. |
-| `color` | string | Hex color for the fallback sprite. |
-| `sprite` | string | Lowercase filename (without `.png`). |
-| `description` | string | Art prompt for sprite generation. |
-
-### Stat Balance Guidelines
-
-Aim for a total stat sum (HP + ATK + DEF + SPD) between 40 and 55.
-
-| Archetype | HP | ATK | DEF | SPD | Example |
-|-----------|---:|----:|----:|----:|---------|
-| Glass cannon | low | high | low | high | ForkBomb (22/10/2/9) |
-| Tank | high | low | high | low | InfiniteLoop (45/4/5/1) |
-| Balanced | mid | mid | mid | mid | GitBlame (31/6/6/5) |
-| Speedster | low | mid | low | max | 404NotFound (24/5/5/10) |
-
-### Type Guide
-
-| Type | Theme |
-|------|-------|
-| Frontend | Browser and UI bugs (CSS issues, 404s, DOM problems) |
-| Backend | Server-side bugs (null pointers, memory leaks, race conditions) |
-| DevOps | Infrastructure bugs (pipeline failures, container issues, git problems) |
-| Testing | Test-related bugs (flaky tests, assertion errors) |
-| Architecture | Design pattern bugs (monoliths, spaghetti code) |
-| Security | Security vulnerabilities (SQL injection, XSS) |
-| AI | AI/ML bugs (hallucinations, prompt issues) |
-
----
-
-## Add a New Move
-
-1. Open `ecosystem/data/moves.json`
-2. Add an entry:
-
-```json
-{ "id": "yourmove", "name": "YourMove", "power": 8, "type": "frontend" }
-```
-
-### Move Field Reference
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Lowercase, no spaces. Used as the internal identifier. |
-| `name` | string | Display name shown in battle. |
-| `power` | number | Base damage. Range: 4-14. |
-| `type` | string | One of the 7 types. Determines effectiveness. |
-
-### Power Guidelines
-
-| Range | Category | Example |
-|-------|----------|---------|
-| 4-6 | Weak (reliable) | NullCheck (4), MockOverride (6) |
-| 7-9 | Standard | Refactor (8), CacheInvalidation (9) |
-| 10-12 | Strong | SegFault (10), SQLInjection (11) |
-| 13-14 | High-risk | BufferOverrun (13), Compile (14) |
-
----
-
-## Add a Sprite
-
-Sprites are 64x64 PNG images with transparent backgrounds.
-
-1. Create a 64x64 pixel art sprite
-2. Save as `src/game/sprites/<name>.png` (lowercase, matching the `sprite` field in monsters.json)
-3. The game will automatically load it
-
-If no sprite exists, the game falls back to a colored rectangle -- so sprites are optional.
-
----
-
-## Report a Bug
-
-Use the [Bug Report](../../issues/new?template=bug-report.yml) issue template, or open a plain issue with:
-
-- What happened
-- What you expected
-- Browser and OS
-
----
+The TypeScript source in `src/` is the single source of truth. It compiles to `dist/` via `tsc` (individual modules) and `esbuild` (CLI bundle). All tests import from `dist/`, so you must build before running them.
 
 ## Development
 
-### Project Structure
-
-```
-src/                 # TypeScript source (single source of truth)
-├── cli/             # Commander-based CLI (bugmon command)
-│   └── commands/    # CLI subcommands (watch, scan, demo, etc.)
-├── core/            # Shared logic (EventBus, BugEngine, BugRegistry)
-├── game/            # Browser game (client-side)
-│   ├── engine/      # Core framework (state, input, rendering)
-│   ├── battle/      # Battle engine + damage formula
-│   ├── world/       # Map, player, encounters
-│   ├── evolution/   # Dev-activity evolution system
-│   ├── audio/       # Synthesized sounds
-│   ├── sync/        # Save/load + CLI sync
-│   └── sprites/     # Sprite images + procedural tiles
-├── domain/          # Pure domain logic (no DOM, no Node.js APIs)
-├── agentguard/      # Governance runtime
-└── ecosystem/       # Game content modules
-ecosystem/data/      # All game content (JSON + JS modules)
-dist/                # Compiled output (tsc + esbuild)
+```bash
+npm run build:ts       # Compile TypeScript to dist/
+npm test               # Run JS test suite
+npm run ts:test        # Run TypeScript tests (vitest)
+npm run lint           # Check code with ESLint
+npm run lint:fix       # Auto-fix lint issues
+npm run format         # Check formatting with Prettier
+npm run format:fix     # Auto-fix formatting
+npm run ts:check       # Type-check without emitting (tsc --noEmit)
 ```
 
-### How It Works
+Run `npm run build:ts` after making changes, then run both test suites before submitting a PR.
 
-- TypeScript source in `src/` compiles to `dist/` via `tsc` + `esbuild`
-- All game content is loaded from JSON at startup
-- The game is a state machine: EXPLORE → BATTLE_TRANSITION → BATTLE → EXPLORE
-- See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical breakdown
+## How to Contribute
 
-### Code Style
+### Custom Policies
 
-- TypeScript with strict mode (source in `src/`, compiled to `dist/`)
-- Zero browser runtime dependencies; CLI uses `chokidar`, `commander`, `pino`
-- ESLint + Prettier enforced
-- Prefer simple, readable code over abstractions
+AgentGuard uses YAML or JSON policy files to define action rules. You can contribute new policy examples or improve the policy format.
 
----
+- Policy files live in `policy/` or at the repo root as `agentguard.yaml`
+- Policies define `rules` with `action`, `effect` (allow/deny), optional `scopes`, `branches`, and `limits`
+- Example:
+
+```yaml
+rules:
+  - action: 'git.push'
+    effect: deny
+    branches: ['main', 'production']
+    reason: 'Direct push to protected branches is not allowed'
+
+  - action: 'file.write'
+    effect: allow
+    scopes: ['src/**', 'tests/**']
+    reason: 'Allow writes within source and test directories'
+```
+
+### Custom Invariants
+
+Invariants are runtime checks that verify system state before an action executes. AgentGuard ships with 6 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, lockfile integrity).
+
+To add a new invariant:
+
+1. Open `src/invariants/` (or `src/agentguard/invariants/definitions.ts` on main)
+2. Add a check function that returns a violation result with a severity level
+3. Register the invariant in the checker
+4. Add tests covering the new check
+
+### Bug Fixes and Improvements
+
+- Open an issue first to discuss the change, especially for larger features
+- Reference the issue number in your PR
+- Keep changes focused -- one fix or feature per PR
+
+## Project Structure
+
+```
+src/
+├── kernel/          # Governed action kernel (orchestrator)
+├── events/          # Canonical event model and lifecycle events
+├── policy/          # Policy evaluator, YAML/JSON loaders
+├── invariants/      # Invariant checker and built-in definitions
+├── adapters/        # Execution adapters (file, shell, git, claude-code)
+├── core/            # Shared logic (EventBus, types, hashing)
+├── cli/             # CLI entry point and commands (guard, inspect, replay)
+│   └── commands/    # Individual CLI subcommands
+├── domain/          # Pure domain logic (actions, events, reference monitor)
+└── agentguard/      # Legacy kernel location (being consolidated)
+
+policy/              # Policy configuration files (JSON)
+tests/               # Test suite (JS + TypeScript)
+dist/                # Compiled output (generated, do not edit)
+```
 
 ## Pull Request Process
 
-1. Fork the repo and create your branch from `main`
-2. Make your changes
-3. Test locally (`npm run build:ts && npm run serve`)
-4. Open a PR with a clear description
+1. Fork the repository and create a branch from `main`
+2. Make your changes in `src/` (never edit `dist/` directly)
+3. Run `npm run build:ts` to compile
+4. Run `npm test` and `npm run ts:test` to verify all tests pass
+5. Run `npm run lint` and `npm run format` to check code style
+6. Open a PR against `main` with a clear description of what changed and why
 
-For BugMon/move additions, the CI will automatically validate your JSON.
+## Code Style
 
----
-
-## BugMon Name Ideas
-
-Need inspiration? BugMon names should be programming concepts that developers will recognize:
-
-- Bug types: SegFault, MemoryLeak, BufferOverflow
-- Patterns: Singleton, Observer, FactoryMethod
-- Tools: Webpack, Docker, Kubernetes
-- Concepts: TechnicalDebt, ScopeCreep, YakShaving
-- Culture: RubberDuck, ItWorksOnMyMachine, HotDeploy
-
-The best names are ones that make developers laugh and nod.
+- **TypeScript** with strict mode enabled (`verbatimModuleSyntax`, `noUnusedLocals`, `noUnusedParameters`)
+- **ESLint** flat config with `typescript-eslint` recommended rules
+- **Prettier** for formatting (single quotes, trailing commas, 100 char print width, 2 space indent)
+- **camelCase** for functions and variables
+- **UPPER_SNAKE_CASE** for constants
+- `const`/`let` only, no `var`
+- Arrow functions preferred
+- Use `import type` for type-only imports

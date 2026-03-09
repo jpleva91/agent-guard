@@ -1,6 +1,6 @@
 #!/bin/sh
-# BugMon Git Hook - post-commit
-# Tracks git commits for BugMon evolution system
+# AgentGuard Git Hook - post-commit
+# Tracks git commits for developer activity events
 # Install: cp hooks/post-commit .git/hooks/post-commit && chmod +x .git/hooks/post-commit
 
 EVENTS_FILE="$(git rev-parse --show-toplevel)/.events.json"
@@ -35,7 +35,7 @@ if any(word in msg for word in ['test', 'spec', 'assert']):
 
 with open('$EVENTS_FILE', 'w') as f:
     json.dump(data, f, indent=2)
-print('[BugMon] Dev activity logged! Your BugMon grow stronger.')
+print('[AgentGuard] Dev activity logged.')
 "
 elif command -v node > /dev/null 2>&1; then
   node -e "
@@ -52,6 +52,6 @@ if (/deploy|release|publish/.test(msg)) data.deploys = (data.deploys || 0) + 1;
 if (/test|spec|assert/.test(msg)) data.tests_passing = (data.tests_passing || 0) + 1;
 
 fs.writeFileSync('$EVENTS_FILE', JSON.stringify(data, null, 2));
-console.log('[BugMon] Dev activity logged! Your BugMon grow stronger.');
+console.log('[AgentGuard] Dev activity logged.');
 "
 fi

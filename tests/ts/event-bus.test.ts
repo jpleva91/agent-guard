@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { EventBus } from '../../src/core/event-bus.js';
+import { EventBus } from '../../src/events/bus.js';
 
 interface TestEventMap {
   Ping: { value: number };

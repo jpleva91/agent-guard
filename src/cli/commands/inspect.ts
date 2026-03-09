@@ -3,11 +3,11 @@
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { renderEventStream, renderDecisionTable } from '../../agentguard/renderers/tui.js';
-import { getEventFilePath } from '../../agentguard/sinks/jsonl.js';
-import { getDecisionFilePath } from '../../agentguard/sinks/decision-jsonl.js';
+import { renderEventStream, renderDecisionTable } from '../tui.js';
+import { getEventFilePath } from '../../events/jsonl.js';
+import { getDecisionFilePath } from '../../events/decision-jsonl.js';
 import type { DomainEvent } from '../../core/types.js';
-import type { GovernanceDecisionRecord } from '../../agentguard/decisions/types.js';
+import type { GovernanceDecisionRecord } from '../../kernel/decisions/types.js';
 
 const BASE_DIR = '.agentguard';
 const EVENTS_DIR = join(BASE_DIR, 'events');

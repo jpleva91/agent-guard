@@ -10,7 +10,7 @@ import {
   ACTION_CLASS,
   ACTION_TYPES,
   DECISION,
-} from '../dist/domain/actions.js';
+} from '../dist/core/actions.js';
 
 suite('Domain Actions — Canonical Action Schema', () => {
   // --- Action Types ---

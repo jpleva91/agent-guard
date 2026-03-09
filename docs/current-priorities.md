@@ -4,8 +4,6 @@
 
 AgentGuard is a **governed action runtime for AI agents**. The kernel loop intercepts agent tool calls, enforces policies and invariants, executes via adapters, and emits lifecycle events. This is the core value proposition.
 
-The BugMon game layer (roguelike encounters, browser game, battle engine) is **deprioritized**. It remains functional but is not the focus of active development. Future work may revisit it as an optional visualization mode.
-
 ## What Is Implemented
 
 ### Governed Action Kernel (NEW — Active Focus)
@@ -30,7 +28,7 @@ The BugMon game layer (roguelike encounters, browser game, battle engine) is **d
 - **Adapter registry** — action class → handler mapping with authorization guard (`domain/execution/adapters.ts`)
 
 ### Canonical Event Model
-- 50+ event kinds covering governance, battle, progression, pipeline, developer signals (`domain/events.ts`, `core/types.ts`)
+- 50+ event kinds covering governance, pipeline, developer signals (`domain/events.ts`, `core/types.ts`)
 - EventBus — generic typed pub/sub (`core/event-bus.ts`)
 - Event store — in-memory persistence with query/replay (`domain/event-store.ts`)
 - Event factory with fingerprinting (`domain/events.ts`)
@@ -47,14 +45,6 @@ The BugMon game layer (roguelike encounters, browser game, battle engine) is **d
 - CI workflows (deploy, validate, size check, CodeQL, publish, release)
 - ESLint + Prettier enforced
 - Size budget enforcement
-
-### BugMon Game Layer (DEPRIORITIZED)
-- Battle engine with type effectiveness, passives, healing (`domain/battle.ts`)
-- 31 BugMon across 7 types, 72 moves, 7 evolution chains (`ecosystem/data/`)
-- Browser game: Canvas 2D, synthesized audio, mobile touch controls (`game/`)
-- Terminal renderer for encounters (`cli/renderer.ts`)
-- Bug Grimoire, progression, XP system (`ecosystem/`)
-- Battle simulation framework (`simulation/`)
 
 ## What Is Next
 
@@ -80,11 +70,6 @@ The BugMon game layer (roguelike encounters, browser game, battle engine) is **d
 - Aggregate statistics across runs
 - Risk scoring per agent run
 - Failure clustering
-
-### Future — BugMon Revival (Not Scheduled)
-- Governance events → boss encounters
-- Browser game integration with kernel events
-- Run engine connecting game sessions to governance runs
 
 ## Open Questions
 

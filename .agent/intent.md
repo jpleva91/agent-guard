@@ -2,30 +2,26 @@
 
 ## System Purpose
 
-AgentGuard + BugMon is a unified platform with two layers connected by a single canonical event model.
-
-**AgentGuard** is a deterministic governance runtime for AI coding agents. It evaluates agent actions against declared policies and invariants, producing canonical events when violations occur.
-
-**BugMon** is a roguelike developer telemetry game. It consumes canonical events (developer errors, CI failures, governance violations) and renders them as interactive encounters. Coding sessions are dungeon runs. Bugs are enemies. CI failures are bosses.
+AgentGuard is a governed action runtime for AI coding agents. It intercepts agent tool calls, evaluates them against declared policies and invariants, executes authorized actions via adapters, and emits canonical lifecycle events for audit and replay.
 
 ## Primary Responsibilities
 
-1. Detect software failures from stderr, test output, linter output, and runtime crashes
-2. Normalize errors through a multi-stage ingestion pipeline (parse, fingerprint, classify, map)
-3. Emit structured canonical events via the domain EventBus
-4. Map events to BugMon creature encounters with rarity-weighted selection
-5. Run turn-based battles with a deterministic combat engine
-6. Track progression through a Bug Grimoire (defeated enemy compendium), XP, and evolution chains
-7. Enforce governance policies on AI agent actions (AgentGuard layer)
-8. Produce audit evidence packs for governance violations
+1. Intercept agent tool calls via Claude Code hooks (PreToolUse/PostToolUse)
+2. Normalize raw tool calls into canonical action types via the Action Authorization Boundary (AAB)
+3. Evaluate actions against YAML/JSON policy rules (deny/allow with scopes, branches, limits)
+4. Check system invariants before execution (secret exposure, protected branches, blast radius, test-before-push, no force push, lockfile integrity)
+5. Execute authorized actions through typed adapters (file, shell, git, claude-code)
+6. Emit structured canonical events for the full lifecycle: ACTION_REQUESTED, ACTION_ALLOWED/DENIED, ACTION_EXECUTED/FAILED
+7. Track escalation levels (NORMAL, ELEVATED, HIGH, LOCKDOWN) for runtime governance
+8. Persist all events to JSONL for audit trail and replay
+9. Produce evidence packs for governance violations
 
 ## Scope Boundaries
 
 Agents must not:
 
-- Introduce features that violate the roguelike metaphor (coding = dungeon runs, bugs = enemies)
-- Add external runtime dependencies (the system is zero-dependency at runtime)
-- Blur the separation between governance producer (AgentGuard) and event consumer (BugMon)
-- Add server-side components — the browser game is 100% client-side
-- Replace synthesized audio with audio files
+- Add external runtime dependencies (the CLI may use runtime deps, but the governance kernel should remain lean)
 - Break the single canonical event schema that connects all systems
+- Bypass the governed action loop (propose, normalize, evaluate, execute, emit)
+- Modify policy evaluation to allow previously denied actions without explicit policy changes
+- Introduce non-determinism into invariant checking

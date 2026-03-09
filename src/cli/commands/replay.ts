@@ -7,7 +7,7 @@
 
 import type { Command } from 'commander';
 import pino from 'pino';
-import { createExecutionEventLog } from '../../domain/execution-log/event-log.js';
+import { createExecutionEventLog } from '../../core/execution-log/event-log.js';
 
 export function registerReplayCommand(program: Command): void {
   program
@@ -28,13 +28,13 @@ export function registerReplayCommand(program: Command): void {
           limit: string;
         }
       ) => {
-        const logger = pino({ name: 'bugmon-replay' });
+        const logger = pino({ name: 'agentguard-replay' });
         const fs = await import('node:fs');
 
         if (!fs.existsSync(file)) {
           logger.error({ file }, 'Event log file not found');
           console.error(`Event log file not found: ${file}`);
-          console.error('Run "bugmon watch" first to generate events.');
+          console.error('Run "agentguard guard" first to generate events.');
           return;
         }
 

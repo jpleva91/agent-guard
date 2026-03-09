@@ -2,7 +2,7 @@
  * Event Contract — Canonical event taxonomy
  *
  * All 29 event kinds defined in domain/events.js, organized by category.
- * Every system in the AgentGuard + BugMon platform produces and consumes
+ * Every system in the AgentGuard platform produces and consumes
  * events conforming to this taxonomy.
  *
  * Source: domain/events.js
@@ -45,7 +45,7 @@ export type HealingApplied = "HEALING_APPLIED";
 export type PassiveActivated = "PASSIVE_ACTIVATED";
 // Required: passive, owner
 
-/** A BugMon was defeated (HP reached 0) */
+/** An AgentGuard entity was defeated (HP reached 0) */
 export type BugmonFainted = "BUGMON_FAINTED";
 // Required: bugmon
 
@@ -67,7 +67,7 @@ export type BattleEnded = "BATTLE_ENDED";
 export type ActivityRecorded = "ActivityRecorded";
 // Required: activity
 
-/** A BugMon species evolved into a new form */
+/** An AgentGuard species evolved into a new form */
 export type EvolutionTriggered = "EvolutionTriggered";
 // Required: from, to
 

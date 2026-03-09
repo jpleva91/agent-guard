@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { evaluate, matchAction, matchScope } from '../dist/agentguard/policies/evaluator.js';
+import { evaluate, matchAction, matchScope } from '../dist/policy/evaluator.js';
 
 suite('AgentGuard — Policy Evaluator', () => {
   test('matchAction exact match', () => {

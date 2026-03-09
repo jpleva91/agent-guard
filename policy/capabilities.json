@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "description": "Agent capability policy for BugMon repository operations",
+  "description": "Agent capability policy for AgentGuard repository operations",
   "allowed_actions": [
     "file.read",
     "file.write",
@@ -11,9 +11,7 @@
     "git.status",
     "git.commit",
     "git.branch",
-    "build.run",
-    "simulate.run",
-    "sync-data.run"
+    "build.run"
   ],
   "restricted_actions": [
     "shell.exec.arbitrary",
@@ -30,16 +28,10 @@
     "read_any": true,
     "write_allowed_paths": [
       "src/**",
-      "core/**",
-      "game/**",
-      "domain/**",
-      "ecosystem/**",
       "tests/**",
       "scripts/**",
-      "simulation/**",
       "spec/**",
-      "policy/**",
-      "runtime/**"
+      "policy/**"
     ],
     "write_denied_paths": [
       ".github/workflows/**",

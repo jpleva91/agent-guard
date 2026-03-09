@@ -1,6 +1,6 @@
 # Plugin API
 
-The system supports extension through five plugin categories: event sources, content packs, renderers, policy packs, and replay processors. Each category has a defined contract and integration point.
+The system supports extension through four plugin categories: event sources, renderers, policy packs, and replay processors. Each category has a defined contract and integration point.
 
 ## Plugin Categories
 
@@ -86,53 +86,23 @@ export function createGitHubActionsSource(options) {
 }
 ```
 
-### 2. Content Packs
+### 2. Renderers
 
-Content packs add new BugMon creatures, moves, evolution chains, and type matchups to the game. The existing community submission workflow is the first content pack system.
+Renderers subscribe to governance events and present them to the developer in real time.
 
-**Contract:** Content packs provide JSON data conforming to the existing data schemas (see [ARCHITECTURE.md](../ARCHITECTURE.md) for schema definitions).
-
-**Integration point:** Add entries to `ecosystem/data/` JSON files. Run `npm run sync-data` to regenerate JS modules.
-
-**Built-in content:**
-- 31 BugMon creatures (`ecosystem/data/monsters.json`)
-- 72 moves (`ecosystem/data/moves.json`)
-- 7 types with effectiveness chart (`ecosystem/data/types.json`)
-- 7 evolution chains with 10 evolved forms (`ecosystem/data/evolutions.json`)
-
-**Community submission workflow:**
-1. Open a GitHub Issue using the BugMon submission template
-2. Automated validation checks schema, stat ranges, and move references
-3. Battle preview bot generates matchup analysis
-4. Maintainer approval triggers automatic PR creation
-5. Merge adds the BugMon to the game
-
-**Planned content pack features:**
-| Feature | Description |
-|---------|-------------|
-| Governance BugMon | Creatures themed around agent governance violations |
-| Environment-specific packs | Different BugMon for Python, Go, Rust ecosystems |
-| Boss content packs | Custom boss encounters with unique mechanics |
-| Achievement packs | New achievement sets tied to specific error types |
-
-### 3. Renderers
-
-Renderers subscribe to events and display encounters, battles, and progression to the developer.
-
-**Contract:** A renderer subscribes to EventBus events and presents the appropriate UI for each event type.
+**Contract:** A renderer subscribes to EventBus events and presents the appropriate output for each event type.
 
 **Integration point:** Subscribe to events via `domain/event-bus.js`.
 
 **Built-in renderers:**
 | Renderer | Platform | Path |
 |----------|----------|------|
-| Terminal (ANSI) | CLI / terminal | `core/cli/renderer.js`, `core/cli/encounter.js` |
-| Browser (Canvas 2D) | Web browser | `game/` directory |
+| TUI renderer | CLI / terminal | `agentguard/renderers/tui.ts` |
+| JSONL sink | Persistence | `agentguard/sinks/jsonl.ts` |
 
 **Planned renderers:**
 | Renderer | Platform |
 |----------|----------|
-| Mobile | Mobile web (responsive Canvas) |
 | VS Code sidebar | VS Code extension webview |
 | JetBrains tool window | IntelliJ/WebStorm plugin |
 | Minimal / headless | CI environments (text-only output) |
@@ -145,21 +115,21 @@ import { Events } from '../domain/events.js';
 
 const bus = new EventBus();
 
-// Subscribe to encounter events
-bus.on(Events.ENCOUNTER_STARTED, (event) => {
-  // Render encounter UI
+// Subscribe to governance events
+bus.on(Events.ACTION_REQUESTED, (event) => {
+  // Display action proposal
 });
 
-bus.on(Events.MOVE_USED, (event) => {
-  // Render battle action
+bus.on(Events.ACTION_DENIED, (event) => {
+  // Display denial with reason
 });
 
-bus.on(Events.BATTLE_ENDED, (event) => {
-  // Render battle result
+bus.on(Events.ACTION_EXECUTED, (event) => {
+  // Display execution result
 });
 ```
 
-### 4. Policy Packs
+### 3. Policy Packs
 
 Policy packs define governance rules for AgentGuard. Each pack declares what actions are allowed, denied, or constrained for specific agent scopes.
 
@@ -203,7 +173,7 @@ policy:
     - "test_suite_passes_after_change"
 ```
 
-### 5. Replay Processors
+### 4. Replay Processors
 
 Replay processors transform event streams for analysis, visualization, or testing.
 
@@ -215,9 +185,7 @@ Replay processors transform event streams for analysis, visualization, or testin
 | Processor | Description |
 |-----------|-------------|
 | Session summarizer | Aggregate session events into a summary report |
-| Difficulty analyzer | Compute difficulty curve across a session |
 | Error pattern detector | Identify recurring error patterns across sessions |
-| Encounter replayer | Regenerate encounters from stored events for testing |
 | Governance auditor | Extract and format governance decisions for review |
 
 ## Extension Guidelines
@@ -226,7 +194,7 @@ Replay processors transform event streams for analysis, visualization, or testin
 
 2. **Event-driven integration.** Plugins communicate through the EventBus. No direct function calls between plugins and core systems.
 
-3. **Schema compliance.** Content packs must conform to existing JSON schemas. The validation workflow enforces this for community submissions.
+3. **Schema compliance.** Plugins must conform to existing event and policy schemas.
 
 4. **Deterministic behavior.** Policy packs and replay processors must be deterministic. Given the same input, they must produce the same output.
 

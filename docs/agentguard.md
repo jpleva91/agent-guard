@@ -1,6 +1,6 @@
 # AgentGuard — Deterministic Governance Runtime
 
-AgentGuard is the governance layer of the system. It enforces deterministic execution constraints on AI coding agents by evaluating every agent action against declared policies and invariants. Violations produce canonical events that feed into BugMon encounters.
+AgentGuard is the governance layer of the system. It enforces deterministic execution constraints on AI coding agents by evaluating every agent action against declared policies and invariants. Violations produce canonical events that feed into the audit trail.
 
 AgentGuard is not an AI system. It is a deterministic runtime that evaluates agent behavior against static rules. No inference, no heuristics, no probabilistic decisions.
 
@@ -50,8 +50,6 @@ action    emit PolicyDenied
 Invariants are conditions that must always hold true. AgentGuard monitors these continuously, not just at action boundaries.
 
 **System invariants:**
-- Layer boundaries are maintained (no cross-imports between `core/` and `game/`)
-- Bundle size stays within budget
 - Test suite passes after modifications
 - No secrets or credentials in committed files
 - Protected files are not modified without explicit authorization
@@ -143,16 +141,16 @@ Evidence packs enable:
 
 ## Event Production
 
-AgentGuard produces canonical events (see [Event Model](event-model.md)) that flow into the shared event store. BugMon subscribes to these events and generates encounters from them.
+AgentGuard produces canonical events (see [Event Model](event-model.md)) that flow into the shared event store. Subscribers (TUI renderer, JSONL sink, CLI inspect) consume these events.
 
-| AgentGuard Outcome | Event Type | BugMon Effect |
-|-------------------|------------|---------------|
-| Action allowed | (no event) | No encounter |
-| Policy denied | `PolicyDenied` | Governance enemy |
-| Unauthorized action | `UnauthorizedAction` | Governance boss |
-| Invariant violated | `InvariantViolation` | Elite governance boss |
-| Blast radius exceeded | `BlastRadiusExceeded` | Governance boss |
-| Merge guard triggered | `MergeGuardFailure` | Governance boss |
+| Outcome | Event Type | Severity |
+|---------|------------|----------|
+| Action allowed | (no event) | - |
+| Policy denied | `PolicyDenied` | Medium |
+| Unauthorized action | `UnauthorizedAction` | High |
+| Invariant violated | `InvariantViolation` | Critical |
+| Blast radius exceeded | `BlastRadiusExceeded` | High |
+| Merge guard triggered | `MergeGuardFailure` | High |
 
 ## Architecture
 
@@ -173,7 +171,6 @@ AgentGuard Runtime
     ▼
 Event Store + EventBus
     │
-    ├──▶ BugMon (encounters from violations)
     ├──▶ Audit Log (compliance record)
     └──▶ Agent Feedback (deny reason for adjustment)
 ```

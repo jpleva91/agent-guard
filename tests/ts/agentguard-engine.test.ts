@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createEngine, INTERVENTION } from '../../src/agentguard/core/engine.js';
+import { createEngine, INTERVENTION } from '../../src/kernel/decision.js';
 
 describe('agentguard/core/engine', () => {
   describe('INTERVENTION', () => {

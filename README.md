@@ -142,18 +142,16 @@ AgentGuard tracks repeated denials and invariant violations. If an agent repeate
 agentguard guard                          # Start governed action runtime
 agentguard guard --policy <file>          # Use a specific policy file (YAML/JSON)
 agentguard guard --dry-run                # Evaluate without executing actions
-agentguard inspect [runId]                # Show action graph for a run
+agentguard inspect [runId]                # Show action graph and decisions for a run
 agentguard inspect --last                 # Inspect most recent run
 agentguard events [runId]                 # Show raw event stream for a run
 
-# === Monitoring ===
-agentguard watch -- <command>             # Monitor a command for errors
-agentguard scan [path]                    # Scan files for bugs (eslint/tsc)
-agentguard replay --last                  # Replay a session timeline
+# === Replay ===
+agentguard replay --last                  # Replay a governance session timeline
+agentguard replay --last --step           # Step through events interactively
 
-# === Tools ===
-agentguard init                           # Install git hooks
-agentguard claude-init                    # Set up Claude Code integration
+# === Integration ===
+agentguard claude-init                    # Set up Claude Code hook integration
 agentguard help                           # Show all commands
 ```
 
@@ -210,24 +208,35 @@ Full kernel loop detail: [docs/unified-architecture.md](docs/unified-architectur
 
 ```
 src/
-├── agentguard/             # Governance runtime (active focus)
-│   ├── kernel.ts           # Governed action kernel
-│   ├── monitor.ts          # Escalation tracking
-│   ├── core/               # AAB + RTA engine
-│   ├── policies/           # Policy evaluator + JSON/YAML loaders
-│   ├── invariants/         # Invariant checker + 6 defaults
-│   ├── evidence/           # Evidence pack generation
-│   ├── adapters/           # Execution adapters (file, shell, git, claude-code)
-│   ├── renderers/          # TUI renderer
-│   └── sinks/              # JSONL event persistence
-├── domain/                 # Pure domain logic (no DOM, no Node.js APIs)
-│   ├── actions.ts          # 23 canonical action types
-│   ├── events.ts           # Structured lifecycle events
-│   ├── reference-monitor.ts
-│   └── execution/          # Adapter registry
-├── core/                   # Shared infrastructure (EventBus, types)
+├── kernel/                 # Governed action kernel
+│   ├── kernel.ts           # Orchestrator (propose → evaluate → execute → emit)
+│   ├── aab.ts              # Action Authorization Boundary (normalization)
+│   ├── decision.ts         # Runtime assurance engine
+│   ├── monitor.ts          # Escalation state machine
+│   ├── evidence.ts         # Evidence pack generation
+│   ├── decisions/          # Typed decision records
+│   └── simulation/         # Pre-execution impact simulation
+├── events/                 # Canonical event model
+│   ├── schema.ts           # Event kinds, factory, validation
+│   ├── bus.ts              # Generic typed EventBus
+│   ├── store.ts            # In-memory event store
+│   ├── jsonl.ts            # JSONL event persistence (audit trail)
+│   └── decision-jsonl.ts   # Decision record persistence
+├── policy/                 # Policy system
+│   ├── evaluator.ts        # Rule matching engine
+│   ├── loader.ts           # Policy validation + loading
+│   └── yaml-loader.ts      # YAML policy parser
+├── invariants/             # Invariant system
+│   ├── definitions.ts      # 6 built-in invariants
+│   └── checker.ts          # Invariant evaluation engine
+├── adapters/               # Execution adapters
+│   ├── file.ts, shell.ts, git.ts  # Action handlers
+│   ├── claude-code.ts      # Claude Code hook adapter
+│   └── registry.ts         # Adapter registry
 ├── cli/                    # CLI entry point + commands
-└── game/                   # BugMon browser game (deprioritized)
+│   ├── bin.ts              # Main entry
+│   └── commands/           # guard, inspect, replay, claude-hook
+└── core/                   # Shared utilities (types, actions, hash)
 ```
 
 ## Run Locally
@@ -237,8 +246,8 @@ git clone https://github.com/jpleva91/agent-guard.git
 cd agent-guard
 npm install
 npm run build:ts        # Compile TypeScript → dist/
-npm run ts:test         # Run 345 TypeScript tests
-npm test                # Run 1085 JavaScript tests
+npm run ts:test         # Run TypeScript tests (vitest)
+npm test                # Run JavaScript tests
 ```
 
 ## Documentation

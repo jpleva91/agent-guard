@@ -1,4 +1,4 @@
-// bugmon claude-init — set up Claude Code integration
+// agentguard claude-init — set up Claude Code integration
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -36,7 +36,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   const settingsLabel = isGlobal ? '~/.claude/settings.json' : '.claude/settings.json';
 
   process.stderr.write('\n');
-  process.stderr.write(`  ${BOLD}BugMon Claude Code Integration${RESET}\n\n`);
+  process.stderr.write(`  ${BOLD}AgentGuard Claude Code Integration${RESET}\n\n`);
 
   if (isRemove) {
     removeHook(settingsPath, settingsLabel);
@@ -59,9 +59,9 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     }
   }
 
-  if (hasBugMonHook(settings)) {
+  if (hasAgentGuardHook(settings)) {
     process.stderr.write(
-      `  ${FG.yellow}Already configured.${RESET} BugMon hook found in ${settingsLabel}.\n`
+      `  ${FG.yellow}Already configured.${RESET} AgentGuard hook found in ${settingsLabel}.\n`
     );
     process.stderr.write(`  ${DIM}Use --remove to uninstall.${RESET}\n\n`);
     return;
@@ -89,10 +89,10 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   );
   process.stderr.write(`  ${DIM}Command: ${hookCommand}${RESET}\n\n`);
   process.stderr.write(
-    `  ${FG.green}${BOLD}Done!${RESET} BugMon encounters will trigger on errors in Claude Code.\n`
+    `  ${FG.green}${BOLD}Done!${RESET} AgentGuard governance will monitor errors in Claude Code.\n`
   );
-  process.stderr.write(`  ${DIM}Run "bugmon dex" to view your collection.${RESET}\n`);
-  process.stderr.write(`  ${DIM}Use "bugmon claude-init --remove" to uninstall.${RESET}\n\n`);
+  process.stderr.write(`  ${DIM}Run "agentguard inspect --last" to view action history.${RESET}\n`);
+  process.stderr.write(`  ${DIM}Use "agentguard claude-init --remove" to uninstall.${RESET}\n\n`);
 }
 
 function removeHook(settingsPath: string, settingsLabel: string): void {
@@ -111,9 +111,9 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
     return;
   }
 
-  if (!hasBugMonHook(settings)) {
+  if (!hasAgentGuardHook(settings)) {
     process.stderr.write(
-      `  ${DIM}No BugMon hook found in ${settingsLabel}. Nothing to remove.${RESET}\n\n`
+      `  ${DIM}No AgentGuard hook found in ${settingsLabel}. Nothing to remove.${RESET}\n\n`
     );
     return;
   }
@@ -137,11 +137,11 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
     `  ${FG.green}✓${RESET}  Hook removed from ${FG.cyan}${settingsLabel}${RESET}\n`
   );
   process.stderr.write(
-    `  ${DIM}BugMon encounters will no longer trigger in Claude Code.${RESET}\n\n`
+    `  ${DIM}AgentGuard governance will no longer monitor in Claude Code.${RESET}\n\n`
   );
 }
 
-function hasBugMonHook(settings: Settings): boolean {
+function hasAgentGuardHook(settings: Settings): boolean {
   const postToolUse = settings?.hooks?.PostToolUse || [];
   return postToolUse.some((entry) => {
     const hooks = entry.hooks || [];

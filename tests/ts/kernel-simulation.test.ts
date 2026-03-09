@@ -1,12 +1,12 @@
 // Integration tests: kernel + simulation + invariant re-check
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createKernel } from '../../src/agentguard/kernel.js';
-import { createSimulatorRegistry } from '../../src/agentguard/simulation/registry.js';
-import type { ActionSimulator, SimulationResult } from '../../src/agentguard/simulation/types.js';
-import type { NormalizedIntent } from '../../src/agentguard/policies/evaluator.js';
-import type { GovernanceDecisionRecord, DecisionSink } from '../../src/agentguard/decisions/types.js';
-import { resetActionCounter } from '../../src/domain/actions.js';
-import { resetEventCounter } from '../../src/domain/events.js';
+import { createKernel } from '../../src/kernel/kernel.js';
+import { createSimulatorRegistry } from '../../src/kernel/simulation/registry.js';
+import type { ActionSimulator, SimulationResult } from '../../src/kernel/simulation/types.js';
+import type { NormalizedIntent } from '../../src/policy/evaluator.js';
+import type { GovernanceDecisionRecord, DecisionSink } from '../../src/kernel/decisions/types.js';
+import { resetActionCounter } from '../../src/core/actions.js';
+import { resetEventCounter } from '../../src/events/schema.js';
 
 beforeEach(() => {
   resetActionCounter();

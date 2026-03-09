@@ -1,4 +1,4 @@
-// File-based event store — persists domain events to ~/.bugmon/events/
+// File-based event store — persists domain events to ~/.agentguard/events/
 // Implements the EventStore interface from src/domain/event-store.ts
 // Each session gets its own JSONL file for efficient append-only writes.
 
@@ -13,10 +13,10 @@ import {
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import type { DomainEvent, EventFilter, EventStore } from '../core/types.js';
-import { validateEvent } from '../domain/events.js';
+import { validateEvent } from '../events/schema.js';
 import type { ValidationResult } from '../core/types.js';
 
-const EVENTS_DIR = join(homedir(), '.bugmon', 'events');
+const EVENTS_DIR = join(homedir(), '.agentguard', 'events');
 
 function ensureDir(): void {
   if (!existsSync(EVENTS_DIR)) {

@@ -1,8 +1,8 @@
 // Tests for Simulator Registry
 import { describe, it, expect } from 'vitest';
-import { createSimulatorRegistry } from '../../src/agentguard/simulation/registry.js';
-import type { ActionSimulator, SimulationResult } from '../../src/agentguard/simulation/types.js';
-import type { NormalizedIntent } from '../../src/agentguard/policies/evaluator.js';
+import { createSimulatorRegistry } from '../../src/kernel/simulation/registry.js';
+import type { ActionSimulator, SimulationResult } from '../../src/kernel/simulation/types.js';
+import type { NormalizedIntent } from '../../src/policy/evaluator.js';
 
 function makeStubSimulator(id: string, supportedActions: string[]): ActionSimulator {
   return {

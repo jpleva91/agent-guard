@@ -1,12 +1,12 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
-import { resetEventCounter } from '../dist/domain/events.js';
+import { resetEventCounter } from '../dist/events/schema.js';
 import {
   checkInvariant,
   checkAllInvariants,
   buildSystemState,
-} from '../dist/agentguard/invariants/checker.js';
-import { DEFAULT_INVARIANTS } from '../dist/agentguard/invariants/definitions.js';
+} from '../dist/invariants/checker.js';
+import { DEFAULT_INVARIANTS } from '../dist/invariants/definitions.js';
 
 suite('AgentGuard — Invariant Checker', () => {
   test('checkInvariant returns holds=true when invariant passes', () => {

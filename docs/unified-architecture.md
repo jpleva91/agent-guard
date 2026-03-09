@@ -1,12 +1,12 @@
 # Unified Architecture — AgentGuard
 
-This document describes the architecture of AgentGuard as a governed action runtime for AI agents, with the BugMon game layer as a deprioritized optional mode.
+This document describes the architecture of AgentGuard as a governed action runtime for AI agents.
 
 ## Architectural Thesis
 
 AgentGuard is a **governed action runtime**. The Action is the primary unit of computation. Every agent tool call passes through the kernel loop, which enforces policies and invariants before execution.
 
-The system has one architectural spine: the **canonical event model**. All system activity becomes events. The kernel produces governance events. Subscribers (TUI renderer, JSONL sink, and optionally BugMon) consume them.
+The system has one architectural spine: the **canonical event model**. All system activity becomes events. The kernel produces governance events. Subscribers (TUI renderer, JSONL sink, CLI inspect) consume them.
 
 ## System Model
 
@@ -62,7 +62,6 @@ The system has one architectural spine: the **canonical event model**. All syste
                                     │                   │
                                     │  CLI inspect      │
                                     │  CLI events       │
-                                    │  (future: BugMon) │
                                     └───────────────────┘
 ```
 
@@ -144,25 +143,13 @@ Pure domain logic with no environment dependencies.
 | `agentguard inspect` | `cli/commands/inspect.ts` | Show action graph for a run |
 | `agentguard events` | `cli/commands/inspect.ts` | Show raw event stream for a run |
 
-### BugMon Layer (Deprioritized)
-
-BugMon is the **event consumer and game layer**. It remains functional but is not under active development.
-
-| Responsibility | Description |
-|----------------|-------------|
-| Event consumption | Subscribe to canonical events |
-| Encounter generation | Map events to BugMon creatures |
-| Battle engine | Turn-based combat system |
-| Progression tracking | XP, levels, Bug Grimoire |
-| Rendering | Terminal + browser game UIs |
-
 ## Integration Guarantees
 
 1. **Single event schema.** The kernel and all consumers use the same canonical event format.
 
 2. **Kernel as single mediation point.** All agent actions pass through the kernel. No bypass.
 
-3. **Independent operation.** The kernel works without BugMon. BugMon works without the kernel (consuming developer signal events only). They connect through the canonical event model.
+3. **Independent operation.** The kernel operates independently. Subscribers connect through the canonical event model.
 
 4. **Deterministic evaluation.** Same action + same policy + same state = same decision. No inference, no heuristics.
 
