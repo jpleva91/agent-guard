@@ -3,7 +3,6 @@
 //
 // TODO(roadmap): Phase 4 — File-based event store (.agentguard/events/)
 // TODO(roadmap): Phase 4 — Event stream serialization format
-// TODO(roadmap): Phase 4 — Event export/import for sharing sessions
 
 import type { DomainEvent, EventFilter, EventStore, ValidationResult } from '../core/types.js';
 import { validateEvent } from './schema.js';
