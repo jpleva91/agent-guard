@@ -4,11 +4,15 @@ Review open pull requests for code quality, coding convention adherence, governa
 
 ## Prerequisites
 
-None — standalone scheduled skill. Governance runtime is recommended but not required.
+Run `start-governance-runtime` first. All scheduled skills must operate under governance.
 
 ## Steps
 
-### 1. List Open PRs
+### 1. Start Governance Runtime
+
+Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is active and intercepting all tool calls. If governance cannot be activated, STOP — do not proceed without governance.
+
+### 2. List Open PRs
 
 ```bash
 gh pr list --state open --json number,title,author,headRefName,additions,deletions,createdAt --limit 10
@@ -16,7 +20,7 @@ gh pr list --state open --json number,title,author,headRefName,additions,deletio
 
 If no open PRs exist, report "No open PRs to review" and STOP.
 
-### 2. Filter Unreviewed PRs
+### 3. Filter Unreviewed PRs
 
 For each open PR, check if this skill has already posted a review:
 
@@ -26,7 +30,7 @@ gh pr view <PR_NUMBER> --json comments --jq '.comments[].body' | grep -c "AgentG
 
 Skip PRs that already have an `**AgentGuard Review Bot**` comment. Select up to **3 unreviewed PRs** for this run.
 
-### 3. Review Each PR
+### 4. Review Each PR
 
 For each selected PR:
 
@@ -77,7 +81,7 @@ Check the diff against these criteria:
 - No hardcoded secrets or credentials
 - Imports are clean (no unused imports)
 
-### 4. Post Review Comment
+### 5. Post Review Comment
 
 For each reviewed PR, post a structured comment:
 
@@ -106,7 +110,7 @@ gh pr comment <PR_NUMBER> --body "**AgentGuard Review Bot** — automated code r
 *Automated review by review-open-prs skill on $(date -u +%Y-%m-%dT%H:%M:%SZ)*"
 ```
 
-### 5. Summary
+### 6. Summary
 
 Report:
 - **PRs reviewed**: N (list PR numbers and titles)
