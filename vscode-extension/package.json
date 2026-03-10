@@ -52,6 +52,44 @@
           "group": "navigation"
         }
       ]
+    },
+    "configuration": {
+      "title": "AgentGuard",
+      "properties": {
+        "agentguard.notifications.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable governance notifications for policy violations and invariant violations."
+        },
+        "agentguard.notifications.severityOverrides": {
+          "type": "object",
+          "default": {},
+          "description": "Override the default notification severity for specific event kinds. Keys: PolicyDenied, InvariantViolation, BlastRadiusExceeded, ActionEscalated. Values: information, warning, error.",
+          "properties": {
+            "PolicyDenied": {
+              "type": "string",
+              "enum": ["information", "warning", "error"],
+              "description": "Severity for policy denial notifications (default: warning)"
+            },
+            "InvariantViolation": {
+              "type": "string",
+              "enum": ["information", "warning", "error"],
+              "description": "Severity for invariant violation notifications (default: error)"
+            },
+            "BlastRadiusExceeded": {
+              "type": "string",
+              "enum": ["information", "warning", "error"],
+              "description": "Severity for blast radius exceeded notifications (default: error)"
+            },
+            "ActionEscalated": {
+              "type": "string",
+              "enum": ["information", "warning", "error"],
+              "description": "Severity for action escalation notifications (default: information)"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
     }
   },
   "scripts": {

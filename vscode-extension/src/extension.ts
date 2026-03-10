@@ -6,6 +6,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { RunStatusProvider } from './providers/run-status-provider';
 import { RunHistoryProvider } from './providers/run-history-provider';
+import { NotificationService } from './services/notification-service';
 import { getEventsDir } from './services/event-reader';
 
 let fileWatcher: fs.FSWatcher | undefined;
@@ -22,15 +23,19 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider('agentguard.runStatus', runStatusProvider),
-    vscode.window.registerTreeDataProvider('agentguard.runHistory', runHistoryProvider),
+    vscode.window.registerTreeDataProvider('agentguard.runHistory', runHistoryProvider)
   );
+
+  // Register notification service
+  const notificationService = new NotificationService(workspaceRoot);
+  context.subscriptions.push(notificationService);
 
   // Register refresh command
   context.subscriptions.push(
     vscode.commands.registerCommand('agentguard.refresh', () => {
       runStatusProvider.refresh();
       runHistoryProvider.refresh();
-    }),
+    })
   );
 
   // Watch the events directory for changes
