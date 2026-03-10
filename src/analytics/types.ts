@@ -62,6 +62,31 @@ export interface AnalyticsReport {
   readonly clusters: readonly ViolationCluster[];
   readonly trends: readonly ViolationTrend[];
   readonly topInferredCauses: readonly { cause: string; count: number }[];
+  readonly runRiskScores: readonly RunRiskScore[];
+}
+
+/** A factor contributing to a session's aggregate risk score */
+export interface RiskFactor {
+  readonly dimension: 'violations' | 'escalation' | 'blastRadius' | 'operations';
+  readonly rawValue: number;
+  readonly normalizedScore: number;
+  readonly weight: number;
+  readonly details: string;
+}
+
+/** Risk level derived from the aggregate risk score */
+export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+
+/** Aggregate risk score for a single governance session */
+export interface RunRiskScore {
+  readonly sessionId: string;
+  readonly score: number;
+  readonly riskLevel: RiskLevel;
+  readonly factors: readonly RiskFactor[];
+  readonly totalActions: number;
+  readonly totalDenials: number;
+  readonly totalViolations: number;
+  readonly peakEscalation: number;
 }
 
 /** Options for the analytics engine */

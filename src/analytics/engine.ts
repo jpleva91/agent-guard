@@ -1,10 +1,11 @@
 // Analytics engine — orchestrates aggregation, clustering, trend analysis,
 // and report generation for cross-session violation pattern detection.
 
-import { aggregateViolations } from './aggregator.js';
+import { aggregateViolations, listSessionIds, loadSessionEvents } from './aggregator.js';
 import { clusterViolations } from './cluster.js';
+import { computeAllRunRiskScores } from './risk-scorer.js';
 import { computeAllTrends } from './trends.js';
-import type { AnalyticsReport, AnalyticsOptions } from './types.js';
+import type { AnalyticsReport, AnalyticsOptions, RunRiskScore } from './types.js';
 
 const DEFAULT_MIN_CLUSTER_SIZE = 2;
 const DEFAULT_TREND_WINDOW_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -16,7 +17,7 @@ export function analyze(options: AnalyticsOptions = {}): AnalyticsReport {
   const trendWindowMs = options.trendWindowMs ?? DEFAULT_TREND_WINDOW_MS;
 
   // 1. Aggregate violations from all sessions
-  const { violations, sessionCount } = aggregateViolations(baseDir);
+  const { violations, sessionCount, allEvents } = aggregateViolations(baseDir);
 
   // 2. Count by kind
   const violationsByKind: Record<string, number> = {};
@@ -42,6 +43,14 @@ export function analyze(options: AnalyticsOptions = {}): AnalyticsReport {
     .map(([cause, count]) => ({ cause, count }))
     .sort((a, b) => b.count - a.count);
 
+  // 6. Compute per-run risk scores
+  const sessionIds = listSessionIds(baseDir);
+  const sessionEventsMap = new Map<string, typeof allEvents>();
+  for (const sid of sessionIds) {
+    sessionEventsMap.set(sid, loadSessionEvents(sid, baseDir));
+  }
+  const runRiskScores = computeAllRunRiskScores(sessionEventsMap);
+
   return {
     generatedAt: Date.now(),
     sessionsAnalyzed: sessionCount,
@@ -50,5 +59,17 @@ export function analyze(options: AnalyticsOptions = {}): AnalyticsReport {
     clusters,
     trends,
     topInferredCauses,
+    runRiskScores,
   };
+}
+
+/** Compute risk scores for sessions without full analytics */
+export function analyzeRisk(options: AnalyticsOptions = {}): RunRiskScore[] {
+  const baseDir = options.baseDir ?? '.agentguard';
+  const sessionIds = listSessionIds(baseDir);
+  const sessionEventsMap = new Map<string, ReturnType<typeof loadSessionEvents>>();
+  for (const sid of sessionIds) {
+    sessionEventsMap.set(sid, loadSessionEvents(sid, baseDir));
+  }
+  return computeAllRunRiskScores(sessionEventsMap);
 }
