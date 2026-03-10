@@ -17,6 +17,8 @@ policy evaluator matches rules (deny/allow)
     ↓
 invariant checker verifies system state
     ↓
+simulate impact (predict blast radius, risk level)
+    ↓
 if allowed: execute via adapter
     ↓
 emit lifecycle events (JSONL audit trail)
@@ -69,6 +71,12 @@ Build the governance runtime that evaluates agent actions against policies and i
 - [x] CLI governance commands (`agentguard guard`, `agentguard inspect`)
 - [x] Governance event emission into canonical event model
 - [x] Integration with Claude Code hook (`src/adapters/claude-code.ts`, `src/cli/commands/claude-hook.ts`)
+- [x] Pre-execution simulation engine (`src/kernel/simulation/`)
+- [x] Filesystem simulator — risk assessment by path pattern (`src/kernel/simulation/filesystem-simulator.ts`)
+- [x] Git simulator — push/merge/branch impact analysis (`src/kernel/simulation/git-simulator.ts`)
+- [x] Package simulator — dependency change detection via dry-run (`src/kernel/simulation/package-simulator.ts`)
+- [x] Simulation-triggered invariant re-evaluation (high-risk simulation flips ALLOW → DENY)
+- [x] `SIMULATION_COMPLETED` event kind with blast radius and risk level
 
 ## Phase 3 — Event Persistence + Replay `STABLE`
 
@@ -120,7 +128,21 @@ AI features are intentionally placed last. The system must be useful without AI 
 - [ ] AI pattern detection (recurring violation clusters across sessions)
 - [ ] Team observability (aggregate governance reports across a dev team)
 
-## Phase 7 — Governance Extensions `PLANNED`
+## Phase 7 — Predictive Governance `PLANNED`
+
+> **Theme:** Govern outcomes before execution
+
+Extend the simulation engine from risk assessment to predictive governance — evaluate policies and invariants against predicted system state before actions execute.
+
+- [ ] Structured impact forecasts (predicted files changed, dependencies affected, test risk, blast radius score)
+- [ ] Predictive policy rules (`deny if predicted_test_failures > 0`, `deny if predicted_files_changed > 10`)
+- [ ] Plan-level simulation — simulate a sequence of actions as a batch before allowing execution
+- [ ] Simulator plugin interface — community-contributed simulators via plugin registry
+- [ ] `agentguard simulate <action>` CLI command for standalone impact analysis
+- [ ] Simulation replay and comparison across runs
+- [ ] Dependency graph simulation (transitive impact of package changes)
+
+## Phase 8 — Governance Extensions `PLANNED`
 
 > **Theme:** Easy contributor entry points for the governance ecosystem
 
@@ -134,7 +156,7 @@ Create well-defined extension surfaces so the community can contribute invariant
 - [ ] Extension authoring guide and template scaffolding
 - [ ] `agentguard init --extension <type>` scaffolding command
 
-## Phase 8 — Governance Observability `PLANNED`
+## Phase 9 — Governance Observability `PLANNED`
 
 > **Theme:** See what governance is doing
 
@@ -146,7 +168,7 @@ Surface governance activity through dashboards, traces, and metrics.
 - [ ] Metrics export (Prometheus / OpenTelemetry)
 - [ ] Session comparison (diff two governance runs side-by-side)
 
-## Phase 9 — CI/CD Enforcement `PLANNED`
+## Phase 10 — CI/CD Enforcement `PLANNED`
 
 > **Theme:** Governance gates in the delivery pipeline
 
@@ -158,7 +180,7 @@ Integrate governance checks into CI/CD workflows as enforceable gates.
 - [ ] Evidence packs attached to pull requests
 - [ ] Policy violation gating (fail CI on unresolved violations)
 
-## Phase 10 — Multi-Agent Governance `PLANNED`
+## Phase 11 — Multi-Agent Governance `PLANNED`
 
 > **Theme:** Govern agent fleets, not just single agents
 
@@ -170,7 +192,7 @@ Extend the governance model to coordinate policies across multiple agents.
 - [ ] Agent-to-agent action verification
 - [ ] Multi-agent escalation coordination
 
-## Phase 11 — Remote Governance Runtime `PLANNED`
+## Phase 12 — Remote Governance Runtime `PLANNED`
 
 > **Theme:** Governance as a service
 
@@ -182,7 +204,7 @@ Run the governance kernel as a remote service for centralized policy management.
 - [ ] Multi-repo governance (single policy across repositories)
 - [ ] Team policy management dashboard
 
-## Phase 12 — Ecosystem Integrations `PLANNED`
+## Phase 13 — Ecosystem Integrations `PLANNED`
 
 > **Theme:** Govern any agent framework
 
