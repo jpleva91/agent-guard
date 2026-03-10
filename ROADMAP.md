@@ -138,7 +138,7 @@ Extend the simulation engine from risk assessment to predictive governance — e
 - [ ] Predictive policy rules (`deny if predicted_test_failures > 0`, `deny if predicted_files_changed > 10`)
 - [ ] Plan-level simulation — simulate a sequence of actions as a batch before allowing execution
 - [ ] Simulator plugin interface — community-contributed simulators via plugin registry
-- [x] `agentguard simulate <action>` CLI command for standalone impact analysis (`src/cli/commands/simulate.ts`)
+- [ ] `agentguard simulate <action>` CLI command for standalone impact analysis
 - [ ] Simulation replay and comparison across runs
 - [ ] Dependency graph simulation (transitive impact of package changes)
 
