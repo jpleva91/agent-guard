@@ -1,5 +1,6 @@
 // Tests for CLI init command — scaffold governance extensions
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { sep } from 'node:path';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 
 vi.mock('node:fs', () => ({
@@ -139,7 +140,7 @@ describe('init command', () => {
 
         const writeCalls = vi.mocked(writeFileSync).mock.calls;
         const testCall = writeCalls.find(
-          (call) => typeof call[0] === 'string' && (call[0] as string).includes('tests/')
+          (call) => typeof call[0] === 'string' && (call[0] as string).includes(`tests${sep}`)
         );
         expect(testCall, `Test file should be generated for ${type}`).toBeDefined();
       }
@@ -175,7 +176,7 @@ describe('init command', () => {
 
         const writeCalls = vi.mocked(writeFileSync).mock.calls;
         const srcCall = writeCalls.find(
-          (call) => typeof call[0] === 'string' && (call[0] as string).endsWith('src/index.ts')
+          (call) => typeof call[0] === 'string' && (call[0] as string).endsWith(`src${sep}index.ts`)
         );
         expect(srcCall, `src/index.ts should be generated for ${type}`).toBeDefined();
       }
