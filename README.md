@@ -29,7 +29,7 @@ Expected output:
 
 ```
   AgentGuard Runtime Active
-  policy: Demo Safety Policy | invariants: 6 active
+  policy: Demo Safety Policy | invariants: 7 active
 
   ✓ file.read src/auth/service.ts (dry-run)
   ✓ file.write src/auth/service.ts (dry-run)
@@ -62,7 +62,7 @@ AI coding agents execute file writes, shell commands, and git operations autonom
 AgentGuard adds a **deterministic decision point** between proposal and execution:
 
 - **Safety policies** — declare what agents can and cannot do in YAML
-- **Invariant enforcement** — 6 built-in checks (secrets, protected branches, blast radius) run on every action
+- **Invariant enforcement** — 7 built-in checks (secrets, protected branches, blast radius, skill protection) run on every action
 - **Audit trail** — every decision is recorded as structured JSONL, inspectable after the fact
 - **Session debugging** — replay any agent session to see exactly what happened and why
 
@@ -72,7 +72,7 @@ AgentGuard evaluates every agent action through a **governed action kernel**:
 
 1. **Normalize** — Claude Code tool calls (Bash, Write, Edit, Read) are mapped to canonical action types (shell.exec, file.write, file.read)
 2. **Evaluate** — policies match against the action (deny git.push to main, deny destructive commands, enforce scope limits)
-3. **Check invariants** — 6 built-in safety checks run on every action
+3. **Check invariants** — 7 built-in safety checks run on every action
 4. **Execute** — if allowed, the action runs via adapters (file, shell, git handlers)
 5. **Emit events** — full lifecycle events sunk to JSONL for audit trail
 
@@ -80,7 +80,7 @@ AgentGuard evaluates every agent action through a **governed action kernel**:
 
 ```
   AgentGuard Runtime Active
-  policy: agentguard.yaml | invariants: 6 active
+  policy: agentguard.yaml | invariants: 7 active
 
   ✓ file.write src/auth/service.ts
   ✓ shell.exec npm test
@@ -120,13 +120,14 @@ Drop an `agentguard.yaml` in your repo root — the CLI picks it up automaticall
 
 ## Built-in Invariants
 
-6 safety invariants run on every action evaluation:
+7 safety invariants run on every action evaluation:
 
 | Invariant | Severity | Description |
 |-----------|----------|-------------|
 | **no-secret-exposure** | 5 (critical) | Blocks access to .env, credentials, .pem, .key files |
 | **protected-branch** | 4 (high) | Prevents direct push to main/master |
 | **no-force-push** | 4 (high) | Forbids force push |
+| **no-skill-modification** | 4 (high) | Prevents modification of .claude/skills/ files |
 | **blast-radius-limit** | 3 (medium) | Enforces file modification limit (default 20) |
 | **test-before-push** | 3 (medium) | Requires tests pass before push |
 | **lockfile-integrity** | 2 (low) | Ensures package.json changes sync with lockfiles |
@@ -214,6 +215,8 @@ src/
 │   ├── decision.ts         # Runtime assurance engine
 │   ├── monitor.ts          # Escalation state machine
 │   ├── evidence.ts         # Evidence pack generation
+│   ├── replay-comparator.ts # Replay outcome comparison
+│   ├── replay-engine.ts    # Deterministic replay engine
 │   ├── decisions/          # Typed decision records
 │   └── simulation/         # Pre-execution impact simulation
 ├── events/                 # Canonical event model
@@ -227,7 +230,7 @@ src/
 │   ├── loader.ts           # Policy validation + loading
 │   └── yaml-loader.ts      # YAML policy parser
 ├── invariants/             # Invariant system
-│   ├── definitions.ts      # 6 built-in invariants
+│   ├── definitions.ts      # 7 built-in invariants
 │   └── checker.ts          # Invariant evaluation engine
 ├── adapters/               # Execution adapters
 │   ├── file.ts, shell.ts, git.ts  # Action handlers
@@ -237,7 +240,7 @@ src/
 │   ├── bin.ts              # Main entry
 │   └── commands/           # guard, inspect, replay, claude-hook, claude-init
 ├── telemetry/              # Runtime telemetry and logging
-└── core/                   # Shared utilities (types, actions, hash, execution-log)
+└── core/                   # Shared utilities (types, actions, hash, rng, execution-log)
 ```
 
 ## Run Locally

@@ -70,7 +70,7 @@ Build the governance runtime that evaluates agent actions against policies and i
 - [x] Governance event emission into canonical event model
 - [x] Integration with Claude Code hook (`src/adapters/claude-code.ts`, `src/cli/commands/claude-hook.ts`)
 
-## Phase 3 — Event Persistence + Replay `PARTIALLY COMPLETE`
+## Phase 3 — Event Persistence + Replay `MOSTLY COMPLETE`
 
 > **Theme:** Every session is replayable
 
@@ -81,8 +81,8 @@ Implement durable event storage and deterministic replay.
 - [x] Session metadata (run ID, timestamps)
 - [x] Execution event log (`src/core/execution-log/`)
 - [x] CLI replay command (`agentguard replay`)
-- [ ] Deterministic replay with seeded RNG
-- [ ] Replay comparator (verify original vs replayed outcomes)
+- [x] Deterministic replay with seeded RNG (`src/core/rng.ts`, `src/kernel/replay-engine.ts`)
+- [x] Replay comparator (verify original vs replayed outcomes) (`src/kernel/replay-comparator.ts`)
 - [ ] Event export/import for sharing sessions
 
 ## Phase 4 — Plugin Ecosystem

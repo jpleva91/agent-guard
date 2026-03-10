@@ -8,7 +8,7 @@ The system has one architectural spine: the **canonical event model**. All syste
 
 **Key characteristics:**
 - Governed action kernel: propose → normalize → evaluate → execute → emit
-- 6 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, lockfile integrity)
+- 7 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, no skill modification, lockfile integrity)
 - YAML/JSON policy format with pattern matching, scopes, and branch conditions
 - Escalation tracking: NORMAL → ELEVATED → HIGH → LOCKDOWN
 - JSONL event persistence for audit trail and replay
@@ -44,6 +44,8 @@ src/
 │   ├── decision.ts         # Runtime assurance engine
 │   ├── monitor.ts          # Escalation state machine
 │   ├── evidence.ts         # Evidence pack generation
+│   ├── replay-comparator.ts # Replay outcome comparison
+│   ├── replay-engine.ts    # Deterministic replay engine
 │   ├── decisions/          # Typed decision records
 │   │   ├── factory.ts      # Decision record factory
 │   │   └── types.ts        # Decision record type definitions
@@ -64,7 +66,7 @@ src/
 │   ├── loader.ts           # Policy validation + loading
 │   └── yaml-loader.ts      # YAML policy parser
 ├── invariants/             # Invariant system
-│   ├── definitions.ts      # 6 built-in invariant definitions
+│   ├── definitions.ts      # 7 built-in invariant definitions
 │   └── checker.ts          # Invariant evaluation engine
 ├── adapters/               # Execution adapters
 │   ├── registry.ts         # Adapter registry (action class → handler)
@@ -86,6 +88,7 @@ src/
     ├── actions.ts          # 23 canonical action types across 8 classes
     ├── hash.ts             # Content hashing utilities
     ├── adapters.ts         # Adapter registry interface
+    ├── rng.ts              # Seeded random number generator
     └── execution-log/      # Execution audit log
         ├── bridge.ts       # Bridge between event systems
         ├── event-log.ts    # Event logging
@@ -99,7 +102,7 @@ src/
 
 tests/
 ├── *.test.js               # 14 JS test files (custom zero-dependency harness)
-└── ts/*.test.ts            # 38 TS test files (vitest)
+└── ts/*.test.ts            # 41 TS test files (vitest)
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
 docs/                       # System documentation (architecture, event model, specs)
 hooks/                      # Git hooks (post-commit, post-merge)
@@ -138,7 +141,7 @@ The kernel loop is the core of AgentGuard. Every agent action passes through it:
 1. Agent proposes action (Claude Code tool call → `RawAgentAction`)
 2. AAB normalizes intent (tool → action type, detect git/destructive commands)
 3. Policy evaluator matches rules (deny/allow with scopes, branches, limits)
-4. Invariant checker verifies system state (6 defaults)
+4. Invariant checker verifies system state (7 defaults)
 5. If allowed: execute via adapter (file/shell/git handlers)
 6. Emit lifecycle events: `ACTION_REQUESTED` → `ACTION_ALLOWED/DENIED` → `ACTION_EXECUTED/FAILED`
 7. Sink all events to JSONL for audit trail
@@ -230,7 +233,7 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 
 **Test structure:**
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (`tests/ts/*.test.ts`): 38 files using vitest
+- **TypeScript tests** (`tests/ts/*.test.ts`): 41 files using vitest
 - **Coverage areas**: adapters, kernel (AAB, engine, monitor, blast radius), CLI commands, decision records, domain models, events, evidence packs, execution log, invariants, JSONL persistence, policy evaluation, simulation, telemetry, TUI renderer, YAML loading
 
 ## CI/CD & Automation
