@@ -1,6 +1,6 @@
 // Replay CLI — flight recorder playback for debugging sessions.
 //
-// TODO(roadmap): Phase 4 — Full replay engine: feed stored event stream through encounter generator
+// DONE(roadmap): Phase 4 — Full replay engine: see src/kernel/replay-engine.ts
 // TODO(roadmap): Phase 4 — Deterministic replay with seeded RNG
 // TODO(roadmap): Phase 4 — Replay comparator (verify original vs replayed outcomes)
 // TODO(roadmap): Phase 6 — Replay processor plugin interface
