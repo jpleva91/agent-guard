@@ -1,6 +1,5 @@
 dist/
 node_modules/
-.events.json
 runtime/events/*
 runtime/replay/*
 !runtime/events/.gitkeep
@@ -9,6 +8,8 @@ runtime/replay/*
 .agentguard/*
 !.agentguard/events/
 !.agentguard/events/.gitkeep
+!.agentguard/decisions/
+!.agentguard/decisions/.gitkeep
 logs/*
 !logs/.gitkeep
 !logs/runtime-events.jsonl

@@ -1,0 +1,28 @@
+#!/bin/sh
+# AgentGuard Git Hook - pre-commit
+# Auto-stages telemetry files so governance data rides with every commit.
+# Without this, telemetry JSONL files accumulate as untracked forever.
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# Stage consolidated telemetry log
+if [ -f "$REPO_ROOT/logs/runtime-events.jsonl" ]; then
+  git add "$REPO_ROOT/logs/runtime-events.jsonl" 2>/dev/null
+fi
+
+# Stage dev activity counters
+if [ -f "$REPO_ROOT/.events.json" ]; then
+  git add "$REPO_ROOT/.events.json" 2>/dev/null
+fi
+
+# Stage governance event JSONL files
+for f in "$REPO_ROOT"/.agentguard/events/*.jsonl; do
+  [ -f "$f" ] && git add "$f" 2>/dev/null
+done
+
+# Stage governance decision records
+for f in "$REPO_ROOT"/.agentguard/decisions/*.jsonl; do
+  [ -f "$f" ] && git add "$f" 2>/dev/null
+done
+
+exit 0

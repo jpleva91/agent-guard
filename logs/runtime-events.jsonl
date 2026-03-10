@@ -1,0 +1,4 @@
+{"timestamp":"2026-03-10T01:04:59.520Z","agent":"claude-code","run_id":"hook_1773104699513_r4tafa","syscall":"file.read","target":"/tmp/safe-file.ts","capability":"default-policy","policy_result":"allow","invariant_result":"pass"}
+{"timestamp":"2026-03-10T01:04:59.537Z","agent":"claude-code","run_id":"hook_1773104699535_ycr8ub","syscall":"file.read","target":"**/*.ts","capability":"default-policy","policy_result":"allow","invariant_result":"pass"}
+{"timestamp":"2026-03-10T01:04:59.562Z","agent":"claude-code","run_id":"hook_1773104699561_4q9vpr","syscall":"file.write","target":"/tmp/test.ts","capability":"default-policy","policy_result":"allow","invariant_result":"pass"}
+{"timestamp":"2026-03-10T01:04:59.585Z","agent":"claude-code","run_id":"hook_1773104699582_wvpv5h","syscall":"shell.exec","target":"echo hello","capability":"default-allow","policy_result":"allow","invariant_result":"pass"}

@@ -1,6 +1,7 @@
 // agentguard claude-init — set up Claude Code integration
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
@@ -100,6 +101,39 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   );
   process.stderr.write(`  ${DIM}PreToolUse:  governance enforcement (all tools)${RESET}\n`);
   process.stderr.write(`  ${DIM}PostToolUse: error monitoring (Bash)${RESET}\n\n`);
+  // Set core.hooksPath so git uses the repo's hooks/ directory
+  // (pre-commit auto-stages telemetry, post-commit tracks dev activity)
+  try {
+    const currentHooksPath = execSync('git config core.hooksPath', { encoding: 'utf8' }).trim();
+    if (currentHooksPath !== 'hooks') {
+      execSync('git config core.hooksPath hooks');
+      process.stderr.write(
+        `  ${FG.green}✓${RESET}  Git hooks path set to ${FG.cyan}hooks/${RESET}\n`
+      );
+    }
+  } catch {
+    // Not in a git repo, or no hooksPath set yet
+    try {
+      execSync('git config core.hooksPath hooks');
+      process.stderr.write(
+        `  ${FG.green}✓${RESET}  Git hooks path set to ${FG.cyan}hooks/${RESET}\n`
+      );
+    } catch {
+      process.stderr.write(
+        `  ${FG.yellow}Warning:${RESET} Could not set git hooks path. Run: git config core.hooksPath hooks\n`
+      );
+    }
+  }
+
+  // Ensure telemetry directories exist
+  const dirs = ['.agentguard/events', '.agentguard/decisions', 'logs'];
+  for (const dir of dirs) {
+    const dirPath = join(process.cwd(), dir);
+    if (!existsSync(dirPath)) {
+      mkdirSync(dirPath, { recursive: true });
+    }
+  }
+
   process.stderr.write(
     `  ${FG.green}${BOLD}Done!${RESET} AgentGuard governance will enforce policies on all Claude Code actions.\n`
   );
