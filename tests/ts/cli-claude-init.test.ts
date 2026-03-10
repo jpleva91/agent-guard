@@ -1,5 +1,6 @@
 // Tests for claude-init CLI command
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { join } from 'node:path';
 
 vi.mock('node:fs', () => ({
   readFileSync: vi.fn(),
@@ -111,11 +112,11 @@ describe('claudeInit', () => {
     await claudeInit(['--global']);
 
     expect(mkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining('/mock-home/.claude'),
+      expect.stringContaining(join('/mock-home', '.claude')),
       { recursive: true }
     );
     expect(writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('/mock-home/.claude/settings.json'),
+      expect.stringContaining(join('/mock-home', '.claude', 'settings.json')),
       expect.any(String),
       'utf8'
     );
@@ -127,7 +128,7 @@ describe('claudeInit', () => {
     await claudeInit(['-g']);
 
     expect(mkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining('/mock-home/.claude'),
+      expect.stringContaining(join('/mock-home', '.claude')),
       { recursive: true }
     );
   });

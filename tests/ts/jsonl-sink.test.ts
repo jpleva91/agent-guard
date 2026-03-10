@@ -1,5 +1,6 @@
 // Tests for JSONL event and decision persistence sinks
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { join } from 'node:path';
 
 vi.mock('node:fs', () => ({
   mkdirSync: vi.fn(),
@@ -106,9 +107,9 @@ describe('createJsonlSink', () => {
     const sink = createJsonlSink({ runId: 'run_1', baseDir: '/custom' });
     sink.write(makeFakeEvent());
 
-    expect(mkdirSync).toHaveBeenCalledWith('/custom/events', { recursive: true });
+    expect(mkdirSync).toHaveBeenCalledWith(join('/custom', 'events'), { recursive: true });
     expect(appendFileSync).toHaveBeenCalledWith(
-      '/custom/events/run_1.jsonl',
+      join('/custom', 'events', 'run_1.jsonl'),
       expect.any(String),
       'utf8'
     );
@@ -132,7 +133,7 @@ describe('getEventFilePath', () => {
 
   it('uses custom baseDir', () => {
     const path = getEventFilePath('run_42', '/my/dir');
-    expect(path).toBe('/my/dir/events/run_42.jsonl');
+    expect(path).toBe(join('/my/dir', 'events', 'run_42.jsonl'));
   });
 });
 
@@ -172,7 +173,7 @@ describe('createDecisionJsonlSink', () => {
     const sink = createDecisionJsonlSink({ runId: 'run_1', baseDir: '/audit' });
     sink.write(makeFakeDecisionRecord());
 
-    expect(mkdirSync).toHaveBeenCalledWith('/audit/decisions', { recursive: true });
+    expect(mkdirSync).toHaveBeenCalledWith(join('/audit', 'decisions'), { recursive: true });
   });
 });
 
@@ -186,6 +187,6 @@ describe('getDecisionFilePath', () => {
 
   it('uses custom baseDir', () => {
     const path = getDecisionFilePath('run_1', '/audit');
-    expect(path).toBe('/audit/decisions/run_1.jsonl');
+    expect(path).toBe(join('/audit', 'decisions', 'run_1.jsonl'));
   });
 });

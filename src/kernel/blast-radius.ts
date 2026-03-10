@@ -78,7 +78,10 @@ const CONFIG_PATTERNS = [
 ];
 
 /** Determine the action weight multiplier based on action type */
-function getActionMultiplier(action: string, weights: BlastRadiusWeights): BlastRadiusFactor | null {
+function getActionMultiplier(
+  action: string,
+  weights: BlastRadiusWeights
+): BlastRadiusFactor | null {
   if (action.startsWith('file.delete')) {
     return { name: 'delete-action', multiplier: weights.delete, reason: 'File deletion' };
   }
@@ -90,10 +93,18 @@ function getActionMultiplier(action: string, weights: BlastRadiusWeights): Blast
   }
   if (action.startsWith('git.')) {
     if (action === 'git.force-push') {
-      return { name: 'force-push', multiplier: weights.git * 2, reason: 'Git force push (history rewrite)' };
+      return {
+        name: 'force-push',
+        multiplier: weights.git * 2,
+        reason: 'Git force push (history rewrite)',
+      };
     }
     if (action === 'git.branch.delete') {
-      return { name: 'branch-delete', multiplier: weights.git * 1.5, reason: 'Git branch deletion' };
+      return {
+        name: 'branch-delete',
+        multiplier: weights.git * 1.5,
+        reason: 'Git branch deletion',
+      };
     }
     return { name: 'git-action', multiplier: weights.git, reason: `Git operation: ${action}` };
   }

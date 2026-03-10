@@ -20,9 +20,7 @@ export async function claudeHook(hookType?: string): Promise<void> {
 
     // Determine hook type: explicit CLI arg > payload field > inference from tool_output
     const isPreToolUse =
-      hookType === 'pre' ||
-      data.hook === 'PreToolUse' ||
-      (!hookType && !data.tool_output);
+      hookType === 'pre' || data.hook === 'PreToolUse' || (!hookType && !data.tool_output);
 
     if (isPreToolUse) {
       // Resolve session_id: payload field > environment variable > undefined
@@ -40,9 +38,8 @@ export async function claudeHook(hookType?: string): Promise<void> {
 }
 
 async function handlePreToolUse(payload: ClaudeCodeHookPayload): Promise<void> {
-  const { processClaudeCodeHook, formatHookResponse } = await import(
-    '../../adapters/claude-code.js'
-  );
+  const { processClaudeCodeHook, formatHookResponse } =
+    await import('../../adapters/claude-code.js');
   const { createKernel } = await import('../../kernel/kernel.js');
   const { createJsonlSink } = await import('../../events/jsonl.js');
   const { createDecisionJsonlSink } = await import('../../events/decision-jsonl.js');
@@ -82,7 +79,9 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload): Promise<void> {
     policyDefs,
     dryRun: true,
     sinks: jsonlSink ? [jsonlSink] : [],
-    decisionSinks: [decisionSink, telemetrySink].filter(Boolean) as import('../../kernel/decisions/types.js').DecisionSink[],
+    decisionSinks: [decisionSink, telemetrySink].filter(
+      Boolean
+    ) as import('../../kernel/decisions/types.js').DecisionSink[],
   });
 
   const result = await processClaudeCodeHook(kernel, normalizedPayload);
