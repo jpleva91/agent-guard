@@ -66,6 +66,30 @@ const COMMANDS: Record<string, CommandHelp> = {
     ],
     examples: ['agentguard replay', 'agentguard replay --last', 'agentguard replay --last --step'],
   },
+  export: {
+    name: 'agentguard export',
+    description: 'Export a governance session to a portable JSONL file',
+    usage: 'agentguard export <runId> [flags]',
+    flags: [
+      { flag: '--output, -o <file>', description: 'Output file path' },
+      { flag: '--last', description: 'Export the most recent run' },
+    ],
+    examples: [
+      'agentguard export run_1234567890_abc',
+      'agentguard export --last',
+      'agentguard export --last -o session.jsonl',
+    ],
+  },
+  import: {
+    name: 'agentguard import',
+    description: 'Import a governance session from a portable JSONL file',
+    usage: 'agentguard import <file> [flags]',
+    flags: [{ flag: '--as <runId>', description: 'Import as a different run ID' }],
+    examples: [
+      'agentguard import session.jsonl',
+      'agentguard import ./exports/run.agentguard.jsonl --as custom_run_id',
+    ],
+  },
 };
 
 async function main() {
@@ -122,6 +146,26 @@ async function main() {
       break;
     }
 
+    case 'export': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.export));
+        break;
+      }
+      const { exportSession } = await import('./commands/export.js');
+      await exportSession(args.slice(1));
+      break;
+    }
+
+    case 'import': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.import));
+        break;
+      }
+      const { importSession } = await import('./commands/import.js');
+      await importSession(args.slice(1));
+      break;
+    }
+
     case 'claude-init': {
       const { claudeInit } = await import('./commands/claude-init.js');
       await claudeInit(args.slice(1));
@@ -170,6 +214,11 @@ function printHelp(): void {
     agentguard guard --dry-run                Evaluate without executing actions
     agentguard inspect [runId]                Inspect action graph and decisions
     agentguard events [runId]                 Show raw event stream for a run
+
+  \x1b[1mPortability:\x1b[0m
+    agentguard export <runId>                 Export a governance session to JSONL
+    agentguard export --last                  Export the most recent run
+    agentguard import <file>                  Import a governance session from JSONL
 
   \x1b[1mReplay:\x1b[0m
     agentguard replay                         List recorded sessions
