@@ -153,6 +153,10 @@ agentguard plugin search [query]          # Search for plugins on npm
 agentguard simulate <action-json>         # Simulate action and show predicted impact
 agentguard simulate --action <type>       # Simulate by action type and flags
 
+# === CI/CD ===
+agentguard ci-check <session>             # Verify governance session for violations
+agentguard ci-check --last                # Check most recent run locally
+
 # === Integration ===
 agentguard claude-init                    # Set up Claude Code hook integration
 agentguard help                           # Show all commands
@@ -262,7 +266,7 @@ src/
 │   └── index.ts            # Module re-exports
 ├── cli/                    # CLI entry point + commands
 │   ├── bin.ts              # Main entry
-│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, plugin, claude-hook, claude-init
+│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, claude-hook, claude-init
 ├── telemetry/              # Runtime telemetry and logging
 └── core/                   # Shared utilities (types, actions, hash, rng, execution-log)
 

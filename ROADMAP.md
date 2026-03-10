@@ -76,7 +76,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Cross-session Analytics (aggregation, clustering, trends) | Implemented | `src/analytics/` |
 | Plugin Ecosystem (discovery, registry, validation) | Implemented | `src/plugins/` |
 | Renderer Plugin System | Implemented | `src/renderers/` |
-| CLI (guard, inspect, events, replay, export, import, simulate, analytics, plugin, claude-hook, claude-init) | Implemented | `src/cli/` |
+| CLI (guard, inspect, events, replay, export, import, simulate, ci-check, analytics, plugin, claude-hook, claude-init) | Implemented | `src/cli/` |
 | Claude Code Hook Integration | Implemented | `src/adapters/claude-code.ts` |
 | VS Code Extension (sidebar panels, event reader, inline diagnostics) | Implemented | `vscode-extension/` |
 | Policy Pack Loader | Implemented | `src/policy/pack-loader.ts` |
@@ -102,7 +102,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Item | Status | Maturity |
 |---|---|---|
 | Canonical Action Representation | Implemented | Production |
-| AAB Reference Monitor | Implemented | 2 bypass vectors to close |
+| AAB Reference Monitor | Implemented | 1 bypass vector to close (missing-adapter fixed) |
 | Policy Evaluator | Implemented | Production |
 | 8 Built-in Invariants | Fully Implemented | Production |
 | Event Model (45 kinds) | Comprehensive | Production |
@@ -243,7 +243,7 @@ Phases are ordered to prioritize **effect-path closure and mandatory mediation**
 This is the architectural hinge. These changes transform the AAB from advisory interception to mandatory execution control.
 
 - [ ] Default-deny unknown actions in `src/policy/evaluator.ts` (change fallback from `allowed: true` to `allowed: false`)
-- [ ] Deny actions with no registered adapter in `src/kernel/kernel.ts` (emit `ActionDenied` instead of silently skipping)
+- [x] Deny actions with no registered adapter in `src/kernel/kernel.ts` (emit `ActionDenied` instead of silently skipping)
 - [ ] Persist escalation state changes as `StateChanged` DomainEvents in `src/kernel/monitor.ts`
 - [ ] Expand destructive command patterns in `src/kernel/aab.ts` (add 15+ patterns covering sudo, pkill, docker, systemctl, database commands)
 - [ ] Enforce intervention types beyond DENY (implement PAUSE and ROLLBACK behaviors in kernel execution)
@@ -314,7 +314,7 @@ The JSONL persistence layer was the right starting point — append-only, human-
 
 > **Theme:** Governance gates in the delivery pipeline
 
-- [ ] GitHub Actions integration (reusable workflow)
+- [x] GitHub Actions integration (reusable workflow)
 - [ ] Pre-merge policy validation (block PRs that violate policy)
 - [ ] CI replay verification (replay governance session in CI)
 - [ ] Evidence packs attached to pull requests
