@@ -108,6 +108,23 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard import ./exports/run.agentguard.jsonl --as custom_run_id',
     ],
   },
+  simulate: {
+    name: 'agentguard simulate',
+    description: 'Simulate an action and display predicted impact without executing',
+    usage: 'agentguard simulate <action-json> [flags]',
+    flags: [
+      { flag: '--action <type>', description: 'Action type (e.g., file.write, git.push)' },
+      { flag: '--target <path>', description: 'Target file or resource path' },
+      { flag: '--command <cmd>', description: 'Shell command (for shell.exec actions)' },
+      { flag: '--branch <name>', description: 'Git branch name' },
+      { flag: '--json', description: 'Output raw SimulationResult as JSON' },
+    ],
+    examples: [
+      'agentguard simulate \'{"tool":"Bash","command":"git push origin main"}\'',
+      'agentguard simulate --action file.write --target .env',
+      'agentguard simulate --action git.push --branch main --json',
+    ],
+  },
 };
 
 async function main() {
@@ -195,6 +212,19 @@ async function main() {
       break;
     }
 
+    case 'simulate': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.simulate));
+        break;
+      }
+      const { simulate: simulateCmd } = await import('./commands/simulate.js');
+      const flags = args.slice(1);
+      const jsonOut = flags.includes('--json');
+      const code = await simulateCmd(flags, { json: jsonOut });
+      process.exit(code);
+      break;
+    }
+
     case 'plugin': {
       if (wantsHelp) {
         const { plugin: pluginCmd } = await import('./commands/plugin.js');
@@ -256,6 +286,11 @@ function printHelp(): void {
     agentguard inspect [runId]                Inspect action graph and decisions
     agentguard events [runId]                 Show raw event stream for a run
     agentguard analytics                      Analyze violation patterns across sessions
+
+  \x1b[1mSimulation:\x1b[0m
+    agentguard simulate <action-json>          Simulate action and show predicted impact
+    agentguard simulate --action <type>        Simulate by action type and flags
+    agentguard simulate ... --json             Output raw JSON result
 
   \x1b[1mPortability:\x1b[0m
     agentguard export <runId>                 Export a governance session to JSONL
