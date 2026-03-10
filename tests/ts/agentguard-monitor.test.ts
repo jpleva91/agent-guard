@@ -238,8 +238,7 @@ describe('agentguard/monitor', () => {
       // Drive to ELEVATED
       monitor.process({ tool: 'Write', file: 'src/a.ts' });
 
-      const allEvents = monitor.store.all();
-      const stateChangedEvents = allEvents.filter((e) => e.kind === STATE_CHANGED);
+      const stateChangedEvents = monitor.store.query({ kind: STATE_CHANGED });
       expect(stateChangedEvents).toHaveLength(1);
       expect((stateChangedEvents[0] as unknown as Record<string, unknown>).from).toBe('NORMAL');
       expect((stateChangedEvents[0] as unknown as Record<string, unknown>).to).toBe('ELEVATED');
