@@ -114,9 +114,17 @@ src/
         ├── event-schema.ts # Event schema definitions
         └── index.ts        # Module re-exports
 
+vscode-extension/              # VS Code extension
+├── src/
+│   ├── extension.ts           # Extension entry point (sidebar panels, file watcher)
+│   ├── providers/             # Tree data providers (run status, run history)
+│   └── services/              # Event reader, notification formatter, notification service
+├── package.json               # Extension manifest (activation, views, configuration)
+└── tsconfig.json              # Extension TypeScript config
+
 tests/
 ├── *.test.js               # 14 JS test files (custom zero-dependency harness)
-└── ts/*.test.ts            # 49 TS test files (vitest)
+└── ts/*.test.ts            # 51 TS test files (vitest)
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
 docs/                       # System documentation (architecture, event model, specs)
 hooks/                      # Git hooks (post-commit, post-merge)
@@ -252,8 +260,8 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 
 **Test structure:**
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (`tests/ts/*.test.ts`): 50 files using vitest
-- **Coverage areas**: adapters, kernel (AAB, engine, monitor, blast radius), CLI commands, decision records, domain models, events, evidence packs, execution log, invariants, JSONL persistence, plugins (discovery, registry, validation), policy evaluation (including pack loader), renderers, replay (engine, comparator, processor), simulation, telemetry, TUI renderer, YAML loading
+- **TypeScript tests** (`tests/ts/*.test.ts`): 51 files using vitest
+- **Coverage areas**: adapters, kernel (AAB, engine, monitor, blast radius, integration, e2e pipeline), CLI commands, decision records, domain models, events, evidence packs, execution log, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, validation), policy evaluation (including pack loader), renderers, replay (engine, comparator, processor), simulation, telemetry, TUI renderer, VS Code event reader, YAML loading
 
 ## CI/CD & Automation
 

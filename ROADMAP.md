@@ -105,14 +105,14 @@ Formalize the plugin system for third-party extensions.
 - [x] Plugin validation and sandboxing (`src/plugins/validator.ts`, `src/plugins/sandbox.ts`)
 - [x] Plugin registry / discovery mechanism (`src/plugins/registry.ts`, `src/plugins/discovery.ts`)
 
-## Phase 5 — Editor Integrations `PLANNED`
+## Phase 5 — Editor Integrations `IN PROGRESS`
 
 > **Theme:** Governance moves into the editor
 
 Bring AgentGuard governance into editor environments.
 
-- [ ] VS Code extension: sidebar panel with run status
-- [ ] VS Code: governance notifications for policy violations
+- [x] VS Code extension: sidebar panel with run status (`vscode-extension/src/providers/run-status-provider.ts`)
+- [x] VS Code: governance notifications for policy violations (`vscode-extension/src/services/notification-service.ts`)
 - [ ] VS Code: inline invariant violation indicators
 - [ ] JetBrains plugin (IntelliJ/WebStorm)
 - [ ] Claude Code deep integration (full governance kernel in hook pipeline)

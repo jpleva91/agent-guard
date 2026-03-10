@@ -53,6 +53,8 @@ src/
 ├── cli/           CLI entry point and commands
 ├── telemetry/     Runtime telemetry and logging
 └── core/          Shared utilities (types, actions, hash, execution-log)
+
+vscode-extension/  VS Code extension (sidebar panels, notifications, event reader)
 ```
 
 ## Layer Rules
