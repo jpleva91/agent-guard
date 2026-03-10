@@ -2,6 +2,20 @@
 
 Detect unresolved review comments on agent-authored PRs, make code changes to address the feedback, and reply to each thread. Keeps agent PRs moving toward merge without requiring human re-implementation. Designed for periodic scheduled execution.
 
+## Autonomy Directive
+
+This skill runs as an **unattended scheduled task**. No human is present to answer questions.
+
+- **NEVER pause to ask for clarification or confirmation** — make your best judgment and proceed
+- **NEVER use AskUserQuestion or any interactive prompt** — all decisions must be made autonomously
+- If a comment's intent is ambiguous, classify it as **non-actionable** and reply acknowledging it
+- If a code change is uncertain, **skip it** and reply explaining what was unclear
+- If governance activation fails, log the failure and **STOP** — do not ask what to do
+- If `gh` CLI fails, log the error and **STOP** — do not ask for credentials
+- If a branch has unexpected state, **skip that PR** and move to the next
+- Default to the **safest option** in every ambiguous situation (skip > attempt)
+- When in doubt about any decision, choose the conservative path and document why in the summary
+
 ## Prerequisites
 
 Run `start-governance-runtime` first. All scheduled skills must operate under governance. Requires `gh` CLI authenticated with repo access.

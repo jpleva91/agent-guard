@@ -2,6 +2,19 @@
 
 Audit pull requests merged in the last 7 days for risks that may have been overlooked — unresolved review comments, dismissed change requests, bypassed CI, or governance violations. Creates a consolidated risk report as a GitHub issue. Designed for weekly scheduled execution.
 
+## Autonomy Directive
+
+This skill runs as an **unattended scheduled task**. No human is present to answer questions.
+
+- **NEVER pause to ask for clarification or confirmation** — make your best judgment and proceed
+- **NEVER use AskUserQuestion or any interactive prompt** — all decisions must be made autonomously
+- If risk classification is ambiguous, round **up** to the higher risk level (err on the side of caution)
+- If governance activation fails, log the failure and **STOP** — do not ask what to do
+- If `gh` CLI fails, log the error and **STOP** — do not ask for credentials
+- If a PR's data is incomplete or malformed, **skip that PR** and note it in the summary
+- Default to the **safest option** in every ambiguous situation (flag risk > ignore risk)
+- When in doubt about any decision, choose the conservative path and document why in the summary
+
 ## Prerequisites
 
 Run `start-governance-runtime` first. All scheduled skills must operate under governance. Requires `gh` CLI authenticated with repo access.

@@ -2,6 +2,19 @@
 
 Detect open PR branches with merge conflicts against main, rebase them, and auto-resolve trivial conflicts. For complex conflicts, post a diagnostic comment listing the conflicting files and ask the human to intervene. Designed for periodic scheduled execution.
 
+## Autonomy Directive
+
+This skill runs as an **unattended scheduled task**. No human is present to answer questions.
+
+- **NEVER pause to ask for clarification or confirmation** — make your best judgment and proceed
+- **NEVER use AskUserQuestion or any interactive prompt** — all decisions must be made autonomously
+- If a conflict's classification is ambiguous, treat it as **complex** and abort the rebase for that PR
+- If governance activation fails, log the failure and **STOP** — do not ask what to do
+- If `gh` CLI fails, log the error and **STOP** — do not ask for credentials
+- If `git rebase` enters an unexpected state, run `git rebase --abort` and skip that PR
+- Default to the **safest option** in every ambiguous situation (abort rebase > attempt resolution)
+- When in doubt about any decision, choose the conservative path and document why in the summary
+
 ## Prerequisites
 
 Run `start-governance-runtime` first. All scheduled skills must operate under governance. Requires `gh` CLI authenticated with repo access.
