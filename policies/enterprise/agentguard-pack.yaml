@@ -1,0 +1,128 @@
+# Enterprise policy pack — restrictive rules for corporate environments.
+# Enforces branch protection, blast radius limits, and deployment controls.
+#
+# Usage:
+#   extends: ["./policies/enterprise"]
+
+id: enterprise-pack
+name: Enterprise Safety Pack
+description: Restrictive rules for corporate environments with deployment controls
+severity: 4
+
+rules:
+  # --- Branch protection ---
+  # Protected branch enforcement is handled by the protected-branches invariant.
+  # Policy-level protection covers force push and destructive git operations.
+  - action: git.force-push
+    effect: deny
+    reason: Force push is prohibited in enterprise environments
+
+  - action: git.reset
+    effect: deny
+    reason: Git reset is destructive — use revert instead
+
+  # --- Secrets and credentials ---
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: Environment files must be managed via secrets manager
+
+  - action: file.write
+    effect: deny
+    target: "*.pem"
+    reason: Certificate files must not be modified by agents
+
+  - action: file.write
+    effect: deny
+    target: "*.key"
+    reason: Private key files must not be modified by agents
+
+  - action: file.write
+    effect: deny
+    target: "credentials*"
+    reason: Credential files must not be modified by agents
+
+  # --- Blast radius controls ---
+  - action: file.write
+    effect: deny
+    limit: 15
+    reason: Blast radius exceeded — max 15 files per action in enterprise mode
+
+  - action: file.delete
+    effect: deny
+    limit: 5
+    reason: Bulk deletion denied — max 5 files per action
+
+  # --- Shell safety ---
+  - action: shell.exec
+    effect: deny
+    target: rm -rf
+    reason: Destructive shell commands denied
+
+  - action: shell.exec
+    effect: deny
+    target: "chmod 777"
+    reason: Overly permissive chmod denied
+
+  - action: shell.exec
+    effect: deny
+    target: curl
+    reason: External HTTP requests from shell denied — use approved APIs
+
+  # --- Package and deployment controls ---
+  - action: npm.publish
+    effect: deny
+    reason: Package publishing requires release pipeline
+
+  - action: deploy.trigger
+    effect: deny
+    reason: Deployments must go through CI/CD pipeline
+
+  - action: infra.apply
+    effect: deny
+    reason: Infrastructure changes require approval
+
+  - action: infra.destroy
+    effect: deny
+    reason: Infrastructure destruction is prohibited
+
+  # --- Allow safe operations ---
+  - action: file.read
+    effect: allow
+    reason: Reading is always safe
+
+  - action: file.write
+    effect: allow
+    reason: File writes allowed within blast radius limits
+
+  - action: git.diff
+    effect: allow
+    reason: Viewing diffs is always safe
+
+  - action: git.commit
+    effect: allow
+    reason: Commits to feature branches allowed
+
+  - action: git.push
+    effect: allow
+    reason: Pushes to feature branches allowed
+
+  - action: git.checkout
+    effect: allow
+    reason: Branch switching allowed
+
+  - action: git.branch.create
+    effect: allow
+    reason: Branch creation allowed
+
+  - action: test.run
+    effect: allow
+    reason: Running tests is always safe
+
+  - action: npm.install
+    effect: allow
+    reason: Dependency installation allowed
+
+  - action: npm.script.run
+    effect: allow
+    reason: NPM scripts allowed
