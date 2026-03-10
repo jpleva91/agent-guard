@@ -259,6 +259,112 @@ export function renderActionGraph(results: KernelResult[]): string {
   return lines.join('\n');
 }
 
+/** Serialized rule evaluation entry from a PolicyTraceRecorded event */
+interface TraceRuleEntry {
+  policyId: string;
+  policyName: string;
+  ruleIndex: number;
+  effect: string;
+  actionPattern: string | string[];
+  actionMatched: boolean;
+  conditionsMatched: boolean;
+  conditionDetails: {
+    scopeMatched?: boolean;
+    limitExceeded?: boolean;
+    branchMatched?: boolean;
+  };
+  outcome: 'match' | 'no-match' | 'skipped';
+}
+
+/** A PolicyTraceRecorded event from the event stream */
+export interface PolicyTraceEvent {
+  kind: string;
+  timestamp: number;
+  actionType: string;
+  target?: string;
+  decision: string;
+  totalRulesChecked: number;
+  phaseThatMatched?: string | null;
+  rulesEvaluated?: TraceRuleEntry[];
+  durationMs?: number;
+  [key: string]: unknown;
+}
+
+export function renderPolicyTraces(events: PolicyTraceEvent[]): string {
+  const lines: string[] = [];
+  lines.push('');
+  lines.push(
+    `  ${ANSI.bold}Policy Evaluation Traces${ANSI.reset} ${ANSI.dim}(${events.length} evaluations)${ANSI.reset}`
+  );
+  lines.push(`  ${ANSI.dim}${'─'.repeat(60)}${ANSI.reset}`);
+
+  for (let i = 0; i < events.length; i++) {
+    const trace = events[i];
+    const num = `${i + 1}.`.padStart(4);
+    const decisionColor = trace.decision === 'allow' ? ANSI.green : ANSI.red;
+    const decisionIcon = trace.decision === 'allow' ? ICONS.allowed : ICONS.denied;
+    const phase = trace.phaseThatMatched || 'none';
+    const duration =
+      trace.durationMs !== undefined
+        ? `${ANSI.dim}${trace.durationMs.toFixed(2)}ms${ANSI.reset}`
+        : '';
+
+    lines.push(
+      `  ${num} ${decisionColor}${decisionIcon}${ANSI.reset} ${ANSI.bold}${trace.actionType}${ANSI.reset} ${ANSI.dim}${trace.target || ''}${ANSI.reset}`
+    );
+    lines.push(
+      `       decision: ${decisionColor}${trace.decision.toUpperCase()}${ANSI.reset} | phase: ${ANSI.cyan}${phase}${ANSI.reset} | rules checked: ${trace.totalRulesChecked} ${duration}`
+    );
+
+    // Show individual rule evaluations
+    const rules = trace.rulesEvaluated || [];
+    if (rules.length > 0) {
+      for (const rule of rules) {
+        const outcomeColor =
+          rule.outcome === 'match' ? ANSI.green : rule.outcome === 'skipped' ? ANSI.dim : ANSI.gray;
+        const outcomeIcon =
+          rule.outcome === 'match'
+            ? ICONS.allowed
+            : rule.outcome === 'skipped'
+              ? '-'
+              : ICONS.bullet;
+
+        const pattern = Array.isArray(rule.actionPattern)
+          ? rule.actionPattern.join(', ')
+          : rule.actionPattern;
+
+        lines.push(
+          `       ${outcomeColor}${outcomeIcon}${ANSI.reset} [${rule.effect}] ${ANSI.dim}${pattern}${ANSI.reset} ${ANSI.dim}(${rule.policyName}#${rule.ruleIndex})${ANSI.reset} ${ANSI.dim}${ICONS.arrow} ${rule.outcome}${ANSI.reset}`
+        );
+
+        // Show condition details for rules that matched action but failed conditions
+        if (rule.actionMatched && !rule.conditionsMatched && rule.outcome === 'no-match') {
+          const details: string[] = [];
+          if (rule.conditionDetails.scopeMatched === false) details.push('scope mismatch');
+          if (rule.conditionDetails.branchMatched === false) details.push('branch mismatch');
+          if (details.length > 0) {
+            lines.push(`         ${ANSI.dim}reason: ${details.join(', ')}${ANSI.reset}`);
+          }
+        }
+
+        // Show condition details for matching rules
+        if (rule.outcome === 'match' && rule.conditionsMatched) {
+          const details: string[] = [];
+          if (rule.conditionDetails.scopeMatched) details.push('scope');
+          if (rule.conditionDetails.limitExceeded) details.push('limit exceeded');
+          if (rule.conditionDetails.branchMatched) details.push('branch');
+          if (details.length > 0) {
+            lines.push(`         ${ANSI.dim}matched on: ${details.join(', ')}${ANSI.reset}`);
+          }
+        }
+      }
+    }
+  }
+
+  lines.push('');
+  return lines.join('\n');
+}
+
 export function renderEventStream(
   events: Array<{ kind: string; timestamp: number; [key: string]: unknown }>
 ): string {

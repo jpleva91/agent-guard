@@ -145,6 +145,87 @@ describe('inspect', () => {
     );
   });
 
+  it('shows policy traces with --traces flag', async () => {
+    vi.mocked(existsSync).mockReturnValue(true);
+    const traceEvent = JSON.stringify({
+      id: 'evt_1',
+      kind: 'PolicyTraceRecorded',
+      timestamp: 1700000000000,
+      fingerprint: 'fp_1',
+      actionType: 'file.write',
+      target: 'src/app.ts',
+      decision: 'allow',
+      totalRulesChecked: 2,
+      phaseThatMatched: 'allow',
+      rulesEvaluated: [
+        {
+          policyId: 'security',
+          policyName: 'Security Policy',
+          ruleIndex: 0,
+          effect: 'deny',
+          actionPattern: 'git.push',
+          actionMatched: false,
+          conditionsMatched: false,
+          conditionDetails: {},
+          outcome: 'no-match',
+        },
+      ],
+      durationMs: 0.15,
+    });
+    const content = makeActionEvent('ActionAllowed') + '\n' + traceEvent + '\n';
+    vi.mocked(readFileSync).mockReturnValue(content);
+
+    await inspect(['run_001', '--traces']);
+
+    expect(process.stderr.write).toHaveBeenCalledWith(
+      expect.stringContaining('Policy Evaluation Traces')
+    );
+  });
+
+  it('shows no traces message when no trace events exist', async () => {
+    vi.mocked(existsSync).mockReturnValue(true);
+    const content = makeActionEvent('ActionAllowed') + '\n';
+    vi.mocked(readFileSync).mockReturnValue(content);
+
+    await inspect(['run_001', '--traces']);
+
+    expect(process.stderr.write).toHaveBeenCalledWith(
+      expect.stringContaining('No policy evaluation traces found')
+    );
+  });
+
+  it('supports both --traces and --decisions flags together', async () => {
+    vi.mocked(existsSync).mockReturnValue(true);
+    const traceEvent = JSON.stringify({
+      id: 'evt_1',
+      kind: 'PolicyTraceRecorded',
+      timestamp: 1700000000000,
+      fingerprint: 'fp_1',
+      actionType: 'file.write',
+      target: 'src/app.ts',
+      decision: 'allow',
+      totalRulesChecked: 1,
+      phaseThatMatched: 'allow',
+      durationMs: 0.1,
+    });
+    vi.mocked(readFileSync).mockImplementation((p) => {
+      const path = String(p);
+      if (path.includes('decisions')) {
+        return makeDecisionRecord() + '\n';
+      }
+      return makeActionEvent('ActionAllowed') + '\n' + traceEvent + '\n';
+    });
+
+    await inspect(['run_001', '--decisions', '--traces']);
+
+    expect(process.stderr.write).toHaveBeenCalledWith(
+      expect.stringContaining('Decision Records')
+    );
+    expect(process.stderr.write).toHaveBeenCalledWith(
+      expect.stringContaining('Policy Evaluation Traces')
+    );
+  });
+
   it('shows denied actions with reason', async () => {
     vi.mocked(existsSync).mockReturnValue(true);
     const denied = makeActionEvent('ActionDenied', {

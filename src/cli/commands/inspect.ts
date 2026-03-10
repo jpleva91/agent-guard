@@ -3,7 +3,8 @@
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { renderEventStream, renderDecisionTable } from '../tui.js';
+import { renderEventStream, renderDecisionTable, renderPolicyTraces } from '../tui.js';
+import type { PolicyTraceEvent } from '../tui.js';
 import { getEventFilePath } from '../../events/jsonl.js';
 import { getDecisionFilePath } from '../../events/decision-jsonl.js';
 import type { DomainEvent } from '../../core/types.js';
@@ -69,7 +70,8 @@ function listRuns(): string[] {
 
 export async function inspect(args: string[]): Promise<void> {
   const showDecisions = args.includes('--decisions');
-  const filteredArgs = args.filter((a) => a !== '--decisions');
+  const showTraces = args.includes('--traces');
+  const filteredArgs = args.filter((a) => a !== '--decisions' && a !== '--traces');
   const targetArg = filteredArgs[0];
 
   if (!targetArg || targetArg === '--list') {
@@ -109,6 +111,18 @@ export async function inspect(args: string[]): Promise<void> {
       process.stderr.write(renderDecisionTable(decisions));
     } else {
       process.stderr.write('\n  \x1b[2mNo decision records found for this run.\x1b[0m\n');
+    }
+  }
+
+  // Show policy evaluation traces if --traces flag is present
+  if (showTraces) {
+    const traceEvents = events.filter(
+      (e) => e.kind === 'PolicyTraceRecorded'
+    ) as unknown as PolicyTraceEvent[];
+    if (traceEvents.length > 0) {
+      process.stderr.write(renderPolicyTraces(traceEvents));
+    } else {
+      process.stderr.write('\n  \x1b[2mNo policy evaluation traces found for this run.\x1b[0m\n');
     }
   }
 
