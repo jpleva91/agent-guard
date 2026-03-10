@@ -166,6 +166,18 @@ async function main() {
       break;
     }
 
+    case 'plugin': {
+      if (wantsHelp) {
+        const { plugin: pluginCmd } = await import('./commands/plugin.js');
+        await pluginCmd(['help']);
+        break;
+      }
+      const { plugin: pluginCmd } = await import('./commands/plugin.js');
+      const code = await pluginCmd(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
     case 'claude-init': {
       const { claudeInit } = await import('./commands/claude-init.js');
       await claudeInit(args.slice(1));
@@ -224,6 +236,12 @@ function printHelp(): void {
     agentguard replay                         List recorded sessions
     agentguard replay --last                  Replay most recent session
     agentguard replay --last --step           Step through events interactively
+
+  \x1b[1mPlugins:\x1b[0m
+    agentguard plugin list                    List installed plugins
+    agentguard plugin install <path>          Install a plugin from a local path
+    agentguard plugin remove <id>             Remove a plugin by ID
+    agentguard plugin search [query]          Search for plugins on npm
 
   \x1b[1mIntegration:\x1b[0m
     agentguard claude-init                    Set up Claude Code hook integration

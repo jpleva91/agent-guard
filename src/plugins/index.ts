@@ -17,3 +17,11 @@ export { validateManifest, validatePlugin, checkApiVersionCompatibility } from '
 export type { PluginSandbox, SandboxExecutionResult, SandboxRegistry } from './sandbox.js';
 
 export { createPluginSandbox, createSandboxRegistry } from './sandbox.js';
+
+export type { InstalledPlugin, PluginRegistry, PluginRegistryOptions } from './registry.js';
+
+export { createPluginRegistry } from './registry.js';
+
+export type { DiscoveredPlugin, NpmSearchOptions, LocalSearchOptions } from './discovery.js';
+
+export { searchNpmPlugins, searchLocalPlugins } from './discovery.js';
