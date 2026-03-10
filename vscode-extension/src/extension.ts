@@ -6,6 +6,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { RunStatusProvider } from './providers/run-status-provider';
 import { RunHistoryProvider } from './providers/run-history-provider';
+import { RecentEventsProvider } from './providers/recent-events-provider';
 import { NotificationService } from './services/notification-service';
 import { getEventsDir } from './services/event-reader';
 
@@ -20,10 +21,12 @@ export function activate(context: vscode.ExtensionContext): void {
   // Register tree data providers
   const runStatusProvider = new RunStatusProvider(workspaceRoot);
   const runHistoryProvider = new RunHistoryProvider(workspaceRoot);
+  const recentEventsProvider = new RecentEventsProvider(workspaceRoot);
 
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider('agentguard.runStatus', runStatusProvider),
-    vscode.window.registerTreeDataProvider('agentguard.runHistory', runHistoryProvider)
+    vscode.window.registerTreeDataProvider('agentguard.runHistory', runHistoryProvider),
+    vscode.window.registerTreeDataProvider('agentguard.recentEvents', recentEventsProvider)
   );
 
   // Register notification service
@@ -35,6 +38,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('agentguard.refresh', () => {
       runStatusProvider.refresh();
       runHistoryProvider.refresh();
+      recentEventsProvider.refresh();
     })
   );
 
@@ -43,6 +47,7 @@ export function activate(context: vscode.ExtensionContext): void {
   watchEventsDirectory(eventsDir, () => {
     runStatusProvider.refresh();
     runHistoryProvider.refresh();
+    recentEventsProvider.refresh();
   });
 
   // Clean up file watcher on deactivation

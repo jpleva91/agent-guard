@@ -95,7 +95,11 @@ export function listSessionIds(eventsDir: string): string[] {
 /**
  * Build a RunSummary from a list of events.
  */
-export function summarizeRun(sessionId: string, sessionFile: string, events: GovernanceEvent[]): RunSummary {
+export function summarizeRun(
+  sessionId: string,
+  sessionFile: string,
+  events: GovernanceEvent[]
+): RunSummary {
   let startedAt = 0;
   let endedAt: number | null = null;
   let actionsRequested = 0;
@@ -125,9 +129,10 @@ export function summarizeRun(sessionId: string, sessionFile: string, events: Gov
         violations++;
         break;
       case 'ActionEscalated': {
-        const level = typeof event.metadata === 'object' && event.metadata !== null
-          ? (event.metadata as Record<string, unknown>).escalationLevel
-          : undefined;
+        const level =
+          typeof event.metadata === 'object' && event.metadata !== null
+            ? (event.metadata as Record<string, unknown>).escalationLevel
+            : undefined;
         if (typeof level === 'number' && level > escalationLevel) {
           escalationLevel = level;
         }
@@ -201,4 +206,72 @@ export function findLatestRun(workspaceRoot: string): RunSummary | null {
  */
 export function isGovernanceEvent(kind: string): boolean {
   return GOVERNANCE_KINDS.has(kind);
+}
+
+/** Policy file names to search for, in priority order */
+const POLICY_FILE_NAMES = ['agentguard.yaml', 'agentguard.yml', '.agentguard.yaml'];
+
+/**
+ * Find the active policy file in the workspace.
+ * Returns the filename if found, null otherwise.
+ */
+export function findPolicyFile(workspaceRoot: string): string | null {
+  for (const name of POLICY_FILE_NAMES) {
+    const filePath = path.join(workspaceRoot, name);
+    if (fs.existsSync(filePath)) {
+      return name;
+    }
+  }
+  return null;
+}
+
+/** A recent governance event for display in the sidebar */
+export interface RecentEvent {
+  readonly id: string;
+  readonly kind: string;
+  readonly timestamp: number;
+  readonly actionType: string | null;
+  readonly target: string | null;
+  readonly reason: string | null;
+}
+
+/**
+ * Extract recent governance events (allowed/denied actions) from the latest run.
+ * Returns the most recent N events, newest first.
+ */
+export function getRecentEvents(workspaceRoot: string, limit = 20): RecentEvent[] {
+  const latestRun = findLatestRun(workspaceRoot);
+  if (!latestRun) return [];
+
+  const events = parseJsonlFile(latestRun.sessionFile);
+  const actionKinds = new Set([
+    'ActionAllowed',
+    'ActionDenied',
+    'ActionEscalated',
+    'PolicyDenied',
+    'InvariantViolation',
+    'BlastRadiusExceeded',
+  ]);
+
+  const recent: RecentEvent[] = [];
+  for (let i = events.length - 1; i >= 0 && recent.length < limit; i--) {
+    const event = events[i];
+    if (actionKinds.has(event.kind)) {
+      const metadata =
+        typeof event.metadata === 'object' && event.metadata !== null
+          ? (event.metadata as Record<string, unknown>)
+          : {};
+
+      recent.push({
+        id: event.id,
+        kind: event.kind,
+        timestamp: event.timestamp,
+        actionType: (event.actionType as string) ?? (metadata.actionType as string) ?? null,
+        target: (event.target as string) ?? (metadata.target as string) ?? null,
+        reason: (event.reason as string) ?? (metadata.reason as string) ?? null,
+      });
+    }
+  }
+
+  return recent;
 }

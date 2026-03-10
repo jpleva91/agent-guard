@@ -31,6 +31,10 @@
           "name": "Run Status"
         },
         {
+          "id": "agentguard.recentEvents",
+          "name": "Recent Events"
+        },
+        {
           "id": "agentguard.runHistory",
           "name": "Run History"
         }
@@ -48,7 +52,7 @@
       "view/title": [
         {
           "command": "agentguard.refresh",
-          "when": "view == agentguard.runStatus || view == agentguard.runHistory",
+          "when": "view == agentguard.runStatus || view == agentguard.recentEvents || view == agentguard.runHistory",
           "group": "navigation"
         }
       ]

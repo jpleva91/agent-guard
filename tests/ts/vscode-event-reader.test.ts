@@ -3,7 +3,7 @@
 // without requiring the VS Code extension host.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -56,10 +56,77 @@ function parseJsonlContent(content: string): GovernanceEvent[] {
   return events;
 }
 
+interface RecentEvent {
+  readonly id: string;
+  readonly kind: string;
+  readonly timestamp: number;
+  readonly actionType: string | null;
+  readonly target: string | null;
+  readonly reason: string | null;
+}
+
+const POLICY_FILE_NAMES = ['agentguard.yaml', 'agentguard.yml', '.agentguard.yaml'];
+
+function findPolicyFile(workspaceRoot: string): string | null {
+  for (const name of POLICY_FILE_NAMES) {
+    const filePath = join(workspaceRoot, name);
+    if (existsSync(filePath)) {
+      return name;
+    }
+  }
+  return null;
+}
+
+function getRecentEvents(workspaceRoot: string, limit = 20): RecentEvent[] {
+  const eventsDir = join(workspaceRoot, '.agentguard', 'events');
+  if (!existsSync(eventsDir)) return [];
+
+  const files = readdirSync(eventsDir)
+    .filter((f) => f.endsWith('.jsonl'))
+    .sort()
+    .reverse();
+
+  if (files.length === 0) return [];
+
+  const latestFile = join(eventsDir, files[0]);
+  const content = readFileSync(latestFile, 'utf8');
+  const events = parseJsonlContent(content);
+
+  const actionKinds = new Set([
+    'ActionAllowed',
+    'ActionDenied',
+    'ActionEscalated',
+    'PolicyDenied',
+    'InvariantViolation',
+    'BlastRadiusExceeded',
+  ]);
+
+  const recent: RecentEvent[] = [];
+  for (let i = events.length - 1; i >= 0 && recent.length < limit; i--) {
+    const event = events[i];
+    if (actionKinds.has(event.kind)) {
+      const metadata =
+        typeof event.metadata === 'object' && event.metadata !== null
+          ? (event.metadata as Record<string, unknown>)
+          : {};
+      recent.push({
+        id: event.id,
+        kind: event.kind,
+        timestamp: event.timestamp,
+        actionType: (event.actionType as string) ?? (metadata.actionType as string) ?? null,
+        target: (event.target as string) ?? (metadata.target as string) ?? null,
+        reason: (event.reason as string) ?? (metadata.reason as string) ?? null,
+      });
+    }
+  }
+
+  return recent;
+}
+
 function summarizeRun(
   sessionId: string,
   sessionFile: string,
-  events: GovernanceEvent[],
+  events: GovernanceEvent[]
 ): RunSummary {
   let startedAt = 0;
   let endedAt: number | null = null;
@@ -258,7 +325,14 @@ describe('VS Code event reader', () => {
           expected: 'false',
           actual: 'true',
         },
-        { id: 'e7', kind: 'RunEnded', timestamp: 2000, fingerprint: 'g', runId: 'r1', result: 'ok' },
+        {
+          id: 'e7',
+          kind: 'RunEnded',
+          timestamp: 2000,
+          fingerprint: 'g',
+          runId: 'r1',
+          result: 'ok',
+        },
       ];
 
       const summary = summarizeRun('session_1', 'session_1.jsonl', events);
@@ -372,6 +446,113 @@ describe('VS Code event reader', () => {
       expect(parsed).toHaveLength(2);
       expect(parsed[0].kind).toBe('RunStarted');
       expect(parsed[1].kind).toBe('ActionRequested');
+    });
+  });
+
+  describe('findPolicyFile', () => {
+    it('detects agentguard.yaml in workspace', () => {
+      writeFileSync(join(testDir, 'agentguard.yaml'), 'version: 1\nrules: []\n');
+      const result = findPolicyFile(testDir);
+      expect(result).toBe('agentguard.yaml');
+    });
+
+    it('detects agentguard.yml when yaml not present', () => {
+      writeFileSync(join(testDir, 'agentguard.yml'), 'version: 1\nrules: []\n');
+      const result = findPolicyFile(testDir);
+      expect(result).toBe('agentguard.yml');
+    });
+
+    it('detects .agentguard.yaml as hidden config', () => {
+      writeFileSync(join(testDir, '.agentguard.yaml'), 'version: 1\nrules: []\n');
+      const result = findPolicyFile(testDir);
+      expect(result).toBe('.agentguard.yaml');
+    });
+
+    it('prefers agentguard.yaml over agentguard.yml', () => {
+      writeFileSync(join(testDir, 'agentguard.yaml'), 'version: 1\nrules: []\n');
+      writeFileSync(join(testDir, 'agentguard.yml'), 'version: 1\nrules: []\n');
+      const result = findPolicyFile(testDir);
+      expect(result).toBe('agentguard.yaml');
+    });
+
+    it('returns null when no policy file exists', () => {
+      const result = findPolicyFile(testDir);
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getRecentEvents', () => {
+    it('extracts recent allowed and denied events from latest run', () => {
+      const sessionFile = join(eventsDir, 'session_recent.jsonl');
+      const events = [
+        { id: 'e1', kind: 'RunStarted', timestamp: 1000, fingerprint: 'a', runId: 'r1' },
+        {
+          id: 'e2',
+          kind: 'ActionAllowed',
+          timestamp: 1001,
+          fingerprint: 'b',
+          actionType: 'file.write',
+          target: 'src/app.ts',
+        },
+        {
+          id: 'e3',
+          kind: 'ActionDenied',
+          timestamp: 1002,
+          fingerprint: 'c',
+          actionType: 'git.push',
+          target: 'main',
+          reason: 'protected branch',
+        },
+        {
+          id: 'e4',
+          kind: 'PolicyDenied',
+          timestamp: 1003,
+          fingerprint: 'd',
+          actionType: 'shell.exec',
+          target: 'rm -rf /',
+          reason: 'destructive command',
+        },
+      ];
+      writeFileSync(sessionFile, events.map((e) => JSON.stringify(e)).join('\n') + '\n');
+
+      const recent = getRecentEvents(testDir);
+      // 3 action events (RunStarted is not an action kind)
+      expect(recent).toHaveLength(3);
+      // Newest first
+      expect(recent[0].kind).toBe('PolicyDenied');
+      expect(recent[0].actionType).toBe('shell.exec');
+      expect(recent[0].reason).toBe('destructive command');
+      expect(recent[1].kind).toBe('ActionDenied');
+      expect(recent[1].target).toBe('main');
+      expect(recent[2].kind).toBe('ActionAllowed');
+      expect(recent[2].actionType).toBe('file.write');
+    });
+
+    it('returns empty array when no runs exist', () => {
+      const recent = getRecentEvents(testDir);
+      expect(recent).toEqual([]);
+    });
+
+    it('respects the limit parameter', () => {
+      const sessionFile = join(eventsDir, 'session_limit.jsonl');
+      const events = [];
+      for (let i = 0; i < 30; i++) {
+        events.push({
+          id: `e${i}`,
+          kind: 'ActionAllowed',
+          timestamp: 1000 + i,
+          fingerprint: `f${i}`,
+          actionType: 'file.write',
+          target: `file${i}.ts`,
+        });
+      }
+      writeFileSync(sessionFile, events.map((e) => JSON.stringify(e)).join('\n') + '\n');
+
+      const recent = getRecentEvents(testDir, 5);
+      expect(recent).toHaveLength(5);
+      // Should be the 5 most recent (highest timestamp)
+      expect(recent[0].target).toBe('file29.ts');
+      expect(recent[4].target).toBe('file25.ts');
     });
   });
 });
