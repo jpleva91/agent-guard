@@ -54,6 +54,7 @@ src/
 │       ├── filesystem-simulator.ts  # File system impact simulation
 │       ├── git-simulator.ts         # Git operation simulation
 │       ├── package-simulator.ts     # Package change simulation
+│       ├── forecast.ts              # Impact forecast builder
 │       ├── registry.ts              # Simulator registry
 │       └── types.ts                 # Simulation type definitions
 ├── events/                 # Canonical event model
@@ -70,6 +71,14 @@ src/
 ├── invariants/             # Invariant system
 │   ├── definitions.ts      # 8 built-in invariant definitions
 │   └── checker.ts          # Invariant evaluation engine
+├── analytics/              # Cross-session violation analytics
+│   ├── aggregator.ts       # Violation aggregation across sessions
+│   ├── cluster.ts          # Violation clustering by dimension
+│   ├── engine.ts           # Analytics engine orchestrator
+│   ├── index.ts            # Module re-exports
+│   ├── reporter.ts         # Output formatters (terminal, JSON, markdown)
+│   ├── trends.ts           # Violation trend computation
+│   └── types.ts            # Analytics type definitions
 ├── adapters/               # Execution adapters
 │   ├── registry.ts         # Adapter registry (action class → handler)
 │   ├── file.ts, shell.ts, git.ts  # Action handlers
@@ -84,7 +93,7 @@ src/
 │   ├── replay.ts           # Session replay logic
 │   ├── session-store.ts    # Session management
 │   ├── file-event-store.ts # File-based event persistence
-│   └── commands/           # guard, inspect, replay, export, import, plugin, claude-hook, claude-init
+│   └── commands/           # analytics, guard, inspect, replay, export, import, plugin, claude-hook, claude-init
 ├── plugins/                # Plugin ecosystem
 │   ├── discovery.ts        # Plugin discovery mechanism
 │   ├── registry.ts         # Plugin registry
@@ -117,7 +126,7 @@ src/
 vscode-extension/              # VS Code extension
 ├── src/
 │   ├── extension.ts           # Extension entry point (sidebar panels, file watcher)
-│   ├── providers/             # Tree data providers (run status, run history)
+│   ├── providers/             # Tree data providers (run status, run history, recent events)
 │   └── services/              # Event reader, notification formatter, notification service
 ├── package.json               # Extension manifest (activation, views, configuration)
 └── tsconfig.json              # Extension TypeScript config
@@ -173,6 +182,7 @@ See `docs/unified-architecture.md` for the full model.
 
 ### Directory Layout
 Each top-level directory maps to a single architectural concept:
+- **src/analytics/** — Cross-session violation analytics (aggregation, clustering, trends, reporting)
 - **src/kernel/** — Governed action kernel, escalation, evidence, decisions, simulation
 - **src/events/** — Canonical event model (schema, bus, store, persistence)
 - **src/policy/** — Policy evaluator + loaders (YAML/JSON, pack loader)
@@ -185,6 +195,7 @@ Each top-level directory maps to a single architectural concept:
 - **src/telemetry/** — Runtime telemetry and logging
 
 ### CLI Commands
+- `agentguard analytics` — Analyze violation patterns across governance sessions
 - `agentguard guard` — Start the governed action runtime (policy + invariant enforcement)
 - `agentguard guard --policy <file>` — Use a specific policy file (YAML or JSON)
 - `agentguard guard --dry-run` — Evaluate without executing actions
@@ -260,8 +271,8 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 
 **Test structure:**
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (`tests/ts/*.test.ts`): 51 files using vitest
-- **Coverage areas**: adapters, kernel (AAB, engine, monitor, blast radius, integration, e2e pipeline), CLI commands, decision records, domain models, events, evidence packs, execution log, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, validation), policy evaluation (including pack loader), renderers, replay (engine, comparator, processor), simulation, telemetry, TUI renderer, VS Code event reader, YAML loading
+- **TypeScript tests** (`tests/ts/*.test.ts`): 53 files using vitest
+- **Coverage areas**: adapters, analytics, kernel (AAB, engine, monitor, blast radius, integration, e2e pipeline), CLI commands, decision records, domain models, events, evidence packs, execution log, impact forecast, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, validation), policy evaluation (including pack loader), renderers, replay (engine, comparator, processor), simulation, telemetry, TUI renderer, VS Code event reader, YAML loading
 
 ## CI/CD & Automation
 

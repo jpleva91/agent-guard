@@ -134,7 +134,7 @@ AI features are intentionally placed last. The system must be useful without AI 
 
 Extend the simulation engine from risk assessment to predictive governance — evaluate policies and invariants against predicted system state before actions execute.
 
-- [ ] Structured impact forecasts (predicted files changed, dependencies affected, test risk, blast radius score)
+- [x] Structured impact forecasts (predicted files changed, dependencies affected, test risk, blast radius score)
 - [ ] Predictive policy rules (`deny if predicted_test_failures > 0`, `deny if predicted_files_changed > 10`)
 - [ ] Plan-level simulation — simulate a sequence of actions as a batch before allowing execution
 - [ ] Simulator plugin interface — community-contributed simulators via plugin registry
@@ -164,7 +164,7 @@ Surface governance activity through dashboards, traces, and metrics.
 
 - [ ] Timeline viewer for governance sessions (`agentguard replay --ui`)
 - [ ] Policy evaluation traces (which rule matched, why)
-- [ ] Invariant violation analytics (frequency, clustering)
+- [x] Invariant violation analytics (frequency, clustering)
 - [ ] Metrics export (Prometheus / OpenTelemetry)
 - [ ] Session comparison (diff two governance runs side-by-side)
 

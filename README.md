@@ -132,6 +132,7 @@ agentguard guard --dry-run                # Evaluate without executing actions
 agentguard inspect [runId]                # Show action graph and decisions for a run
 agentguard inspect --last                 # Inspect most recent run
 agentguard events [runId]                 # Show raw event stream for a run
+agentguard analytics                      # Analyze violation patterns across sessions
 
 # === Portability ===
 agentguard export <runId>                 # Export a governance session to JSONL
@@ -232,6 +233,13 @@ src/
 ├── invariants/             # Invariant system
 │   ├── definitions.ts      # 8 built-in invariants
 │   └── checker.ts          # Invariant evaluation engine
+├── analytics/              # Cross-session violation analytics
+│   ├── aggregator.ts       # Violation aggregation across sessions
+│   ├── cluster.ts          # Violation clustering by dimension
+│   ├── engine.ts           # Analytics engine orchestrator
+│   ├── reporter.ts         # Output formatters (terminal, JSON, markdown)
+│   ├── trends.ts           # Violation trend computation
+│   └── types.ts            # Analytics type definitions
 ├── adapters/               # Execution adapters
 │   ├── file.ts, shell.ts, git.ts  # Action handlers
 │   ├── claude-code.ts      # Claude Code hook adapter
@@ -250,14 +258,14 @@ src/
 │   └── index.ts            # Module re-exports
 ├── cli/                    # CLI entry point + commands
 │   ├── bin.ts              # Main entry
-│   └── commands/           # guard, inspect, replay, export, import, plugin, claude-hook, claude-init
+│   └── commands/           # analytics, guard, inspect, replay, export, import, plugin, claude-hook, claude-init
 ├── telemetry/              # Runtime telemetry and logging
 └── core/                   # Shared utilities (types, actions, hash, rng, execution-log)
 
 vscode-extension/              # VS Code extension
 ├── src/
 │   ├── extension.ts           # Sidebar panels, file watcher, notifications
-│   ├── providers/             # Tree data providers (run status, run history)
+│   ├── providers/             # Tree data providers (run status, run history, recent events)
 │   └── services/              # Event reader, notification formatter + service
 └── package.json               # Extension manifest
 ```

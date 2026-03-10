@@ -43,6 +43,7 @@ Each top-level directory under `src/` maps to a single architectural concept:
 
 ```
 src/
+├── analytics/     Cross-session violation analytics (aggregation, clustering, trends)
 ├── kernel/        Governed action kernel (orchestrate, normalize, decide, escalate)
 ├── events/        Canonical event model (schema, bus, store, JSONL persistence)
 ├── policy/        Policy system (evaluator, loaders, pack loader)
@@ -66,7 +67,8 @@ vscode-extension/  VS Code extension (sidebar panels, notifications, event reade
 - **adapters/** may import from core/, kernel/ only
 - **plugins/** may import from core/, events/, kernel/ only
 - **renderers/** may import from core/, events/ only
-- **cli/** may import from kernel/, events/, policy/, plugins/, renderers/, core/
+- **analytics/** may import from events/, core/ only
+- **cli/** may import from analytics/, kernel/, events/, policy/, plugins/, renderers/, core/
 - **telemetry/** may import from core/ only
 - **core/** has no project imports (leaf layer)
 
