@@ -1,0 +1,66 @@
+{
+  "name": "agentguard-vscode",
+  "displayName": "AgentGuard",
+  "description": "Governance run status and event visibility for AgentGuard",
+  "version": "0.1.0",
+  "publisher": "agentguard",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "workspaceContains:.agentguard",
+    "workspaceContains:agentguard.yaml"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "agentguard",
+          "title": "AgentGuard",
+          "icon": "$(shield)"
+        }
+      ]
+    },
+    "views": {
+      "agentguard": [
+        {
+          "id": "agentguard.runStatus",
+          "name": "Run Status"
+        },
+        {
+          "id": "agentguard.runHistory",
+          "name": "Run History"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "agentguard.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "AgentGuard"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "agentguard.refresh",
+          "when": "view == agentguard.runStatus || view == agentguard.runHistory",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./tsconfig.json",
+    "watch": "tsc -watch -p ./tsconfig.json",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.9.3"
+  }
+}
