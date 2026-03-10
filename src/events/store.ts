@@ -1,7 +1,6 @@
 // Event store interface and in-memory reference implementation.
 // No DOM, no Node.js APIs — pure domain logic.
-//
-// TODO(roadmap): Phase 4 — File-based event store (.agentguard/events/)
+// File-based persistence: see src/cli/file-event-store.ts
 
 import type { DomainEvent, EventFilter, EventStore, ValidationResult } from '../core/types.js';
 import { validateEvent } from './schema.js';

@@ -76,7 +76,7 @@ Build the governance runtime that evaluates agent actions against policies and i
 
 Implement durable event storage and deterministic replay.
 
-- [x] File-based event store (`src/events/store.ts`)
+- [x] File-based event store (`src/cli/file-event-store.ts`)
 - [x] Event stream serialization (NDJSON/JSONL)
 - [x] Session metadata (run ID, timestamps)
 - [x] Execution event log (`src/core/execution-log/`)
