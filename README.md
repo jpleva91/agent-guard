@@ -224,6 +224,7 @@ src/
 ├── kernel/                 # Governed action kernel
 │   ├── kernel.ts           # Orchestrator (propose → evaluate → execute → emit)
 │   ├── aab.ts              # Action Authorization Boundary (normalization)
+│   ├── blast-radius.ts     # Weighted blast radius computation engine
 │   ├── decision.ts         # Runtime assurance engine
 │   ├── monitor.ts          # Escalation state machine
 │   ├── evidence.ts         # Evidence pack generation

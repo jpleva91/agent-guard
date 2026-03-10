@@ -252,7 +252,7 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 
 **Test structure:**
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (`tests/ts/*.test.ts`): 49 files using vitest
+- **TypeScript tests** (`tests/ts/*.test.ts`): 50 files using vitest
 - **Coverage areas**: adapters, kernel (AAB, engine, monitor, blast radius), CLI commands, decision records, domain models, events, evidence packs, execution log, invariants, JSONL persistence, plugins (discovery, registry, validation), policy evaluation (including pack loader), renderers, replay (engine, comparator, processor), simulation, telemetry, TUI renderer, YAML loading
 
 ## CI/CD & Automation
