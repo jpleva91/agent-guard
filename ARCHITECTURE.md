@@ -46,7 +46,7 @@ src/
 ├── kernel/        Governed action kernel (orchestrate, normalize, decide, escalate)
 ├── events/        Canonical event model (schema, bus, store, JSONL persistence)
 ├── policy/        Policy system (evaluator, loaders)
-├── invariants/    Invariant system (6 built-in definitions, checker)
+├── invariants/    Invariant system (7 built-in definitions, checker)
 ├── adapters/      Execution adapters (file, shell, git, claude-code)
 ├── cli/           CLI entry point and commands
 ├── telemetry/     Runtime telemetry and logging
