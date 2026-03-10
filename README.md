@@ -113,7 +113,7 @@ Drop an `agentguard.yaml` in your repo root — the CLI picks it up automaticall
 | **protected-branch** | 4 (high) | Prevents direct push to main/master |
 | **no-force-push** | 4 (high) | Forbids force push |
 | **no-skill-modification** | 4 (high) | Prevents modification of .claude/skills/ files |
-| **no-scheduled-task-modification** | 4 (high) | Prevents modification of scheduled task files |
+| **no-scheduled-task-modification** | 5 (critical) | Prevents modification of scheduled task files |
 | **blast-radius-limit** | 3 (medium) | Enforces file modification limit (default 20) |
 | **test-before-push** | 3 (medium) | Requires tests pass before push |
 | **lockfile-integrity** | 2 (low) | Ensures package.json changes sync with lockfiles |
@@ -258,6 +258,14 @@ src/
 │   └── index.ts            # Module re-exports
 ├── cli/                    # CLI entry point + commands
 │   ├── bin.ts              # Main entry
+│   ├── args.ts             # Argument parsing utilities
+│   ├── colors.ts           # Terminal color helpers
+│   ├── tui.ts              # TUI renderer (terminal action stream)
+│   ├── policy-resolver.ts  # Policy file discovery and resolution
+│   ├── recorder.ts         # Event recording
+│   ├── replay.ts           # Session replay logic
+│   ├── session-store.ts    # Session management
+│   ├── file-event-store.ts # File-based event persistence
 │   └── commands/           # analytics, guard, inspect, replay, export, import, plugin, claude-hook, claude-init
 ├── telemetry/              # Runtime telemetry and logging
 └── core/                   # Shared utilities (types, actions, hash, rng, execution-log)
