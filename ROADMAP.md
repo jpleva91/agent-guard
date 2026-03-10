@@ -24,7 +24,7 @@ emit lifecycle events (JSONL audit trail)
 
 ---
 
-## Phase 0 — Architecture Clarity `COMPLETE`
+## Phase 0 — Architecture Clarity `STABLE`
 
 > **Theme:** Define the unified system model
 
@@ -37,7 +37,7 @@ Establish the conceptual architecture, documentation, and event model.
 - [x] Product positioning (`docs/product-positioning.md`)
 - [x] Rewritten README, ARCHITECTURE, ROADMAP
 
-## Phase 1 — Canonical Event Model `COMPLETE`
+## Phase 1 — Canonical Event Model `STABLE`
 
 > **Theme:** Formalize the event spine
 
@@ -52,7 +52,7 @@ Extend the event system into the formal canonical event model.
 - [x] Event store interface (persist, query, replay)
 - [x] Tests for all event types and lifecycle
 
-## Phase 2 — AgentGuard Governance Runtime `COMPLETE`
+## Phase 2 — AgentGuard Governance Runtime `STABLE`
 
 > **Theme:** Deterministic agent governance
 
@@ -70,7 +70,7 @@ Build the governance runtime that evaluates agent actions against policies and i
 - [x] Governance event emission into canonical event model
 - [x] Integration with Claude Code hook (`src/adapters/claude-code.ts`, `src/cli/commands/claude-hook.ts`)
 
-## Phase 3 — Event Persistence + Replay `COMPLETE`
+## Phase 3 — Event Persistence + Replay `STABLE`
 
 > **Theme:** Every session is replayable
 
@@ -85,7 +85,7 @@ Implement durable event storage and deterministic replay.
 - [x] Replay comparator (verify original vs replayed outcomes) (`src/kernel/replay-comparator.ts`)
 - [x] Event export/import for sharing sessions (`src/cli/commands/export.ts`, `src/cli/commands/import.ts`)
 
-## Phase 4 — Plugin Ecosystem `COMPLETE`
+## Phase 4 — Plugin Ecosystem `STABLE`
 
 > **Theme:** Extensible by design
 
@@ -97,7 +97,7 @@ Formalize the plugin system for third-party extensions.
 - [x] Plugin validation and sandboxing (`src/plugins/validator.ts`, `src/plugins/sandbox.ts`)
 - [x] Plugin registry / discovery mechanism (`src/plugins/registry.ts`, `src/plugins/discovery.ts`)
 
-## Phase 5 — Editor Integrations
+## Phase 5 — Editor Integrations `PLANNED`
 
 > **Theme:** Governance moves into the editor
 
@@ -109,9 +109,9 @@ Bring AgentGuard governance into editor environments.
 - [ ] JetBrains plugin (IntelliJ/WebStorm)
 - [ ] Claude Code deep integration (full governance kernel in hook pipeline)
 
-## Phase 6 — AI-Assisted Governance
+## Phase 6 — AI-Assisted Governance `PLANNED`
 
-> **Theme:** Explicitly deferred. Requires Phase 2 + 3.
+> **Theme:** AI-augmented governance. Requires Phase 2 + 3.
 
 AI features are intentionally placed last. The system must be useful without AI before AI is layered on.
 
@@ -120,8 +120,94 @@ AI features are intentionally placed last. The system must be useful without AI 
 - [ ] AI pattern detection (recurring violation clusters across sessions)
 - [ ] Team observability (aggregate governance reports across a dev team)
 
+## Phase 7 — Governance Extensions `PLANNED`
+
+> **Theme:** Easy contributor entry points for the governance ecosystem
+
+Create well-defined extension surfaces so the community can contribute invariants, policies, adapters, renderers, and replay processors without modifying the kernel.
+
+- [ ] Invariant packs — community invariant definitions (`src/invariants/community/`)
+- [ ] Policy packs — prebuilt policy sets for common scenarios (`policies/`)
+- [ ] Execution adapters — framework-specific adapters (`src/adapters/`)
+- [ ] Renderer plugins — custom governance visualizations (`src/renderers/`)
+- [ ] Replay processors — session analysis extensions (`src/kernel/replay-processors/`)
+- [ ] Extension authoring guide and template scaffolding
+- [ ] `agentguard init --extension <type>` scaffolding command
+
+## Phase 8 — Governance Observability `PLANNED`
+
+> **Theme:** See what governance is doing
+
+Surface governance activity through dashboards, traces, and metrics.
+
+- [ ] Timeline viewer for governance sessions (`agentguard replay --ui`)
+- [ ] Policy evaluation traces (which rule matched, why)
+- [ ] Invariant violation analytics (frequency, clustering)
+- [ ] Metrics export (Prometheus / OpenTelemetry)
+- [ ] Session comparison (diff two governance runs side-by-side)
+
+## Phase 9 — CI/CD Enforcement `PLANNED`
+
+> **Theme:** Governance gates in the delivery pipeline
+
+Integrate governance checks into CI/CD workflows as enforceable gates.
+
+- [ ] GitHub Actions integration (reusable workflow)
+- [ ] Pre-merge policy validation (block PRs that violate policy)
+- [ ] CI replay verification (replay governance session in CI)
+- [ ] Evidence packs attached to pull requests
+- [ ] Policy violation gating (fail CI on unresolved violations)
+
+## Phase 10 — Multi-Agent Governance `PLANNED`
+
+> **Theme:** Govern agent fleets, not just single agents
+
+Extend the governance model to coordinate policies across multiple agents.
+
+- [ ] Cross-agent policy definitions
+- [ ] Shared invariant state across agent sessions
+- [ ] Agent identity and role-based access control
+- [ ] Agent-to-agent action verification
+- [ ] Multi-agent escalation coordination
+
+## Phase 11 — Remote Governance Runtime `PLANNED`
+
+> **Theme:** Governance as a service
+
+Run the governance kernel as a remote service for centralized policy management.
+
+- [ ] Server mode (`agentguard serve`)
+- [ ] Remote policy distribution and sync
+- [ ] Centralized event ingestion from multiple agents
+- [ ] Multi-repo governance (single policy across repositories)
+- [ ] Team policy management dashboard
+
+## Phase 12 — Ecosystem Integrations `PLANNED`
+
+> **Theme:** Govern any agent framework
+
+Provide adapters and hooks for major agent frameworks and editors.
+
+- [ ] LangGraph adapter
+- [ ] OpenAI Agents SDK adapter
+- [ ] AutoGen adapter
+- [ ] Cursor integration
+- [ ] Generic MCP adapter
+
 ---
 
 ## Legend
 
-- **Status:** `COMPLETE` | `MOSTLY COMPLETE` | `PARTIALLY COMPLETE` | `PLANNED`
+- **Status:** `STABLE` | `EXPERIMENTAL` | `PLANNED`
+
+## Community Contributions
+
+AgentGuard is built for contributors. Here are the best places to start:
+
+- **Write an invariant pack** — Define domain-specific invariants in `src/invariants/community/`. See `src/invariants/definitions.ts` for the 8 built-in invariants as a reference.
+- **Create a policy pack** — Ship a reusable policy YAML in `policies/`. See `agentguard.yaml` for the format and `src/policy/pack-loader.ts` for the pack loading contract.
+- **Build an adapter** — Add support for a new agent framework in `src/adapters/`. Follow the pattern in `src/adapters/claude-code.ts`.
+- **Add a renderer** — Create a custom governance output renderer implementing the `GovernanceRenderer` interface in `src/renderers/types.ts`.
+- **Write a replay processor** — Build session analysis tools using the `ReplayProcessor` interface in `src/kernel/replay-processor.ts`.
+
+See the [Plugin API specification](docs/plugin-api.md) for detailed contracts.
