@@ -15,7 +15,7 @@ describe('agentguard/core/engine', () => {
     it('creates an engine with defaults', () => {
       const engine = createEngine();
       expect(engine.getPolicyCount()).toBe(0);
-      expect(engine.getInvariantCount()).toBe(6); // DEFAULT_INVARIANTS
+      expect(engine.getInvariantCount()).toBe(7); // DEFAULT_INVARIANTS
       expect(engine.getPolicyErrors()).toEqual([]);
     });
 

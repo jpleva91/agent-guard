@@ -21,6 +21,16 @@ rules:
     target: .env
     reason: Secrets files must not be modified
 
+  - action: file.write
+    effect: deny
+    target: ".claude/skills/"
+    reason: Agent skill files are protected from modification
+
+  - action: file.delete
+    effect: deny
+    target: ".claude/skills/"
+    reason: Agent skill files are protected from deletion
+
   - action: shell.exec
     effect: deny
     target: rm -rf

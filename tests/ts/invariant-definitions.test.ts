@@ -167,6 +167,55 @@ describe('no-force-push', () => {
   });
 });
 
+describe('no-skill-modification', () => {
+  const inv = findInvariant('no-skill-modification');
+
+  it('holds when target is outside .claude/skills/', () => {
+    const result = inv.check({ currentTarget: 'src/index.ts' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('fails when currentTarget is a skill file', () => {
+    const result = inv.check({ currentTarget: '.claude/skills/my-skill/SKILL.md' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('target');
+  });
+
+  it('fails when currentTarget is nested in skills directory', () => {
+    const result = inv.check({ currentTarget: '.claude/skills/ui-ux-pro-max/data/landing.csv' });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when currentCommand references .claude/skills/', () => {
+    const result = inv.check({ currentCommand: 'rm -rf .claude/skills/old-skill' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('command');
+  });
+
+  it('fails when modifiedFiles includes skill files', () => {
+    const result = inv.check({
+      modifiedFiles: ['src/index.ts', '.claude/skills/my-skill/SKILL.md'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('modified');
+  });
+
+  it('handles Windows backslash paths', () => {
+    const result = inv.check({ currentTarget: '.claude\\skills\\my-skill\\SKILL.md' });
+    expect(result.holds).toBe(false);
+  });
+
+  it('holds with empty state', () => {
+    const result = inv.check({});
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when .claude path does not include skills', () => {
+    const result = inv.check({ currentTarget: '.claude/settings.json' });
+    expect(result.holds).toBe(true);
+  });
+});
+
 describe('lockfile-integrity', () => {
   const inv = findInvariant('lockfile-integrity');
 
@@ -266,6 +315,8 @@ describe('buildSystemState', () => {
     expect(state.filesAffected).toBe(0);
     expect(state.blastRadiusLimit).toBe(20);
     expect(state.protectedBranches).toEqual(['main', 'master']);
+    expect(state.currentTarget).toBe('');
+    expect(state.currentCommand).toBe('');
   });
 
   it('populates from context values', () => {
@@ -279,11 +330,15 @@ describe('buildSystemState', () => {
       filesAffected: 5,
       blastRadiusLimit: 10,
       protectedBranches: ['production'],
+      currentTarget: 'src/index.ts',
+      currentCommand: 'npm test',
     });
     expect(state.modifiedFiles).toEqual(['a.ts', 'b.ts']);
     expect(state.targetBranch).toBe('main');
     expect(state.directPush).toBe(true);
     expect(state.filesAffected).toBe(5);
+    expect(state.currentTarget).toBe('src/index.ts');
+    expect(state.currentCommand).toBe('npm test');
   });
 
   it('computes filesAffected from modifiedFiles when not specified', () => {

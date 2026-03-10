@@ -97,6 +97,8 @@ export function createEngine(config: EngineConfig = {}): Engine {
 
       const state = buildSystemState({
         ...systemContext,
+        currentTarget: intent.target,
+        currentCommand: intent.command,
         filesAffected: intent.filesAffected || systemContext.filesAffected,
         targetBranch: intent.branch || systemContext.targetBranch,
         forcePush: intent.action === 'git.force-push',

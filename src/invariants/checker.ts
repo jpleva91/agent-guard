@@ -71,5 +71,7 @@ export function buildSystemState(context: Record<string, unknown> = {}): SystemS
       (context.filesAffected as number) || ((context.modifiedFiles as string[]) || []).length,
     blastRadiusLimit: (context.blastRadiusLimit as number) || 20,
     protectedBranches: (context.protectedBranches as string[]) || ['main', 'master'],
+    currentTarget: (context.currentTarget as string) || '',
+    currentCommand: (context.currentCommand as string) || '',
   };
 }

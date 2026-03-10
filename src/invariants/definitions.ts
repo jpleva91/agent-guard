@@ -29,6 +29,10 @@ export interface SystemState {
   simulatedBlastRadius?: number;
   /** Risk level from pre-execution simulation */
   simulatedRiskLevel?: string;
+  /** File path targeted by the current action */
+  currentTarget?: string;
+  /** Shell command of the current action (for shell.exec detection) */
+  currentCommand?: string;
 }
 
 export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
@@ -116,6 +120,40 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         holds: !state.forcePush,
         expected: 'No force push',
         actual: state.forcePush ? 'Force push detected' : 'Normal push',
+      };
+    },
+  },
+
+  {
+    id: 'no-skill-modification',
+    name: 'No Skill Modification',
+    description: 'Agent skill files (.claude/skills/) must not be modified by governed actions',
+    severity: 4,
+    check(state) {
+      const SKILL_PATTERNS = ['.claude/skills/', '.claude\\skills\\'];
+      const matchesSkillPath = (path: string) => SKILL_PATTERNS.some((p) => path.includes(p));
+
+      const target = state.currentTarget || '';
+      const targetViolation = target !== '' && matchesSkillPath(target);
+
+      const command = state.currentCommand || '';
+      const commandViolation = command !== '' && matchesSkillPath(command);
+
+      const skillFiles = (state.modifiedFiles || []).filter((f) => matchesSkillPath(f));
+
+      const holds = !targetViolation && !commandViolation && skillFiles.length === 0;
+
+      const violations: string[] = [];
+      if (targetViolation) violations.push(`target: ${target}`);
+      if (commandViolation) violations.push(`command references skills`);
+      if (skillFiles.length > 0) violations.push(`modified: ${skillFiles.join(', ')}`);
+
+      return {
+        holds,
+        expected: 'No modifications to .claude/skills/',
+        actual: holds
+          ? 'No skill files affected'
+          : `Skill modification detected (${violations.join('; ')})`,
       };
     },
   },

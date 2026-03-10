@@ -803,6 +803,10 @@ export interface SystemState {
   readonly isPush?: boolean;
   readonly testsPass?: boolean;
   readonly blastRadiusLimit?: number;
+  /** File path targeted by the current action */
+  readonly currentTarget?: string;
+  /** Shell command of the current action (for shell.exec detection) */
+  readonly currentCommand?: string;
   [key: string]: unknown;
 }
 
