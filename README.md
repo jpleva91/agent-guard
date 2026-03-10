@@ -4,7 +4,7 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![npm](https://img.shields.io/badge/npm-agentguard-cb3837.svg)](https://www.npmjs.com/package/agentguard)
+[![npm](https://img.shields.io/npm/v/@red-codes/agentguard.svg)](https://www.npmjs.com/package/@red-codes/agentguard)
 
 ---
 
@@ -46,13 +46,13 @@ Expected output:
 
 ```bash
 # Pipe an action into the kernel
-echo '{"tool":"Bash","command":"git push origin main"}' | npx agentguard guard --dry-run
+echo '{"tool":"Bash","command":"git push origin main"}' | npx @red-codes/agentguard guard --dry-run
 
 # Start the runtime with a policy file
-npx agentguard guard --policy agentguard.yaml
+npx @red-codes/agentguard guard --policy agentguard.yaml
 
 # Inspect the last run
-npx agentguard inspect --last
+npx @red-codes/agentguard inspect --last
 ```
 
 ## Why AgentGuard Exists
@@ -168,14 +168,14 @@ agentguard claude-init                    # Set up Claude Code hook integration
 agentguard help                           # Show all commands
 ```
 
-Install globally: `npm i -g agentguard`
+Install globally: `npm i -g @red-codes/agentguard`
 
 ## Claude Code Integration
 
 AgentGuard hooks into [Claude Code](https://docs.anthropic.com/en/docs/claude-code) sessions via PreToolUse/PostToolUse hooks. Every tool call is normalized into a canonical action and evaluated by the kernel.
 
 ```bash
-npx agentguard claude-init    # Set up Claude Code hooks
+npx @red-codes/agentguard claude-init    # Set up Claude Code hooks
 ```
 
 Tool call mapping:

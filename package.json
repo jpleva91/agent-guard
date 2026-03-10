@@ -1,5 +1,5 @@
 {
-  "name": "agentguard",
+  "name": "@red-codes/agentguard",
   "version": "1.0.0",
   "description": "Runtime governance for AI coding agents — policy enforcement, invariant checking, and audit trails for agent tool calls.",
   "type": "module",
