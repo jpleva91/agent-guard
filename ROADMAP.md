@@ -60,7 +60,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Action Authorization Boundary (AAB) | Implemented (2 bypass vectors) | `src/kernel/aab.ts` |
 | Policy Evaluator (two-phase deny/allow) | Implemented | `src/policy/evaluator.ts` |
 | 8 Built-in Invariants | Fully Implemented | `src/invariants/definitions.ts`, `src/invariants/checker.ts` |
-| Event Model (44 event kinds) | Comprehensive | `src/events/schema.ts` |
+| Event Model (45 event kinds) | Comprehensive | `src/events/schema.ts` |
 | JSONL Persistence | Implemented | `src/events/jsonl.ts` |
 | Simulation Engine (3 simulators + impact forecast) | Fully Implemented | `src/kernel/simulation/` |
 | Blast Radius Computation | Implemented | `src/kernel/blast-radius.ts` |
@@ -76,7 +76,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Cross-session Analytics (aggregation, clustering, trends) | Implemented | `src/analytics/` |
 | Plugin Ecosystem (discovery, registry, validation) | Implemented | `src/plugins/` |
 | Renderer Plugin System | Implemented | `src/renderers/` |
-| CLI (guard, inspect, events, replay, export, import, simulate) | Implemented | `src/cli/` |
+| CLI (guard, inspect, events, replay, export, import, simulate, analytics, plugin, claude-hook, claude-init) | Implemented | `src/cli/` |
 | Claude Code Hook Integration | Implemented | `src/adapters/claude-code.ts` |
 | VS Code Extension (sidebar panels, event reader) | Implemented | `vscode-extension/` |
 | Policy Pack Loader | Implemented | `src/policy/pack-loader.ts` |
@@ -105,7 +105,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | AAB Reference Monitor | Implemented | 2 bypass vectors to close |
 | Policy Evaluator | Implemented | Production |
 | 8 Built-in Invariants | Fully Implemented | Production |
-| Event Model (44 kinds) | Comprehensive | Production |
+| Event Model (45 kinds) | Comprehensive | Production |
 | Simulation & Forecasting | Fully Implemented | Production |
 | Escalation State Machine | Implemented | Functional (events not persisted) |
 | Cross-session Analytics | Implemented | Functional (forensic only) |
