@@ -88,3 +88,4 @@
 {"timestamp":"2026-03-10T12:12:13.299Z","agent":"claude-code","run_id":"hook_1773144733297_l76l2f","syscall":"file.read","target":"**/*.ts","capability":"default-policy","policy_result":"allow","invariant_result":"pass"}
 {"timestamp":"2026-03-10T12:12:13.311Z","agent":"claude-code","run_id":"hook_1773144733309_qn9sj5","syscall":"file.write","target":"/tmp/test.ts","capability":"default-policy","policy_result":"allow","invariant_result":"pass"}
 {"timestamp":"2026-03-10T12:12:13.328Z","agent":"claude-code","run_id":"hook_1773144733325_stqimo","syscall":"shell.exec","target":"echo hello","capability":"default-allow","policy_result":"allow","invariant_result":"pass"}
+{"timestamp":"2026-03-10T20:05:58.536Z","agent":"unknown","run_id":"run_1773173158526_j5irp3","syscall":"shell.exec","target":"","capability":"default-policy","policy_result":"deny","invariant_result":"pass"}

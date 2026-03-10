@@ -149,6 +149,9 @@ agentguard plugin install <path>          # Install a plugin from a local path
 agentguard plugin remove <id>            # Remove a plugin by ID
 agentguard plugin search [query]          # Search for plugins on npm
 
+# === Evidence ===
+agentguard evidence-pr                    # Generate PR governance reports
+
 # === Integration ===
 agentguard claude-init                    # Set up Claude Code hook integration
 agentguard help                           # Show all commands
@@ -258,7 +261,8 @@ src/
 │   └── index.ts            # Module re-exports
 ├── cli/                    # CLI entry point + commands
 │   ├── bin.ts              # Main entry
-│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, plugin, claude-hook, claude-init
+│   ├── evidence-summary.ts # Evidence summary generation
+│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, plugin, claude-hook, claude-init, evidence-pr
 ├── telemetry/              # Runtime telemetry and logging
 └── core/                   # Shared utilities (types, actions, hash, rng, execution-log)
 
