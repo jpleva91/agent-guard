@@ -4,10 +4,7 @@ import { analyze } from '../../analytics/engine.js';
 import { toMarkdown, toJson, toTerminal } from '../../analytics/reporter.js';
 import type { StorageConfig } from '../../storage/types.js';
 
-export async function analytics(
-  args: string[],
-  storageConfig?: StorageConfig
-): Promise<number> {
+export async function analytics(args: string[], storageConfig?: StorageConfig): Promise<number> {
   const format = parseFormat(args);
   const baseDir = parseBaseDir(args);
   const minClusterSize = parseMinCluster(args);

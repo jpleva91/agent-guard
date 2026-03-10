@@ -22,7 +22,14 @@ export function createSqliteEventStore(db: Database.Database, runId?: string): E
   return {
     append(event: DomainEvent): void {
       const rid = runId ?? extractRunId(event) ?? 'unknown';
-      insertStmt.run(event.id, rid, event.kind, event.timestamp, event.fingerprint, JSON.stringify(event));
+      insertStmt.run(
+        event.id,
+        rid,
+        event.kind,
+        event.timestamp,
+        event.fingerprint,
+        JSON.stringify(event)
+      );
     },
 
     query(filter: EventFilter = {}): DomainEvent[] {
@@ -59,9 +66,9 @@ export function createSqliteEventStore(db: Database.Database, runId?: string): E
       }
 
       // Find the event's timestamp, then return all events from that point
-      const anchor = db
-        .prepare('SELECT timestamp FROM events WHERE id = ?')
-        .get(fromId) as { timestamp: number } | undefined;
+      const anchor = db.prepare('SELECT timestamp FROM events WHERE id = ?').get(fromId) as
+        | { timestamp: number }
+        | undefined;
       if (!anchor) return [];
 
       const rows = db
@@ -90,14 +97,7 @@ export function createSqliteEventStore(db: Database.Database, runId?: string): E
         for (const line of lines) {
           const event = JSON.parse(line) as DomainEvent;
           const rid = runId ?? extractRunId(event) ?? 'unknown';
-          insertStmt.run(
-            event.id,
-            rid,
-            event.kind,
-            event.timestamp,
-            event.fingerprint,
-            line
-          );
+          insertStmt.run(event.id, rid, event.kind, event.timestamp, event.fingerprint, line);
           loaded++;
         }
         return loaded;
@@ -110,16 +110,18 @@ export function createSqliteEventStore(db: Database.Database, runId?: string): E
 /** List all distinct run IDs, most recent first */
 export function listRunIds(db: Database.Database): string[] {
   const rows = db
-    .prepare('SELECT run_id, MAX(timestamp) as max_ts FROM events GROUP BY run_id ORDER BY max_ts DESC')
+    .prepare(
+      'SELECT run_id, MAX(timestamp) as max_ts FROM events GROUP BY run_id ORDER BY max_ts DESC'
+    )
     .all() as { run_id: string }[];
   return rows.map((r) => r.run_id);
 }
 
 /** Get the most recent run ID */
 export function getLatestRunId(db: Database.Database): string | null {
-  const row = db
-    .prepare('SELECT run_id FROM events ORDER BY timestamp DESC LIMIT 1')
-    .get() as { run_id: string } | undefined;
+  const row = db.prepare('SELECT run_id FROM events ORDER BY timestamp DESC LIMIT 1').get() as
+    | { run_id: string }
+    | undefined;
   return row?.run_id ?? null;
 }
 
