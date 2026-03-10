@@ -126,19 +126,34 @@ npm run format
 
 Report format result (clean or issue count).
 
-### 8. Check Telemetry Directories
+### 8. Check Telemetry Infrastructure
 
 Verify telemetry output paths exist:
 
 ```bash
 ls -d .agentguard/events/ 2>/dev/null && echo "Events dir: OK" || echo "MISSING: .agentguard/events/"
+ls -d .agentguard/decisions/ 2>/dev/null && echo "Decisions dir: OK" || echo "MISSING: .agentguard/decisions/"
 ls -d logs/ 2>/dev/null && echo "Logs dir: OK" || echo "MISSING: logs/"
 ```
 
 Create missing directories:
 
 ```bash
-mkdir -p .agentguard/events logs
+mkdir -p .agentguard/events .agentguard/decisions logs
+```
+
+Verify git hooks are configured for telemetry auto-staging:
+
+```bash
+git config core.hooksPath 2>/dev/null && echo "Git hooks path: OK" || echo "MISSING: core.hooksPath not set"
+ls hooks/pre-commit 2>/dev/null && echo "Pre-commit hook: OK" || echo "MISSING: hooks/pre-commit"
+ls hooks/post-commit 2>/dev/null && echo "Post-commit hook: OK" || echo "MISSING: hooks/post-commit"
+```
+
+If `core.hooksPath` is not set to `hooks`, configure it:
+
+```bash
+git config core.hooksPath hooks
 ```
 
 ### 9. Generate Health Report
@@ -162,7 +177,9 @@ Compile results into a structured report:
 | JS tests | OK/FAIL | N pass / N fail |
 | Lint | OK/WARN | clean / N errors |
 | Format | OK/WARN | clean / N issues |
-| Telemetry dirs | OK/CREATED | present / created |
+| Telemetry dirs | OK/CREATED | events: yes/no, decisions: yes/no, logs: yes/no |
+| Git hooks path | OK/WARN | core.hooksPath: hooks / not set |
+| Pre-commit hook | OK/WARN | present / missing |
 ```
 
 ### 10. Create Issue (if problems found)

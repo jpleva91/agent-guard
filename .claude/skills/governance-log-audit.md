@@ -16,10 +16,11 @@ Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is a
 
 ```bash
 ls -la .agentguard/events/*.jsonl 2>/dev/null
+ls -la .agentguard/decisions/*.jsonl 2>/dev/null
 ls -la logs/runtime-events.jsonl 2>/dev/null
 ```
 
-If no log files exist, report "No governance logs found — nothing to audit" and STOP.
+If no log files exist in any of these locations, report "No governance logs found — nothing to audit" and STOP.
 
 ### 3. Count Events by Type
 
@@ -83,7 +84,29 @@ cat .agentguard/events/*.jsonl 2>/dev/null | grep -i "escalat\|lockdown" | tail 
 
 If any LOCKDOWN events exist, this is a **CRITICAL** finding.
 
-### 7. Generate Report
+### 7. Analyze Decision Records
+
+Decision records in `.agentguard/decisions/` contain richer governance data than raw events. Cross-reference with the aggregated telemetry:
+
+```bash
+cat .agentguard/decisions/*.jsonl 2>/dev/null | grep '"outcome":"deny"' | head -20
+cat logs/runtime-events.jsonl 2>/dev/null | grep '"policy_result":"deny"' | head -20
+cat logs/runtime-events.jsonl 2>/dev/null | grep '"invariant_result":"fail"' | head -20
+```
+
+Count total telemetry records and denied actions from the aggregated log:
+
+```bash
+wc -l logs/runtime-events.jsonl 2>/dev/null || echo 0
+cat logs/runtime-events.jsonl 2>/dev/null | grep -c '"policy_result":"deny"' || echo 0
+```
+
+Look for:
+- **Policy gaps**: actions allowed by default (`"capability":"default-allow"`) that should have explicit policy rules
+- **Invariant failures**: decision records where `invariant_result` is `fail` (potential safety issues)
+- **Agent patterns**: which agents (`claude-code`, etc.) trigger the most denials
+
+### 8. Generate Report
 
 Compile the audit findings into a structured report:
 
@@ -91,7 +114,7 @@ Compile the audit findings into a structured report:
 ## Governance Log Audit Report
 
 **Date**: <timestamp>
-**Log files analyzed**: <count>
+**Log files analyzed**: <count> (events: N, decisions: N, telemetry: N lines)
 **Total events**: <N>
 
 ### Event Summary
@@ -106,6 +129,15 @@ Compile the audit findings into a structured report:
 | ActionEscalated | N |
 | BlastRadiusExceeded | N |
 
+### Telemetry Summary
+
+| Metric | Value |
+|--------|-------|
+| Total telemetry records | N |
+| Denied actions (telemetry) | N |
+| Default-allow actions | N |
+| Invariant failures | N |
+
 ### Health Metrics
 
 | Metric | Value | Status |
@@ -113,6 +145,7 @@ Compile the audit findings into a structured report:
 | Denial rate | X% | OK/WARNING/CRITICAL |
 | Invariant violation rate | X% | OK/WARNING |
 | Escalation events | N | OK/WARNING |
+| Default-allow ratio | X% | OK/WARNING |
 
 ### Patterns Detected
 
@@ -123,7 +156,7 @@ Compile the audit findings into a structured report:
 <Actionable recommendations based on findings>
 ```
 
-### 8. Create or Update Issue (if actionable)
+### 9. Create or Update Issue (if actionable)
 
 If any WARNING or CRITICAL findings exist, check for an existing audit issue:
 
@@ -152,7 +185,7 @@ gh issue create \
   --label "source:governance-audit" --label "priority:high"
 ```
 
-### 9. Summary
+### 10. Summary
 
 Report the audit findings to the console, including:
 - Total events analyzed

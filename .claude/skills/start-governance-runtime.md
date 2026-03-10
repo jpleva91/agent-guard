@@ -26,19 +26,34 @@ This writes both PreToolUse (governance enforcement for all tools) and PostToolU
 
 If installation fails, STOP. Do not proceed with development work without governance.
 
-### 3. Verify Telemetry Directories
+### 3. Verify Git Hooks Path
+
+Ensure git is configured to use the repo's `hooks/` directory (contains `pre-commit` for auto-staging telemetry and `post-commit` for dev activity tracking):
+
+```bash
+git config core.hooksPath 2>/dev/null || echo "NOT SET"
+```
+
+If not set to `hooks`, configure it:
+
+```bash
+git config core.hooksPath hooks
+```
+
+### 4. Verify Telemetry Directories
 
 Ensure the telemetry output paths exist:
 
 ```bash
-mkdir -p .agentguard/events logs
+mkdir -p .agentguard/events .agentguard/decisions logs
 ```
 
 These directories are used by:
 - `.agentguard/events/<runId>.jsonl` — per-run governance event logs
+- `.agentguard/decisions/<runId>.jsonl` — per-run governance decision records
 - `logs/runtime-events.jsonl` — aggregated telemetry records
 
-### 4. Verify Policy File
+### 5. Verify Policy File
 
 Check that a governance policy is loaded:
 
@@ -48,14 +63,15 @@ ls agentguard.yaml 2>/dev/null || ls agentguard.yml 2>/dev/null || ls .agentguar
 
 If a policy file exists, governance rules are active. If no policy file is found, warn: "No policy file found — governance running in fail-open mode (allow all)."
 
-### 5. Confirm Governance Active
+### 6. Confirm Governance Active
 
 Report the status:
 
 ```
 Governance runtime active.
 PreToolUse hooks: registered
-Telemetry paths: ready
+Git hooks path: hooks/
+Telemetry paths: ready (events, decisions, logs)
 Policy: <filename or "none (fail-open)">
 ```
 
