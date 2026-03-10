@@ -216,6 +216,84 @@ describe('no-skill-modification', () => {
   });
 });
 
+describe('no-scheduled-task-modification', () => {
+  const inv = findInvariant('no-scheduled-task-modification');
+
+  it('holds when target is outside .claude/scheduled-tasks/', () => {
+    const result = inv.check({ currentTarget: 'src/index.ts' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('fails when currentTarget is a scheduled task file', () => {
+    const result = inv.check({
+      currentTarget: '.claude/scheduled-tasks/daily-sync/SKILL.md',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('target');
+  });
+
+  it('fails when currentTarget is nested in scheduled-tasks directory', () => {
+    const result = inv.check({
+      currentTarget: '.claude/scheduled-tasks/check-inbox/config.json',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when currentCommand references .claude/scheduled-tasks/', () => {
+    const result = inv.check({
+      currentCommand: 'rm -rf .claude/scheduled-tasks/old-task',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('command');
+  });
+
+  it('fails when modifiedFiles includes scheduled task files', () => {
+    const result = inv.check({
+      modifiedFiles: ['src/index.ts', '.claude/scheduled-tasks/daily-sync/SKILL.md'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('modified');
+  });
+
+  it('handles Windows backslash paths', () => {
+    const result = inv.check({
+      currentTarget: '.claude\\scheduled-tasks\\daily-sync\\SKILL.md',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('holds with empty state', () => {
+    const result = inv.check({});
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when .claude path does not include scheduled-tasks', () => {
+    const result = inv.check({ currentTarget: '.claude/settings.json' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when path contains "scheduled" but not "scheduled-tasks/"', () => {
+    const result = inv.check({ currentTarget: 'src/scheduled-handler.ts' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('detects all three violation vectors simultaneously', () => {
+    const result = inv.check({
+      currentTarget: '.claude/scheduled-tasks/task-a/SKILL.md',
+      currentCommand: 'cat .claude/scheduled-tasks/task-b/SKILL.md',
+      modifiedFiles: ['.claude/scheduled-tasks/task-c/SKILL.md'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('target');
+    expect(result.actual).toContain('command');
+    expect(result.actual).toContain('modified');
+  });
+
+  it('has severity 5 (highest — DENY intervention)', () => {
+    expect(inv.severity).toBe(5);
+  });
+});
+
 describe('lockfile-integrity', () => {
   const inv = findInvariant('lockfile-integrity');
 

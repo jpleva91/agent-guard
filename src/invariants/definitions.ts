@@ -159,6 +159,42 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
   },
 
   {
+    id: 'no-scheduled-task-modification',
+    name: 'No Scheduled Task Modification',
+    description:
+      'Agents must not modify scheduled task definitions (.claude/scheduled-tasks/) directly',
+    severity: 5,
+    check(state) {
+      const SCHEDULED_TASK_PATTERNS = ['.claude/scheduled-tasks/', '.claude\\scheduled-tasks\\'];
+      const matchesScheduledPath = (path: string) =>
+        SCHEDULED_TASK_PATTERNS.some((p) => path.includes(p));
+
+      const target = state.currentTarget || '';
+      const targetViolation = target !== '' && matchesScheduledPath(target);
+
+      const command = state.currentCommand || '';
+      const commandViolation = command !== '' && matchesScheduledPath(command);
+
+      const scheduledFiles = (state.modifiedFiles || []).filter((f) => matchesScheduledPath(f));
+
+      const holds = !targetViolation && !commandViolation && scheduledFiles.length === 0;
+
+      const violations: string[] = [];
+      if (targetViolation) violations.push(`target: ${target}`);
+      if (commandViolation) violations.push(`command references scheduled tasks`);
+      if (scheduledFiles.length > 0) violations.push(`modified: ${scheduledFiles.join(', ')}`);
+
+      return {
+        holds,
+        expected: 'No modifications to .claude/scheduled-tasks/',
+        actual: holds
+          ? 'No scheduled task files affected'
+          : `Scheduled task modification detected (${violations.join('; ')})`,
+      };
+    },
+  },
+
+  {
     id: 'lockfile-integrity',
     name: 'Lockfile Integrity',
     description: 'Package lockfiles must stay in sync with manifests',
