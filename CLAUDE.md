@@ -84,7 +84,7 @@ src/
 │   ├── replay.ts           # Session replay logic
 │   ├── session-store.ts    # Session management
 │   ├── file-event-store.ts # File-based event persistence
-│   └── commands/           # guard, inspect, replay, export, import, simulate, plugin, claude-hook, claude-init
+│   └── commands/           # guard, inspect, replay, export, import, plugin, claude-hook, claude-init
 ├── plugins/                # Plugin ecosystem
 │   ├── discovery.ts        # Plugin discovery mechanism
 │   ├── registry.ts         # Plugin registry
@@ -124,7 +124,7 @@ vscode-extension/              # VS Code extension
 
 tests/
 ├── *.test.js               # 14 JS test files (custom zero-dependency harness)
-└── ts/*.test.ts            # 52 TS test files (vitest)
+└── ts/*.test.ts            # 51 TS test files (vitest)
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
 docs/                       # System documentation (architecture, event model, specs)
 hooks/                      # Git hooks (post-commit, post-merge)
@@ -192,7 +192,6 @@ Each top-level directory maps to a single architectural concept:
 - `agentguard events [runId]` — Show raw event stream for a run
 - `agentguard export <runId>` — Export a governance session to a portable JSONL file
 - `agentguard import <file>` — Import a governance session from a portable JSONL file
-- `agentguard simulate <action>` — Simulate an action and display predicted impact without executing
 - `agentguard replay` — Replay a governance session timeline
 - `agentguard plugin list|install|remove|search` — Manage plugins
 - `agentguard claude-hook` — Handle Claude Code PreToolUse/PostToolUse hook events
@@ -261,7 +260,7 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 
 **Test structure:**
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (`tests/ts/*.test.ts`): 52 files using vitest
+- **TypeScript tests** (`tests/ts/*.test.ts`): 51 files using vitest
 - **Coverage areas**: adapters, kernel (AAB, engine, monitor, blast radius, integration, e2e pipeline), CLI commands, decision records, domain models, events, evidence packs, execution log, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, validation), policy evaluation (including pack loader), renderers, replay (engine, comparator, processor), simulation, telemetry, TUI renderer, VS Code event reader, YAML loading
 
 ## CI/CD & Automation

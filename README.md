@@ -22,24 +22,9 @@ agent proposes action  →  policy evaluated  →  invariants checked  →  allo
 git clone https://github.com/jpleva91/agent-guard.git
 cd agent-guard
 npm install && npm run build:ts
-npm run demo:guard
-```
 
-Expected output:
-
-```
-  AgentGuard Runtime Active
-  policy: Demo Safety Policy | invariants: 8 active
-
-  ✓ file.read src/auth/service.ts (dry-run)
-  ✓ file.write src/auth/service.ts (dry-run)
-  ✓ shell.exec npm test (dry-run)
-  ✗ git.push main → DENIED (demo-policy)
-    Protected branch — use a PR
-  ✗ file.write .env → DENIED (demo-policy)
-    Secrets files must not be modified
-
-  3 allowed, 2 denied, 15 events emitted
+# Evaluate a sample action against the default policy
+echo '{"tool":"Bash","command":"git push origin main"}' | npx agentguard guard --dry-run
 ```
 
 **Try it on your own repo:**
@@ -147,11 +132,6 @@ agentguard guard --dry-run                # Evaluate without executing actions
 agentguard inspect [runId]                # Show action graph and decisions for a run
 agentguard inspect --last                 # Inspect most recent run
 agentguard events [runId]                 # Show raw event stream for a run
-
-# === Simulation ===
-agentguard simulate <action-json>         # Simulate action and show predicted impact
-agentguard simulate --action <type>       # Simulate by action type and flags
-agentguard simulate ... --json            # Output raw JSON result
 
 # === Portability ===
 agentguard export <runId>                 # Export a governance session to JSONL
@@ -270,7 +250,7 @@ src/
 │   └── index.ts            # Module re-exports
 ├── cli/                    # CLI entry point + commands
 │   ├── bin.ts              # Main entry
-│   └── commands/           # guard, inspect, replay, export, import, simulate, plugin, claude-hook, claude-init
+│   └── commands/           # guard, inspect, replay, export, import, plugin, claude-hook, claude-init
 ├── telemetry/              # Runtime telemetry and logging
 └── core/                   # Shared utilities (types, actions, hash, rng, execution-log)
 
