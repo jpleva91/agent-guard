@@ -1,6 +1,18 @@
 # Skill: Observability Review
 
-Analyze runtime telemetry, governance event patterns, CI pipeline trends, and build metrics to surface operational health signals. Detect anomalies, regressions, and trends that other agents cannot see. Publish an Observability Report. Designed for daily scheduled execution.
+Analyze runtime telemetry, governance event patterns, decision records, risk score trends, CI pipeline trends, and build metrics to surface operational health signals. Detect anomalies, regressions, and trends that other agents cannot see. Publish an Observability Report. Designed for daily scheduled execution.
+
+## Autonomy Directive
+
+This skill runs as an **unattended scheduled task**. No human is present to answer questions.
+
+- **NEVER pause to ask for clarification or confirmation** — make your best judgment and proceed
+- **NEVER use AskUserQuestion or any interactive prompt** — all decisions must be made autonomously
+- If data is unavailable or ambiguous, proceed with available data and note limitations
+- If governance activation fails, log the failure and **STOP**
+- If `gh` CLI fails, log the error and **STOP**
+- Default to the **safest option** in every ambiguous situation
+- When in doubt about anomaly severity, round **up** (flag rather than ignore)
 
 ## Prerequisites
 
@@ -12,7 +24,23 @@ Run `start-governance-runtime` first. All scheduled skills must operate under go
 
 Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is active and intercepting all tool calls. If governance cannot be activated, STOP — do not proceed without governance.
 
-### 2. Collect Governance Telemetry
+### 2. Collect Cross-Session Analytics
+
+Use the AgentGuard analytics engine for aggregated cross-session data:
+
+```bash
+npx agentguard analytics --format json 2>/dev/null | head -200
+```
+
+Extract:
+- **Per-session risk scores** (trend over time)
+- **Violation clustering** by dimension (action type, branch, target)
+- **Cross-session denial rate** trend
+- **Top violation patterns** (recurring invariant or policy violations)
+
+If analytics is not available, fall back to manual aggregation in Step 3.
+
+### 3. Collect Governance Telemetry
 
 Read the runtime telemetry log:
 
@@ -38,7 +66,7 @@ Aggregate:
 - **Denial rate**: deny / total as percentage (last 24h and 7d)
 - **Invariant failure rate**: fail / total as percentage (last 24h and 7d)
 
-### 3. Analyze Governance Decision Logs
+### 4. Analyze Decision Records and Risk Scores
 
 List available decision log files:
 
@@ -61,8 +89,24 @@ Parse each `GovernanceDecisionRecord` and aggregate:
 - **Policy matches**: Group by `policy.matchedPolicyName`, count occurrences
 - **Execution success rate**: executed actions that succeeded vs. failed
 - **Average decision-to-execution time**: From `execution.durationMs` where available
+- **Per-session risk scores**: Extract risk score from each session's decision records
 
-### 4. Detect Anomalies
+### 5. Check Tracepoint Data
+
+Look for kernel-level tracepoint data for performance and pipeline health:
+
+```bash
+grep "tracepoint\|trace_kind" logs/runtime-events.jsonl 2>/dev/null | tail -50
+```
+
+If tracepoint data is available, extract:
+- **Kernel pipeline latency**: Time spent in aab.normalize, policy.evaluate, invariant.check stages
+- **Slow operations**: Any tracepoint with duration > 100ms
+- **Adapter dispatch failures**: Failed adapter.dispatch tracepoints
+
+If no tracepoint data exists, note "Tracepoint data: not available" and skip.
+
+### 6. Detect Anomalies
 
 Compare recent patterns (last 24h) against baseline (last 7d) to detect:
 
@@ -81,11 +125,16 @@ Compare recent patterns (last 24h) against baseline (last 7d) to detect:
 - Invariant violation rate >5% (high violation signal)
 - Repeated violations of the same invariant (>3 in 24h)
 
+**Risk score anomalies**:
+- Per-session risk score >70 (high risk session)
+- Risk score trend increasing over last 5 sessions
+- Any session with risk level "critical"
+
 **Volume anomalies**:
 - Event volume dropped >50% vs. 7-day daily average (agents may be stalled)
 - Event volume spiked >200% vs. 7-day daily average (unusual activity)
 
-### 5. Analyze CI Pipeline Health
+### 7. Analyze CI Pipeline Health
 
 Fetch recent CI workflow runs:
 
@@ -110,7 +159,7 @@ Identify:
 - **Failure hotspots**: Which CI jobs fail most often (lint, typecheck, test, build)
 - **Flaky patterns**: Same branch/commit with both pass and fail results
 
-### 6. Analyze Build Metrics
+### 8. Analyze Build Metrics
 
 Check the current build output:
 
@@ -134,9 +183,9 @@ Record:
 - **Vulnerability count**: By severity (critical, high, moderate, low)
 - **Outdated packages**: Count and list of outdated dependencies
 
-### 7. Analyze Agent Activity Patterns
+### 9. Analyze Agent Activity Patterns
 
-From the telemetry data (Step 2), analyze per-agent behavior:
+From the telemetry data (Step 3), analyze per-agent behavior:
 
 For each unique agent in the telemetry:
 - **Action volume**: Total actions in last 24h
@@ -151,7 +200,7 @@ Detect:
 - **Permission-seeking agents**: Agents with denial rate >30%
 - **Narrow-scope agents**: Agents that only touch 1-2 file paths repeatedly
 
-### 8. Check Scheduled Agent Health
+### 10. Check Scheduled Agent Health
 
 Verify all scheduled agents are running:
 
@@ -167,7 +216,7 @@ For each agent, check if it has produced output recently:
 - **Stale**: Output issue exists but is older than 48h
 - **Missing**: No output issue found (agent may not be running)
 
-### 9. Generate Observability Report
+### 11. Generate Observability Report
 
 Compose a structured report in markdown:
 
@@ -178,16 +227,24 @@ Compose a structured report in markdown:
 
 **System Health Dashboard**:
 | Metric | Last 24h | 7-Day Avg | Trend | Status |
-Showing: event volume, denial rate, invariant failure rate, CI pass rate, escalation level.
+Showing: event volume, denial rate, invariant failure rate, CI pass rate, escalation level, risk score.
 
 Use status indicators:
 - `HEALTHY` — metric within normal range
 - `WARNING` — metric approaching threshold
 - `CRITICAL` — metric exceeds threshold or anomaly detected
 
+**Risk Score Trend**:
+| Session | Date | Risk Score | Risk Level |
+Showing per-session risk scores for the last 5-10 sessions, with trend arrow.
+
 **Governance Event Summary** (table):
 | Action Type | Total | Allowed | Denied | Denial Rate |
 Broken down by syscall type.
+
+**Decision Record Summary** (table):
+| Metric | Value |
+Showing: total decisions, deny outcomes, intervention types, escalation levels observed.
 
 **Anomalies Detected** (list):
 Each anomaly with:
@@ -226,6 +283,7 @@ Showing liveness for all scheduled agents.
 - 7-day governance activity trend (daily totals)
 - Denial rate trend (is it increasing, decreasing, or stable?)
 - CI pass rate trend
+- Risk score trend (per-session over time)
 
 **Recommendations** (numbered, max 5):
 Top 5 operational actions prioritized by severity:
@@ -235,7 +293,7 @@ Top 5 operational actions prioritized by severity:
 4. Policy gaps to address
 5. Infrastructure improvements
 
-### 10. Publish Observability Report
+### 12. Publish Observability Report
 
 Check if a previous observability report exists:
 
@@ -258,9 +316,9 @@ gh issue create \
   --label "source:observability-agent" --label "status:pending"
 ```
 
-### 11. Raise Alerts for Critical Anomalies
+### 13. Raise Alerts for Critical Anomalies
 
-If any CRITICAL anomalies were detected (LOCKDOWN events, sustained high denial rate, CI completely broken), create an alert issue:
+If any CRITICAL anomalies were detected (LOCKDOWN events, sustained high denial rate, CI completely broken, critical risk score), create an alert issue:
 
 ```bash
 gh issue list --state open --label "source:observability-agent" --label "priority:critical" --json number,title
@@ -277,11 +335,12 @@ gh issue create \
 
 Cap at **1 alert issue per run**.
 
-### 12. Summary
+### 14. Summary
 
 Report:
 - **Governance events (24h)**: N total, N% denial rate, N% invariant failure rate
 - **Escalation level**: NORMAL / ELEVATED / HIGH / LOCKDOWN
+- **Risk score**: <N>/100 (<risk level>)
 - **CI pass rate**: N% (trend: improving / stable / declining)
 - **Anomalies detected**: N (N critical, N warning, N info)
 - **Scheduled agents healthy**: N of M

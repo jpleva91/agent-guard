@@ -8,6 +8,7 @@ import { RunStatusProvider } from './providers/run-status-provider';
 import { RunHistoryProvider } from './providers/run-history-provider';
 import { RecentEventsProvider } from './providers/recent-events-provider';
 import { NotificationService } from './services/notification-service';
+import { DiagnosticsService } from './services/diagnostics-service';
 import { getEventsDir } from './services/event-reader';
 
 let fileWatcher: fs.FSWatcher | undefined;
@@ -33,12 +34,23 @@ export function activate(context: vscode.ExtensionContext): void {
   const notificationService = new NotificationService(workspaceRoot);
   context.subscriptions.push(notificationService);
 
+  // Register diagnostics service for inline violation indicators
+  const diagnosticsService = new DiagnosticsService(workspaceRoot);
+  context.subscriptions.push(diagnosticsService);
+
   // Register refresh command
   context.subscriptions.push(
     vscode.commands.registerCommand('agentguard.refresh', () => {
       runStatusProvider.refresh();
       runHistoryProvider.refresh();
       recentEventsProvider.refresh();
+    })
+  );
+
+  // Register clear diagnostics command
+  context.subscriptions.push(
+    vscode.commands.registerCommand('agentguard.clearDiagnostics', () => {
+      diagnosticsService.clearAll();
     })
   );
 

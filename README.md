@@ -128,6 +128,7 @@ AgentGuard tracks repeated denials and invariant violations. If an agent repeate
 # === Governance ===
 agentguard guard                          # Start governed action runtime
 agentguard guard --policy <file>          # Use a specific policy file (YAML/JSON)
+agentguard guard --policy a --policy b   # Compose multiple policies with precedence
 agentguard guard --dry-run                # Evaluate without executing actions
 agentguard inspect [runId]                # Show action graph and decisions for a run
 agentguard inspect --last                 # Inspect most recent run
@@ -148,6 +149,17 @@ agentguard plugin list                    # List installed plugins
 agentguard plugin install <path>          # Install a plugin from a local path
 agentguard plugin remove <id>            # Remove a plugin by ID
 agentguard plugin search [query]          # Search for plugins on npm
+
+# === Simulation ===
+agentguard simulate <action-json>         # Simulate action and show predicted impact
+agentguard simulate --action <type>       # Simulate by action type and flags
+
+# === Policy ===
+agentguard policy validate <file>        # Validate a policy file without starting the runtime
+
+# === CI/CD ===
+agentguard ci-check <session>             # Verify governance session for violations
+agentguard ci-check --last                # Check most recent run locally
 
 # === Integration ===
 agentguard claude-init                    # Set up Claude Code hook integration
@@ -226,6 +238,7 @@ src/
 │   ├── jsonl.ts            # JSONL event persistence (audit trail)
 │   └── decision-jsonl.ts   # Decision record persistence
 ├── policy/                 # Policy system
+│   ├── composer.ts         # Policy composition (multi-file merging)
 │   ├── evaluator.ts        # Rule matching engine
 │   ├── loader.ts           # Policy validation + loading
 │   ├── pack-loader.ts      # Policy pack loader (community policy sets)
@@ -238,6 +251,7 @@ src/
 │   ├── cluster.ts          # Violation clustering by dimension
 │   ├── engine.ts           # Analytics engine orchestrator
 │   ├── reporter.ts         # Output formatters (terminal, JSON, markdown)
+│   ├── risk-scorer.ts      # Per-run risk scoring engine
 │   ├── trends.ts           # Violation trend computation
 │   └── types.ts            # Analytics type definitions
 ├── adapters/               # Execution adapters
@@ -258,7 +272,7 @@ src/
 │   └── index.ts            # Module re-exports
 ├── cli/                    # CLI entry point + commands
 │   ├── bin.ts              # Main entry
-│   └── commands/           # analytics, guard, inspect, replay, export, import, plugin, claude-hook, claude-init
+│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, claude-hook, claude-init
 ├── telemetry/              # Runtime telemetry and logging
 └── core/                   # Shared utilities (types, actions, hash, rng, execution-log)
 
@@ -266,8 +280,10 @@ vscode-extension/              # VS Code extension
 ├── src/
 │   ├── extension.ts           # Sidebar panels, file watcher, notifications
 │   ├── providers/             # Tree data providers (run status, run history, recent events)
-│   └── services/              # Event reader, notification formatter + service
+│   └── services/              # Event reader, notification formatter + service, diagnostics, violation mapper
 └── package.json               # Extension manifest
+
+policies/                      # Policy packs (YAML: ci-safe, enterprise, open-source, strict)
 ```
 
 ## Run Locally

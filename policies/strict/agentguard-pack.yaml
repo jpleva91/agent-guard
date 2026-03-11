@@ -1,0 +1,98 @@
+# Strict policy pack — maximum guardrails for high-risk environments.
+# Denies all destructive operations and enforces test-before-push.
+#
+# Usage:
+#   extends: ["./policies/strict"]
+
+id: strict-pack
+name: Strict Safety Pack
+description: Maximum guardrails — deny destructive ops, enforce test-before-push
+severity: 5
+
+rules:
+  # --- Git safety ---
+  # All pushes denied — use pull requests. Branch protection also enforced by invariants.
+  - action: git.push
+    effect: deny
+    reason: All pushes denied in strict mode — use pull requests
+
+  - action: git.force-push
+    effect: deny
+    reason: Force push is never allowed in strict mode
+
+  - action: git.reset
+    effect: deny
+    reason: Git reset is destructive — denied in strict mode
+
+  - action: git.branch.delete
+    effect: deny
+    reason: Branch deletion denied in strict mode
+
+  # --- File safety ---
+  - action: file.delete
+    effect: deny
+    reason: File deletion denied in strict mode
+
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: Secrets file modification denied
+
+  - action: file.write
+    effect: deny
+    target: "*.pem"
+    reason: Certificate file modification denied
+
+  - action: file.write
+    effect: deny
+    target: "*.key"
+    reason: Private key file modification denied
+
+  # --- Shell safety ---
+  - action: shell.exec
+    effect: deny
+    target: rm -rf
+    reason: Destructive shell command denied
+
+  - action: shell.exec
+    effect: deny
+    target: "chmod 777"
+    reason: Overly permissive chmod denied
+
+  # --- Blast radius ---
+  - action: file.write
+    effect: deny
+    limit: 10
+    reason: Blast radius exceeded — max 10 files per action
+
+  # --- Package safety ---
+  - action: npm.publish
+    effect: deny
+    reason: Package publishing denied in strict mode
+
+  # --- Infrastructure ---
+  - action: infra.destroy
+    effect: deny
+    reason: Infrastructure destruction denied
+
+  - action: infra.apply
+    effect: deny
+    reason: Infrastructure changes denied in strict mode
+
+  # --- Deploy ---
+  - action: deploy.trigger
+    effect: deny
+    reason: Deployments denied in strict mode
+
+  # --- Allow safe operations ---
+  - action: file.read
+    effect: allow
+    reason: Reading is always safe
+
+  - action: test.run
+    effect: allow
+    reason: Running tests is always safe
+
+  - action: git.diff
+    effect: allow
+    reason: Viewing diffs is always safe

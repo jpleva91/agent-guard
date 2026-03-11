@@ -1,0 +1,130 @@
+# AgentGuard Governance — Reusable GitHub Actions workflow
+#
+# Verifies governance session data in CI. Can be called from other repositories
+# to enforce AgentGuard governance policies as a CI gate.
+#
+# Usage (from another repo's workflow):
+#
+#   jobs:
+#     governance:
+#       uses: jpleva91/agent-guard/.github/workflows/agentguard-governance.yml@main
+#       with:
+#         session-file: .agentguard/exports/session.agentguard.jsonl
+#         fail-on-violation: true
+#
+# Usage (from the same repo):
+#
+#   jobs:
+#     governance:
+#       uses: ./.github/workflows/agentguard-governance.yml
+#       with:
+#         session-file: .agentguard/exports/session.agentguard.jsonl
+
+name: AgentGuard Governance
+
+on:
+  workflow_call:
+    inputs:
+      session-file:
+        description: >
+          Path to an exported governance session file (.agentguard.jsonl).
+          Created by running `agentguard export --last -o <path>`.
+          If omitted, the workflow will look for the most recent local run.
+        required: false
+        type: string
+        default: ''
+      policy-file:
+        description: >
+          Path to the governance policy file (YAML or JSON).
+          Used for policy validation. Defaults to agentguard.yaml.
+        required: false
+        type: string
+        default: 'agentguard.yaml'
+      fail-on-violation:
+        description: 'Fail the workflow if invariant violations are found.'
+        required: false
+        type: boolean
+        default: true
+      fail-on-denial:
+        description: 'Fail the workflow if any governance actions were denied.'
+        required: false
+        type: boolean
+        default: false
+      agentguard-version:
+        description: >
+          Version of @red-codes/agentguard to install.
+          Use "latest" for the most recent release, or pin a specific version.
+        required: false
+        type: string
+        default: 'latest'
+      node-version:
+        description: 'Node.js version to use.'
+        required: false
+        type: string
+        default: '20'
+
+jobs:
+  governance-check:
+    name: Governance Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+
+      - name: Install AgentGuard
+        run: npm install -g @red-codes/agentguard@${{ inputs.agentguard-version }}
+
+      - name: Validate policy file
+        run: |
+          if [ -f "${{ inputs.policy-file }}" ]; then
+            echo "::notice title=Policy File::Found governance policy: ${{ inputs.policy-file }}"
+          else
+            echo "::warning title=No Policy File::Governance policy not found at ${{ inputs.policy-file }}. Running in fail-open mode."
+          fi
+
+      - name: Run governance check
+        id: ci-check
+        run: |
+          ARGS=""
+
+          # Determine session source
+          if [ -n "${{ inputs.session-file }}" ] && [ -f "${{ inputs.session-file }}" ]; then
+            ARGS="${{ inputs.session-file }}"
+          elif [ -d ".agentguard/events" ] && [ "$(ls -A .agentguard/events/ 2>/dev/null)" ]; then
+            ARGS="--last"
+          else
+            echo "::notice title=No Session Data::No governance session file or local runs found. Skipping governance check."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Add failure mode flags
+          if [ "${{ inputs.fail-on-violation }}" = "true" ]; then
+            ARGS="$ARGS --fail-on-violation"
+          fi
+          if [ "${{ inputs.fail-on-denial }}" = "true" ]; then
+            ARGS="$ARGS --fail-on-denial"
+          fi
+
+          # Run the check with JSON output for structured data
+          agentguard ci-check $ARGS --json > governance-result.json 2>&1 || true
+
+          # Display the result
+          cat governance-result.json
+
+          # Run again for terminal output and annotations (GITHUB_ACTIONS is set automatically)
+          agentguard ci-check $ARGS
+
+      - name: Upload governance report
+        if: steps.ci-check.outputs.skip != 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: governance-report
+          path: governance-result.json
+          retention-days: 30

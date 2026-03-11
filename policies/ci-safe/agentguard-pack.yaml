@@ -1,0 +1,103 @@
+# CI-safe policy pack — rules tuned for automated CI/CD pipelines.
+# Allows build, test, and install operations while denying pushes and deploys.
+#
+# Usage:
+#   extends: ["./policies/ci-safe"]
+
+id: ci-safe-pack
+name: CI-Safe Pack
+description: Rules tuned for CI/CD pipelines — allow build and test, deny push and deploy
+severity: 3
+
+rules:
+  # --- No git mutations in CI ---
+  - action: git.push
+    effect: deny
+    reason: CI pipelines must not push directly
+
+  - action: git.force-push
+    effect: deny
+    reason: Force push prohibited in CI
+
+  - action: git.commit
+    effect: deny
+    reason: CI pipelines must not create commits
+
+  - action: git.reset
+    effect: deny
+    reason: Git reset prohibited in CI
+
+  - action: git.branch.create
+    effect: deny
+    reason: CI pipelines must not create branches
+
+  - action: git.branch.delete
+    effect: deny
+    reason: CI pipelines must not delete branches
+
+  - action: git.merge
+    effect: deny
+    reason: CI pipelines must not merge branches
+
+  # --- No file mutations ---
+  - action: file.write
+    effect: deny
+    reason: CI pipelines must not modify source files
+
+  - action: file.delete
+    effect: deny
+    reason: CI pipelines must not delete files
+
+  - action: file.move
+    effect: deny
+    reason: CI pipelines must not move files
+
+  # --- No publishing or deployment ---
+  - action: npm.publish
+    effect: deny
+    reason: Publishing must use dedicated release pipeline
+
+  - action: deploy.trigger
+    effect: deny
+    reason: Deployment must use dedicated deploy pipeline
+
+  - action: infra.apply
+    effect: deny
+    reason: Infrastructure changes prohibited in CI
+
+  - action: infra.destroy
+    effect: deny
+    reason: Infrastructure destruction prohibited in CI
+
+  # --- Allow read-only and test operations ---
+  - action: file.read
+    effect: allow
+    reason: Reading files for analysis is safe
+
+  - action: git.diff
+    effect: allow
+    reason: Viewing diffs for PR checks is safe
+
+  - action: git.checkout
+    effect: allow
+    reason: Checking out code for builds is safe
+
+  - action: test.run
+    effect: allow
+    reason: Running tests is the primary CI activity
+
+  - action: shell.exec
+    effect: allow
+    reason: Shell commands for build and test scripts
+
+  - action: npm.install
+    effect: allow
+    reason: Installing dependencies for builds
+
+  - action: npm.script.run
+    effect: allow
+    reason: Running NPM scripts for builds and tests
+
+  - action: http.request
+    effect: allow
+    reason: HTTP requests for API testing and health checks

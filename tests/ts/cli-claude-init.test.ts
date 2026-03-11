@@ -208,6 +208,57 @@ describe('claudeInit', () => {
     );
   });
 
+  // --- --store flag ---
+
+  it('embeds --store sqlite in hook commands when --store flag is provided', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit(['--store', 'sqlite']);
+
+    expect(writeFileSync).toHaveBeenCalledTimes(1);
+    const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
+
+    // PreToolUse command should include --store sqlite
+    expect(written.hooks.PreToolUse[0].hooks[0].command).toContain('pre --store sqlite');
+
+    // PostToolUse command should include --store sqlite
+    expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('post --store sqlite');
+  });
+
+  it('does not include --store suffix when no --store flag is provided', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit([]);
+
+    const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
+
+    // Commands should end with just 'pre' and 'post', no trailing flags
+    expect(written.hooks.PreToolUse[0].hooks[0].command).not.toContain('--store');
+    expect(written.hooks.PostToolUse[0].hooks[0].command).not.toContain('--store');
+  });
+
+  it('combines --store with --global flag', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit(['--global', '--store', 'sqlite']);
+
+    expect(writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining(join('/mock-home', '.claude', 'settings.json')),
+      expect.any(String),
+      'utf8'
+    );
+    const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
+    expect(written.hooks.PreToolUse[0].hooks[0].command).toContain('--store sqlite');
+  });
+
+  it('outputs storage backend info when --store is specified', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit(['--store', 'sqlite']);
+
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('sqlite'));
+  });
+
   it('preserves other hooks when removing', async () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(

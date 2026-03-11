@@ -46,6 +46,11 @@
         "title": "Refresh",
         "icon": "$(refresh)",
         "category": "AgentGuard"
+      },
+      {
+        "command": "agentguard.clearDiagnostics",
+        "title": "Clear Violation Indicators",
+        "category": "AgentGuard"
       }
     ],
     "menus": {
@@ -64,6 +69,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable governance notifications for policy violations and invariant violations."
+        },
+        "agentguard.diagnostics.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inline violation indicators in the editor. Shows invariant violations and policy denials in the Problems panel and as inline decorations."
         },
         "agentguard.notifications.severityOverrides": {
           "type": "object",

@@ -1,6 +1,17 @@
 # Skill: Implement Issue
 
-Execute the implementation work described in the claimed GitHub issue. Reads the issue for requirements, respects file scope, follows coding conventions, and commits changes.
+Execute the implementation work described in the claimed GitHub issue. Reads the issue for requirements, respects file scope, validates changes against governance policy via simulation, follows coding conventions, and commits changes.
+
+## Autonomy Directive
+
+This skill runs as an **unattended scheduled task**. No human is present to answer questions.
+
+- **NEVER pause to ask for clarification or confirmation** — make your best judgment and proceed
+- **NEVER use AskUserQuestion or any interactive prompt** — all decisions must be made autonomously
+- If requirements are ambiguous, implement the most conservative interpretation and note assumptions in the commit message
+- If governance activation fails, log the failure and **STOP** — do not ask what to do
+- If a policy simulation denies a file change, **skip that file** and note the denial in the commit message
+- Default to the **safest option** in every ambiguous situation
 
 ## Prerequisites
 
@@ -44,7 +55,31 @@ If a **File Scope** section exists in the issue, only modify files matching the 
 
 If a **Protected Paths** section exists, do NOT modify those files. The kernel will deny the action via policy, but avoid triggering denials proactively.
 
-### 4. Type-Check
+### 4. Pre-Commit Policy Simulation
+
+Before committing, validate each modified file against governance policy:
+
+```bash
+git diff --name-only HEAD
+```
+
+For each modified file, run simulation:
+
+```bash
+npx agentguard simulate --action file.write --target <file> --policy agentguard.yaml --json 2>/dev/null
+```
+
+Check the simulation result:
+- If **allowed**: proceed with the file
+- If **denied**: do NOT commit that file — note the policy violation and the denial reason
+
+If simulation shows a denial, attempt to resolve:
+1. Check if the file is in a protected path (kernel, policy, invariants) — if so, verify the issue explicitly authorizes it
+2. Check if the file matches a deny rule in `agentguard.yaml` — if so, note it as a governance constraint
+
+If the simulate command is not available, skip this step and proceed.
+
+### 5. Type-Check
 
 ```bash
 npm run ts:check
@@ -52,7 +87,7 @@ npm run ts:check
 
 If type errors exist in files you modified, fix them before proceeding. Do not skip type errors.
 
-### 5. Lint
+### 6. Lint
 
 ```bash
 npm run lint
@@ -66,7 +101,7 @@ npm run lint:fix
 
 If errors remain after auto-fix, fix them manually.
 
-### 6. Format Check
+### 7. Format Check
 
 ```bash
 npm run format
@@ -78,7 +113,7 @@ If formatting issues exist in files you modified:
 npm run format:fix
 ```
 
-### 7. Commit Changes
+### 8. Commit Changes
 
 Stage only the files you modified — do NOT use `git add .` or `git add -A`:
 
@@ -100,10 +135,21 @@ Use conventional commit prefixes based on the task type label:
 
 If the task requires multiple logical units of work, make separate commits for each.
 
+### 9. Capture Governance Decision
+
+After commit, capture the governance decision record for audit trail:
+
+```bash
+npx agentguard inspect --last 2>/dev/null
+```
+
+This records the governance decisions made during implementation, which will be included in the PR body by the `create-pr` skill.
+
 ## Rules
 
 - Do NOT modify files in `src/kernel/**`, `src/policy/**`, or `src/invariants/**` unless the issue explicitly authorizes it
 - Do NOT modify `agentguard.yaml` or `.claude/settings.json`
 - Do NOT use `git add .` or `git add -A` — stage specific files only
+- If pre-commit simulation denies a file, do NOT commit it — report the denial
 - If you cannot complete the implementation, commit what you have and note incomplete items in the PR body
 - Write tests for new functionality when the task type is `task:implementation` or `task:bug-fix`

@@ -1,6 +1,17 @@
 # Skill: Triage Failing CI
 
-Diagnose failed CI runs on open PR branches, apply minimal fixes, and push them. Keeps the pipeline unblocked so reviews and merges aren't stalled by lint errors, type mismatches, or broken tests.
+Diagnose failed CI runs on open PR branches, check governance logs for related denials, apply minimal fixes, and push them. Keeps the pipeline unblocked so reviews and merges aren't stalled by lint errors, type mismatches, or broken tests.
+
+## Autonomy Directive
+
+This skill runs as an **unattended scheduled task**. No human is present to answer questions.
+
+- **NEVER pause to ask for clarification or confirmation** — make your best judgment and proceed
+- **NEVER use AskUserQuestion or any interactive prompt** — all decisions must be made autonomously
+- If a fix attempt fails after 2 tries, **skip and report** — do not keep retrying
+- If governance activation fails, log the failure and **STOP**
+- If `gh` CLI fails, log the error and **STOP**
+- Default to the **safest option** in every ambiguous situation (skip > attempt)
 
 ## Prerequisites
 
@@ -43,7 +54,28 @@ gh pr list --head <HEAD_BRANCH> --state open --json number,title --jq '.[0]'
 
 If no open PR exists for the branch, skip this run.
 
-#### 3c. Classify the Failure
+#### 3c. Check Governance Context
+
+Check if governance denials during the PR's development may have contributed to the failure:
+
+```bash
+git fetch origin <HEAD_BRANCH>
+git log origin/<HEAD_BRANCH> --oneline -5
+```
+
+Look for governance event files associated with this branch:
+
+```bash
+ls .agentguard/events/*.jsonl 2>/dev/null | head -5
+cat .agentguard/events/*.jsonl 2>/dev/null | grep "ActionDenied\|PolicyDenied" | grep -i "<HEAD_BRANCH>" | head -10
+```
+
+If governance denials are found:
+- Check if a denied file write or denied shell command correlates with the CI failure
+- Example: if `file.write` was denied for a test file, and CI fails on tests — the denial may be the root cause
+- Note governance-related root causes in the diagnostic comment
+
+#### 3d. Classify the Failure
 
 Read the log output and classify into one of these categories:
 
@@ -54,9 +86,12 @@ Read the log output and classify into one of these categories:
 | **typecheck** | `tsc` errors, `TS\d+:` error codes |
 | **test** | vitest/test failures, assertion errors, `npm test` exit code |
 | **build** | `esbuild` errors, `npm run build:ts` exit code |
+| **governance** | Failure correlates with a governance denial (from step 3c) |
 | **other** | Network errors, timeout, infrastructure issues |
 
 If the category is **other**, skip this run — report it but do not attempt a fix.
+
+If the category is **governance**, do not attempt a fix — report the governance denial as the root cause and suggest policy review.
 
 ### 4. Apply the Fix
 
@@ -147,6 +182,7 @@ gh pr comment <PR_NUMBER> --body "**AgentGuard CI Triage Bot** — automated fix
 - **Failed run**: <RUN_ID>
 - **Category**: <CATEGORY>
 - **Root cause**: <1-2 sentence explanation>
+- **Governance context**: <any related denials or "no governance denials detected">
 
 ## Fix Applied
 
@@ -170,11 +206,36 @@ gh pr comment <PR_NUMBER> --body "**AgentGuard CI Triage Bot** — diagnosis onl
 - **Failed run**: <RUN_ID>
 - **Category**: <CATEGORY>
 - **Root cause**: <1-2 sentence explanation>
+- **Governance context**: <any related denials or "no governance denials detected">
 - **Why auto-fix failed**: <explanation>
 
 ## Suggested Manual Fix
 
 <Specific steps the developer should take>
+
+---
+*Automated diagnosis by triage-failing-ci skill on $(date -u +%Y-%m-%dT%H:%M:%SZ)*"
+```
+
+If the failure is **governance-related**:
+
+```bash
+gh pr comment <PR_NUMBER> --body "**AgentGuard CI Triage Bot** — governance-related failure detected
+
+## Diagnosis
+
+- **Failed run**: <RUN_ID>
+- **Category**: governance
+- **Root cause**: A governance policy denial may have prevented required file changes
+- **Denied actions**: <list of relevant denials from governance logs>
+
+## Recommended Action
+
+Review the governance policy to determine if the denial was intentional:
+- Run \`npx agentguard inspect --last\` to see full decision history
+- Check if the denied action is necessary for CI to pass
+- If the denial was correct, the implementation approach needs adjustment
+- If the denial was overly restrictive, consider a policy update
 
 ---
 *Automated diagnosis by triage-failing-ci skill on $(date -u +%Y-%m-%dT%H:%M:%SZ)*"
@@ -193,6 +254,7 @@ git checkout -
 Report:
 - **Runs triaged**: N (list run IDs, branches, and categories)
 - **Fixes pushed**: N (list PR numbers and commit messages)
+- **Governance-related failures**: N (list branches and denied actions)
 - **Diagnosis only (unfixable)**: N (list PR numbers and reasons)
 - **Skipped (stale/no PR/other)**: N
 
@@ -208,3 +270,4 @@ Report:
 - Skip runs older than 24 hours
 - If `gh` CLI is not authenticated, report the error and STOP
 - If the branch has merge conflicts, skip it and report the conflict in a PR comment
+- For governance-related failures, report but do NOT attempt to bypass the governance policy

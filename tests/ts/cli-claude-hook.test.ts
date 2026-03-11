@@ -180,6 +180,38 @@ describe('claudeHook', () => {
     }
   });
 
+  // --- extraArgs forwarding ---
+
+  it('accepts extraArgs parameter without error', async () => {
+    const input = JSON.stringify({
+      hook: 'PreToolUse',
+      tool_name: 'Read',
+      tool_input: { file_path: '/tmp/test.ts' },
+    });
+    const restore = mockStdin(input);
+    try {
+      await claudeHook('pre', ['--store', 'sqlite']);
+      expect(process.exit).toHaveBeenCalledWith(0);
+    } finally {
+      restore();
+    }
+  });
+
+  it('defaults extraArgs to empty array when not provided', async () => {
+    const input = JSON.stringify({
+      hook: 'PreToolUse',
+      tool_name: 'Read',
+      tool_input: { file_path: '/tmp/test.ts' },
+    });
+    const restore = mockStdin(input);
+    try {
+      await claudeHook('pre');
+      expect(process.exit).toHaveBeenCalledWith(0);
+    } finally {
+      restore();
+    }
+  });
+
   // --- PreToolUse (kernel governance) ---
 
   it('routes PreToolUse Read action through kernel and allows it (no stdout)', async () => {
