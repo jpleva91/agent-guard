@@ -212,6 +212,7 @@ Each top-level directory maps to a single architectural concept:
 - `agentguard plugin list|install|remove|search` — Manage plugins
 - `agentguard simulate <action-json>` — Simulate an action and display predicted impact without executing
 - `agentguard ci-check <session-file>` — CI governance verification (check a session for violations)
+- `agentguard policy validate <file>` — Validate a policy file (YAML/JSON)
 - `agentguard claude-hook` — Handle Claude Code PreToolUse/PostToolUse hook events
 - `agentguard claude-init` — Set up Claude Code hook integration
 
@@ -222,6 +223,7 @@ The canonical event model is the architectural spine. Event kinds defined in `sr
 - **Safety**: `BlastRadiusExceeded`, `MergeGuardFailure`, `EvidencePackGenerated`
 - **Reference Monitor**: `ActionRequested`, `ActionAllowed`, `ActionDenied`, `ActionEscalated`, `ActionExecuted`, `ActionFailed`
 - **Decision & Simulation**: `DecisionRecorded`, `SimulationCompleted`
+- **Policy Composition**: `PolicyComposed`
 - **Policy Traces**: `PolicyTraceRecorded`
 - **Pipeline**: `PipelineStarted`, `StageCompleted`, `StageFailed`, `PipelineCompleted`, `PipelineFailed`, `FileScopeViolation`
 - **Dev activity**: `FileSaved`, `TestCompleted`, `BuildCompleted`, `CommitCreated`, `CodeReviewed`, `DeployCompleted`, `LintCompleted`
