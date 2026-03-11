@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node C:\\Users\\jplev\\Documents\\GitHub\\agent-guard\\dist\\cli\\commands\\claude-hook.js pre"
+            "command": "node C:/Users/jplev/Documents/GitHub/agent-guard/dist/cli/commands/claude-hook.js pre"
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node C:\\Users\\jplev\\Documents\\GitHub\\agent-guard\\dist\\cli\\commands\\claude-hook.js post"
+            "command": "node C:/Users/jplev/Documents/GitHub/agent-guard/dist/cli/commands/claude-hook.js post"
           }
         ]
       }
