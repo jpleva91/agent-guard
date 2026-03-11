@@ -209,6 +209,7 @@ Monitor escalation state transitions are now persisted as `StateChanged` DomainE
 - [x] Deterministic replay with seeded RNG (`src/core/rng.ts`, `src/kernel/replay-engine.ts`)
 - [x] Replay comparator (verify original vs replayed outcomes) (`src/kernel/replay-comparator.ts`)
 - [x] Event export/import for sharing sessions (`src/cli/commands/export.ts`, `src/cli/commands/import.ts`)
+- [ ] SQLite storage backend (opt-in alternative to JSONL with indexed queries) (`src/storage/`)
 
 ### Phase 4 — Plugin Ecosystem `STABLE`
 

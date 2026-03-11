@@ -3,6 +3,7 @@
 // AgentGuard CLI — Runtime governance for AI coding agents
 
 import { formatHelp } from './args.js';
+import { resolveStorageConfig } from '../storage/factory.js';
 
 interface CommandHelp {
   name: string;
@@ -27,6 +28,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--markdown, --md', description: 'Output as Markdown' },
       { flag: '--dir, -d <path>', description: 'Base directory for event data' },
       { flag: '--min-cluster <n>', description: 'Minimum cluster size (default: 2)' },
+      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
     ],
     examples: [
       'agentguard analytics',
@@ -46,6 +48,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       },
       { flag: '--dry-run', description: 'Evaluate without executing actions' },
       { flag: '--verbose, -v', description: 'Show detailed output' },
+      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
     ],
     examples: [
       'agentguard guard',
@@ -159,6 +162,24 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard simulate --action file.write --target .env --policy agentguard.yaml',
     ],
   },
+  init: {
+    name: 'agentguard init',
+    description: 'Scaffold a new governance extension',
+    usage: 'agentguard init --extension <type> [--name <name>] [--dir <path>]',
+    flags: [
+      {
+        flag: '--extension, -e <type>',
+        description: 'Extension type: invariant, policy-pack, adapter, renderer, replay-processor',
+      },
+      { flag: '--name, -n <name>', description: 'Extension name (default: my-<type>)' },
+      { flag: '--dir, -d <path>', description: 'Output directory (default: ./<name>)' },
+    ],
+    examples: [
+      'agentguard init --extension renderer --name json-renderer',
+      'agentguard init invariant --name vendor-guard',
+      'agentguard init policy-pack --name strict-policy',
+    ],
+  },
 };
 
 async function main() {
@@ -169,7 +190,7 @@ async function main() {
         break;
       }
       const { analytics: analyticsCmd } = await import('./commands/analytics.js');
-      const code = await analyticsCmd(args.slice(1));
+      const code = await analyticsCmd(args.slice(1), resolveStorageConfig(args.slice(1)));
       process.exit(code);
       break;
     }
@@ -194,12 +215,14 @@ async function main() {
       const verbose = flags.includes('--verbose') || flags.includes('-v');
 
       const { guard } = await import('./commands/guard.js');
+      const storageConfig = resolveStorageConfig(flags);
       const code = await guard(args.slice(1), {
         policy: policyFiles.length === 1 ? policyFiles[0] : undefined,
         policies: policyFiles.length > 1 ? policyFiles : undefined,
         dryRun,
         verbose,
         stdin: true,
+        store: storageConfig,
       });
       process.exit(code);
       break;
@@ -305,6 +328,17 @@ async function main() {
       break;
     }
 
+    case 'init': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.init));
+        break;
+      }
+      const { init: initCmd } = await import('./commands/init.js');
+      const code = await initCmd(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
     case 'claude-init': {
       const { claudeInit } = await import('./commands/claude-init.js');
       await claudeInit(args.slice(1));
@@ -382,6 +416,10 @@ function printHelp(): void {
     agentguard plugin install <path>          Install a plugin from a local path
     agentguard plugin remove <id>             Remove a plugin by ID
     agentguard plugin search [query]          Search for plugins on npm
+
+  \x1b[1mScaffolding:\x1b[0m
+    agentguard init --extension <type>        Scaffold a new governance extension
+    agentguard init --extension <type> -n X   Name the extension
 
   \x1b[1mCI/CD:\x1b[0m
     agentguard ci-check <session>             Verify governance session in CI
