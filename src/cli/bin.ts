@@ -125,6 +125,17 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard ci-check session.jsonl --fail-on-violation --fail-on-denial',
     ],
   },
+  policy: {
+    name: 'agentguard policy',
+    description: 'Policy management tools (validate, etc.)',
+    usage: 'agentguard policy <command> [options]',
+    flags: [],
+    examples: [
+      'agentguard policy validate agentguard.yaml',
+      'agentguard policy validate my-policy.json --json',
+      'agentguard policy validate agentguard.yaml --strict',
+    ],
+  },
   simulate: {
     name: 'agentguard simulate',
     description: 'Simulate an action and display predicted impact without executing',
@@ -253,6 +264,18 @@ async function main() {
       break;
     }
 
+    case 'policy': {
+      if (wantsHelp) {
+        const { policy: policyCmd } = await import('./commands/policy.js');
+        await policyCmd(['help']);
+        break;
+      }
+      const { policy: policyCmd } = await import('./commands/policy.js');
+      const code = await policyCmd(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
     case 'plugin': {
       if (wantsHelp) {
         const { plugin: pluginCmd } = await import('./commands/plugin.js');
@@ -329,6 +352,11 @@ function printHelp(): void {
     agentguard replay                         List recorded sessions
     agentguard replay --last                  Replay most recent session
     agentguard replay --last --step           Step through events interactively
+
+  \x1b[1mPolicy:\x1b[0m
+    agentguard policy validate <file>        Validate a policy file (YAML/JSON)
+    agentguard policy validate ... --strict  Include best-practice checks
+    agentguard policy validate ... --json    Output as JSON
 
   \x1b[1mPlugins:\x1b[0m
     agentguard plugin list                    List installed plugins
