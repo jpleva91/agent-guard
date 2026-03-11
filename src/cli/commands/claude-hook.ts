@@ -2,6 +2,7 @@
 // PreToolUse: routes actions through the kernel for policy/invariant enforcement.
 // PostToolUse: reports Bash stderr errors (informational only).
 // Always exits 0 — hooks must never fail.
+// Supports both JSONL (default) and SQLite storage backends via AGENTGUARD_STORE env var.
 
 import type { ClaudeCodeHookPayload } from '../../adapters/claude-code.js';
 
@@ -41,10 +42,9 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload): Promise<void> {
   const { processClaudeCodeHook, formatHookResponse } =
     await import('../../adapters/claude-code.js');
   const { createKernel } = await import('../../kernel/kernel.js');
-  const { createJsonlSink } = await import('../../events/jsonl.js');
-  const { createDecisionJsonlSink } = await import('../../events/decision-jsonl.js');
   const { createTelemetryDecisionSink } = await import('../../telemetry/runtimeLogger.js');
   const { loadPolicyDefs } = await import('../policy-resolver.js');
+  const { resolveStorageConfig, createStorageBundle } = await import('../../storage/factory.js');
 
   // Ensure hook field is set
   const normalizedPayload: ClaudeCodeHookPayload = {
@@ -63,11 +63,17 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload): Promise<void> {
   // Generate run ID
   const runId = `hook_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-  // Create sinks (swallow errors — directories may not exist yet)
-  let jsonlSink, decisionSink, telemetrySink;
+  // Resolve storage backend from env/CLI args and create sinks via factory
+  const storageConfig = resolveStorageConfig([]);
+  let storage: Awaited<ReturnType<typeof createStorageBundle>> | null = null;
+  let eventSink: import('../../kernel/kernel.js').EventSink | undefined;
+  let decisionSink: import('../../kernel/decisions/types.js').DecisionSink | undefined;
+  let telemetrySink: import('../../kernel/decisions/types.js').DecisionSink | undefined;
+
   try {
-    jsonlSink = createJsonlSink({ runId });
-    decisionSink = createDecisionJsonlSink({ runId });
+    storage = await createStorageBundle(storageConfig);
+    eventSink = storage.createEventSink(runId);
+    decisionSink = storage.createDecisionSink(runId);
     telemetrySink = createTelemetryDecisionSink();
   } catch {
     // Sink creation failure is non-fatal
@@ -78,7 +84,7 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload): Promise<void> {
     runId,
     policyDefs,
     dryRun: true,
-    sinks: jsonlSink ? [jsonlSink] : [],
+    sinks: eventSink ? [eventSink] : [],
     decisionSinks: [decisionSink, telemetrySink].filter(
       Boolean
     ) as import('../../kernel/decisions/types.js').DecisionSink[],
@@ -86,6 +92,15 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload): Promise<void> {
 
   const result = await processClaudeCodeHook(kernel, normalizedPayload);
   kernel.shutdown();
+
+  // Close storage (important for SQLite to flush WAL)
+  if (storage) {
+    try {
+      storage.close();
+    } catch {
+      // Non-fatal
+    }
+  }
 
   // If denied, output to stdout — this tells Claude Code to block the action
   if (!result.allowed) {

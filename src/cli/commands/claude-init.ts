@@ -31,7 +31,11 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   const isGlobal = args.includes('--global') || args.includes('-g');
   const isRemove = args.includes('--remove') || args.includes('--uninstall');
 
-  const hookScript = resolve(__dirname, 'claude-hook.js');
+  // Resolve hook script path — handles both tsc output (commands/) and esbuild bundle (cli/)
+  let hookScript = resolve(__dirname, 'claude-hook.js');
+  if (!existsSync(hookScript)) {
+    hookScript = resolve(__dirname, 'commands', 'claude-hook.js');
+  }
 
   const settingsDir = isGlobal ? join(homedir(), '.claude') : join(process.cwd(), '.claude');
   const settingsPath = join(settingsDir, 'settings.json');

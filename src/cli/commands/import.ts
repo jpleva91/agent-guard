@@ -1,4 +1,5 @@
 // CLI command: agentguard import — import a governance session from a portable JSONL file.
+// Supports both JSONL (default) and SQLite storage backends.
 
 import { readFileSync, appendFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -8,7 +9,9 @@ import { getDecisionFilePath } from '../../events/decision-jsonl.js';
 import { validateEvent } from '../../events/schema.js';
 import type { DomainEvent, ValidationResult } from '../../core/types.js';
 import type { GovernanceDecisionRecord } from '../../kernel/decisions/types.js';
+import { EXPORT_SCHEMA_VERSION } from './export.js';
 import type { GovernanceExportHeader } from './export.js';
+import type { StorageConfig } from '../../storage/types.js';
 
 const BASE_DIR = '.agentguard';
 
@@ -18,7 +21,7 @@ function ensureDir(dirPath: string): void {
   }
 }
 
-export async function importSession(args: string[]): Promise<void> {
+export async function importSession(args: string[], storageConfig?: StorageConfig): Promise<void> {
   const parsed = parseArgs(args, {
     string: ['--as'],
   });
@@ -60,6 +63,17 @@ export async function importSession(args: string[]): Promise<void> {
   if (header.__agentguard_export !== true || header.version !== 1) {
     process.stderr.write(
       '\n  \x1b[31mError:\x1b[0m Not a valid AgentGuard export (missing or invalid header).\n\n'
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  // Validate schema version (backward-compatible: missing schemaVersion treated as 1)
+  const schemaVersion = header.schemaVersion ?? 1;
+  if (schemaVersion > EXPORT_SCHEMA_VERSION) {
+    process.stderr.write(
+      `\n  \x1b[31mError:\x1b[0m Export uses schema version ${schemaVersion} but this version of AgentGuard only supports up to ${EXPORT_SCHEMA_VERSION}.\n` +
+        '  Please upgrade AgentGuard to import this file.\n\n'
     );
     process.exitCode = 1;
     return;
@@ -111,25 +125,44 @@ export async function importSession(args: string[]): Promise<void> {
     return;
   }
 
-  // Check if run already exists
-  const eventFilePath = getEventFilePath(runId);
-  if (existsSync(eventFilePath)) {
-    process.stderr.write(
-      `\n  \x1b[33m\u26A0\x1b[0m Run "${runId}" already exists. Events will be appended.\n`
-    );
-  }
+  const useSqlite = storageConfig?.backend === 'sqlite';
 
-  // Write events
-  ensureDir(join(BASE_DIR, 'events'));
-  const eventData = events.map((e) => JSON.stringify(e)).join('\n') + '\n';
-  appendFileSync(eventFilePath, eventData, 'utf8');
+  if (useSqlite) {
+    // Write to SQLite via storage sinks
+    const { createStorageBundle } = await import('../../storage/factory.js');
+    const storage = await createStorageBundle(storageConfig);
+    const eventSink = storage.createEventSink(runId);
+    const decisionSink = storage.createDecisionSink(runId);
 
-  // Write decisions (if any)
-  if (decisions.length > 0) {
-    ensureDir(join(BASE_DIR, 'decisions'));
-    const decisionFilePath = getDecisionFilePath(runId);
-    const decisionData = decisions.map((d) => JSON.stringify(d)).join('\n') + '\n';
-    appendFileSync(decisionFilePath, decisionData, 'utf8');
+    for (const event of events) {
+      eventSink.write(event);
+    }
+    for (const decision of decisions) {
+      decisionSink.write(decision);
+    }
+
+    storage.close();
+  } else {
+    // Check if run already exists (JSONL)
+    const eventFilePath = getEventFilePath(runId);
+    if (existsSync(eventFilePath)) {
+      process.stderr.write(
+        `\n  \x1b[33m\u26A0\x1b[0m Run "${runId}" already exists. Events will be appended.\n`
+      );
+    }
+
+    // Write events
+    ensureDir(join(BASE_DIR, 'events'));
+    const eventData = events.map((e) => JSON.stringify(e)).join('\n') + '\n';
+    appendFileSync(eventFilePath, eventData, 'utf8');
+
+    // Write decisions (if any)
+    if (decisions.length > 0) {
+      ensureDir(join(BASE_DIR, 'decisions'));
+      const decisionFilePath = getDecisionFilePath(runId);
+      const decisionData = decisions.map((d) => JSON.stringify(d)).join('\n') + '\n';
+      appendFileSync(decisionFilePath, decisionData, 'utf8');
+    }
   }
 
   process.stderr.write(`\n  \x1b[32m\u2713\x1b[0m Imported run \x1b[1m${runId}\x1b[0m\n`);
