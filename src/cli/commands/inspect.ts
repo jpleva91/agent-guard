@@ -1,5 +1,6 @@
 // CLI command: agentguard inspect — show action graph and events for a run.
 // Also handles: agentguard events <runId>
+// Supports both JSONL (default) and SQLite storage backends.
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -8,11 +9,16 @@ import { getEventFilePath } from '../../events/jsonl.js';
 import { getDecisionFilePath } from '../../events/decision-jsonl.js';
 import type { DomainEvent } from '../../core/types.js';
 import type { GovernanceDecisionRecord } from '../../kernel/decisions/types.js';
+import type { StorageConfig } from '../../storage/types.js';
 
 const BASE_DIR = '.agentguard';
 const EVENTS_DIR = join(BASE_DIR, 'events');
 
-function loadEvents(runId: string): DomainEvent[] {
+// ---------------------------------------------------------------------------
+// JSONL helpers (default backend)
+// ---------------------------------------------------------------------------
+
+function loadEventsJsonl(runId: string): DomainEvent[] {
   const filePath = getEventFilePath(runId);
   if (!existsSync(filePath)) {
     process.stderr.write(`  \x1b[31mError:\x1b[0m No events found for run: ${runId}\n`);
@@ -36,7 +42,7 @@ function loadEvents(runId: string): DomainEvent[] {
   return events;
 }
 
-function loadDecisions(runId: string): GovernanceDecisionRecord[] {
+function loadDecisionsJsonl(runId: string): GovernanceDecisionRecord[] {
   const filePath = getDecisionFilePath(runId);
   if (!existsSync(filePath)) {
     return [];
@@ -58,7 +64,7 @@ function loadDecisions(runId: string): GovernanceDecisionRecord[] {
   return records;
 }
 
-function listRuns(): string[] {
+function listRunsJsonl(): string[] {
   if (!existsSync(EVENTS_DIR)) return [];
   return readdirSync(EVENTS_DIR)
     .filter((f) => f.endsWith('.jsonl'))
@@ -67,13 +73,45 @@ function listRuns(): string[] {
     .reverse();
 }
 
-export async function inspect(args: string[]): Promise<void> {
+// ---------------------------------------------------------------------------
+// SQLite helpers
+// ---------------------------------------------------------------------------
+
+async function openSqliteDb(storageConfig: StorageConfig) {
+  const { createStorageBundle } = await import('../../storage/factory.js');
+  const storage = await createStorageBundle(storageConfig);
+  if (!storage.db) {
+    process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
+    return null;
+  }
+  return storage;
+}
+
+// ---------------------------------------------------------------------------
+// Public commands
+// ---------------------------------------------------------------------------
+
+export async function inspect(args: string[], storageConfig?: StorageConfig): Promise<void> {
   const showDecisions = args.includes('--decisions');
-  const filteredArgs = args.filter((a) => a !== '--decisions');
+  const filteredArgs = args.filter((a) => a !== '--decisions' && a !== '--store' && a !== 'sqlite' && a !== 'jsonl');
   const targetArg = filteredArgs[0];
 
+  const useSqlite = storageConfig?.backend === 'sqlite';
+
   if (!targetArg || targetArg === '--list') {
-    const runs = listRuns();
+    let runs: string[];
+
+    if (useSqlite) {
+      const storage = await openSqliteDb(storageConfig);
+      if (!storage) return;
+      const { listRunIds } = await import('../../storage/sqlite-store.js');
+      const db = storage.db as import('better-sqlite3').Database;
+      runs = listRunIds(db);
+      storage.close();
+    } else {
+      runs = listRunsJsonl();
+    }
+
     if (runs.length === 0) {
       process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
       process.stderr.write('  Run \x1b[1magentguard guard\x1b[0m to start recording.\n\n');
@@ -82,38 +120,95 @@ export async function inspect(args: string[]): Promise<void> {
 
     process.stderr.write('\n  \x1b[1mRecorded Runs\x1b[0m\n');
     process.stderr.write(`  ${'\x1b[2m'}${'─'.repeat(50)}${'\x1b[0m'}\n`);
-    for (const id of runs.slice(0, 20)) {
-      const events = loadEvents(id);
-      process.stderr.write(`  ${id}  ${'\x1b[2m'}(${events.length} events)${'\x1b[0m'}\n`);
+
+    if (useSqlite) {
+      const storage = await openSqliteDb(storageConfig);
+      if (!storage) return;
+      const { loadRunEvents } = await import('../../storage/sqlite-store.js');
+      const db = storage.db as import('better-sqlite3').Database;
+      for (const id of runs.slice(0, 20)) {
+        const events = loadRunEvents(db, id);
+        process.stderr.write(`  ${id}  ${'\x1b[2m'}(${events.length} events)${'\x1b[0m'}\n`);
+      }
+      storage.close();
+    } else {
+      for (const id of runs.slice(0, 20)) {
+        const events = loadEventsJsonl(id);
+        process.stderr.write(`  ${id}  ${'\x1b[2m'}(${events.length} events)${'\x1b[0m'}\n`);
+      }
     }
     process.stderr.write('\n');
     return;
   }
 
   // Check for --last flag
-  const targetRunId = targetArg === '--last' ? listRuns()[0] : targetArg;
+  let targetRunId: string | undefined;
+  if (targetArg === '--last') {
+    if (useSqlite) {
+      const storage = await openSqliteDb(storageConfig);
+      if (!storage) return;
+      const { getLatestRunId } = await import('../../storage/sqlite-store.js');
+      const db = storage.db as import('better-sqlite3').Database;
+      targetRunId = getLatestRunId(db) ?? undefined;
+      storage.close();
+    } else {
+      targetRunId = listRunsJsonl()[0];
+    }
+  } else {
+    targetRunId = targetArg;
+  }
+
   if (!targetRunId) {
     process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n\n');
     return;
   }
 
-  const events = loadEvents(targetRunId);
-  if (events.length === 0 && !showDecisions) return;
+  // Load events
+  let eventList: DomainEvent[];
+  if (useSqlite) {
+    const storage = await openSqliteDb(storageConfig);
+    if (!storage) return;
+    const { loadRunEvents } = await import('../../storage/sqlite-store.js');
+    const db = storage.db as import('better-sqlite3').Database;
+    eventList = loadRunEvents(db, targetRunId);
+    if (eventList.length === 0) {
+      process.stderr.write(`  \x1b[31mError:\x1b[0m No events found for run: ${targetRunId}\n`);
+    }
 
-  process.stderr.write(`\n  \x1b[1mRun:\x1b[0m ${targetRunId}\n`);
+    // Show decision records if --decisions flag is present
+    if (showDecisions) {
+      const { loadRunDecisions } = await import('../../storage/sqlite-store.js');
+      const decisions = loadRunDecisions(db, targetRunId);
+      process.stderr.write(`\n  \x1b[1mRun:\x1b[0m ${targetRunId}\n`);
+      if (decisions.length > 0) {
+        process.stderr.write(renderDecisionTable(decisions));
+      } else {
+        process.stderr.write('\n  \x1b[2mNo decision records found for this run.\x1b[0m\n');
+      }
+    }
+    storage.close();
+  } else {
+    eventList = loadEventsJsonl(targetRunId);
+    if (eventList.length === 0 && !showDecisions) return;
 
-  // Show decision records if --decisions flag is present
-  if (showDecisions) {
-    const decisions = loadDecisions(targetRunId);
-    if (decisions.length > 0) {
-      process.stderr.write(renderDecisionTable(decisions));
-    } else {
-      process.stderr.write('\n  \x1b[2mNo decision records found for this run.\x1b[0m\n');
+    process.stderr.write(`\n  \x1b[1mRun:\x1b[0m ${targetRunId}\n`);
+
+    if (showDecisions) {
+      const decisions = loadDecisionsJsonl(targetRunId);
+      if (decisions.length > 0) {
+        process.stderr.write(renderDecisionTable(decisions));
+      } else {
+        process.stderr.write('\n  \x1b[2mNo decision records found for this run.\x1b[0m\n');
+      }
     }
   }
 
+  if (!useSqlite || !showDecisions) {
+    process.stderr.write(`\n  \x1b[1mRun:\x1b[0m ${targetRunId}\n`);
+  }
+
   // Reconstruct action graph from events
-  const actionEvents = events.filter(
+  const actionEvents = eventList.filter(
     (e) =>
       e.kind === 'ActionRequested' ||
       e.kind === 'ActionAllowed' ||
@@ -188,12 +283,12 @@ export async function inspect(args: string[]): Promise<void> {
   }
 
   // Show event stream
-  if (events.length > 0) {
-    process.stderr.write(renderEventStream(events));
+  if (eventList.length > 0) {
+    process.stderr.write(renderEventStream(eventList));
   }
 }
 
-export async function events(args: string[]): Promise<void> {
+export async function events(args: string[], storageConfig?: StorageConfig): Promise<void> {
   const runId = args[0];
 
   if (!runId) {
@@ -201,13 +296,41 @@ export async function events(args: string[]): Promise<void> {
     return;
   }
 
-  const targetRunId = runId === '--last' ? listRuns()[0] : runId;
+  const useSqlite = storageConfig?.backend === 'sqlite';
+
+  let targetRunId: string | undefined;
+  if (runId === '--last') {
+    if (useSqlite) {
+      const storage = await openSqliteDb(storageConfig);
+      if (!storage) return;
+      const { getLatestRunId } = await import('../../storage/sqlite-store.js');
+      const db = storage.db as import('better-sqlite3').Database;
+      targetRunId = getLatestRunId(db) ?? undefined;
+      storage.close();
+    } else {
+      targetRunId = listRunsJsonl()[0];
+    }
+  } else {
+    targetRunId = runId;
+  }
+
   if (!targetRunId) {
     process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n\n');
     return;
   }
 
-  const eventList = loadEvents(targetRunId);
+  let eventList: DomainEvent[];
+  if (useSqlite) {
+    const storage = await openSqliteDb(storageConfig);
+    if (!storage) return;
+    const { loadRunEvents } = await import('../../storage/sqlite-store.js');
+    const db = storage.db as import('better-sqlite3').Database;
+    eventList = loadRunEvents(db, targetRunId);
+    storage.close();
+  } else {
+    eventList = loadEventsJsonl(targetRunId);
+  }
+
   if (eventList.length === 0) return;
 
   // Raw event dump

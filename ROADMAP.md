@@ -107,7 +107,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | 8 Built-in Invariants | Fully Implemented | Production |
 | Event Model (46 kinds) | Comprehensive | Production |
 | Simulation & Forecasting | Fully Implemented | Production |
-| Escalation State Machine | Implemented | Functional (events not persisted) |
+| Escalation State Machine | Implemented | Functional (events persisted as StateChanged) |
 | Cross-session Analytics | Implemented | Functional (forensic only) |
 | Plugin Sandbox | Implemented | Application-level only |
 | Project Azazel (eBPF) | Not Started | Aspirational |
@@ -143,9 +143,9 @@ Two bypass paths violate the complete mediation requirement of the AAB:
 
 The AAB detects only 10 destructive shell patterns (`src/kernel/aab.ts`). Missing: `sudo`, `pkill`, `killall`, `truncate`, `shred`, `chown`, `docker rm/rmi/system prune`, `systemctl stop/disable`, database-specific DROP commands, `npm uninstall -g`.
 
-### Escalation Audit Gap
+### Escalation Audit Gap — Resolved
 
-Monitor escalation state transitions are emitted to the EventBus but not persisted as DomainEvents. Escalation history is lost when reviewing JSONL records.
+Monitor escalation state transitions are now persisted as `StateChanged` DomainEvents in the event store (`src/kernel/monitor.ts`). State changes include trigger action, denial/violation counts, and threshold values.
 
 ---
 
@@ -209,6 +209,7 @@ Monitor escalation state transitions are emitted to the EventBus but not persist
 - [x] Deterministic replay with seeded RNG (`src/core/rng.ts`, `src/kernel/replay-engine.ts`)
 - [x] Replay comparator (verify original vs replayed outcomes) (`src/kernel/replay-comparator.ts`)
 - [x] Event export/import for sharing sessions (`src/cli/commands/export.ts`, `src/cli/commands/import.ts`)
+- [ ] SQLite storage backend (opt-in alternative to JSONL with indexed queries) (`src/storage/`)
 
 ### Phase 4 — Plugin Ecosystem `STABLE`
 
@@ -244,7 +245,7 @@ This is the architectural hinge. These changes transform the AAB from advisory i
 
 - [ ] Default-deny unknown actions in `src/policy/evaluator.ts` (change fallback from `allowed: true` to `allowed: false`)
 - [x] Deny actions with no registered adapter in `src/kernel/kernel.ts` (emit `ActionDenied` instead of silently skipping)
-- [ ] Persist escalation state changes as `StateChanged` DomainEvents in `src/kernel/monitor.ts`
+- [x] Persist escalation state changes as `StateChanged` DomainEvents in `src/kernel/monitor.ts`
 - [ ] Expand destructive command patterns in `src/kernel/aab.ts` (add 15+ patterns covering sudo, pkill, docker, systemctl, database commands)
 - [ ] Enforce intervention types beyond DENY (implement PAUSE and ROLLBACK behaviors in kernel execution)
 

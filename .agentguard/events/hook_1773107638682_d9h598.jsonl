@@ -1,3 +1,0 @@
-{"kind":"ActionRequested","timestamp":1773107638683,"actionType":"Glob","target":"**/*.ts","justification":"agent action","agentId":"claude-code","metadata":{"runId":"hook_1773107638682_d9h598"},"id":"evt_1773107638683_4","fingerprint":"t9s6np"}
-{"kind":"ActionAllowed","timestamp":1773107638683,"actionType":"file.read","target":"**/*.ts","capability":"default-policy","actionId":"act_1773107638683_2","reason":"Reading is always safe","metadata":{"runId":"hook_1773107638682_d9h598"},"id":"evt_1773107638683_5","fingerprint":"1rvvai"}
-{"kind":"DecisionRecorded","timestamp":1773107638685,"recordId":"dec_1773107638684_ysh5yq","outcome":"allow","actionType":"file.read","target":"**/*.ts","reason":"Reading is always safe","id":"evt_1773107638685_6","fingerprint":"wvqx9l"}

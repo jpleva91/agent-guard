@@ -3,6 +3,7 @@
 // Reads an exported governance session (or the most recent local run),
 // summarises governance outcomes, and exits with code 1 when violations
 // or denials exceed the configured threshold. Designed for CI pipelines.
+// Supports both JSONL (default) and SQLite storage backends.
 
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -15,6 +16,7 @@ import {
 import type { ReplaySession } from '../../kernel/replay-engine.js';
 import type { DomainEvent } from '../../core/types.js';
 import type { GovernanceExportHeader } from './export.js';
+import type { StorageConfig } from '../../storage/types.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -69,6 +71,38 @@ function loadSessionFromExport(filePath: string): ReplaySession | null {
   if (events.length === 0) return null;
 
   return buildReplaySession(header.runId, events);
+}
+
+/**
+ * Load the most recent replay session from SQLite.
+ */
+async function loadLatestSessionSqlite(
+  storageConfig: StorageConfig
+): Promise<ReplaySession | null> {
+  const { createStorageBundle } = await import('../../storage/factory.js');
+  const {
+    getLatestRunId: getLatestRunIdSqlite,
+    loadRunEvents,
+  } = await import('../../storage/sqlite-store.js');
+
+  const storage = await createStorageBundle(storageConfig);
+  if (!storage.db) {
+    process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
+    return null;
+  }
+  const db = storage.db as import('better-sqlite3').Database;
+
+  const runId = getLatestRunIdSqlite(db);
+  if (!runId) {
+    storage.close();
+    return null;
+  }
+
+  const events = loadRunEvents(db, runId);
+  storage.close();
+
+  if (events.length === 0) return null;
+  return buildReplaySession(runId, events);
 }
 
 // ---------------------------------------------------------------------------
@@ -154,7 +188,10 @@ function formatGitHubAnnotation(result: CiCheckResult): string {
 // CLI Entry Point
 // ---------------------------------------------------------------------------
 
-export async function ciCheck(args: string[]): Promise<number> {
+export async function ciCheck(
+  args: string[],
+  storageConfig?: StorageConfig
+): Promise<number> {
   const parsed = parseArgs(args, {
     boolean: ['--fail-on-violation', '--fail-on-denial', '--json', '--last'],
     string: ['--base-dir'],
@@ -169,10 +206,13 @@ export async function ciCheck(args: string[]): Promise<number> {
   const sessionFile = parsed.positional[0];
   const isGitHubActions = !!process.env.GITHUB_ACTIONS;
 
+  const useSqlite = storageConfig?.backend === 'sqlite';
+
   // Resolve the session
   let session: ReplaySession | null = null;
 
   if (sessionFile) {
+    // Session file is always JSONL format (portable export)
     const resolvedPath = resolve(sessionFile);
     if (!existsSync(resolvedPath)) {
       process.stderr.write(`\n  \x1b[31mError:\x1b[0m Session file not found: ${resolvedPath}\n\n`);
@@ -186,14 +226,18 @@ export async function ciCheck(args: string[]): Promise<number> {
       return 1;
     }
   } else if (useLast) {
-    const runId = getLatestRunId(baseDir);
-    if (!runId) {
-      process.stderr.write('\n  \x1b[31mError:\x1b[0m No governance runs found.\n\n');
-      return 1;
+    if (useSqlite) {
+      session = await loadLatestSessionSqlite(storageConfig);
+    } else {
+      const runId = getLatestRunId(baseDir);
+      if (!runId) {
+        process.stderr.write('\n  \x1b[31mError:\x1b[0m No governance runs found.\n\n');
+        return 1;
+      }
+      session = loadReplaySession(runId, { baseDir });
     }
-    session = loadReplaySession(runId, { baseDir });
     if (!session) {
-      process.stderr.write(`\n  \x1b[31mError:\x1b[0m Could not load run: ${runId}\n\n`);
+      process.stderr.write('\n  \x1b[31mError:\x1b[0m Could not load the most recent run.\n\n');
       return 1;
     }
   } else {
@@ -204,7 +248,8 @@ export async function ciCheck(args: string[]): Promise<number> {
     process.stderr.write('    --fail-on-denial      Exit 1 if any actions were denied\n');
     process.stderr.write('    --json                Output as JSON\n');
     process.stderr.write('    --last                Use the most recent local run\n');
-    process.stderr.write('    --base-dir, -d <dir>  Base directory for events\n\n');
+    process.stderr.write('    --base-dir, -d <dir>  Base directory for events\n');
+    process.stderr.write('    --store <backend>     Storage backend: jsonl (default) or sqlite\n\n');
     return 1;
   }
 
