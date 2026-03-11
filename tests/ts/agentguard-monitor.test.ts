@@ -311,4 +311,119 @@ describe('agentguard/monitor', () => {
       expect(stateEvents).toHaveLength(0);
     });
   });
+
+  describe('StateChanged events in MonitorDecision.events (persistence path)', () => {
+    it('includes StateChanged in decision events when escalation transitions', () => {
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 2,
+      });
+
+      // First denial triggers NORMAL → ELEVATED
+      const result = monitor.process({ tool: 'Write', file: 'src/a.ts' });
+
+      const stateEvents = result.events.filter(
+        (e) => (e as unknown as Record<string, unknown>).kind === STATE_CHANGED
+      );
+      expect(stateEvents).toHaveLength(1);
+      const evt = stateEvents[0] as unknown as Record<string, unknown>;
+      expect(evt.from).toBe('NORMAL');
+      expect(evt.to).toBe('ELEVATED');
+    });
+
+    it('does not include StateChanged in events when level stays the same', () => {
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'allow-reads',
+            name: 'Allow Reads',
+            rules: [{ action: 'file.read', effect: 'allow' }],
+          },
+        ],
+      });
+
+      const result = monitor.process({ tool: 'Read', file: 'src/a.ts' });
+
+      const stateEvents = result.events.filter(
+        (e) => (e as unknown as Record<string, unknown>).kind === STATE_CHANGED
+      );
+      expect(stateEvents).toHaveLength(0);
+    });
+
+    it('includes StateChanged for each escalation transition in decision events', () => {
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 2,
+      });
+
+      // 1 denial → ELEVATED
+      const r1 = monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      // 2 denials → HIGH
+      const r2 = monitor.process({ tool: 'Write', file: 'src/b.ts' });
+      // 3 denials → still HIGH (no transition)
+      const r3 = monitor.process({ tool: 'Write', file: 'src/c.ts' });
+      // 4 denials → LOCKDOWN
+      const r4 = monitor.process({ tool: 'Write', file: 'src/d.ts' });
+
+      const getStateEvents = (result: { events: DomainEvent[] }) =>
+        result.events.filter(
+          (e) => (e as unknown as Record<string, unknown>).kind === STATE_CHANGED
+        );
+
+      expect(getStateEvents(r1)).toHaveLength(1);
+      expect(getStateEvents(r2)).toHaveLength(1);
+      expect(getStateEvents(r3)).toHaveLength(0);
+      expect(getStateEvents(r4)).toHaveLength(1);
+
+      const r1evt = getStateEvents(r1)[0] as unknown as Record<string, unknown>;
+      expect(r1evt.from).toBe('NORMAL');
+      expect(r1evt.to).toBe('ELEVATED');
+
+      const r2evt = getStateEvents(r2)[0] as unknown as Record<string, unknown>;
+      expect(r2evt.from).toBe('ELEVATED');
+      expect(r2evt.to).toBe('HIGH');
+
+      const r4evt = getStateEvents(r4)[0] as unknown as Record<string, unknown>;
+      expect(r4evt.from).toBe('HIGH');
+      expect(r4evt.to).toBe('LOCKDOWN');
+    });
+
+    it('includes trigger action in StateChanged events within decision events', () => {
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 4,
+      });
+
+      // 2 denials triggers ELEVATED (ceil(4/2) = 2)
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      const result = monitor.process({ tool: 'Write', file: 'src/b.ts' });
+
+      const stateEvents = result.events.filter(
+        (e) => (e as unknown as Record<string, unknown>).kind === STATE_CHANGED
+      );
+      expect(stateEvents).toHaveLength(1);
+      const evt = stateEvents[0] as unknown as Record<string, unknown>;
+      expect(evt.trigger).toBe('file.write');
+      expect(evt.totalDenials).toBe(2);
+      expect(evt.denialThreshold).toBe(4);
+    });
+  });
 });

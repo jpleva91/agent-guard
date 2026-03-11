@@ -87,7 +87,7 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
   let escalationLevel: EscalationLevel = ESCALATION.NORMAL;
   const sessionStartTime = Date.now();
 
-  function updateEscalation(triggerAction?: string): void {
+  function updateEscalation(triggerAction?: string): DomainEvent | null {
     const previousLevel = escalationLevel;
 
     if (totalDenials >= denialThreshold * 2 || totalViolations >= violationThreshold * 2) {
@@ -115,7 +115,10 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
       store.append(stateEvent);
       bus.emit(STATE_CHANGED, stateEvent as unknown as Record<string, unknown>);
       bus.emit('*', stateEvent as unknown as Record<string, unknown>);
+      return stateEvent;
     }
+
+    return null;
   }
 
   return {
@@ -181,10 +184,13 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
         violationsByInvariant.set(id, (violationsByInvariant.get(id) || 0) + 1);
       }
 
-      updateEscalation(result.intent.action);
+      const stateChangedEvent = updateEscalation(result.intent.action);
+
+      const events = stateChangedEvent ? [...result.events, stateChangedEvent] : result.events;
 
       return {
         ...result,
+        events,
         monitor: {
           escalationLevel,
           totalEvaluations,
