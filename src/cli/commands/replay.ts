@@ -152,9 +152,7 @@ export function registerReplayCommand(program: Command): void {
 // SQLite helpers
 // ---------------------------------------------------------------------------
 
-async function loadReplaySessionSqlite(
-  runId?: string
-): Promise<ReplaySession | null> {
+async function loadReplaySessionSqlite(runId?: string): Promise<ReplaySession | null> {
   const { createStorageBundle } = await import('../../storage/factory.js');
   const { getLatestRunId, loadRunEvents } = await import('../../storage/sqlite-store.js');
   const config = { backend: 'sqlite' as const };

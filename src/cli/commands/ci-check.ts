@@ -80,10 +80,8 @@ async function loadLatestSessionSqlite(
   storageConfig: StorageConfig
 ): Promise<ReplaySession | null> {
   const { createStorageBundle } = await import('../../storage/factory.js');
-  const {
-    getLatestRunId: getLatestRunIdSqlite,
-    loadRunEvents,
-  } = await import('../../storage/sqlite-store.js');
+  const { getLatestRunId: getLatestRunIdSqlite, loadRunEvents } =
+    await import('../../storage/sqlite-store.js');
 
   const storage = await createStorageBundle(storageConfig);
   if (!storage.db) {
@@ -188,10 +186,7 @@ function formatGitHubAnnotation(result: CiCheckResult): string {
 // CLI Entry Point
 // ---------------------------------------------------------------------------
 
-export async function ciCheck(
-  args: string[],
-  storageConfig?: StorageConfig
-): Promise<number> {
+export async function ciCheck(args: string[], storageConfig?: StorageConfig): Promise<number> {
   const parsed = parseArgs(args, {
     boolean: ['--fail-on-violation', '--fail-on-denial', '--json', '--last'],
     string: ['--base-dir'],
@@ -249,7 +244,9 @@ export async function ciCheck(
     process.stderr.write('    --json                Output as JSON\n');
     process.stderr.write('    --last                Use the most recent local run\n');
     process.stderr.write('    --base-dir, -d <dir>  Base directory for events\n');
-    process.stderr.write('    --store <backend>     Storage backend: jsonl (default) or sqlite\n\n');
+    process.stderr.write(
+      '    --store <backend>     Storage backend: jsonl (default) or sqlite\n\n'
+    );
     return 1;
   }
 

@@ -93,7 +93,9 @@ async function openSqliteDb(storageConfig: StorageConfig) {
 
 export async function inspect(args: string[], storageConfig?: StorageConfig): Promise<void> {
   const showDecisions = args.includes('--decisions');
-  const filteredArgs = args.filter((a) => a !== '--decisions' && a !== '--store' && a !== 'sqlite' && a !== 'jsonl');
+  const filteredArgs = args.filter(
+    (a) => a !== '--decisions' && a !== '--store' && a !== 'sqlite' && a !== 'jsonl'
+  );
   const targetArg = filteredArgs[0];
 
   const useSqlite = storageConfig?.backend === 'sqlite';
