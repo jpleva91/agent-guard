@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createMonitor, ESCALATION } from '../../src/kernel/monitor.js';
+import { STATE_CHANGED } from '../../src/events/schema.js';
+import type { DomainEvent } from '../../src/core/types.js';
 
 describe('agentguard/monitor', () => {
   describe('ESCALATION', () => {
@@ -30,11 +32,13 @@ describe('agentguard/monitor', () => {
 
     it('tracks denials', () => {
       const monitor = createMonitor({
-        policyDefs: [{
-          id: 'deny-writes',
-          name: 'No Writes',
-          rules: [{ action: 'file.write', effect: 'deny', reason: 'Read-only' }],
-        }],
+        policyDefs: [
+          {
+            id: 'deny-writes',
+            name: 'No Writes',
+            rules: [{ action: 'file.write', effect: 'deny', reason: 'Read-only' }],
+          },
+        ],
       });
 
       monitor.process({ tool: 'Write', file: 'src/a.ts' });
@@ -44,11 +48,13 @@ describe('agentguard/monitor', () => {
 
     it('escalates on repeated denials', () => {
       const monitor = createMonitor({
-        policyDefs: [{
-          id: 'deny-all',
-          name: 'Deny All',
-          rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
-        }],
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
         denialThreshold: 3,
       });
 
@@ -63,11 +69,13 @@ describe('agentguard/monitor', () => {
 
     it('blocks all actions in lockdown', () => {
       const monitor = createMonitor({
-        policyDefs: [{
-          id: 'deny-all',
-          name: 'Deny All',
-          rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
-        }],
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
         denialThreshold: 2,
       });
 
@@ -83,11 +91,13 @@ describe('agentguard/monitor', () => {
 
     it('resets escalation', () => {
       const monitor = createMonitor({
-        policyDefs: [{
-          id: 'deny-all',
-          name: 'Deny All',
-          rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
-        }],
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
         denialThreshold: 2,
       });
 
@@ -103,15 +113,202 @@ describe('agentguard/monitor', () => {
 
     it('provides event store access', () => {
       const monitor = createMonitor({
-        policyDefs: [{
-          id: 'deny-all',
-          name: 'Deny All',
-          rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
-        }],
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
       });
 
       monitor.process({ tool: 'Write', file: 'src/a.ts' });
       expect(monitor.store.count()).toBeGreaterThan(0);
+    });
+  });
+
+  describe('StateChanged events', () => {
+    it('emits StateChanged on escalation from NORMAL to ELEVATED', () => {
+      const stateEvents: DomainEvent[] = [];
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 4,
+      });
+
+      monitor.bus.on(STATE_CHANGED, (event) => {
+        stateEvents.push(event as unknown as DomainEvent);
+      });
+
+      // 2 denials should trigger ELEVATED (ceil(4/2) = 2)
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/b.ts' });
+
+      expect(stateEvents).toHaveLength(1);
+      const evt = stateEvents[0] as unknown as Record<string, unknown>;
+      expect(evt.kind).toBe(STATE_CHANGED);
+      expect(evt.from).toBe('NORMAL');
+      expect(evt.to).toBe('ELEVATED');
+      expect(evt.trigger).toBe('file.write');
+    });
+
+    it('emits StateChanged with escalation context fields', () => {
+      const stateEvents: DomainEvent[] = [];
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 2,
+      });
+
+      monitor.bus.on(STATE_CHANGED, (event) => {
+        stateEvents.push(event as unknown as DomainEvent);
+      });
+
+      // 1 denial triggers ELEVATED (ceil(2/2) = 1)
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+
+      expect(stateEvents).toHaveLength(1);
+      const evt = stateEvents[0] as unknown as Record<string, unknown>;
+      expect(evt.totalDenials).toBe(1);
+      expect(evt.totalViolations).toBe(0);
+      expect(evt.denialThreshold).toBe(2);
+      expect(evt.violationThreshold).toBe(3);
+    });
+
+    it('emits multiple StateChanged events through escalation levels', () => {
+      const stateEvents: DomainEvent[] = [];
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 2,
+      });
+
+      monitor.bus.on(STATE_CHANGED, (event) => {
+        stateEvents.push(event as unknown as DomainEvent);
+      });
+
+      // 1 denial → ELEVATED
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      // 2 denials → HIGH
+      monitor.process({ tool: 'Write', file: 'src/b.ts' });
+      // 3 denials → still HIGH (no event)
+      monitor.process({ tool: 'Write', file: 'src/c.ts' });
+      // 4 denials → LOCKDOWN
+      monitor.process({ tool: 'Write', file: 'src/d.ts' });
+
+      expect(stateEvents).toHaveLength(3);
+      const transitions = stateEvents.map((e) => {
+        const evt = e as unknown as Record<string, unknown>;
+        return { from: evt.from, to: evt.to };
+      });
+      expect(transitions).toEqual([
+        { from: 'NORMAL', to: 'ELEVATED' },
+        { from: 'ELEVATED', to: 'HIGH' },
+        { from: 'HIGH', to: 'LOCKDOWN' },
+      ]);
+    });
+
+    it('persists StateChanged events in the event store', () => {
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 2,
+      });
+
+      // Drive to ELEVATED
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+
+      const stateChangedEvents = monitor.store.query({ kind: STATE_CHANGED });
+      expect(stateChangedEvents).toHaveLength(1);
+      expect((stateChangedEvents[0] as unknown as Record<string, unknown>).from).toBe('NORMAL');
+      expect((stateChangedEvents[0] as unknown as Record<string, unknown>).to).toBe('ELEVATED');
+    });
+
+    it('emits StateChanged on resetEscalation from non-NORMAL level', () => {
+      const stateEvents: DomainEvent[] = [];
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 2,
+      });
+
+      // Drive to LOCKDOWN
+      for (let i = 0; i < 4; i++) {
+        monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      }
+
+      monitor.bus.on(STATE_CHANGED, (event) => {
+        stateEvents.push(event as unknown as DomainEvent);
+      });
+
+      monitor.resetEscalation();
+
+      expect(stateEvents).toHaveLength(1);
+      const evt = stateEvents[0] as unknown as Record<string, unknown>;
+      expect(evt.from).toBe('LOCKDOWN');
+      expect(evt.to).toBe('NORMAL');
+      expect(evt.trigger).toBe('manual-reset');
+    });
+
+    it('does not emit StateChanged on resetEscalation when already NORMAL', () => {
+      const stateEvents: DomainEvent[] = [];
+      const monitor = createMonitor();
+
+      monitor.bus.on(STATE_CHANGED, (event) => {
+        stateEvents.push(event as unknown as DomainEvent);
+      });
+
+      monitor.resetEscalation();
+
+      expect(stateEvents).toHaveLength(0);
+    });
+
+    it('does not emit StateChanged when escalation level stays the same', () => {
+      const stateEvents: DomainEvent[] = [];
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'allow-reads',
+            name: 'Allow Reads',
+            rules: [{ action: 'file.read', effect: 'allow' }],
+          },
+        ],
+      });
+
+      monitor.bus.on(STATE_CHANGED, (event) => {
+        stateEvents.push(event as unknown as DomainEvent);
+      });
+
+      // Allowed actions don't change escalation
+      monitor.process({ tool: 'Read', file: 'src/a.ts' });
+      monitor.process({ tool: 'Read', file: 'src/b.ts' });
+
+      expect(stateEvents).toHaveLength(0);
     });
   });
 });

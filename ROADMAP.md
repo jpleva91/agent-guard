@@ -60,7 +60,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Action Authorization Boundary (AAB) | Implemented (2 bypass vectors) | `src/kernel/aab.ts` |
 | Policy Evaluator (two-phase deny/allow) | Implemented | `src/policy/evaluator.ts` |
 | 8 Built-in Invariants | Fully Implemented | `src/invariants/definitions.ts`, `src/invariants/checker.ts` |
-| Event Model (44 event kinds) | Comprehensive | `src/events/schema.ts` |
+| Event Model (46 event kinds) | Comprehensive | `src/events/schema.ts` |
 | JSONL Persistence | Implemented | `src/events/jsonl.ts` |
 | Simulation Engine (3 simulators + impact forecast) | Fully Implemented | `src/kernel/simulation/` |
 | Blast Radius Computation | Implemented | `src/kernel/blast-radius.ts` |
@@ -76,9 +76,9 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Cross-session Analytics (aggregation, clustering, trends) | Implemented | `src/analytics/` |
 | Plugin Ecosystem (discovery, registry, validation) | Implemented | `src/plugins/` |
 | Renderer Plugin System | Implemented | `src/renderers/` |
-| CLI (guard, inspect, events, replay, export, import, simulate) | Implemented | `src/cli/` |
+| CLI (guard, inspect, events, replay, export, import, simulate, ci-check, analytics, plugin, claude-hook, claude-init) | Implemented | `src/cli/` |
 | Claude Code Hook Integration | Implemented | `src/adapters/claude-code.ts` |
-| VS Code Extension (sidebar panels, event reader) | Implemented | `vscode-extension/` |
+| VS Code Extension (sidebar panels, event reader, inline diagnostics) | Implemented | `vscode-extension/` |
 | Policy Pack Loader | Implemented | `src/policy/pack-loader.ts` |
 | YAML Policy Parser | Implemented | `src/policy/yaml-loader.ts` |
 
@@ -102,10 +102,10 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Item | Status | Maturity |
 |---|---|---|
 | Canonical Action Representation | Implemented | Production |
-| AAB Reference Monitor | Implemented | 2 bypass vectors to close |
+| AAB Reference Monitor | Implemented | 1 bypass vector to close (missing-adapter fixed) |
 | Policy Evaluator | Implemented | Production |
 | 8 Built-in Invariants | Fully Implemented | Production |
-| Event Model (44 kinds) | Comprehensive | Production |
+| Event Model (46 kinds) | Comprehensive | Production |
 | Simulation & Forecasting | Fully Implemented | Production |
 | Escalation State Machine | Implemented | Functional (events not persisted) |
 | Cross-session Analytics | Implemented | Functional (forensic only) |
@@ -227,7 +227,7 @@ Monitor escalation state transitions are emitted to the EventBus but not persist
 
 - [x] VS Code extension: sidebar panel with run status (`vscode-extension/src/providers/run-status-provider.ts`)
 - [x] VS Code: governance notifications for policy violations (`vscode-extension/src/services/notification-service.ts`)
-- [ ] VS Code: inline invariant violation indicators
+- [x] VS Code: inline invariant violation indicators (`vscode-extension/src/services/diagnostics-service.ts`, `vscode-extension/src/services/violation-mapper.ts`)
 - [ ] JetBrains plugin (IntelliJ/WebStorm)
 - [ ] Claude Code deep integration (full governance kernel in hook pipeline)
 
@@ -244,7 +244,7 @@ Phases are ordered to prioritize **effect-path closure and mandatory mediation**
 This is the architectural hinge. These changes transform the AAB from advisory interception to mandatory execution control.
 
 - [ ] Default-deny unknown actions in `src/policy/evaluator.ts` (change fallback from `allowed: true` to `allowed: false`)
-- [ ] Deny actions with no registered adapter in `src/kernel/kernel.ts` (emit `ActionDenied` instead of silently skipping)
+- [x] Deny actions with no registered adapter in `src/kernel/kernel.ts` (emit `ActionDenied` instead of silently skipping)
 - [ ] Persist escalation state changes as `StateChanged` DomainEvents in `src/kernel/monitor.ts`
 - [ ] Expand destructive command patterns in `src/kernel/aab.ts` (add 15+ patterns covering sudo, pkill, docker, systemctl, database commands)
 - [ ] Enforce intervention types beyond DENY (implement PAUSE and ROLLBACK behaviors in kernel execution)
@@ -264,9 +264,9 @@ This is the architectural hinge. These changes transform the AAB from advisory i
 
 > **Theme:** Shareable, composable, discoverable policies
 
-- [ ] Policy templates for common scenarios (strict, permissive, CI-only)
-- [ ] Policy composition (multiple policy files merged with precedence)
-- [ ] Policy validation CLI (`agentguard policy validate <file>`)
+- [x] Policy templates for common scenarios (`policies/strict`, `policies/ci-safe`, `policies/enterprise`, `policies/open-source`)
+- [x] Policy composition (multiple policy files merged with precedence) (`src/policy/composer.ts`, `guard --policy a --policy b`)
+- [x] Policy validation CLI (`agentguard policy validate <file>`)
 - [ ] Community policy packs (SOC2, HIPAA, internal engineering standards)
 - [ ] Policy pack versioning and compatibility
 
@@ -303,19 +303,19 @@ The JSONL persistence layer was the right starting point — append-only, human-
 
 - [ ] Enhanced telemetry beyond current flat event logging
 - [ ] Run comparison and diff (`agentguard diff <run1> <run2>`)
-- [ ] Risk scoring per agent run
+- [x] Risk scoring per agent run
 - [ ] Failure clustering and trend detection (extend `src/analytics/`)
 - [ ] Timeline viewer for governance sessions (`agentguard replay --ui`)
 - [ ] Policy evaluation traces visualization
 - [ ] Metrics export (Prometheus / OpenTelemetry)
-- [ ] Foundation for kernel-level tracing (define tracepoint interface)
+- [x] Foundation for kernel-level tracing (define tracepoint interface)
 - [ ] Application-level process and network monitoring (Node.js-based, pre-eBPF)
 
 ### Phase 12 — CI/CD Enforcement `PLANNED`
 
 > **Theme:** Governance gates in the delivery pipeline
 
-- [ ] GitHub Actions integration (reusable workflow)
+- [x] GitHub Actions integration (reusable workflow)
 - [ ] Pre-merge policy validation (block PRs that violate policy)
 - [ ] CI replay verification (replay governance session in CI)
 - [ ] Evidence packs attached to pull requests

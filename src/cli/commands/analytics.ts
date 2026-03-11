@@ -41,6 +41,7 @@ export async function analytics(args: string[], storageConfig?: StorageConfig): 
       clusters,
       trends,
       topInferredCauses,
+      runRiskScores: [],
     };
     storage.close();
   } else {

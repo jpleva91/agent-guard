@@ -193,6 +193,8 @@ export type EventKind =
   | 'ActionFailed'
   // Decision Records
   | 'DecisionRecorded'
+  // Policy Composition
+  | 'PolicyComposed'
   // Policy Traces
   | 'PolicyTraceRecorded'
   // Simulation

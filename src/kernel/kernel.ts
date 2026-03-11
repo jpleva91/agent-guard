@@ -411,6 +411,73 @@ export function createKernel(config: KernelConfig = {}): Kernel {
             });
             allEvents.push(failedEvent);
           }
+        } else {
+          // Deny actions with no registered adapter — close the audit trail gap
+          const adapterReason = !actionClass
+            ? `No action class for type: ${action.type}`
+            : `No adapter registered for action class: ${actionClass}`;
+
+          const noAdapterDeniedEvent = createEvent(ACTION_DENIED, {
+            actionType: action.type,
+            target: action.target,
+            reason: `no_registered_adapter: ${adapterReason}`,
+            actionId: action.id,
+            metadata: { runId, noAdapter: true },
+          });
+          allEvents.push(noAdapterDeniedEvent);
+          sinkEvents(allEvents);
+
+          const noAdapterSimSummary = simulationResult
+            ? {
+                predictedChanges: simulationResult.predictedChanges,
+                blastRadius: simulationResult.blastRadius,
+                riskLevel: simulationResult.riskLevel,
+                simulatorId: simulationResult.simulatorId,
+                durationMs: simulationResult.durationMs,
+                forecast: forecast || undefined,
+              }
+            : null;
+
+          const noAdapterDecisionRecord = buildDecisionRecord({
+            runId,
+            decision: {
+              ...decision,
+              allowed: false,
+              decision: {
+                ...decision.decision,
+                reason: `no_registered_adapter: ${adapterReason}`,
+              },
+            },
+            execution: null,
+            executionDurationMs: null,
+            simulation: noAdapterSimSummary,
+          });
+          sinkDecision(noAdapterDecisionRecord);
+
+          const noAdapterDecisionEvent = createEvent(DECISION_RECORDED, {
+            recordId: noAdapterDecisionRecord.recordId,
+            outcome: 'deny',
+            actionType: noAdapterDecisionRecord.action.type,
+            target: noAdapterDecisionRecord.action.target,
+            reason: `no_registered_adapter`,
+          });
+          sinkEvent(noAdapterDecisionEvent);
+
+          const noAdapterResult: KernelResult = {
+            allowed: false,
+            executed: false,
+            decision: {
+              ...decision,
+              allowed: false,
+            },
+            execution: null,
+            action,
+            events: allEvents,
+            runId,
+            decisionRecord: noAdapterDecisionRecord,
+          };
+          actionLog.push(noAdapterResult);
+          return noAdapterResult;
         }
       }
 

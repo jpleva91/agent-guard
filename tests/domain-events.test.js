@@ -35,14 +35,16 @@ import {
   CODE_REVIEWED,
   DEPLOY_COMPLETED,
   LINT_COMPLETED,
+  POLICY_COMPOSED,
 } from '../dist/events/schema.js';
 
 suite('Domain Events — Schema Validation', () => {
-  test('ALL_EVENT_KINDS contains all 45 event kinds', () => {
-    assert.strictEqual(ALL_EVENT_KINDS.size, 45);
+  test('ALL_EVENT_KINDS contains all 46 event kinds', () => {
+    assert.strictEqual(ALL_EVENT_KINDS.size, 46);
     assert.ok(ALL_EVENT_KINDS.has(ERROR_OBSERVED));
     assert.ok(ALL_EVENT_KINDS.has(BATTLE_ENDED));
     assert.ok(ALL_EVENT_KINDS.has(STATE_CHANGED));
+    assert.ok(ALL_EVENT_KINDS.has(POLICY_COMPOSED));
     assert.ok(ALL_EVENT_KINDS.has(FILE_SAVED));
     assert.ok(ALL_EVENT_KINDS.has(COMMIT_CREATED));
   });

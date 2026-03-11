@@ -42,7 +42,10 @@ const COMMANDS: Record<string, CommandHelp> = {
     description: 'Start the governed action runtime — enforce policies and invariants',
     usage: 'agentguard guard [flags]',
     flags: [
-      { flag: '--policy, -p <file>', description: 'Policy file (YAML or JSON)' },
+      {
+        flag: '--policy, -p <file>',
+        description: 'Policy file (YAML or JSON). Repeatable for composition.',
+      },
       { flag: '--dry-run', description: 'Evaluate without executing actions' },
       { flag: '--verbose, -v', description: 'Show detailed output' },
       { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
@@ -50,6 +53,7 @@ const COMMANDS: Record<string, CommandHelp> = {
     examples: [
       'agentguard guard',
       'agentguard guard --policy agentguard.yaml',
+      'agentguard guard --policy base.yaml --policy overrides.yaml',
       'agentguard guard --dry-run',
       'echo \'{"tool":"Bash","command":"rm -rf /"}\' | agentguard guard',
     ],
@@ -111,6 +115,34 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard import ./exports/run.agentguard.jsonl --as custom_run_id',
     ],
   },
+  'ci-check': {
+    name: 'agentguard ci-check',
+    description: 'CI governance verification — check a session for violations',
+    usage: 'agentguard ci-check <session-file> [flags]',
+    flags: [
+      { flag: '--fail-on-violation', description: 'Exit 1 if invariant violations found' },
+      { flag: '--fail-on-denial', description: 'Exit 1 if any actions were denied' },
+      { flag: '--json', description: 'Output result as JSON' },
+      { flag: '--last', description: 'Use the most recent local run' },
+      { flag: '--base-dir, -d <dir>', description: 'Base directory for event storage' },
+    ],
+    examples: [
+      'agentguard ci-check session.agentguard.jsonl --fail-on-violation',
+      'agentguard ci-check --last --fail-on-denial --json',
+      'agentguard ci-check session.jsonl --fail-on-violation --fail-on-denial',
+    ],
+  },
+  policy: {
+    name: 'agentguard policy',
+    description: 'Policy management tools (validate, etc.)',
+    usage: 'agentguard policy <command> [options]',
+    flags: [],
+    examples: [
+      'agentguard policy validate agentguard.yaml',
+      'agentguard policy validate my-policy.json --json',
+      'agentguard policy validate agentguard.yaml --strict',
+    ],
+  },
   simulate: {
     name: 'agentguard simulate',
     description: 'Simulate an action and display predicted impact without executing',
@@ -120,12 +152,14 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--target <path>', description: 'Target file or resource path' },
       { flag: '--command <cmd>', description: 'Shell command (for shell.exec actions)' },
       { flag: '--branch <name>', description: 'Git branch name' },
-      { flag: '--json', description: 'Output raw SimulationResult as JSON' },
+      { flag: '--policy <file>', description: 'Policy file (YAML/JSON) to evaluate against' },
+      { flag: '--json', description: 'Output raw result as JSON' },
     ],
     examples: [
       'agentguard simulate \'{"tool":"Bash","command":"git push origin main"}\'',
       'agentguard simulate --action file.write --target .env',
       'agentguard simulate --action git.push --branch main --json',
+      'agentguard simulate --action file.write --target .env --policy agentguard.yaml',
     ],
   },
   init: {
@@ -167,15 +201,24 @@ async function main() {
         break;
       }
       const flags = args.slice(1);
-      const policyIdx = flags.findIndex((f) => f === '--policy' || f === '-p');
-      const policyFile = policyIdx !== -1 ? flags[policyIdx + 1] : undefined;
+
+      // Collect all --policy/-p flags (repeatable for composition)
+      const policyFiles: string[] = [];
+      for (let i = 0; i < flags.length; i++) {
+        if ((flags[i] === '--policy' || flags[i] === '-p') && flags[i + 1]) {
+          policyFiles.push(flags[i + 1]);
+          i++; // skip the value
+        }
+      }
+
       const dryRun = flags.includes('--dry-run');
       const verbose = flags.includes('--verbose') || flags.includes('-v');
 
       const { guard } = await import('./commands/guard.js');
       const storageConfig = resolveStorageConfig(flags);
       const code = await guard(args.slice(1), {
-        policy: policyFile,
+        policy: policyFiles.length === 1 ? policyFiles[0] : undefined,
+        policies: policyFiles.length > 1 ? policyFiles : undefined,
         dryRun,
         verbose,
         stdin: true,
@@ -235,6 +278,17 @@ async function main() {
       break;
     }
 
+    case 'ci-check': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS['ci-check']));
+        break;
+      }
+      const { ciCheck } = await import('./commands/ci-check.js');
+      const code = await ciCheck(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
     case 'simulate': {
       if (wantsHelp) {
         console.log(formatHelp(COMMANDS.simulate));
@@ -243,7 +297,21 @@ async function main() {
       const { simulate: simulateCmd } = await import('./commands/simulate.js');
       const flags = args.slice(1);
       const jsonOut = flags.includes('--json');
-      const code = await simulateCmd(flags, { json: jsonOut });
+      const policyIdx = flags.findIndex((f) => f === '--policy' || f === '-p');
+      const simulatePolicy = policyIdx !== -1 ? flags[policyIdx + 1] : undefined;
+      const code = await simulateCmd(flags, { json: jsonOut, policy: simulatePolicy });
+      process.exit(code);
+      break;
+    }
+
+    case 'policy': {
+      if (wantsHelp) {
+        const { policy: policyCmd } = await import('./commands/policy.js');
+        await policyCmd(['help']);
+        break;
+      }
+      const { policy: policyCmd } = await import('./commands/policy.js');
+      const code = await policyCmd(args.slice(1));
       process.exit(code);
       break;
     }
@@ -316,6 +384,7 @@ function printHelp(): void {
   \x1b[1mGovernance:\x1b[0m
     agentguard guard                          Start governed action runtime
     agentguard guard --policy <file>          Use a specific policy file (YAML/JSON)
+    agentguard guard --policy a --policy b    Compose multiple policies with precedence
     agentguard guard --dry-run                Evaluate without executing actions
     agentguard inspect [runId]                Inspect action graph and decisions
     agentguard events [runId]                 Show raw event stream for a run
@@ -324,6 +393,7 @@ function printHelp(): void {
   \x1b[1mSimulation:\x1b[0m
     agentguard simulate <action-json>          Simulate action and show predicted impact
     agentguard simulate --action <type>        Simulate by action type and flags
+    agentguard simulate ... --policy <file>    Evaluate against policy (non-zero on deny)
     agentguard simulate ... --json             Output raw JSON result
 
   \x1b[1mPortability:\x1b[0m
@@ -336,6 +406,11 @@ function printHelp(): void {
     agentguard replay --last                  Replay most recent session
     agentguard replay --last --step           Step through events interactively
 
+  \x1b[1mPolicy:\x1b[0m
+    agentguard policy validate <file>        Validate a policy file (YAML/JSON)
+    agentguard policy validate ... --strict  Include best-practice checks
+    agentguard policy validate ... --json    Output as JSON
+
   \x1b[1mPlugins:\x1b[0m
     agentguard plugin list                    List installed plugins
     agentguard plugin install <path>          Install a plugin from a local path
@@ -345,6 +420,10 @@ function printHelp(): void {
   \x1b[1mScaffolding:\x1b[0m
     agentguard init --extension <type>        Scaffold a new governance extension
     agentguard init --extension <type> -n X   Name the extension
+
+  \x1b[1mCI/CD:\x1b[0m
+    agentguard ci-check <session>             Verify governance session in CI
+    agentguard ci-check --last                Check most recent run locally
 
   \x1b[1mIntegration:\x1b[0m
     agentguard claude-init                    Set up Claude Code hook integration

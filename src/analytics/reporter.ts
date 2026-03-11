@@ -1,6 +1,6 @@
 // Report generation — formats analytics results as markdown, JSON, or terminal output.
 
-import type { AnalyticsReport, ViolationCluster, ViolationTrend } from './types.js';
+import type { AnalyticsReport, RunRiskScore, ViolationCluster, ViolationTrend } from './types.js';
 
 /** Format a timestamp as an ISO date string */
 function formatDate(ts: number): string {
@@ -89,6 +89,21 @@ export function toMarkdown(report: AnalyticsReport): string {
     lines.push('');
   }
 
+  // Risk scores
+  if (report.runRiskScores.length > 0) {
+    lines.push('## Run Risk Scores');
+    lines.push('');
+    lines.push('| Session | Score | Level | Actions | Denials | Violations | Escalation |');
+    lines.push('|---------|-------|-------|---------|---------|------------|------------|');
+    for (const rs of report.runRiskScores.slice(0, 20)) {
+      const esc = ['NORMAL', 'ELEVATED', 'HIGH', 'LOCKDOWN'][rs.peakEscalation];
+      lines.push(
+        `| ${rs.sessionId.slice(0, 12)} | ${rs.score} | ${rs.riskLevel} | ${rs.totalActions} | ${rs.totalDenials} | ${rs.totalViolations} | ${esc} |`
+      );
+    }
+    lines.push('');
+  }
+
   return lines.join('\n');
 }
 
@@ -118,6 +133,27 @@ function formatTrendForTerminal(trend: ViolationTrend): string {
   const dir = trendIndicator(trend.direction);
   const change = trend.changePercent > 0 ? `+${trend.changePercent}%` : `${trend.changePercent}%`;
   return `  ${dir} ${trend.key} (${trend.dimension}): ${trend.recentCount} recent / ${trend.previousCount} previous (${change})`;
+}
+
+/** Risk level indicator */
+function riskLevelIndicator(level: string): string {
+  switch (level) {
+    case 'critical':
+      return '\u2718'; // ✘
+    case 'high':
+      return '\u26A0'; // ⚠
+    case 'medium':
+      return '\u25CF'; // ●
+    default:
+      return '\u2714'; // ✔
+  }
+}
+
+/** Format a risk score for terminal display */
+function formatRiskScoreForTerminal(rs: RunRiskScore): string {
+  const indicator = riskLevelIndicator(rs.riskLevel);
+  const esc = ['NORMAL', 'ELEVATED', 'HIGH', 'LOCKDOWN'][rs.peakEscalation];
+  return `    ${indicator} ${rs.sessionId.slice(0, 12)}  score: ${rs.score}  level: ${rs.riskLevel}  escalation: ${esc}  (${rs.totalActions} actions, ${rs.totalDenials} denials)`;
 }
 
 /** Generate terminal output (no ANSI codes for portability) */
@@ -168,6 +204,19 @@ export function toTerminal(report: AnalyticsReport): string {
     lines.push(`  ${'─'.repeat(50)}`);
     for (const { cause, count } of report.topInferredCauses.slice(0, 5)) {
       lines.push(`    [${count}x] ${cause}`);
+    }
+    lines.push('');
+  }
+
+  // Risk scores
+  if (report.runRiskScores.length > 0) {
+    lines.push('  Run Risk Scores');
+    lines.push(`  ${'─'.repeat(50)}`);
+    for (const rs of report.runRiskScores.slice(0, 10)) {
+      lines.push(formatRiskScoreForTerminal(rs));
+    }
+    if (report.runRiskScores.length > 10) {
+      lines.push(`  ... and ${report.runRiskScores.length - 10} more`);
     }
     lines.push('');
   }

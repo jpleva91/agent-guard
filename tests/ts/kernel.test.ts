@@ -205,6 +205,113 @@ describe('Kernel with seeded RNG', () => {
   });
 });
 
+describe('Kernel denies actions with no registered adapter', () => {
+  it('denies when no adapter is registered for the action class', async () => {
+    // Use an empty adapter registry (no adapters registered at all)
+    const { createAdapterRegistry } = await import('../../src/core/adapters.js');
+    const emptyRegistry = createAdapterRegistry();
+
+    const sunkEvents: DomainEvent[] = [];
+    const testSink: EventSink = {
+      write(event) {
+        sunkEvents.push(event);
+      },
+    };
+
+    const kernel = createKernel({
+      adapters: emptyRegistry,
+      sinks: [testSink],
+    });
+
+    // file.read is allowed by default policy, but 'file' class has no adapter
+    const result = await kernel.propose({
+      tool: 'Read',
+      file: 'src/index.ts',
+      agent: 'test-agent',
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.executed).toBe(false);
+    expect(result.action).not.toBeNull();
+
+    // Should have an ActionDenied event with no_registered_adapter reason
+    const deniedEvents = result.events.filter((e) => e.kind === 'ActionDenied');
+    expect(deniedEvents.length).toBe(1);
+    expect((deniedEvents[0] as Record<string, unknown>).reason).toContain('no_registered_adapter');
+  });
+
+  it('sinks denial events to configured sinks', async () => {
+    const { createAdapterRegistry } = await import('../../src/core/adapters.js');
+    const emptyRegistry = createAdapterRegistry();
+
+    const sunkEvents: DomainEvent[] = [];
+    const testSink: EventSink = {
+      write(event) {
+        sunkEvents.push(event);
+      },
+    };
+
+    const kernel = createKernel({
+      adapters: emptyRegistry,
+      sinks: [testSink],
+    });
+
+    await kernel.propose({
+      tool: 'Read',
+      file: 'src/index.ts',
+      agent: 'test-agent',
+    });
+
+    // Should have sunk ActionDenied and DecisionRecorded events
+    const deniedSunk = sunkEvents.filter((e) => e.kind === 'ActionDenied');
+    const decisionSunk = sunkEvents.filter((e) => e.kind === 'DecisionRecorded');
+    expect(deniedSunk.length).toBe(1);
+    expect(decisionSunk.length).toBe(1);
+    expect((decisionSunk[0] as Record<string, unknown>).outcome).toBe('deny');
+    expect((decisionSunk[0] as Record<string, unknown>).reason).toBe('no_registered_adapter');
+  });
+
+  it('includes decision record in kernel result', async () => {
+    const { createAdapterRegistry } = await import('../../src/core/adapters.js');
+    const emptyRegistry = createAdapterRegistry();
+
+    const kernel = createKernel({ adapters: emptyRegistry });
+
+    const result = await kernel.propose({
+      tool: 'Write',
+      file: 'test.txt',
+      agent: 'test-agent',
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.decisionRecord).toBeDefined();
+    expect(result.decisionRecord?.outcome).toBe('deny');
+  });
+
+  it('records no-adapter denial in action log', async () => {
+    const { createAdapterRegistry } = await import('../../src/core/adapters.js');
+    const emptyRegistry = createAdapterRegistry();
+
+    const kernel = createKernel({ adapters: emptyRegistry });
+
+    await kernel.propose({
+      tool: 'Read',
+      file: 'a.ts',
+      agent: 'test',
+    });
+    await kernel.propose({
+      tool: 'Write',
+      file: 'b.ts',
+      agent: 'test',
+    });
+
+    const log = kernel.getActionLog();
+    expect(log.length).toBe(2);
+    expect(log[0].allowed).toBe(false);
+    expect(log[1].allowed).toBe(false);
+  });
+});
+
 describe('Kernel with policies', () => {
   const strictPolicy: KernelConfig = {
     dryRun: true,

@@ -50,6 +50,9 @@ export const ACTION_FAILED: EventKind = 'ActionFailed';
 // Decision Records
 export const DECISION_RECORDED: EventKind = 'DecisionRecorded';
 
+// Policy Composition
+export const POLICY_COMPOSED: EventKind = 'PolicyComposed';
+
 // Policy Traces
 export const POLICY_TRACE_RECORDED: EventKind = 'PolicyTraceRecorded';
 
@@ -129,7 +132,13 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   },
   [STATE_CHANGED]: {
     required: ['from', 'to'],
-    optional: [],
+    optional: [
+      'trigger',
+      'totalDenials',
+      'totalViolations',
+      'denialThreshold',
+      'violationThreshold',
+    ],
   },
   [RUN_STARTED]: {
     required: ['runId'],
@@ -194,6 +203,10 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   [DECISION_RECORDED]: {
     required: ['recordId', 'outcome', 'actionType'],
     optional: ['target', 'reason', 'metadata'],
+  },
+  [POLICY_COMPOSED]: {
+    required: ['policyCount', 'totalRules', 'sources'],
+    optional: ['layers', 'metadata'],
   },
   [POLICY_TRACE_RECORDED]: {
     required: ['actionType', 'decision', 'totalRulesChecked'],
