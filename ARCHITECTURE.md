@@ -52,6 +52,7 @@ src/
 ├── plugins/       Plugin ecosystem (discovery, registry, validation, sandboxing)
 ├── renderers/     Renderer plugin system (registry, TUI renderer)
 ├── cli/           CLI entry point and commands
+├── storage/       SQLite storage backend (opt-in alternative to JSONL)
 ├── telemetry/     Runtime telemetry and logging
 └── core/          Shared utilities (types, actions, hash, execution-log)
 
@@ -70,7 +71,8 @@ policies/          Policy packs (YAML: ci-safe, enterprise, open-source, strict)
 - **plugins/** may import from core/, events/, kernel/ only
 - **renderers/** may import from core/, events/ only
 - **analytics/** may import from events/, core/ only
-- **cli/** may import from analytics/, kernel/, events/, policy/, plugins/, renderers/, core/
+- **storage/** may import from events/, core/ only
+- **cli/** may import from analytics/, kernel/, events/, policy/, plugins/, renderers/, storage/, core/
 - **telemetry/** may import from core/ only
 - **core/** has no project imports (leaf layer)
 

@@ -14,7 +14,7 @@ The system has one architectural spine: the **canonical event model**. All syste
 - JSONL event persistence for audit trail and replay
 - Claude Code adapter for PreToolUse/PostToolUse hooks
 - TypeScript source (`src/`), compiled to `dist/` via tsc + esbuild
-- CLI has runtime dependencies (`chokidar`, `commander`, `pino`)
+- CLI has runtime dependencies (`chokidar`, `commander`, `pino`); optional `better-sqlite3` for SQLite storage backend
 - Build tooling: tsc + esbuild + vitest (dev dependencies only)
 
 ## Quick Start
@@ -47,6 +47,7 @@ src/
 │   ├── replay-comparator.ts # Replay outcome comparison
 │   ├── replay-engine.ts    # Deterministic replay engine
 │   ├── replay-processor.ts # Replay event processor
+│   ├── heartbeat.ts        # Agent heartbeat monitor
 │   ├── decisions/          # Typed decision records
 │   │   ├── factory.ts      # Decision record factory
 │   │   └── types.ts        # Decision record type definitions
@@ -95,7 +96,7 @@ src/
 │   ├── replay.ts           # Session replay logic
 │   ├── session-store.ts    # Session management
 │   ├── file-event-store.ts # File-based event persistence
-│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, claude-hook, claude-init
+│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, claude-hook, claude-init, init
 ├── plugins/                # Plugin ecosystem
 │   ├── discovery.ts        # Plugin discovery mechanism
 │   ├── registry.ts         # Plugin registry
@@ -108,6 +109,14 @@ src/
 │   ├── tui-renderer.ts     # TUI renderer implementation
 │   ├── types.ts            # Renderer type definitions
 │   └── index.ts            # Module re-exports
+├── storage/                # SQLite storage backend (opt-in)
+│   ├── factory.ts          # Storage bundle factory
+│   ├── index.ts            # Module re-exports
+│   ├── migrations.ts       # Schema migrations (version-based)
+│   ├── sqlite-analytics.ts # SQLite-backed analytics queries
+│   ├── sqlite-sink.ts      # SQLite event/decision sink
+│   ├── sqlite-store.ts     # SQLite event store implementation
+│   └── types.ts            # Storage type definitions
 ├── telemetry/              # Runtime telemetry
 │   ├── index.ts            # Module re-exports
 │   ├── runtimeLogger.ts    # Runtime logging implementation
@@ -137,7 +146,7 @@ vscode-extension/              # VS Code extension
 
 tests/
 ├── *.test.js               # 14 JS test files (custom zero-dependency harness)
-└── ts/*.test.ts            # 62 TS test files (vitest)
+└── ts/*.test.ts            # 71 TS test files (vitest)
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
 policies/                   # Policy packs (YAML: ci-safe, enterprise, open-source, strict)
 docs/                       # System documentation (architecture, event model, specs)
@@ -197,6 +206,7 @@ Each top-level directory maps to a single architectural concept:
 - **src/renderers/** — Renderer plugin system (registry, TUI renderer)
 - **src/cli/** — CLI entry point and commands
 - **src/core/** — Shared utilities (types, actions, hash, execution-log)
+- **src/storage/** — SQLite storage backend (opt-in alternative to JSONL, indexed queries)
 - **src/telemetry/** — Runtime telemetry and logging
 
 ### CLI Commands
@@ -215,6 +225,7 @@ Each top-level directory maps to a single architectural concept:
 - `agentguard policy validate <file>` — Validate a policy file (YAML/JSON)
 - `agentguard claude-hook` — Handle Claude Code PreToolUse/PostToolUse hook events
 - `agentguard claude-init` — Set up Claude Code hook integration
+- `agentguard init <type>` — Scaffold governance extensions (invariant, policy-pack, adapter, renderer, replay-processor)
 
 ### Event Model
 The canonical event model is the architectural spine. Event kinds defined in `src/events/schema.ts`:
@@ -227,6 +238,7 @@ The canonical event model is the architectural spine. Event kinds defined in `sr
 - **Policy Traces**: `PolicyTraceRecorded`
 - **Pipeline**: `PipelineStarted`, `StageCompleted`, `StageFailed`, `PipelineCompleted`, `PipelineFailed`, `FileScopeViolation`
 - **Dev activity**: `FileSaved`, `TestCompleted`, `BuildCompleted`, `CommitCreated`, `CodeReviewed`, `DeployCompleted`, `LintCompleted`
+- **Heartbeat**: `HeartbeatEmitted`, `HeartbeatMissed`, `AgentUnresponsive`
 - **Battle lifecycle**: `ENCOUNTER_STARTED`, `MOVE_USED`, `DAMAGE_DEALT`, `HEALING_APPLIED`, `PASSIVE_ACTIVATED`, `BUGMON_FAINTED`, `CACHE_ATTEMPTED`, `CACHE_SUCCESS`, `BATTLE_ENDED`
 - **Ingestion**: `ErrorObserved`, `BugClassified`, `ActivityRecorded`, `EvolutionTriggered`
 
@@ -281,7 +293,7 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 
 **Test structure:**
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (`tests/ts/*.test.ts`): 62 files using vitest
+- **TypeScript tests** (`tests/ts/*.test.ts`): 71 files using vitest
 - **Coverage areas**: adapters, analytics (including risk scorer), kernel (AAB, engine, monitor, blast radius, integration, e2e pipeline), CLI commands (args, guard, inspect, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate), decision records, domain models, events, evidence packs, execution log, impact forecast, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, validation), policy evaluation (including pack loader, policy packs, evaluation trace), renderers, replay (engine, comparator, processor), simulation, telemetry (including tracepoint), TUI renderer, violation mapper, VS Code event reader, YAML loading
 
 ## CI/CD & Automation

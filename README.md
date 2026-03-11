@@ -163,6 +163,7 @@ agentguard ci-check --last                # Check most recent run locally
 
 # === Integration ===
 agentguard claude-init                    # Set up Claude Code hook integration
+agentguard init <type>                    # Scaffold governance extensions
 agentguard help                           # Show all commands
 ```
 
@@ -229,6 +230,7 @@ src/
 │   ├── replay-comparator.ts # Replay outcome comparison
 │   ├── replay-engine.ts    # Deterministic replay engine
 │   ├── replay-processor.ts # Replay event processor
+│   ├── heartbeat.ts        # Agent heartbeat monitor
 │   ├── decisions/          # Typed decision records
 │   └── simulation/         # Pre-execution impact simulation
 ├── events/                 # Canonical event model
@@ -272,7 +274,8 @@ src/
 │   └── index.ts            # Module re-exports
 ├── cli/                    # CLI entry point + commands
 │   ├── bin.ts              # Main entry
-│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, claude-hook, claude-init
+│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, claude-hook, claude-init, init
+├── storage/                # SQLite storage backend (opt-in alternative to JSONL)
 ├── telemetry/              # Runtime telemetry and logging
 └── core/                   # Shared utilities (types, actions, hash, rng, execution-log)
 

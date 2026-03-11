@@ -60,7 +60,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Action Authorization Boundary (AAB) | Implemented (2 bypass vectors) | `src/kernel/aab.ts` |
 | Policy Evaluator (two-phase deny/allow) | Implemented | `src/policy/evaluator.ts` |
 | 8 Built-in Invariants | Fully Implemented | `src/invariants/definitions.ts`, `src/invariants/checker.ts` |
-| Event Model (46 event kinds) | Comprehensive | `src/events/schema.ts` |
+| Event Model (49 event kinds) | Comprehensive | `src/events/schema.ts` |
 | JSONL Persistence | Implemented | `src/events/jsonl.ts` |
 | Simulation Engine (3 simulators + impact forecast) | Fully Implemented | `src/kernel/simulation/` |
 | Blast Radius Computation | Implemented | `src/kernel/blast-radius.ts` |
@@ -76,7 +76,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Cross-session Analytics (aggregation, clustering, trends) | Implemented | `src/analytics/` |
 | Plugin Ecosystem (discovery, registry, validation) | Implemented | `src/plugins/` |
 | Renderer Plugin System | Implemented | `src/renderers/` |
-| CLI (guard, inspect, events, replay, export, import, simulate, ci-check, analytics, plugin, claude-hook, claude-init) | Implemented | `src/cli/` |
+| CLI (guard, inspect, events, replay, export, import, simulate, ci-check, analytics, plugin, claude-hook, claude-init, init) | Implemented | `src/cli/` |
 | Claude Code Hook Integration | Implemented | `src/adapters/claude-code.ts` |
 | VS Code Extension (sidebar panels, event reader, inline diagnostics) | Implemented | `vscode-extension/` |
 | Policy Pack Loader | Implemented | `src/policy/pack-loader.ts` |
@@ -105,7 +105,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | AAB Reference Monitor | Implemented | 1 bypass vector to close (missing-adapter fixed) |
 | Policy Evaluator | Implemented | Production |
 | 8 Built-in Invariants | Fully Implemented | Production |
-| Event Model (46 kinds) | Comprehensive | Production |
+| Event Model (49 kinds) | Comprehensive | Production |
 | Simulation & Forecasting | Fully Implemented | Production |
 | Escalation State Machine | Implemented | Functional (events persisted as StateChanged) |
 | Cross-session Analytics | Implemented | Functional (forensic only) |
@@ -115,7 +115,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | P-1b Transactional Protocol | Not Started | Aspirational |
 | Confidence-Based HITL | Partial | Labels only |
 | Multi-Agent Identity | Aspirational | Types exist, no enforcement |
-| Shared State & Heartbeat | Not Started | Aspirational |
+| Shared State & Heartbeat | Partial | Heartbeat implemented (`src/kernel/heartbeat.ts`) |
 | Formal Verification (Z3) | Not Started | Aspirational |
 | Automated Invariant Learning | Not Started | Aspirational |
 
@@ -209,7 +209,7 @@ Monitor escalation state transitions are now persisted as `StateChanged` DomainE
 - [x] Deterministic replay with seeded RNG (`src/core/rng.ts`, `src/kernel/replay-engine.ts`)
 - [x] Replay comparator (verify original vs replayed outcomes) (`src/kernel/replay-comparator.ts`)
 - [x] Event export/import for sharing sessions (`src/cli/commands/export.ts`, `src/cli/commands/import.ts`)
-- [ ] SQLite storage backend (opt-in alternative to JSONL with indexed queries) (`src/storage/`)
+- [x] SQLite storage backend (opt-in alternative to JSONL with indexed queries) (`src/storage/`)
 
 ### Phase 4 — Plugin Ecosystem `STABLE`
 
@@ -281,21 +281,21 @@ This is the architectural hinge. These changes transform the AAB from advisory i
 - [ ] Deep Claude Code integration (auto-install, configuration management)
 - [ ] Cursor integration
 
-### Phase 10 — Structured Storage Backend `PLANNED`
+### Phase 10 — Structured Storage Backend `IN PROGRESS`
 
 > **Theme:** Replace flat-file JSONL with embedded database for fast queries and audit at scale
 
 The JSONL persistence layer was the right starting point — append-only, human-readable, zero dependencies. But it doesn't scale: every query requires filesystem enumeration + full file parsing, and hundreds of `.jsonl` files accumulate in `.agentguard/`.
 
-- [ ] SQLite storage adapter implementing existing `EventStore` interface
-- [ ] Schema design: `events`, `decisions`, `sessions` tables with JSON payload columns
-- [ ] Indexed columns: `kind`, `timestamp`, `runId`, `actionType`, `fingerprint`
+- [x] SQLite storage adapter implementing existing `EventStore` interface
+- [x] Schema design: `events`, `decisions`, `sessions` tables with JSON payload columns
+- [x] Indexed columns: `kind`, `timestamp`, `runId`, `actionType`, `fingerprint`
 - [ ] Migration utility: bulk-import existing `.jsonl` files into SQLite (`agentguard migrate`)
-- [ ] Query API: filter by time range, event kind, action type, run ID without loading all events
-- [ ] Aggregation queries for analytics (replace in-memory `loadAllEvents()` pattern)
-- [ ] JSONL export compatibility — `agentguard export` still produces portable JSONL
+- [x] Query API: filter by time range, event kind, action type, run ID without loading all events
+- [x] Aggregation queries for analytics (replace in-memory `loadAllEvents()` pattern)
+- [x] JSONL export compatibility — `agentguard export` still produces portable JSONL
 - [ ] Storage location: `~/.agentguard/agentguard.db` (home directory, out of repo tree)
-- [ ] Retain JSONL as optional fallback/streaming sink for real-time tailing
+- [x] Retain JSONL as optional fallback/streaming sink for real-time tailing
 
 ### Phase 11 — Runtime Tracing & Observability `PLANNED`
 
@@ -340,7 +340,7 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [ ] PID-bound capability tokens for privilege separation
 - [ ] Cross-agent policy definitions
 - [ ] Shared state contracts with provenance tracking
-- [ ] Heartbeat mechanism for agent liveness
+- [x] Heartbeat mechanism for agent liveness (`src/kernel/heartbeat.ts`)
 - [ ] Multi-agent pipeline orchestration (implement `docs/multi-agent-pipeline.md`)
 - [ ] Multi-agent escalation coordination
 
