@@ -36,6 +36,11 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   const storeBackend = storeIdx !== -1 ? args[storeIdx + 1] : undefined;
   const storeSuffix = storeBackend ? ` --store ${storeBackend}` : '';
 
+  // Parse --db-path flag for SQLite database path (embedded into hook commands)
+  const dbPathIdx = args.findIndex((a) => a === '--db-path');
+  const dbPathValue = dbPathIdx !== -1 ? args[dbPathIdx + 1] : undefined;
+  const dbPathSuffix = dbPathValue ? ` --db-path ${dbPathValue}` : '';
+
   // Resolve hook script path — handles both tsc output (commands/) and esbuild bundle (cli/)
   let hookScript = resolve(__dirname, 'claude-hook.js');
   if (!existsSync(hookScript)) {
@@ -86,7 +91,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `node ${hookScript} pre${storeSuffix}`,
+        command: `node ${hookScript} pre${storeSuffix}${dbPathSuffix}`,
       },
     ],
   });
@@ -98,7 +103,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `node ${hookScript} post${storeSuffix}`,
+        command: `node ${hookScript} post${storeSuffix}${dbPathSuffix}`,
       },
     ],
   });

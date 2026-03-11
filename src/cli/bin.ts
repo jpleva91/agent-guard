@@ -29,6 +29,10 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--dir, -d <path>', description: 'Base directory for event data' },
       { flag: '--min-cluster <n>', description: 'Minimum cluster size (default: 2)' },
       { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      {
+        flag: '--db-path <path>',
+        description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
+      },
     ],
     examples: [
       'agentguard analytics',
@@ -49,6 +53,10 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--dry-run', description: 'Evaluate without executing actions' },
       { flag: '--verbose, -v', description: 'Show detailed output' },
       { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      {
+        flag: '--db-path <path>',
+        description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
+      },
     ],
     examples: [
       'agentguard guard',
@@ -66,6 +74,10 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--list', description: 'List all recorded runs' },
       { flag: '--last', description: 'Inspect the most recent run' },
       { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      {
+        flag: '--db-path <path>',
+        description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
+      },
     ],
     examples: [
       'agentguard inspect --list',
@@ -80,6 +92,10 @@ const COMMANDS: Record<string, CommandHelp> = {
     usage: 'agentguard events <runId>',
     flags: [
       { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      {
+        flag: '--db-path <path>',
+        description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
+      },
     ],
     examples: ['agentguard events --last', 'agentguard events run_1234567890_abc'],
   },
@@ -93,6 +109,10 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--stats', description: 'Show session statistics only' },
       { flag: '--filter <kind>', description: 'Filter events by kind' },
       { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      {
+        flag: '--db-path <path>',
+        description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
+      },
     ],
     examples: ['agentguard replay', 'agentguard replay --last', 'agentguard replay --last --step'],
   },
@@ -104,6 +124,10 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--output, -o <file>', description: 'Output file path' },
       { flag: '--last', description: 'Export the most recent run' },
       { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      {
+        flag: '--db-path <path>',
+        description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
+      },
     ],
     examples: [
       'agentguard export run_1234567890_abc',
@@ -119,6 +143,10 @@ const COMMANDS: Record<string, CommandHelp> = {
     flags: [
       { flag: '--as <runId>', description: 'Import as a different run ID' },
       { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      {
+        flag: '--db-path <path>',
+        description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
+      },
     ],
     examples: [
       'agentguard import session.jsonl',
@@ -137,6 +165,10 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--last', description: 'Use the most recent local run' },
       { flag: '--base-dir, -d <dir>', description: 'Base directory for event storage' },
       { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      {
+        flag: '--db-path <path>',
+        description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
+      },
     ],
     examples: [
       'agentguard ci-check session.agentguard.jsonl --fail-on-violation',

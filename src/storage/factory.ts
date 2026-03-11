@@ -2,13 +2,13 @@
 // Dynamic import of better-sqlite3 ensures it's only loaded for SQLite backend.
 
 import { join, dirname } from 'node:path';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { createJsonlSink } from '../events/jsonl.js';
 import { createDecisionJsonlSink } from '../events/decision-jsonl.js';
 import type { EventSink } from '../kernel/kernel.js';
 import type { DecisionSink } from '../kernel/decisions/types.js';
 import type { StorageConfig } from './types.js';
-import { DEFAULT_BASE_DIR, DEFAULT_DB_FILENAME } from './types.js';
+import { DEFAULT_BASE_DIR, DEFAULT_DB_FILENAME, DEFAULT_SQLITE_DB_PATH } from './types.js';
 
 /** Bundled storage objects returned by the factory */
 export interface StorageBundle {
@@ -59,7 +59,7 @@ async function createSqliteBundle(config: StorageConfig): Promise<StorageBundle>
   const { runMigrations } = await import('./migrations.js');
   const { createSqliteEventSink, createSqliteDecisionSink } = await import('./sqlite-sink.js');
 
-  const dbPath = config.dbPath ?? join(config.baseDir ?? DEFAULT_BASE_DIR, DEFAULT_DB_FILENAME);
+  const dbPath = resolveSqlitePath(config);
 
   // Ensure parent directory exists
   try {
@@ -92,6 +92,33 @@ async function createSqliteBundle(config: StorageConfig): Promise<StorageBundle>
   };
 }
 
+/**
+ * Resolve the SQLite database path from config, with home-dir default.
+ *
+ * Priority: config.dbPath > config.baseDir + filename > repo-local fallback > home-dir default
+ */
+export function resolveSqlitePath(config: StorageConfig): string {
+  // Explicit dbPath takes top priority
+  if (config.dbPath) return config.dbPath;
+
+  // Explicit baseDir means user chose a custom location
+  if (config.baseDir) return join(config.baseDir, DEFAULT_DB_FILENAME);
+
+  // Check for repo-local DB (backward compat) — use it if it exists, but hint migration
+  const repoLocal = join(DEFAULT_BASE_DIR, DEFAULT_DB_FILENAME);
+  if (existsSync(repoLocal)) {
+    process.stderr.write(
+      `[agentguard] Using repo-local SQLite database at ${repoLocal}\n` +
+        `[agentguard] Hint: the default location has moved to ${DEFAULT_SQLITE_DB_PATH}\n` +
+        `[agentguard] To migrate, move the file and remove --dir / AGENTGUARD_DIR overrides.\n`
+    );
+    return repoLocal;
+  }
+
+  // Default: home directory
+  return DEFAULT_SQLITE_DB_PATH;
+}
+
 /** Resolve storage config from CLI args and environment */
 export function resolveStorageConfig(args: string[]): StorageConfig {
   const storeIdx = args.findIndex((a) => a === '--store');
@@ -104,5 +131,10 @@ export function resolveStorageConfig(args: string[]): StorageConfig {
   const dirIdx = args.findIndex((a) => a === '--dir' || a === '-d');
   const baseDir = dirIdx !== -1 ? args[dirIdx + 1] : undefined;
 
-  return { backend, baseDir };
+  // --db-path flag or AGENTGUARD_DB_PATH env var for explicit SQLite path
+  const dbPathIdx = args.findIndex((a) => a === '--db-path');
+  const dbPathArg = dbPathIdx !== -1 ? args[dbPathIdx + 1] : undefined;
+  const dbPath = dbPathArg ?? process.env.AGENTGUARD_DB_PATH ?? undefined;
+
+  return { backend, baseDir, dbPath };
 }
