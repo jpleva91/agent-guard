@@ -262,6 +262,7 @@ src/
 │   ├── aggregator.ts       # Violation aggregation across sessions
 │   ├── cluster.ts          # Violation clustering by dimension
 │   ├── engine.ts           # Analytics engine orchestrator
+│   ├── index.ts            # Module re-exports
 │   ├── reporter.ts         # Output formatters (terminal, JSON, markdown)
 │   ├── risk-scorer.ts      # Per-run risk scoring engine
 │   ├── trends.ts           # Violation trend computation
