@@ -63,6 +63,28 @@ export interface AnalyticsReport {
   readonly trends: readonly ViolationTrend[];
   readonly topInferredCauses: readonly { cause: string; count: number }[];
   readonly runRiskScores: readonly RunRiskScore[];
+  readonly failureAnalysis?: FailureAnalysis;
+}
+
+/** Category of a failure event for grouping in failure analysis */
+export type FailureCategory = 'denial' | 'violation' | 'execution' | 'escalation' | 'pipeline';
+
+/** A top failure pattern with category context */
+export interface FailurePattern {
+  readonly pattern: string;
+  readonly count: number;
+  readonly category: FailureCategory;
+}
+
+/** Cross-session failure analysis (superset of violations — includes execution errors,
+ *  escalations, and pipeline failures) */
+export interface FailureAnalysis {
+  readonly totalFailures: number;
+  readonly failuresByKind: Record<string, number>;
+  readonly failuresByCategory: Partial<Record<FailureCategory, number>>;
+  readonly clusters: readonly ViolationCluster[];
+  readonly trends: readonly ViolationTrend[];
+  readonly topPatterns: readonly FailurePattern[];
 }
 
 /** A factor contributing to a session's aggregate risk score */

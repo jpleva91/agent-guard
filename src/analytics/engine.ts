@@ -1,11 +1,24 @@
 // Analytics engine — orchestrates aggregation, clustering, trend analysis,
 // and report generation for cross-session violation pattern detection.
 
-import { aggregateViolations, listSessionIds, loadSessionEvents } from './aggregator.js';
+import {
+  aggregateViolations,
+  aggregateFailures,
+  categorizeFailure,
+  listSessionIds,
+  loadSessionEvents,
+} from './aggregator.js';
 import { clusterViolations } from './cluster.js';
 import { computeAllRunRiskScores } from './risk-scorer.js';
 import { computeAllTrends } from './trends.js';
-import type { AnalyticsReport, AnalyticsOptions, RunRiskScore } from './types.js';
+import type {
+  AnalyticsReport,
+  AnalyticsOptions,
+  FailureAnalysis,
+  FailureCategory,
+  FailurePattern,
+  RunRiskScore,
+} from './types.js';
 
 const DEFAULT_MIN_CLUSTER_SIZE = 2;
 const DEFAULT_TREND_WINDOW_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -51,6 +64,9 @@ export function analyze(options: AnalyticsOptions = {}): AnalyticsReport {
   }
   const runRiskScores = computeAllRunRiskScores(sessionEventsMap);
 
+  // 7. Failure analysis (superset of violations — includes execution errors, escalations, etc.)
+  const failureAnalysis = buildFailureAnalysis(baseDir, minClusterSize, trendWindowMs);
+
   return {
     generatedAt: Date.now(),
     sessionsAnalyzed: sessionCount,
@@ -60,6 +76,61 @@ export function analyze(options: AnalyticsOptions = {}): AnalyticsReport {
     trends,
     topInferredCauses,
     runRiskScores,
+    failureAnalysis,
+  };
+}
+
+/** Run failure analysis across all sessions */
+function buildFailureAnalysis(
+  baseDir: string,
+  minClusterSize: number,
+  trendWindowMs: number
+): FailureAnalysis {
+  const { failures } = aggregateFailures(baseDir);
+
+  // Count by kind
+  const failuresByKind: Record<string, number> = {};
+  for (const f of failures) {
+    failuresByKind[f.kind] = (failuresByKind[f.kind] ?? 0) + 1;
+  }
+
+  // Count by category
+  const failuresByCategory: Partial<Record<FailureCategory, number>> = {};
+  for (const f of failures) {
+    const cat = categorizeFailure(f.kind);
+    failuresByCategory[cat] = (failuresByCategory[cat] ?? 0) + 1;
+  }
+
+  // Cluster failures
+  const failureClusters = clusterViolations(failures, minClusterSize);
+
+  // Compute failure trends
+  const failureTrends = computeAllTrends(failures, trendWindowMs);
+
+  // Extract top patterns with categories
+  const patternMap = new Map<string, { count: number; category: FailureCategory }>();
+  for (const f of failures) {
+    const pattern = f.actionType ? `${f.kind}:${f.actionType}` : f.kind;
+    const existing = patternMap.get(pattern);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      patternMap.set(pattern, { count: 1, category: categorizeFailure(f.kind) });
+    }
+  }
+
+  const topPatterns: FailurePattern[] = [...patternMap.entries()]
+    .map(([pattern, { count, category }]) => ({ pattern, count, category }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 20);
+
+  return {
+    totalFailures: failures.length,
+    failuresByKind,
+    failuresByCategory,
+    clusters: failureClusters,
+    trends: failureTrends,
+    topPatterns,
   };
 }
 

@@ -1,6 +1,12 @@
 // Report generation — formats analytics results as markdown, JSON, or terminal output.
 
-import type { AnalyticsReport, RunRiskScore, ViolationCluster, ViolationTrend } from './types.js';
+import type {
+  AnalyticsReport,
+  FailureAnalysis,
+  RunRiskScore,
+  ViolationCluster,
+  ViolationTrend,
+} from './types.js';
 
 /** Format a timestamp as an ISO date string */
 function formatDate(ts: number): string {
@@ -104,7 +110,58 @@ export function toMarkdown(report: AnalyticsReport): string {
     lines.push('');
   }
 
+  // Failure analysis
+  if (report.failureAnalysis) {
+    appendFailureAnalysisMarkdown(lines, report.failureAnalysis);
+  }
+
   return lines.join('\n');
+}
+
+/** Append failure analysis section to markdown lines */
+function appendFailureAnalysisMarkdown(lines: string[], fa: FailureAnalysis): void {
+  lines.push('## Failure Analysis');
+  lines.push('');
+  lines.push(`Total failures: ${fa.totalFailures}`);
+  lines.push('');
+
+  if (Object.keys(fa.failuresByCategory).length > 0) {
+    lines.push('### Failures by Category');
+    lines.push('');
+    lines.push('| Category | Count |');
+    lines.push('|----------|-------|');
+    for (const [category, count] of Object.entries(fa.failuresByCategory)) {
+      lines.push(`| ${category} | ${count} |`);
+    }
+    lines.push('');
+  }
+
+  if (fa.topPatterns.length > 0) {
+    lines.push('### Top Failure Patterns');
+    lines.push('');
+    lines.push('| Pattern | Category | Count |');
+    lines.push('|---------|----------|-------|');
+    for (const { pattern, category, count } of fa.topPatterns.slice(0, 20)) {
+      lines.push(`| ${pattern} | ${category} | ${count} |`);
+    }
+    lines.push('');
+  }
+
+  if (fa.trends.length > 0) {
+    lines.push('### Failure Trends');
+    lines.push('');
+    lines.push('| Pattern | Direction | Recent | Previous | Change |');
+    lines.push('|---------|-----------|--------|----------|--------|');
+    for (const trend of fa.trends.slice(0, 20)) {
+      const dir = `${trendIndicator(trend.direction)} ${trend.direction}`;
+      const change =
+        trend.changePercent > 0 ? `+${trend.changePercent}%` : `${trend.changePercent}%`;
+      lines.push(
+        `| ${trend.key} (${trend.dimension}) | ${dir} | ${trend.recentCount} | ${trend.previousCount} | ${change} |`
+      );
+    }
+    lines.push('');
+  }
 }
 
 /** Generate a JSON report */
@@ -221,5 +278,44 @@ export function toTerminal(report: AnalyticsReport): string {
     lines.push('');
   }
 
+  // Failure analysis
+  if (report.failureAnalysis) {
+    appendFailureAnalysisTerminal(lines, report.failureAnalysis);
+  }
+
   return lines.join('\n');
+}
+
+/** Append failure analysis section to terminal lines */
+function appendFailureAnalysisTerminal(lines: string[], fa: FailureAnalysis): void {
+  lines.push(`  Failure Analysis (${fa.totalFailures} total)`);
+  lines.push(`  ${'─'.repeat(50)}`);
+
+  if (Object.keys(fa.failuresByCategory).length > 0) {
+    for (const [category, count] of Object.entries(fa.failuresByCategory)) {
+      lines.push(`    ${category}: ${count}`);
+    }
+    lines.push('');
+  }
+
+  if (fa.topPatterns.length > 0) {
+    lines.push('  Top Failure Patterns');
+    for (const { pattern, count, category } of fa.topPatterns.slice(0, 10)) {
+      lines.push(`    [${count}x] ${pattern} (${category})`);
+    }
+    lines.push('');
+  }
+
+  if (fa.trends.length > 0) {
+    lines.push('  Failure Trends');
+    for (const trend of fa.trends.slice(0, 10)) {
+      const dir = trendIndicator(trend.direction);
+      const change =
+        trend.changePercent > 0 ? `+${trend.changePercent}%` : `${trend.changePercent}%`;
+      lines.push(
+        `  ${dir} ${trend.key} (${trend.dimension}): ${trend.recentCount} recent / ${trend.previousCount} previous (${change})`
+      );
+    }
+    lines.push('');
+  }
 }

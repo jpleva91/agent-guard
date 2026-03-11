@@ -19,6 +19,8 @@ import { computeTrends, computeAllTrends } from '../../src/analytics/trends.js';
 import { toMarkdown, toJson, toTerminal } from '../../src/analytics/reporter.js';
 import {
   aggregateViolations,
+  aggregateFailures,
+  categorizeFailure,
   listSessionIds,
   loadSessionEvents,
 } from '../../src/analytics/aggregator.js';
@@ -567,5 +569,297 @@ describe('engine', () => {
     expect(report.clusters).toEqual([]);
     expect(report.trends).toEqual([]);
     expect(report.runRiskScores).toEqual([]);
+  });
+
+  it('includes failure analysis in report', () => {
+    vi.mocked(existsSync).mockReturnValue(true);
+    vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+      typeof readdirSync
+    >);
+    vi.mocked(readFileSync).mockReturnValue(
+      makeJsonlContent([
+        {
+          id: 'e1',
+          kind: 'ActionFailed',
+          timestamp: 1000,
+          fingerprint: 'fp',
+          actionType: 'shell.exec',
+          target: 'npm test',
+          error: 'Exit code 1',
+        },
+        {
+          id: 'e2',
+          kind: 'ActionFailed',
+          timestamp: 2000,
+          fingerprint: 'fp',
+          actionType: 'shell.exec',
+          target: 'npm build',
+          error: 'Compilation error',
+        },
+        {
+          id: 'e3',
+          kind: 'ActionDenied',
+          timestamp: 3000,
+          fingerprint: 'fp',
+          actionType: 'git.push',
+          target: 'main',
+          reason: 'Protected branch',
+        },
+        {
+          id: 'e4',
+          kind: 'ActionEscalated',
+          timestamp: 4000,
+          fingerprint: 'fp',
+          actionType: 'file.write',
+          target: 'src/kernel/kernel.ts',
+          reason: 'Protected path',
+        },
+        {
+          id: 'e5',
+          kind: 'InvariantViolation',
+          timestamp: 5000,
+          fingerprint: 'fp',
+          invariant: 'blast-radius',
+          actionType: 'file.write',
+          target: 'many-files',
+          expected: 'under limit',
+          actual: 'over limit',
+        },
+      ])
+    );
+
+    const report = analyze({ minClusterSize: 2 });
+    expect(report.failureAnalysis).toBeDefined();
+    expect(report.failureAnalysis!.totalFailures).toBe(5);
+    expect(report.failureAnalysis!.failuresByKind.ActionFailed).toBe(2);
+    expect(report.failureAnalysis!.failuresByKind.ActionDenied).toBe(1);
+    expect(report.failureAnalysis!.failuresByKind.ActionEscalated).toBe(1);
+    expect(report.failureAnalysis!.failuresByCategory.execution).toBe(2);
+    expect(report.failureAnalysis!.failuresByCategory.denial).toBe(1);
+    expect(report.failureAnalysis!.failuresByCategory.escalation).toBe(1);
+    expect(report.failureAnalysis!.topPatterns.length).toBeGreaterThan(0);
+  });
+});
+
+// --- Failure Aggregation Tests ---
+
+describe('failure aggregation', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  describe('categorizeFailure', () => {
+    it('categorizes ActionFailed as execution', () => {
+      expect(categorizeFailure('ActionFailed')).toBe('execution');
+    });
+
+    it('categorizes ActionEscalated as escalation', () => {
+      expect(categorizeFailure('ActionEscalated')).toBe('escalation');
+    });
+
+    it('categorizes StageFailed as pipeline', () => {
+      expect(categorizeFailure('StageFailed')).toBe('pipeline');
+    });
+
+    it('categorizes PipelineFailed as pipeline', () => {
+      expect(categorizeFailure('PipelineFailed')).toBe('pipeline');
+    });
+
+    it('categorizes ActionDenied as denial', () => {
+      expect(categorizeFailure('ActionDenied')).toBe('denial');
+    });
+
+    it('categorizes PolicyDenied as denial', () => {
+      expect(categorizeFailure('PolicyDenied')).toBe('denial');
+    });
+
+    it('categorizes InvariantViolation as violation', () => {
+      expect(categorizeFailure('InvariantViolation')).toBe('violation');
+    });
+  });
+
+  describe('aggregateFailures', () => {
+    it('captures all failure types including ActionFailed and ActionEscalated', () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
+      vi.mocked(readFileSync).mockReturnValue(
+        makeJsonlContent([
+          {
+            id: 'e1',
+            kind: 'ActionFailed',
+            timestamp: 1000,
+            fingerprint: 'fp',
+            actionType: 'shell.exec',
+            target: 'npm test',
+            error: 'Exit code 1',
+          },
+          {
+            id: 'e2',
+            kind: 'ActionEscalated',
+            timestamp: 2000,
+            fingerprint: 'fp',
+            actionType: 'file.write',
+            target: 'src/kernel/kernel.ts',
+            reason: 'Protected path',
+          },
+          {
+            id: 'e3',
+            kind: 'ActionAllowed',
+            timestamp: 3000,
+            fingerprint: 'fp',
+            actionType: 'file.read',
+            target: 'README.md',
+            capability: 'read',
+          },
+          {
+            id: 'e4',
+            kind: 'InvariantViolation',
+            timestamp: 4000,
+            fingerprint: 'fp',
+            invariant: 'protected-branches',
+            actionType: 'git.push',
+            target: 'main',
+            expected: 'no push',
+            actual: 'push',
+          },
+          {
+            id: 'e5',
+            kind: 'StageFailed',
+            timestamp: 5000,
+            fingerprint: 'fp',
+            runId: 'run-1',
+            stageId: 'test',
+            errors: ['Test suite failed'],
+          },
+        ])
+      );
+
+      const result = aggregateFailures();
+      expect(result.sessionCount).toBe(1);
+      // Should capture ActionFailed, ActionEscalated, InvariantViolation, StageFailed
+      // but NOT ActionAllowed
+      expect(result.failures).toHaveLength(4);
+      expect(result.failures.map((f) => f.kind)).toContain('ActionFailed');
+      expect(result.failures.map((f) => f.kind)).toContain('ActionEscalated');
+      expect(result.failures.map((f) => f.kind)).toContain('InvariantViolation');
+      expect(result.failures.map((f) => f.kind)).toContain('StageFailed');
+      expect(result.allEvents).toHaveLength(5);
+    });
+
+    it('extracts error field as reason for ActionFailed events', () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
+      vi.mocked(readFileSync).mockReturnValue(
+        makeJsonlContent([
+          {
+            id: 'e1',
+            kind: 'ActionFailed',
+            timestamp: 1000,
+            fingerprint: 'fp',
+            actionType: 'shell.exec',
+            target: 'npm test',
+            error: 'Exit code 1',
+          },
+        ])
+      );
+
+      const result = aggregateFailures();
+      expect(result.failures[0].reason).toBe('Exit code 1');
+    });
+
+    it('extracts failedStage as target for PipelineFailed events', () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
+      vi.mocked(readFileSync).mockReturnValue(
+        makeJsonlContent([
+          {
+            id: 'e1',
+            kind: 'PipelineFailed',
+            timestamp: 1000,
+            fingerprint: 'fp',
+            runId: 'run-1',
+            failedStage: 'test',
+            errors: ['Test failed'],
+          },
+        ])
+      );
+
+      const result = aggregateFailures();
+      expect(result.failures[0].target).toBe('test');
+      expect(result.failures[0].reason).toBe('Test failed');
+    });
+
+    it('handles empty event store', () => {
+      vi.mocked(existsSync).mockReturnValue(false);
+
+      const result = aggregateFailures();
+      expect(result.failures).toEqual([]);
+      expect(result.sessionCount).toBe(0);
+    });
+  });
+});
+
+// --- Failure Reporter Tests ---
+
+describe('failure reporter', () => {
+  const reportWithFailures = {
+    generatedAt: 1700000000000,
+    sessionsAnalyzed: 3,
+    totalViolations: 5,
+    violationsByKind: { InvariantViolation: 3, PolicyDenied: 2 },
+    clusters: [],
+    trends: [],
+    topInferredCauses: [],
+    runRiskScores: [],
+    failureAnalysis: {
+      totalFailures: 8,
+      failuresByKind: { ActionFailed: 3, ActionDenied: 2, ActionEscalated: 1, StageFailed: 2 },
+      failuresByCategory: { execution: 3, denial: 2, escalation: 1, pipeline: 2 },
+      clusters: [],
+      trends: [],
+      topPatterns: [
+        { pattern: 'ActionFailed:shell.exec', count: 3, category: 'execution' as const },
+        { pattern: 'ActionDenied:git.push', count: 2, category: 'denial' as const },
+      ],
+    },
+  };
+
+  describe('toMarkdown with failure analysis', () => {
+    it('includes failure analysis section', () => {
+      const md = toMarkdown(reportWithFailures);
+      expect(md).toContain('## Failure Analysis');
+      expect(md).toContain('Total failures: 8');
+      expect(md).toContain('### Failures by Category');
+      expect(md).toContain('execution');
+      expect(md).toContain('### Top Failure Patterns');
+      expect(md).toContain('ActionFailed:shell.exec');
+    });
+  });
+
+  describe('toTerminal with failure analysis', () => {
+    it('includes failure analysis section', () => {
+      const output = toTerminal(reportWithFailures);
+      expect(output).toContain('Failure Analysis');
+      expect(output).toContain('8 total');
+      expect(output).toContain('execution: 3');
+      expect(output).toContain('Top Failure Patterns');
+      expect(output).toContain('ActionFailed:shell.exec');
+    });
+  });
+
+  describe('toJson with failure analysis', () => {
+    it('includes failure analysis in JSON output', () => {
+      const json = toJson(reportWithFailures);
+      const parsed = JSON.parse(json);
+      expect(parsed.failureAnalysis).toBeDefined();
+      expect(parsed.failureAnalysis.totalFailures).toBe(8);
+      expect(parsed.failureAnalysis.failuresByCategory.execution).toBe(3);
+    });
   });
 });

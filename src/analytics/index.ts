@@ -1,7 +1,13 @@
 // Analytics module re-exports
 
 export { analyze, analyzeRisk } from './engine.js';
-export { aggregateViolations, listSessionIds, loadSessionEvents } from './aggregator.js';
+export {
+  aggregateViolations,
+  aggregateFailures,
+  categorizeFailure,
+  listSessionIds,
+  loadSessionEvents,
+} from './aggregator.js';
 export { clusterViolations, clusterByDimension } from './cluster.js';
 export { computeRunRiskScore, computeAllRunRiskScores } from './risk-scorer.js';
 export { computeAllTrends, computeTrends } from './trends.js';
@@ -18,4 +24,7 @@ export type {
   RiskFactor,
   RiskLevel,
   RunRiskScore,
+  FailureCategory,
+  FailurePattern,
+  FailureAnalysis,
 } from './types.js';
