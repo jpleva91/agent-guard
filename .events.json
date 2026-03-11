@@ -1,5 +1,5 @@
 {
-  "commits": 5,
+  "commits": 6,
   "prs_merged": 1,
   "bugs_fixed": 1,
   "tests_passing": 0,
@@ -8,5 +8,5 @@
   "conflicts_resolved": 0,
   "ci_passes": 0,
   "deploys": 0,
-  "docs_written": 0
+  "docs_written": 1
 }

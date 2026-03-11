@@ -207,6 +207,31 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard init policy-pack --name strict-policy',
     ],
   },
+  traces: {
+    name: 'agentguard traces',
+    description: 'Display policy evaluation traces for a governance run',
+    usage: 'agentguard traces [runId] [flags]',
+    flags: [
+      { flag: '--last', description: 'Show traces for the most recent run' },
+      { flag: '--list', description: 'List all recorded runs' },
+      { flag: '--action, -a <type>', description: 'Filter by action type (e.g., git, file.write)' },
+      {
+        flag: '--decision, -d <allow|deny>',
+        description: 'Filter by decision outcome',
+      },
+      { flag: '--summary, -s', description: 'Show summary statistics only' },
+      { flag: '--json', description: 'Output as JSON' },
+      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+    ],
+    examples: [
+      'agentguard traces --last',
+      'agentguard traces --last --summary',
+      'agentguard traces --last --action git',
+      'agentguard traces --last --decision deny',
+      'agentguard traces --last --json',
+      'agentguard traces run_1234567890_abc',
+    ],
+  },
   'evidence-pr': {
     name: 'agentguard evidence-pr',
     description: 'Attach governance evidence report to a pull request',
@@ -393,6 +418,17 @@ async function main() {
       break;
     }
 
+    case 'traces': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.traces));
+        break;
+      }
+      const { traces: tracesCmd } = await import('./commands/traces.js');
+      const code = await tracesCmd(args.slice(1), resolveStorageConfig(args.slice(1)));
+      process.exit(code);
+      break;
+    }
+
     case 'init': {
       if (wantsHelp) {
         console.log(formatHelp(COMMANDS.init));
@@ -454,6 +490,12 @@ function printHelp(): void {
     agentguard inspect [runId]                Inspect action graph and decisions
     agentguard events [runId]                 Show raw event stream for a run
     agentguard analytics                      Analyze violation patterns across sessions
+
+  \x1b[1mTraces:\x1b[0m
+    agentguard traces --last                  Show policy traces for most recent run
+    agentguard traces --last --summary        Show summary statistics only
+    agentguard traces --last --action git     Filter traces by action type
+    agentguard traces --last --decision deny  Filter traces by decision
 
   [1mComparison:[0m
     agentguard diff <runA> <runB>              Compare two governance sessions
