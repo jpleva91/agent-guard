@@ -98,7 +98,8 @@ export function resolveStorageConfig(args: string[]): StorageConfig {
   const storeArg = storeIdx !== -1 ? args[storeIdx + 1] : undefined;
   const envStore = process.env.AGENTGUARD_STORE;
 
-  const backend = storeArg === 'sqlite' || envStore === 'sqlite' ? 'sqlite' : 'jsonl';
+  const raw = storeArg !== undefined ? storeArg : envStore;
+  const backend = raw === 'sqlite' ? 'sqlite' : 'jsonl';
 
   const dirIdx = args.findIndex((a) => a === '--dir' || a === '-d');
   const baseDir = dirIdx !== -1 ? args[dirIdx + 1] : undefined;

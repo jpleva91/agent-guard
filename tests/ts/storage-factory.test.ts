@@ -45,6 +45,12 @@ describe('resolveStorageConfig', () => {
     expect(config.backend).toBe('sqlite');
   });
 
+  it('CLI --store jsonl overrides AGENTGUARD_STORE=sqlite', () => {
+    process.env.AGENTGUARD_STORE = 'sqlite';
+    const config = resolveStorageConfig(['--store', 'jsonl']);
+    expect(config.backend).toBe('jsonl');
+  });
+
   it('parses --dir flag as baseDir', () => {
     const config = resolveStorageConfig(['--dir', '/tmp/custom']);
     expect(config.baseDir).toBe('/tmp/custom');
