@@ -1,7 +1,12 @@
 // TUI governance renderer — wraps the existing tui.ts render functions
 // into a GovernanceRenderer plugin. Writes ANSI-colored output to a stream.
 
-import type { GovernanceRenderer, RendererConfig, RunSummary } from './types.js';
+import type {
+  GovernanceRenderer,
+  PolicyTracePayload,
+  RendererConfig,
+  RunSummary,
+} from './types.js';
 import type { KernelResult } from '../kernel/kernel.js';
 import type { MonitorDecision } from '../kernel/monitor.js';
 import type { GovernanceDecisionRecord } from '../kernel/decisions/types.js';
@@ -12,6 +17,7 @@ import {
   renderMonitorStatus,
   renderDecisionRecord,
   renderSimulation,
+  renderPolicyTraces,
 } from '../cli/tui.js';
 
 export interface TuiRendererOptions {
@@ -19,6 +25,8 @@ export interface TuiRendererOptions {
   output?: { write(s: string): boolean };
   /** Show verbose output (decision records, reasons) */
   verbose?: boolean;
+  /** Show policy evaluation traces inline */
+  trace?: boolean;
 }
 
 /**
@@ -31,12 +39,16 @@ export interface TuiRendererOptions {
 export function createTuiRenderer(options: TuiRendererOptions = {}): GovernanceRenderer {
   const output = options.output ?? process.stderr;
   const verbose = options.verbose ?? false;
+  let traceEnabled = options.trace ?? false;
 
   return {
     id: 'tui',
     name: 'Terminal UI Renderer',
 
     onRunStarted(config: RendererConfig) {
+      if (config.trace !== undefined) {
+        traceEnabled = config.trace;
+      }
       output.write(
         renderBanner({
           policyName: config.policyName,
@@ -70,6 +82,27 @@ export function createTuiRenderer(options: TuiRendererOptions = {}): GovernanceR
       if (verbose) {
         output.write(renderDecisionRecord(record) + '\n');
       }
+    },
+
+    onPolicyTrace(trace: PolicyTracePayload) {
+      if (!traceEnabled) return;
+      output.write(
+        renderPolicyTraces([
+          {
+            kind: 'PolicyTraceRecorded',
+            timestamp: Date.now(),
+            actionType: trace.actionType,
+            target: trace.target,
+            decision: trace.decision,
+            totalRulesChecked: trace.totalRulesChecked,
+            phaseThatMatched: trace.phaseThatMatched,
+            rulesEvaluated: trace.rulesEvaluated as Parameters<
+              typeof renderPolicyTraces
+            >[0][0]['rulesEvaluated'],
+            durationMs: trace.durationMs,
+          },
+        ]) + '\n'
+      );
     },
 
     onRunEnded(summary: RunSummary) {

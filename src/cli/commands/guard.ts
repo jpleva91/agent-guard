@@ -18,10 +18,11 @@ import { simpleHash } from '../../core/hash.js';
 import { createRendererRegistry } from '../../renderers/registry.js';
 import type { RendererRegistry } from '../../renderers/registry.js';
 import { createTuiRenderer } from '../../renderers/tui-renderer.js';
-import { createEvent, POLICY_COMPOSED } from '../../events/schema.js';
+import { createEvent, POLICY_COMPOSED, POLICY_TRACE_RECORDED } from '../../events/schema.js';
 
 import { createStorageBundle } from '../../storage/factory.js';
 import type { StorageConfig } from '../../storage/types.js';
+import type { PolicyTracePayload } from '../../renderers/types.js';
 
 export interface GuardOptions {
   /** Single policy path (backwards compatible) */
@@ -30,6 +31,7 @@ export interface GuardOptions {
   policies?: string[];
   dryRun?: boolean;
   verbose?: boolean;
+  trace?: boolean;
   stdin?: boolean;
   simulate?: boolean;
   /** Optional pre-configured renderer registry (for custom renderers) */
@@ -111,7 +113,7 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
   // Set up renderer registry — use provided registry or create default with TUI
   const renderers = options.renderers ?? createRendererRegistry();
   if (!options.renderers) {
-    renderers.register(createTuiRenderer({ verbose: options.verbose }));
+    renderers.register(createTuiRenderer({ verbose: options.verbose, trace: options.trace }));
   }
 
   // Notify renderers: run started
@@ -123,6 +125,7 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     verbose: options.verbose,
     dryRun: options.dryRun,
     simulatorCount: simCount,
+    trace: options.trace,
   });
 
   if (!options.stdin) {
@@ -171,6 +174,13 @@ async function processStdin(
 
           // Dispatch to all registered renderers
           renderers.notifyActionResult(result);
+
+          // Dispatch policy trace events for real-time visualization
+          for (const event of result.events) {
+            if (event.kind === POLICY_TRACE_RECORDED) {
+              renderers.notifyPolicyTrace(event as unknown as PolicyTracePayload);
+            }
+          }
 
           if (result.decisionRecord) {
             renderers.notifyDecisionRecord(result.decisionRecord);

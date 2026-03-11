@@ -14,6 +14,32 @@ export interface RendererConfig {
   readonly verbose?: boolean;
   readonly dryRun?: boolean;
   readonly simulatorCount?: number;
+  readonly trace?: boolean;
+}
+
+/** A single policy trace event for real-time rendering */
+export interface PolicyTracePayload {
+  readonly actionType: string;
+  readonly target?: string;
+  readonly decision: string;
+  readonly totalRulesChecked: number;
+  readonly phaseThatMatched?: string | null;
+  readonly rulesEvaluated?: ReadonlyArray<{
+    readonly policyId: string;
+    readonly policyName: string;
+    readonly ruleIndex: number;
+    readonly effect: string;
+    readonly actionPattern: string | string[];
+    readonly actionMatched: boolean;
+    readonly conditionsMatched: boolean;
+    readonly conditionDetails: {
+      readonly scopeMatched?: boolean;
+      readonly limitExceeded?: boolean;
+      readonly branchMatched?: boolean;
+    };
+    readonly outcome: 'match' | 'no-match' | 'skipped';
+  }>;
+  readonly durationMs?: number;
 }
 
 /** Summary provided to renderers at run end */
@@ -56,6 +82,9 @@ export interface GovernanceRenderer {
 
   /** Called when a governance decision record is persisted */
   onDecisionRecord?(record: GovernanceDecisionRecord): void;
+
+  /** Called when a policy evaluation trace is recorded */
+  onPolicyTrace?(trace: PolicyTracePayload): void;
 
   /** Called when a governance run ends */
   onRunEnded?(summary: RunSummary): void;

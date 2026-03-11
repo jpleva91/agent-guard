@@ -1,7 +1,12 @@
 // Renderer registry — manages multiple governance renderers.
 // Dispatches lifecycle events to all registered renderers.
 
-import type { GovernanceRenderer, RendererConfig, RunSummary } from './types.js';
+import type {
+  GovernanceRenderer,
+  PolicyTracePayload,
+  RendererConfig,
+  RunSummary,
+} from './types.js';
 import type { KernelResult } from '../kernel/kernel.js';
 import type { MonitorDecision } from '../kernel/monitor.js';
 import type { GovernanceDecisionRecord } from '../kernel/decisions/types.js';
@@ -37,6 +42,9 @@ export interface RendererRegistry {
 
   /** Dispatch: decision record */
   notifyDecisionRecord(record: GovernanceDecisionRecord): void;
+
+  /** Dispatch: policy trace */
+  notifyPolicyTrace(trace: PolicyTracePayload): void;
 
   /** Dispatch: run ended */
   notifyRunEnded(summary: RunSummary): void;
@@ -128,6 +136,14 @@ export function createRendererRegistry(): RendererRegistry {
       for (const renderer of renderers.values()) {
         if (renderer.onDecisionRecord) {
           safeCall(() => renderer.onDecisionRecord!(record));
+        }
+      }
+    },
+
+    notifyPolicyTrace(trace) {
+      for (const renderer of renderers.values()) {
+        if (renderer.onPolicyTrace) {
+          safeCall(() => renderer.onPolicyTrace!(trace));
         }
       }
     },

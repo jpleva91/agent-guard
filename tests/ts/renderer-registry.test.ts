@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createRendererRegistry } from '../../src/renderers/registry.js';
-import type { GovernanceRenderer, RendererConfig, RunSummary } from '../../src/renderers/types.js';
+import type {
+  GovernanceRenderer,
+  PolicyTracePayload,
+  RendererConfig,
+  RunSummary,
+} from '../../src/renderers/types.js';
 import type { KernelResult } from '../../src/kernel/kernel.js';
 
 function makeRenderer(id: string, overrides: Partial<GovernanceRenderer> = {}): GovernanceRenderer {
@@ -120,6 +125,27 @@ describe('RendererRegistry', () => {
       registry.notifyRunEnded(summary);
 
       expect(onRunEnded).toHaveBeenCalledWith(summary);
+    });
+
+    it('dispatches onPolicyTrace to all renderers', () => {
+      const registry = createRendererRegistry();
+      const onPolicyTrace1 = vi.fn();
+      const onPolicyTrace2 = vi.fn();
+      registry.register(makeRenderer('r1', { onPolicyTrace: onPolicyTrace1 }));
+      registry.register(makeRenderer('r2', { onPolicyTrace: onPolicyTrace2 }));
+
+      const trace: PolicyTracePayload = {
+        actionType: 'file.write',
+        target: 'src/index.ts',
+        decision: 'allow',
+        totalRulesChecked: 2,
+        phaseThatMatched: 'allow',
+        durationMs: 0.5,
+      };
+      registry.notifyPolicyTrace(trace);
+
+      expect(onPolicyTrace1).toHaveBeenCalledWith(trace);
+      expect(onPolicyTrace2).toHaveBeenCalledWith(trace);
     });
 
     it('skips renderers without the hook', () => {

@@ -52,6 +52,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       },
       { flag: '--dry-run', description: 'Evaluate without executing actions' },
       { flag: '--verbose, -v', description: 'Show detailed output' },
+      { flag: '--trace, -t', description: 'Show policy evaluation traces inline' },
       { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
       {
         flag: '--db-path <path>',
@@ -316,6 +317,7 @@ async function main() {
 
       const dryRun = flags.includes('--dry-run');
       const verbose = flags.includes('--verbose') || flags.includes('-v');
+      const trace = flags.includes('--trace') || flags.includes('-t');
 
       const { guard } = await import('./commands/guard.js');
       const storageConfig = resolveStorageConfig(flags);
@@ -324,6 +326,7 @@ async function main() {
         policies: policyFiles.length > 1 ? policyFiles : undefined,
         dryRun,
         verbose,
+        trace,
         stdin: true,
         store: storageConfig,
       });
@@ -521,6 +524,7 @@ function printHelp(): void {
     agentguard guard --policy <file>          Use a specific policy file (YAML/JSON)
     agentguard guard --policy a --policy b    Compose multiple policies with precedence
     agentguard guard --dry-run                Evaluate without executing actions
+    agentguard guard --trace                  Show policy evaluation traces inline
     agentguard inspect [runId]                Inspect action graph and decisions
     agentguard events [runId]                 Show raw event stream for a run
     agentguard analytics                      Analyze violation patterns across sessions

@@ -1,7 +1,7 @@
 // Tests for TUI governance renderer plugin (GovernanceRenderer implementation)
 import { describe, it, expect, vi } from 'vitest';
 import { createTuiRenderer } from '../../src/renderers/tui-renderer.js';
-import type { RendererConfig, RunSummary } from '../../src/renderers/types.js';
+import type { PolicyTracePayload, RendererConfig, RunSummary } from '../../src/renderers/types.js';
 import type { KernelResult } from '../../src/kernel/kernel.js';
 import type { MonitorDecision } from '../../src/kernel/monitor.js';
 
@@ -220,6 +220,102 @@ describe('TuiRenderer plugin', () => {
     });
   });
 
+  describe('onPolicyTrace', () => {
+    function makeTrace(overrides: Partial<PolicyTracePayload> = {}): PolicyTracePayload {
+      return {
+        actionType: 'file.write',
+        target: 'src/index.ts',
+        decision: 'allow',
+        totalRulesChecked: 3,
+        phaseThatMatched: 'allow',
+        durationMs: 1.25,
+        rulesEvaluated: [
+          {
+            policyId: 'default',
+            policyName: 'default-policy',
+            ruleIndex: 0,
+            effect: 'deny',
+            actionPattern: 'shell.exec',
+            actionMatched: false,
+            conditionsMatched: false,
+            conditionDetails: {},
+            outcome: 'no-match',
+          },
+          {
+            policyId: 'default',
+            policyName: 'default-policy',
+            ruleIndex: 1,
+            effect: 'allow',
+            actionPattern: 'file.*',
+            actionMatched: true,
+            conditionsMatched: true,
+            conditionDetails: { scopeMatched: true },
+            outcome: 'match',
+          },
+        ],
+        ...overrides,
+      };
+    }
+
+    it('renders trace when trace option is enabled', () => {
+      const output = makeOutput();
+      const renderer = createTuiRenderer({ output, trace: true });
+      renderer.onPolicyTrace!(makeTrace());
+
+      const text = output.text();
+      expect(text).toContain('Policy Evaluation Traces');
+      expect(text).toContain('file.write');
+      expect(text).toContain('ALLOW');
+    });
+
+    it('suppresses trace when trace option is disabled', () => {
+      const output = makeOutput();
+      const renderer = createTuiRenderer({ output, trace: false });
+      renderer.onPolicyTrace!(makeTrace());
+
+      expect(output.write).not.toHaveBeenCalled();
+    });
+
+    it('suppresses trace by default', () => {
+      const output = makeOutput();
+      const renderer = createTuiRenderer({ output });
+      renderer.onPolicyTrace!(makeTrace());
+
+      expect(output.write).not.toHaveBeenCalled();
+    });
+
+    it('enables trace via config.trace in onRunStarted', () => {
+      const output = makeOutput();
+      const renderer = createTuiRenderer({ output });
+      renderer.onRunStarted!(makeConfig({ trace: true }));
+      output.chunks.length = 0; // clear banner output
+
+      renderer.onPolicyTrace!(makeTrace());
+
+      const text = output.text();
+      expect(text).toContain('Policy Evaluation Traces');
+    });
+
+    it('renders denied trace with DENY indicator', () => {
+      const output = makeOutput();
+      const renderer = createTuiRenderer({ output, trace: true });
+      renderer.onPolicyTrace!(makeTrace({ decision: 'deny', phaseThatMatched: 'deny' }));
+
+      const text = output.text();
+      expect(text).toContain('DENY');
+    });
+
+    it('shows rule evaluation details', () => {
+      const output = makeOutput();
+      const renderer = createTuiRenderer({ output, trace: true });
+      renderer.onPolicyTrace!(makeTrace());
+
+      const text = output.text();
+      expect(text).toContain('default-policy');
+      expect(text).toContain('file.*');
+    });
+  });
+
   describe('implements GovernanceRenderer contract', () => {
     it('has all optional lifecycle hooks', () => {
       const renderer = createTuiRenderer();
@@ -228,6 +324,7 @@ describe('TuiRenderer plugin', () => {
       expect(renderer.onMonitorStatus).toBeDefined();
       expect(renderer.onSimulation).toBeDefined();
       expect(renderer.onDecisionRecord).toBeDefined();
+      expect(renderer.onPolicyTrace).toBeDefined();
       expect(renderer.onRunEnded).toBeDefined();
     });
   });
