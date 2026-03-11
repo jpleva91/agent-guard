@@ -13,14 +13,25 @@ import type { StorageConfig } from '../../storage/types.js';
 const BASE_DIR = '.agentguard';
 const EVENTS_DIR = join(BASE_DIR, 'events');
 
+/**
+ * Current schema version for the event/decision data shape.
+ * Bump this when the DomainEvent or GovernanceDecisionRecord structure changes.
+ */
+export const EXPORT_SCHEMA_VERSION = 1;
+
 /** Metadata header written as the first line of an exported governance session. */
 export interface GovernanceExportHeader {
   readonly __agentguard_export: true;
+  /** Export wrapper format version */
   readonly version: 1;
+  /** Event/decision data schema version */
+  readonly schemaVersion: number;
   readonly runId: string;
   readonly exportedAt: number;
   readonly eventCount: number;
   readonly decisionCount: number;
+  /** Storage backend the session was exported from */
+  readonly sourceBackend?: 'jsonl' | 'sqlite';
 }
 
 // ---------------------------------------------------------------------------
@@ -76,10 +87,7 @@ function loadRunDecisionsJsonl(runId: string): GovernanceDecisionRecord[] {
 // Public command
 // ---------------------------------------------------------------------------
 
-export async function exportSession(
-  args: string[],
-  storageConfig?: StorageConfig
-): Promise<void> {
+export async function exportSession(args: string[], storageConfig?: StorageConfig): Promise<void> {
   const parsed = parseArgs(args, {
     boolean: ['--last'],
     string: ['--output', '-o'],
@@ -161,10 +169,12 @@ export async function exportSession(
   const header: GovernanceExportHeader = {
     __agentguard_export: true,
     version: 1,
+    schemaVersion: EXPORT_SCHEMA_VERSION,
     runId,
     exportedAt: Date.now(),
     eventCount: events.length,
     decisionCount: decisions.length,
+    sourceBackend: useSqlite ? 'sqlite' : 'jsonl',
   };
 
   const lines = [

@@ -10,7 +10,7 @@ vi.mock('node:fs', () => ({
   appendFileSync: vi.fn(),
 }));
 
-import { exportSession } from '../../src/cli/commands/export.js';
+import { exportSession, EXPORT_SCHEMA_VERSION } from '../../src/cli/commands/export.js';
 import { importSession } from '../../src/cli/commands/import.js';
 import { readFileSync, writeFileSync, existsSync, readdirSync, appendFileSync } from 'node:fs';
 
@@ -55,9 +55,7 @@ describe('exportSession CLI', () => {
   it('shows usage when no arguments provided', async () => {
     await exportSession([]);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('Usage:')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
     expect(process.exitCode).toBe(1);
   });
 
@@ -92,13 +90,13 @@ describe('exportSession CLI', () => {
     const header = JSON.parse(lines[0]);
     expect(header.__agentguard_export).toBe(true);
     expect(header.version).toBe(1);
+    expect(header.schemaVersion).toBe(EXPORT_SCHEMA_VERSION);
     expect(header.runId).toBe('run_test');
     expect(header.eventCount).toBe(2);
     expect(header.decisionCount).toBe(1);
+    expect(header.sourceBackend).toBe('jsonl');
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('Exported run')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Exported run'));
   });
 
   it('exports using --last flag', async () => {
@@ -118,9 +116,7 @@ describe('exportSession CLI', () => {
     await exportSession(['--last']);
 
     expect(writeFileSync).toHaveBeenCalledTimes(1);
-    const header = JSON.parse(
-      (vi.mocked(writeFileSync).mock.calls[0][1] as string).split('\n')[0]
-    );
+    const header = JSON.parse((vi.mocked(writeFileSync).mock.calls[0][1] as string).split('\n')[0]);
     expect(header.runId).toBe('run_002');
   });
 
@@ -158,9 +154,7 @@ describe('exportSession CLI', () => {
 
     await exportSession(['--last']);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('No runs recorded')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('No runs recorded'));
     expect(process.exitCode).toBe(1);
   });
 });
@@ -169,9 +163,7 @@ describe('importSession CLI', () => {
   it('shows usage when no arguments provided', async () => {
     await importSession([]);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('Usage:')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
     expect(process.exitCode).toBe(1);
   });
 
@@ -198,9 +190,7 @@ describe('importSession CLI', () => {
     await importSession(['session.jsonl']);
 
     expect(appendFileSync).toHaveBeenCalledTimes(1);
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('Imported run')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Imported run'));
   });
 
   it('imports events and decisions', async () => {
@@ -215,9 +205,12 @@ describe('importSession CLI', () => {
       decisionCount: 1,
     };
     const fileContent =
-      JSON.stringify(header) + '\n' +
-      JSON.stringify(event) + '\n' +
-      JSON.stringify(decision) + '\n';
+      JSON.stringify(header) +
+      '\n' +
+      JSON.stringify(event) +
+      '\n' +
+      JSON.stringify(decision) +
+      '\n';
 
     vi.mocked(existsSync).mockImplementation((p) => {
       const path = String(p);
@@ -230,9 +223,7 @@ describe('importSession CLI', () => {
 
     // Should write events and decisions
     expect(appendFileSync).toHaveBeenCalledTimes(2);
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('Decisions: 1')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Decisions: 1'));
   });
 
   it('uses --as flag to override runId', async () => {
@@ -268,9 +259,7 @@ describe('importSession CLI', () => {
 
     await importSession(['missing.jsonl']);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('File not found')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('File not found'));
     expect(process.exitCode).toBe(1);
   });
 
@@ -292,9 +281,7 @@ describe('importSession CLI', () => {
 
     await importSession(['bad.jsonl']);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('invalid header')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('invalid header'));
     expect(process.exitCode).toBe(1);
   });
 
@@ -325,9 +312,7 @@ describe('importSession CLI', () => {
 
     await importSession(['bad-events.jsonl']);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('no valid events')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('no valid events'));
     expect(process.exitCode).toBe(1);
   });
 
@@ -348,8 +333,81 @@ describe('importSession CLI', () => {
 
     await importSession(['session.jsonl']);
 
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('already exists'));
+  });
+
+  it('accepts exports without schemaVersion (backward compatibility)', async () => {
+    const event = makeEvent();
+    const header = {
+      __agentguard_export: true,
+      version: 1,
+      // no schemaVersion — old-format export
+      runId: 'run_old_format',
+      exportedAt: Date.now(),
+      eventCount: 1,
+      decisionCount: 0,
+    };
+    const fileContent = JSON.stringify(header) + '\n' + JSON.stringify(event) + '\n';
+
+    vi.mocked(existsSync).mockImplementation((p) => {
+      const path = String(p);
+      if (path.includes('.agentguard')) return false;
+      return true;
+    });
+    vi.mocked(readFileSync).mockReturnValue(fileContent);
+
+    await importSession(['old-export.jsonl']);
+
+    expect(appendFileSync).toHaveBeenCalledTimes(1);
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Imported run'));
+  });
+
+  it('rejects exports with unsupported schemaVersion', async () => {
+    const header = {
+      __agentguard_export: true,
+      version: 1,
+      schemaVersion: 999,
+      runId: 'run_future',
+      exportedAt: Date.now(),
+      eventCount: 1,
+      decisionCount: 0,
+    };
+    const fileContent = JSON.stringify(header) + '\n' + JSON.stringify(makeEvent()) + '\n';
+
+    vi.mocked(existsSync).mockReturnValue(true);
+    vi.mocked(readFileSync).mockReturnValue(fileContent);
+
+    await importSession(['future-export.jsonl']);
+
     expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('already exists')
+      expect.stringContaining('schema version 999')
     );
+    expect(process.exitCode).toBe(1);
+  });
+
+  it('accepts exports with current schemaVersion', async () => {
+    const event = makeEvent();
+    const header = {
+      __agentguard_export: true,
+      version: 1,
+      schemaVersion: EXPORT_SCHEMA_VERSION,
+      runId: 'run_current',
+      exportedAt: Date.now(),
+      eventCount: 1,
+      decisionCount: 0,
+    };
+    const fileContent = JSON.stringify(header) + '\n' + JSON.stringify(event) + '\n';
+
+    vi.mocked(existsSync).mockImplementation((p) => {
+      const path = String(p);
+      if (path.includes('.agentguard')) return false;
+      return true;
+    });
+    vi.mocked(readFileSync).mockReturnValue(fileContent);
+
+    await importSession(['current-export.jsonl']);
+
+    expect(appendFileSync).toHaveBeenCalledTimes(1);
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Imported run'));
   });
 });

@@ -9,6 +9,7 @@ import { getDecisionFilePath } from '../../events/decision-jsonl.js';
 import { validateEvent } from '../../events/schema.js';
 import type { DomainEvent, ValidationResult } from '../../core/types.js';
 import type { GovernanceDecisionRecord } from '../../kernel/decisions/types.js';
+import { EXPORT_SCHEMA_VERSION } from './export.js';
 import type { GovernanceExportHeader } from './export.js';
 import type { StorageConfig } from '../../storage/types.js';
 
@@ -20,10 +21,7 @@ function ensureDir(dirPath: string): void {
   }
 }
 
-export async function importSession(
-  args: string[],
-  storageConfig?: StorageConfig
-): Promise<void> {
+export async function importSession(args: string[], storageConfig?: StorageConfig): Promise<void> {
   const parsed = parseArgs(args, {
     string: ['--as'],
   });
@@ -65,6 +63,17 @@ export async function importSession(
   if (header.__agentguard_export !== true || header.version !== 1) {
     process.stderr.write(
       '\n  \x1b[31mError:\x1b[0m Not a valid AgentGuard export (missing or invalid header).\n\n'
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  // Validate schema version (backward-compatible: missing schemaVersion treated as 1)
+  const schemaVersion = header.schemaVersion ?? 1;
+  if (schemaVersion > EXPORT_SCHEMA_VERSION) {
+    process.stderr.write(
+      `\n  \x1b[31mError:\x1b[0m Export uses schema version ${schemaVersion} but this version of AgentGuard only supports up to ${EXPORT_SCHEMA_VERSION}.\n` +
+        '  Please upgrade AgentGuard to import this file.\n\n'
     );
     process.exitCode = 1;
     return;
