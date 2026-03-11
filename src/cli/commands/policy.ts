@@ -9,6 +9,7 @@ import { parseArgs } from '../args.js';
 import { bold, color, dim } from '../colors.js';
 import { validatePolicy, VALID_ACTIONS } from '../../policy/loader.js';
 import { parseYamlPolicy } from '../../policy/yaml-loader.js';
+import { ACTION_TYPES } from '../../core/actions.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -107,20 +108,48 @@ function strictChecks(parsed: Record<string, unknown>): {
 
   if (!Array.isArray(rules)) return { warnings, info };
 
-  // Check for unrecognized action patterns
+  // Check for unrecognized action patterns against both policy VALID_ACTIONS
+  // and the canonical ACTION_TYPES registry from src/core/actions.ts
   for (let i = 0; i < rules.length; i++) {
     const rule = rules[i];
     const actions = Array.isArray(rule.action) ? rule.action : [rule.action];
     for (const action of actions) {
       if (typeof action === 'string' && action !== '*' && !action.endsWith('.*')) {
-        if (!VALID_ACTIONS.has(action)) {
+        if (!VALID_ACTIONS.has(action) && !ACTION_TYPES[action]) {
           warnings.push({
             level: 'warning',
-            message: `Unrecognized action "${action}" — may not match any agent actions`,
+            message: `Unrecognized action "${action}" — not found in canonical action registry or policy actions`,
             rule: i,
           });
         }
       }
+    }
+  }
+
+  // Check for rule conflicts: same action pattern with both allow and deny rules
+  const actionEffects = new Map<string, { allow: number[]; deny: number[] }>();
+  for (let i = 0; i < rules.length; i++) {
+    const rule = rules[i];
+    const actions = Array.isArray(rule.action) ? rule.action : [rule.action];
+    const effect = rule.effect as string;
+    if (effect !== 'allow' && effect !== 'deny') continue;
+    for (const action of actions) {
+      if (typeof action !== 'string') continue;
+      let entry = actionEffects.get(action);
+      if (!entry) {
+        entry = { allow: [], deny: [] };
+        actionEffects.set(action, entry);
+      }
+      entry[effect].push(i);
+    }
+  }
+
+  for (const [action, effects] of actionEffects) {
+    if (effects.allow.length > 0 && effects.deny.length > 0) {
+      warnings.push({
+        level: 'warning',
+        message: `Conflicting rules for "${action}": deny in rules [${effects.deny.join(', ')}] and allow in rules [${effects.allow.join(', ')}] — deny rules take precedence`,
+      });
     }
   }
 
@@ -380,7 +409,10 @@ async function policyValidate(args: string[]): Promise<number> {
     process.stderr.write(formatTerminalResult(result));
   }
 
-  return result.valid ? 0 : 1;
+  // Exit codes: 0 = valid, 1 = errors, 2 = warnings-only
+  if (!result.valid) return 1;
+  if (result.warnings.length > 0) return 2;
+  return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -425,6 +457,11 @@ function printPolicyHelp(): void {
   ${bold('Flags (validate):')}
     --json            Output validation result as JSON
     --strict          Include best-practice recommendations
+
+  ${bold('Exit codes:')}
+    0                 Policy is valid
+    1                 Policy has errors
+    2                 Policy is valid but has warnings (--strict mode)
 
   ${bold('Examples:')}
     agentguard policy validate agentguard.yaml

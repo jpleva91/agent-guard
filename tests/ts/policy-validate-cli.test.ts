@@ -95,6 +95,43 @@ rules:
     reason: No writes at all
 `;
 
+const CANONICAL_ACTION_YAML = `
+id: canonical
+name: Canonical Actions
+description: Policy using canonical action types from core/actions.ts
+rules:
+  - action: file.read
+    effect: allow
+    reason: File reads are safe
+  - action: git.diff
+    effect: allow
+    reason: Diffs are safe
+`;
+
+const CONFLICTING_RULES_YAML = `
+id: conflicting
+name: Conflicting Rules
+description: Policy with conflicting allow and deny for same action
+rules:
+  - action: shell.exec
+    effect: deny
+    reason: No shell commands
+  - action: shell.exec
+    effect: allow
+    reason: Actually allow shell
+`;
+
+const NON_CANONICAL_ACTION_YAML = `
+id: non-canonical
+name: Non Canonical
+description: Policy with an action not in canonical registry
+rules:
+  - action: file.write
+    effect: deny
+  - action: custom.action
+    effect: deny
+`;
+
 beforeAll(() => {
   mkdirSync(TEST_DIR, { recursive: true });
   writeFileSync(join(TEST_DIR, 'valid.yaml'), VALID_YAML);
@@ -105,6 +142,9 @@ beforeAll(() => {
   writeFileSync(join(TEST_DIR, 'allow-only.yaml'), ONLY_ALLOW_RULES_YAML);
   writeFileSync(join(TEST_DIR, 'unknown-action.yaml'), UNRECOGNIZED_ACTION_YAML);
   writeFileSync(join(TEST_DIR, 'overlapping.yaml'), OVERLAPPING_RULES_YAML);
+  writeFileSync(join(TEST_DIR, 'canonical.yaml'), CANONICAL_ACTION_YAML);
+  writeFileSync(join(TEST_DIR, 'conflicting.yaml'), CONFLICTING_RULES_YAML);
+  writeFileSync(join(TEST_DIR, 'non-canonical.yaml'), NON_CANONICAL_ACTION_YAML);
   writeFileSync(join(TEST_DIR, 'empty.yaml'), '');
   writeFileSync(join(TEST_DIR, 'bad-json.json'), '{ invalid json');
 });
@@ -243,5 +283,76 @@ describe('PolicyValidationResult structure', () => {
     const parsed = JSON.parse(json);
     expect(parsed.valid).toBe(true);
     expect(parsed.ruleCount).toBe(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Canonical action type reference validation
+// ---------------------------------------------------------------------------
+
+describe('canonical action type validation', () => {
+  it('accepts canonical action types from core/actions.ts', () => {
+    const result = validatePolicyFileStrict(join(TEST_DIR, 'canonical.yaml'), true);
+    expect(result.valid).toBe(true);
+    // file.read and git.diff are in ACTION_TYPES — no warnings about unrecognized actions
+    expect(result.warnings.some((w) => w.message.includes('file.read'))).toBe(false);
+    expect(result.warnings.some((w) => w.message.includes('git.diff'))).toBe(false);
+  });
+
+  it('warns about actions not in canonical registry or policy actions', () => {
+    const result = validatePolicyFileStrict(join(TEST_DIR, 'non-canonical.yaml'), true);
+    expect(result.valid).toBe(true);
+    expect(result.warnings.some((w) => w.message.includes('custom.action'))).toBe(true);
+    expect(result.warnings.some((w) => w.message.includes('canonical action registry'))).toBe(true);
+    // file.write is valid — should not warn
+    expect(result.warnings.some((w) => w.message.includes('"file.write"'))).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Rule conflict detection
+// ---------------------------------------------------------------------------
+
+describe('rule conflict detection', () => {
+  it('warns about conflicting allow and deny rules for same action', () => {
+    const result = validatePolicyFileStrict(join(TEST_DIR, 'conflicting.yaml'), true);
+    expect(result.valid).toBe(true);
+    expect(
+      result.warnings.some(
+        (w) => w.message.includes('Conflicting') && w.message.includes('shell.exec')
+      )
+    ).toBe(true);
+    expect(result.warnings.some((w) => w.message.includes('deny rules take precedence'))).toBe(
+      true
+    );
+  });
+
+  it('does not warn about conflicts when only one effect is used', () => {
+    const result = validatePolicyFileStrict(join(TEST_DIR, 'overlapping.yaml'), true);
+    // overlapping has only deny rules — no conflict warning
+    expect(result.warnings.some((w) => w.message.includes('Conflicting'))).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Exit code behavior
+// ---------------------------------------------------------------------------
+
+describe('exit code semantics', () => {
+  it('valid policy without strict returns exit code 0 (valid, no warnings)', () => {
+    const result = validatePolicyFileStrict(join(TEST_DIR, 'valid.yaml'), false);
+    expect(result.valid).toBe(true);
+    expect(result.warnings).toHaveLength(0);
+  });
+
+  it('valid policy with strict warnings returns warnings array', () => {
+    const result = validatePolicyFileStrict(join(TEST_DIR, 'conflicting.yaml'), true);
+    expect(result.valid).toBe(true);
+    expect(result.warnings.length).toBeGreaterThan(0);
+  });
+
+  it('invalid policy returns valid=false', () => {
+    const result = validatePolicyFileStrict(join(TEST_DIR, 'missing-id.yaml'), true);
+    expect(result.valid).toBe(false);
   });
 });
