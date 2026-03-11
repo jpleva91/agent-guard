@@ -396,6 +396,128 @@ const DESTRUCTIVE_PATTERNS: DestructivePattern[] = [
     riskLevel: 'high',
     category: 'system',
   },
+  {
+    pattern: /\bdoas\s+/,
+    description: 'Privileged command execution (OpenBSD)',
+    riskLevel: 'high',
+    category: 'system',
+  },
+  // Process management — high (expanded)
+  {
+    pattern: /\bxkill\b/,
+    description: 'Kill X11 window process',
+    riskLevel: 'high',
+    category: 'process',
+  },
+  // Container operations — high/critical (expanded)
+  {
+    pattern: /\bdocker\s+container\s+prune\b/,
+    description: 'Prune all stopped Docker containers',
+    riskLevel: 'high',
+    category: 'container',
+  },
+  {
+    pattern: /\bdocker\s+image\s+prune\b/,
+    description: 'Prune dangling Docker images',
+    riskLevel: 'high',
+    category: 'container',
+  },
+  {
+    pattern: /\bhelm\s+(?:uninstall|delete)\b/,
+    description: 'Remove Kubernetes Helm release',
+    riskLevel: 'high',
+    category: 'container',
+  },
+  // Service management — high (expanded)
+  {
+    pattern: /\bsystemctl\s+mask\b/,
+    description: 'Permanently prevent service from starting',
+    riskLevel: 'high',
+    category: 'service',
+  },
+  // Database — critical/high (expanded)
+  {
+    pattern: /\bALTER\s+TABLE\s+\S+\s+DROP\b/i,
+    description: 'Drop column or constraint (SQL)',
+    riskLevel: 'high',
+    category: 'database',
+  },
+  {
+    pattern: /\bdb\.dropDatabase\s*\(/,
+    description: 'Drop MongoDB database',
+    riskLevel: 'critical',
+    category: 'database',
+  },
+  {
+    pattern: /\bdb\.\w+\.drop\s*\(/,
+    description: 'Drop MongoDB collection',
+    riskLevel: 'critical',
+    category: 'database',
+  },
+  // Package management — high (expanded)
+  {
+    pattern: /\b(?:dnf|yum)\s+(?:remove|erase)\b/,
+    description: 'Remove RPM package (dnf/yum)',
+    riskLevel: 'high',
+    category: 'package',
+  },
+  {
+    pattern: /\bpacman\s+-R/,
+    description: 'Remove Arch Linux package',
+    riskLevel: 'high',
+    category: 'package',
+  },
+  {
+    pattern: /\bsnap\s+remove\b/,
+    description: 'Remove Snap package',
+    riskLevel: 'high',
+    category: 'package',
+  },
+  {
+    pattern: /\bcargo\s+uninstall\b/,
+    description: 'Uninstall Rust crate',
+    riskLevel: 'high',
+    category: 'package',
+  },
+  {
+    pattern: /\bpnpm\s+(?:remove|uninstall)\s+-g\b/,
+    description: 'Uninstall global pnpm package',
+    riskLevel: 'high',
+    category: 'package',
+  },
+  // Infrastructure — critical (expanded)
+  {
+    pattern: /\bpulumi\s+destroy\b/,
+    description: 'Destroy Pulumi-managed infrastructure',
+    riskLevel: 'critical',
+    category: 'infra',
+  },
+  // Git destructive — high (expanded)
+  {
+    pattern: /\bgit\s+stash\s+drop\b/,
+    description: 'Drop stashed changes',
+    riskLevel: 'high',
+    category: 'filesystem',
+  },
+  {
+    pattern: /\bgit\s+reflog\s+expire\b/,
+    description: 'Expire reflog entries (history loss)',
+    riskLevel: 'high',
+    category: 'filesystem',
+  },
+  // Network — critical/high (expanded)
+  {
+    pattern: /\biptables\s+-X\b/,
+    description: 'Delete user-defined firewall chains',
+    riskLevel: 'high',
+    category: 'network',
+  },
+  {
+    pattern: /\bnft\s+flush\s+ruleset\b/,
+    description: 'Flush all nftables rules',
+    riskLevel: 'critical',
+    category: 'network',
+  },
 ];
 
 function isDestructiveCommand(command: string): boolean {

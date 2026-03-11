@@ -20,6 +20,8 @@ export interface BlastRadiusWeights {
   sensitivePath: number;
   /** Multiplier for config file matches (default: 2.0) */
   configPath: number;
+  /** Multiplier for destructive shell commands (default: 4.0) */
+  destructive: number;
 }
 
 /** Result of blast radius computation */
@@ -53,6 +55,7 @@ const DEFAULT_WEIGHTS: BlastRadiusWeights = {
   shell: 1.0,
   sensitivePath: 5.0,
   configPath: 2.0,
+  destructive: 4.0,
 };
 
 const SENSITIVE_PATTERNS = ['.env', 'credentials', '.pem', '.key', 'secret', 'token', '.password'];
@@ -148,6 +151,19 @@ function getConfigPathFactor(
   return null;
 }
 
+/** Check if the intent is a destructive shell command */
+function getDestructiveCommandFactor(
+  intent: NormalizedIntent,
+  weights: BlastRadiusWeights
+): BlastRadiusFactor | null {
+  if (!intent.destructive) return null;
+  return {
+    name: 'destructive-command',
+    multiplier: weights.destructive,
+    reason: 'Destructive shell command detected',
+  };
+}
+
 /** Derive risk level from a weighted score */
 function deriveRiskLevel(weightedScore: number): 'low' | 'medium' | 'high' {
   if (weightedScore >= 50) return 'high';
@@ -160,6 +176,7 @@ function deriveRiskLevel(weightedScore: number): 'low' | 'medium' | 'high' {
  *
  * The engine applies multipliers for:
  *   - Action type (delete > write > git > shell > read)
+ *   - Destructive command detection (sudo, rm -rf, DROP TABLE, etc.)
  *   - Path sensitivity (secrets, credentials)
  *   - Config file impact (package.json, CI configs, etc.)
  *
@@ -181,6 +198,9 @@ export function computeBlastRadius(
   // Collect applicable factors
   const actionFactor = getActionMultiplier(intent.action, weights);
   if (actionFactor) factors.push(actionFactor);
+
+  const destructiveFactor = getDestructiveCommandFactor(intent, weights);
+  if (destructiveFactor) factors.push(destructiveFactor);
 
   const sensitiveFactor = getSensitivePathFactor(intent.target, weights);
   if (sensitiveFactor) factors.push(sensitiveFactor);

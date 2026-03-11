@@ -143,5 +143,42 @@ describe('blast-radius computation engine', () => {
       expect(result.riskLevel).toBe('low');
       expect(result.exceeded).toBe(false);
     });
+
+    it('applies destructive command multiplier for destructive shell commands', () => {
+      const result = computeBlastRadius(
+        makeIntent({ action: 'shell.exec', destructive: true, filesAffected: 1 }),
+        100
+      );
+      // 1 * shell(1.0) * destructive(4.0) = 4.0
+      expect(result.weightedScore).toBe(DEFAULT_WEIGHTS.shell * DEFAULT_WEIGHTS.destructive);
+      expect(result.factors.some((f) => f.name === 'destructive-command')).toBe(true);
+    });
+
+    it('does not apply destructive multiplier for non-destructive commands', () => {
+      const result = computeBlastRadius(
+        makeIntent({ action: 'shell.exec', destructive: false, filesAffected: 1 }),
+        100
+      );
+      // 1 * shell(1.0) = 1.0, no destructive factor
+      expect(result.weightedScore).toBe(DEFAULT_WEIGHTS.shell);
+      expect(result.factors.some((f) => f.name === 'destructive-command')).toBe(false);
+    });
+
+    it('stacks destructive multiplier with sensitive path', () => {
+      const result = computeBlastRadius(
+        makeIntent({
+          action: 'shell.exec',
+          destructive: true,
+          target: '.env',
+          filesAffected: 1,
+        }),
+        100
+      );
+      // 1 * shell(1.0) * destructive(4.0) * sensitive(5.0) = 20
+      const expected =
+        DEFAULT_WEIGHTS.shell * DEFAULT_WEIGHTS.destructive * DEFAULT_WEIGHTS.sensitivePath;
+      expect(result.weightedScore).toBe(expected);
+      expect(result.factors).toHaveLength(3); // shell + destructive + sensitive
+    });
   });
 });

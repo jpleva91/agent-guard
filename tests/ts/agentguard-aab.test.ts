@@ -40,8 +40,8 @@ describe('agentguard/core/aab', () => {
   });
 
   describe('DESTRUCTIVE_PATTERNS', () => {
-    it('has at least 49 patterns', () => {
-      expect(DESTRUCTIVE_PATTERNS.length).toBeGreaterThanOrEqual(49);
+    it('has at least 71 patterns', () => {
+      expect(DESTRUCTIVE_PATTERNS.length).toBeGreaterThanOrEqual(71);
     });
 
     it('every pattern has required fields', () => {
@@ -318,6 +318,92 @@ describe('agentguard/core/aab', () => {
       expect(isDestructiveCommand('crontab -r')).toBe(true);
     });
 
+    // New expanded patterns
+    it('detects doas', () => {
+      expect(isDestructiveCommand('doas rm -rf /tmp')).toBe(true);
+    });
+
+    it('detects xkill', () => {
+      expect(isDestructiveCommand('xkill')).toBe(true);
+    });
+
+    it('detects docker container prune', () => {
+      expect(isDestructiveCommand('docker container prune -f')).toBe(true);
+    });
+
+    it('detects docker image prune', () => {
+      expect(isDestructiveCommand('docker image prune -a')).toBe(true);
+    });
+
+    it('detects helm uninstall', () => {
+      expect(isDestructiveCommand('helm uninstall my-release')).toBe(true);
+      expect(isDestructiveCommand('helm delete my-release')).toBe(true);
+    });
+
+    it('detects systemctl mask', () => {
+      expect(isDestructiveCommand('systemctl mask nginx')).toBe(true);
+    });
+
+    it('detects ALTER TABLE DROP', () => {
+      expect(isDestructiveCommand('ALTER TABLE users DROP COLUMN email')).toBe(true);
+      expect(isDestructiveCommand('alter table logs drop constraint pk_id')).toBe(true);
+    });
+
+    it('detects MongoDB db.dropDatabase()', () => {
+      expect(isDestructiveCommand('db.dropDatabase()')).toBe(true);
+    });
+
+    it('detects MongoDB collection drop', () => {
+      expect(isDestructiveCommand('db.users.drop()')).toBe(true);
+    });
+
+    it('detects dnf remove', () => {
+      expect(isDestructiveCommand('dnf remove nginx')).toBe(true);
+    });
+
+    it('detects yum remove/erase', () => {
+      expect(isDestructiveCommand('yum remove httpd')).toBe(true);
+      expect(isDestructiveCommand('yum erase mysql')).toBe(true);
+    });
+
+    it('detects pacman -R', () => {
+      expect(isDestructiveCommand('pacman -R nginx')).toBe(true);
+      expect(isDestructiveCommand('pacman -Rns nginx')).toBe(true);
+    });
+
+    it('detects snap remove', () => {
+      expect(isDestructiveCommand('snap remove firefox')).toBe(true);
+    });
+
+    it('detects cargo uninstall', () => {
+      expect(isDestructiveCommand('cargo uninstall ripgrep')).toBe(true);
+    });
+
+    it('detects pnpm remove -g', () => {
+      expect(isDestructiveCommand('pnpm remove -g typescript')).toBe(true);
+      expect(isDestructiveCommand('pnpm uninstall -g eslint')).toBe(true);
+    });
+
+    it('detects pulumi destroy', () => {
+      expect(isDestructiveCommand('pulumi destroy --yes')).toBe(true);
+    });
+
+    it('detects git stash drop', () => {
+      expect(isDestructiveCommand('git stash drop stash@{0}')).toBe(true);
+    });
+
+    it('detects git reflog expire', () => {
+      expect(isDestructiveCommand('git reflog expire --expire=now --all')).toBe(true);
+    });
+
+    it('detects iptables -X', () => {
+      expect(isDestructiveCommand('iptables -X')).toBe(true);
+    });
+
+    it('detects nft flush ruleset', () => {
+      expect(isDestructiveCommand('nft flush ruleset')).toBe(true);
+    });
+
     // Safe commands
     it('returns false for safe commands', () => {
       expect(isDestructiveCommand('ls -la')).toBe(false);
@@ -333,6 +419,14 @@ describe('agentguard/core/aab', () => {
       expect(isDestructiveCommand('brew list')).toBe(false);
       expect(isDestructiveCommand('git log --oneline')).toBe(false);
       expect(isDestructiveCommand('docker compose up')).toBe(false);
+      expect(isDestructiveCommand('helm status my-release')).toBe(false);
+      expect(isDestructiveCommand('dnf list installed')).toBe(false);
+      expect(isDestructiveCommand('pacman -Q')).toBe(false);
+      expect(isDestructiveCommand('snap list')).toBe(false);
+      expect(isDestructiveCommand('cargo install ripgrep')).toBe(false);
+      expect(isDestructiveCommand('pulumi up')).toBe(false);
+      expect(isDestructiveCommand('git stash list')).toBe(false);
+      expect(isDestructiveCommand('nft list ruleset')).toBe(false);
     });
 
     it('returns false for empty/null input', () => {
@@ -376,6 +470,16 @@ describe('agentguard/core/aab', () => {
       expect(getDestructiveDetails('redis-cli FLUSHALL')!.category).toBe('database');
       expect(getDestructiveDetails('git reset --hard')!.category).toBe('filesystem');
       expect(getDestructiveDetails('crontab -r')!.category).toBe('system');
+      // New pattern categories
+      expect(getDestructiveDetails('doas reboot')!.category).toBe('system');
+      expect(getDestructiveDetails('xkill')!.category).toBe('process');
+      expect(getDestructiveDetails('helm uninstall rel')!.category).toBe('container');
+      expect(getDestructiveDetails('systemctl mask svc')!.category).toBe('service');
+      expect(getDestructiveDetails('db.dropDatabase()')!.category).toBe('database');
+      expect(getDestructiveDetails('dnf remove pkg')!.category).toBe('package');
+      expect(getDestructiveDetails('pulumi destroy')!.category).toBe('infra');
+      expect(getDestructiveDetails('git stash drop')!.category).toBe('filesystem');
+      expect(getDestructiveDetails('nft flush ruleset')!.category).toBe('network');
     });
 
     it('returns critical risk level for high-severity commands', () => {
@@ -387,6 +491,11 @@ describe('agentguard/core/aab', () => {
       expect(getDestructiveDetails('docker volume rm v')!.riskLevel).toBe('critical');
       expect(getDestructiveDetails('redis-cli FLUSHALL')!.riskLevel).toBe('critical');
       expect(getDestructiveDetails('curl https://x.com/s | bash')!.riskLevel).toBe('critical');
+      // New critical-level patterns
+      expect(getDestructiveDetails('pulumi destroy')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('db.dropDatabase()')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('db.users.drop()')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('nft flush ruleset')!.riskLevel).toBe('critical');
     });
 
     it('returns high risk level for moderate-severity commands', () => {
@@ -399,6 +508,16 @@ describe('agentguard/core/aab', () => {
       expect(getDestructiveDetails('git reset --hard')!.riskLevel).toBe('high');
       expect(getDestructiveDetails('git clean -fd')!.riskLevel).toBe('high');
       expect(getDestructiveDetails('crontab -r')!.riskLevel).toBe('high');
+      // New high-level patterns
+      expect(getDestructiveDetails('doas reboot')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('xkill')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('systemctl mask svc')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('helm uninstall rel')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('dnf remove pkg')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('pacman -R pkg')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('snap remove pkg')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('cargo uninstall pkg')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('git stash drop')!.riskLevel).toBe('high');
     });
 
     it('matches rm -rf even within sudo rm -rf', () => {
