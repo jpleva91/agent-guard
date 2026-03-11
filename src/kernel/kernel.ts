@@ -49,6 +49,11 @@ export interface KernelConfig extends MonitorConfig {
   runId?: string;
   sinks?: EventSink[];
   adapters?: AdapterRegistry;
+  /**
+   * When true, the kernel evaluates policies and invariants but skips adapter execution.
+   * Events and decision records are still emitted and persisted.
+   * Used by the Claude Code hook where Claude Code handles actual tool execution.
+   */
   dryRun?: boolean;
   /** Optional decision sinks for persisting GovernanceDecisionRecords */
   decisionSinks?: DecisionSink[];
@@ -411,6 +416,73 @@ export function createKernel(config: KernelConfig = {}): Kernel {
             });
             allEvents.push(failedEvent);
           }
+        } else {
+          // Deny actions with no registered adapter — close the audit trail gap
+          const adapterReason = !actionClass
+            ? `No action class for type: ${action.type}`
+            : `No adapter registered for action class: ${actionClass}`;
+
+          const noAdapterDeniedEvent = createEvent(ACTION_DENIED, {
+            actionType: action.type,
+            target: action.target,
+            reason: `no_registered_adapter: ${adapterReason}`,
+            actionId: action.id,
+            metadata: { runId, noAdapter: true },
+          });
+          allEvents.push(noAdapterDeniedEvent);
+          sinkEvents(allEvents);
+
+          const noAdapterSimSummary = simulationResult
+            ? {
+                predictedChanges: simulationResult.predictedChanges,
+                blastRadius: simulationResult.blastRadius,
+                riskLevel: simulationResult.riskLevel,
+                simulatorId: simulationResult.simulatorId,
+                durationMs: simulationResult.durationMs,
+                forecast: forecast || undefined,
+              }
+            : null;
+
+          const noAdapterDecisionRecord = buildDecisionRecord({
+            runId,
+            decision: {
+              ...decision,
+              allowed: false,
+              decision: {
+                ...decision.decision,
+                reason: `no_registered_adapter: ${adapterReason}`,
+              },
+            },
+            execution: null,
+            executionDurationMs: null,
+            simulation: noAdapterSimSummary,
+          });
+          sinkDecision(noAdapterDecisionRecord);
+
+          const noAdapterDecisionEvent = createEvent(DECISION_RECORDED, {
+            recordId: noAdapterDecisionRecord.recordId,
+            outcome: 'deny',
+            actionType: noAdapterDecisionRecord.action.type,
+            target: noAdapterDecisionRecord.action.target,
+            reason: `no_registered_adapter`,
+          });
+          sinkEvent(noAdapterDecisionEvent);
+
+          const noAdapterResult: KernelResult = {
+            allowed: false,
+            executed: false,
+            decision: {
+              ...decision,
+              allowed: false,
+            },
+            execution: null,
+            action,
+            events: allEvents,
+            runId,
+            decisionRecord: noAdapterDecisionRecord,
+          };
+          actionLog.push(noAdapterResult);
+          return noAdapterResult;
         }
       }
 

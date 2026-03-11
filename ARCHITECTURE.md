@@ -43,19 +43,22 @@ Each top-level directory under `src/` maps to a single architectural concept:
 
 ```
 src/
-├── analytics/     Cross-session violation analytics (aggregation, clustering, trends)
+├── analytics/     Cross-session violation analytics (aggregation, clustering, trends, risk scoring)
 ├── kernel/        Governed action kernel (orchestrate, normalize, decide, escalate)
 ├── events/        Canonical event model (schema, bus, store, JSONL persistence)
-├── policy/        Policy system (evaluator, loaders, pack loader)
+├── policy/        Policy system (composer, evaluator, loaders, pack loader)
 ├── invariants/    Invariant system (8 built-in definitions, checker)
 ├── adapters/      Execution adapters (file, shell, git, claude-code)
 ├── plugins/       Plugin ecosystem (discovery, registry, validation, sandboxing)
 ├── renderers/     Renderer plugin system (registry, TUI renderer)
 ├── cli/           CLI entry point and commands
+├── storage/       SQLite storage backend (opt-in alternative to JSONL)
 ├── telemetry/     Runtime telemetry and logging
 └── core/          Shared utilities (types, actions, hash, execution-log)
 
-vscode-extension/  VS Code extension (sidebar panels, notifications, event reader)
+vscode-extension/  VS Code extension (sidebar panels, notifications, event reader, inline diagnostics)
+
+policies/          Policy packs (YAML: ci-safe, enterprise, open-source, strict)
 ```
 
 ## Layer Rules
@@ -68,7 +71,8 @@ vscode-extension/  VS Code extension (sidebar panels, notifications, event reade
 - **plugins/** may import from core/, events/, kernel/ only
 - **renderers/** may import from core/, events/ only
 - **analytics/** may import from events/, core/ only
-- **cli/** may import from analytics/, kernel/, events/, policy/, plugins/, renderers/, core/
+- **storage/** may import from events/, core/ only
+- **cli/** may import from analytics/, kernel/, events/, policy/, plugins/, renderers/, storage/, core/
 - **telemetry/** may import from core/ only
 - **core/** has no project imports (leaf layer)
 

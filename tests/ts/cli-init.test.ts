@@ -99,7 +99,9 @@ describe('init command', () => {
             expect(pkg.agentguard).toBeDefined();
             expect(pkg.agentguard.id).toBe(`agentguard-test-${type}`);
             expect(pkg.agentguard.apiVersion).toBe('^1.0.0');
+
             expect(pkg.agentguard.type).toBe(type);
+
           }
         });
 
@@ -203,7 +205,9 @@ describe('init command', () => {
 
   describe('custom directory', () => {
     it('should use --dir when provided', async () => {
+
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
       const code = await init([
         '--extension',
         'renderer',
@@ -220,6 +224,7 @@ describe('init command', () => {
         (call) => typeof call[0] === 'string' && (call[0] as string).includes('custom-dir')
       );
       expect(hasCustomDir).toBe(true);
+
 
       // Next steps output should show the --dir path, not the --name
       const allOutput = consoleSpy.mock.calls.flat().join('\n');
@@ -246,6 +251,7 @@ describe('init command', () => {
       vi.spyOn(console, 'log').mockImplementation(() => {});
       const code = await init(['--extension', 'renderer', '--name', 'my-renderer-v2']);
       expect(code).toBe(0);
+
     });
   });
 

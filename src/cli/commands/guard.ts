@@ -1,14 +1,13 @@
 // CLI command: agentguard guard — start the governed action runtime.
 // Reads stdin for action proposals (JSON), evaluates them, writes results to stdout.
 // Uses the renderer plugin system for all human-facing output.
+// Supports policy composition: multiple --policy flags merged with precedence.
 
 import { createKernel } from '../../kernel/kernel.js';
 import type { KernelConfig } from '../../kernel/kernel.js';
 import { createLiveRegistry } from '../../adapters/registry.js';
-import { createJsonlSink } from '../../events/jsonl.js';
-import { createDecisionJsonlSink } from '../../events/decision-jsonl.js';
 import { createTelemetryDecisionSink } from '../../telemetry/runtimeLogger.js';
-import { loadPolicyDefs } from '../policy-resolver.js';
+import { loadPolicyDefs, loadComposedPolicies, describeComposition } from '../policy-resolver.js';
 import { createSimulatorRegistry } from '../../kernel/simulation/registry.js';
 import { createGitSimulator } from '../../kernel/simulation/git-simulator.js';
 import { createFilesystemSimulator } from '../../kernel/simulation/filesystem-simulator.js';
@@ -19,21 +18,42 @@ import { simpleHash } from '../../core/hash.js';
 import { createRendererRegistry } from '../../renderers/registry.js';
 import type { RendererRegistry } from '../../renderers/registry.js';
 import { createTuiRenderer } from '../../renderers/tui-renderer.js';
+import { createEvent, POLICY_COMPOSED } from '../../events/schema.js';
+
+import { createStorageBundle } from '../../storage/factory.js';
+import type { StorageConfig } from '../../storage/types.js';
 
 export interface GuardOptions {
+  /** Single policy path (backwards compatible) */
   policy?: string;
+  /** Multiple policy paths for composition */
+  policies?: string[];
   dryRun?: boolean;
   verbose?: boolean;
   stdin?: boolean;
   simulate?: boolean;
   /** Optional pre-configured renderer registry (for custom renderers) */
   renderers?: RendererRegistry;
+  /** Storage backend config */
+  store?: StorageConfig;
 }
 
 export async function guard(_args: string[], options: GuardOptions = {}): Promise<number> {
-  // Resolve policy
-  const policyDefs = loadPolicyDefs(options.policy);
-  const policyPath = options.policy;
+  // Resolve policies — use composition if multiple paths provided
+  const explicitPaths = options.policies ?? (options.policy ? [options.policy] : undefined);
+  const useComposition = explicitPaths && explicitPaths.length > 1;
+
+  let policyDefs: unknown[];
+  let policyName: string;
+
+  if (useComposition || explicitPaths) {
+    const composition = loadComposedPolicies(explicitPaths);
+    policyDefs = composition.policies;
+    policyName = describeComposition(composition);
+  } else {
+    policyDefs = loadPolicyDefs(options.policy);
+    policyName = options.policy || 'default (no file)';
+  }
 
   // Build simulator registry (enabled by default)
   const simulators = createSimulatorRegistry();
@@ -50,9 +70,11 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
   // Generate run ID using seeded RNG so both sinks share it
   const runId = `run_${Date.now()}_${simpleHash(rng.random().toString())}`;
 
-  // Create sinks
-  const jsonlSink = createJsonlSink({ runId });
-  const decisionSink = createDecisionJsonlSink({ runId });
+  // Create sinks — use storage bundle if configured, otherwise default JSONL
+  const storeConfig = options.store ?? { backend: 'jsonl' as const };
+  const storage = await createStorageBundle(storeConfig);
+  const eventSink = storage.createEventSink(runId);
+  const decisionSink = storage.createDecisionSink(runId);
   const telemetrySink = createTelemetryDecisionSink();
 
   // Build kernel config
@@ -62,12 +84,29 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     policyDefs,
     dryRun: options.dryRun ?? false,
     adapters: options.dryRun ? undefined : createLiveRegistry(),
-    sinks: [jsonlSink],
+    sinks: [eventSink],
     decisionSinks: [decisionSink, telemetrySink],
     simulators: simulators.all().length > 0 ? simulators : undefined,
   };
 
   const kernel = createKernel(kernelConfig);
+
+  // Emit PolicyComposed event when multiple policies are composed
+  if (useComposition) {
+    const composition = loadComposedPolicies(explicitPaths);
+    const composedEvent = createEvent(POLICY_COMPOSED, {
+      policyCount: composition.policies.length,
+      totalRules: composition.policies.reduce((sum, p) => sum + p.rules.length, 0),
+      sources: composition.sources.map((s) => ({
+        path: s.path,
+        layer: s.layer,
+        policyId: s.policy.id,
+        ruleCount: s.policy.rules.length,
+      })),
+      layers: composition.layers,
+    });
+    eventSink.write(composedEvent);
+  }
 
   // Set up renderer registry — use provided registry or create default with TUI
   const renderers = options.renderers ?? createRendererRegistry();
@@ -76,7 +115,6 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
   }
 
   // Notify renderers: run started
-  const policyName = policyPath || 'default (no file)';
   const simCount = simulators.all().length;
   renderers.notifyRunStarted({
     runId,
@@ -95,12 +133,13 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     process.stderr.write(`  ${'\x1b[2m'}Press Ctrl+C to stop.${'\x1b[0m'}\n\n`);
   }
 
-  return processStdin(kernel, renderers);
+  return processStdin(kernel, renderers, storage);
 }
 
 async function processStdin(
   kernel: ReturnType<typeof createKernel>,
-  renderers: RendererRegistry
+  renderers: RendererRegistry,
+  storage: { close(): void }
 ): Promise<number> {
   const startTime = Date.now();
   let totalActions = 0;
@@ -168,6 +207,7 @@ async function processStdin(
         durationMs: Date.now() - startTime,
       });
       renderers.disposeAll();
+      storage.close();
     };
 
     process.stdin.on('end', () => {

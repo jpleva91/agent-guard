@@ -2,6 +2,17 @@
 
 Detect documentation drift between the codebase and project documentation files. If drift is found, create a branch with fixes and open a pull request. Designed for periodic scheduled execution.
 
+## Autonomy Directive
+
+This skill runs as an **unattended scheduled task**. No human is present to answer questions.
+
+- **NEVER pause to ask for clarification or confirmation** — make your best judgment and proceed
+- **NEVER use AskUserQuestion or any interactive prompt** — all decisions must be made autonomously
+- If data is unavailable or ambiguous, proceed with available data and note limitations
+- If governance activation fails, log the failure and **STOP**
+- If `gh` CLI fails, log the error and **STOP**
+- Default to the **safest option** in every ambiguous situation
+
 ## Prerequisites
 
 Run `start-governance-runtime` first. All scheduled skills must operate under governance.

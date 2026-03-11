@@ -6,23 +6,23 @@ Ensure the AgentGuard kernel is active and intercepting all tool calls before an
 
 ### 1. Check Hook Registration
 
-Read the local Claude Code settings and verify the PreToolUse governance hook is installed:
+Read the local Claude Code settings and verify the PreToolUse governance hook is installed with SQLite storage:
 
 ```bash
 cat .claude/settings.json 2>/dev/null
 ```
 
-Look for a `PreToolUse` entry whose command contains `claude-hook`. If the file does not exist or does not contain the hook, proceed to step 2. If it does, skip to step 3.
+Look for a `PreToolUse` entry whose command contains `claude-hook` and `--store sqlite`. If the file does not exist, does not contain the hook, or the hook is missing `--store sqlite`, proceed to step 2. If it does, skip to step 3.
 
 ### 2. Install Hooks
 
-Run the AgentGuard hook installer:
+Run the AgentGuard hook installer with SQLite storage:
 
 ```bash
-npx agentguard claude-init
+npx agentguard claude-init --remove 2>/dev/null; npx agentguard claude-init --store sqlite
 ```
 
-This writes both PreToolUse (governance enforcement for all tools) and PostToolUse (Bash error monitoring) hooks into `.claude/settings.json`. The command is idempotent — if hooks already exist it reports "Already configured."
+This writes both PreToolUse (governance enforcement for all tools) and PostToolUse (Bash error monitoring) hooks into `.claude/settings.json`, configured to persist governance data to SQLite (`.agentguard/agentguard.db`). The `--remove` ensures any existing hooks without SQLite are replaced.
 
 If installation fails, STOP. Do not proceed with development work without governance.
 
@@ -31,11 +31,11 @@ If installation fails, STOP. Do not proceed with development work without govern
 Ensure the telemetry output paths exist:
 
 ```bash
-mkdir -p .agentguard/events logs
+mkdir -p .agentguard logs
 ```
 
 These directories are used by:
-- `.agentguard/events/<runId>.jsonl` — per-run governance event logs
+- `.agentguard/agentguard.db` — SQLite governance database (events, decisions, sessions)
 - `logs/runtime-events.jsonl` — aggregated telemetry records
 
 ### 4. Verify Policy File
@@ -55,6 +55,7 @@ Report the status:
 ```
 Governance runtime active.
 PreToolUse hooks: registered
+Storage: SQLite (.agentguard/agentguard.db)
 Telemetry paths: ready
 Policy: <filename or "none (fail-open)">
 ```

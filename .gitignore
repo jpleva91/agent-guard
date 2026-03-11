@@ -4,14 +4,9 @@ runtime/events/*
 runtime/replay/*
 !runtime/events/.gitkeep
 !runtime/replay/.gitkeep
-# Governance runtime — ignore per-session artifacts, keep directory structure
+# Governance runtime — ignore per-run artifacts, track audit trail
 .agentguard/*
-!.agentguard/events/
 !.agentguard/events/.gitkeep
-.agentguard/events/*.jsonl
-!.agentguard/decisions/
 !.agentguard/decisions/.gitkeep
-.agentguard/decisions/*.jsonl
 logs/*
 !logs/.gitkeep
-!logs/runtime-events.jsonl

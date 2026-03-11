@@ -58,24 +58,228 @@ function detectGitAction(command: string): string | null {
   return null;
 }
 
+export type DestructiveRiskLevel = 'high' | 'critical';
+
+export interface DestructivePattern {
+  pattern: RegExp;
+  description: string;
+  riskLevel: DestructiveRiskLevel;
+  category: string;
+}
+
+const DESTRUCTIVE_PATTERNS: DestructivePattern[] = [
+  // Filesystem — critical
+  {
+    pattern: /\brm\s+-rf\b/,
+    description: 'Recursive force delete',
+    riskLevel: 'critical',
+    category: 'filesystem',
+  },
+  {
+    pattern: /\brm\s+-r\b/,
+    description: 'Recursive delete',
+    riskLevel: 'critical',
+    category: 'filesystem',
+  },
+  {
+    pattern: /\brm\s+--recursive\b/,
+    description: 'Recursive delete (long flag)',
+    riskLevel: 'critical',
+    category: 'filesystem',
+  },
+  {
+    pattern: /\bmkfs\b/,
+    description: 'Create filesystem (erases partition)',
+    riskLevel: 'critical',
+    category: 'filesystem',
+  },
+  {
+    pattern: />\s*\/dev\/sd[a-z]/,
+    description: 'Direct write to block device',
+    riskLevel: 'critical',
+    category: 'filesystem',
+  },
+  {
+    pattern: /\bdd\s+if=/,
+    description: 'Low-level disk copy (can overwrite devices)',
+    riskLevel: 'critical',
+    category: 'filesystem',
+  },
+  {
+    pattern: /\bshred\b/,
+    description: 'Secure file deletion (irrecoverable)',
+    riskLevel: 'critical',
+    category: 'filesystem',
+  },
+  {
+    pattern: /\bfdisk\b/,
+    description: 'Partition table manipulation',
+    riskLevel: 'critical',
+    category: 'filesystem',
+  },
+  // System administration — critical/high
+  {
+    pattern: /\bsudo\s+rm\b/,
+    description: 'Privileged file deletion',
+    riskLevel: 'critical',
+    category: 'system',
+  },
+  {
+    pattern: /\bsudo\s+/,
+    description: 'Privileged command execution',
+    riskLevel: 'high',
+    category: 'system',
+  },
+  {
+    pattern: /\bsu\s+-?\s*\w*/,
+    description: 'Switch user (privilege escalation)',
+    riskLevel: 'high',
+    category: 'system',
+  },
+  {
+    pattern: /\bchmod\s+777\b/,
+    description: 'World-writable permissions',
+    riskLevel: 'high',
+    category: 'system',
+  },
+  {
+    pattern: /\bchown\s+/,
+    description: 'Change file ownership',
+    riskLevel: 'high',
+    category: 'system',
+  },
+  // Process management — high
+  {
+    pattern: /\bkill\s+-9\b/,
+    description: 'Force kill process (SIGKILL)',
+    riskLevel: 'high',
+    category: 'process',
+  },
+  {
+    pattern: /\bpkill\b/,
+    description: 'Kill processes by name',
+    riskLevel: 'high',
+    category: 'process',
+  },
+  {
+    pattern: /\bkillall\b/,
+    description: 'Kill all processes by name',
+    riskLevel: 'high',
+    category: 'process',
+  },
+  // Container operations — high/critical
+  {
+    pattern: /\bdocker\s+rm\b/,
+    description: 'Remove Docker container',
+    riskLevel: 'high',
+    category: 'container',
+  },
+  {
+    pattern: /\bdocker\s+rmi\b/,
+    description: 'Remove Docker image',
+    riskLevel: 'high',
+    category: 'container',
+  },
+  {
+    pattern: /\bdocker\s+system\s+prune\b/,
+    description: 'Prune all unused Docker resources',
+    riskLevel: 'critical',
+    category: 'container',
+  },
+  // Service management — high
+  {
+    pattern: /\bsystemctl\s+stop\b/,
+    description: 'Stop system service',
+    riskLevel: 'high',
+    category: 'service',
+  },
+  {
+    pattern: /\bsystemctl\s+disable\b/,
+    description: 'Disable system service',
+    riskLevel: 'high',
+    category: 'service',
+  },
+  {
+    pattern: /\bservice\s+\S+\s+stop\b/,
+    description: 'Stop system service (SysV)',
+    riskLevel: 'high',
+    category: 'service',
+  },
+  // Database — critical
+  {
+    pattern: /\bdropdb\b/,
+    description: 'Drop PostgreSQL database',
+    riskLevel: 'critical',
+    category: 'database',
+  },
+  {
+    pattern: /\bDROP\s+DATABASE\b/i,
+    description: 'Drop database (SQL)',
+    riskLevel: 'critical',
+    category: 'database',
+  },
+  {
+    pattern: /\bDROP\s+TABLE\b/i,
+    description: 'Drop table (SQL)',
+    riskLevel: 'critical',
+    category: 'database',
+  },
+  {
+    pattern: /\bTRUNCATE\b/i,
+    description: 'Truncate table (delete all rows)',
+    riskLevel: 'critical',
+    category: 'database',
+  },
+  {
+    pattern: /\bDELETE\s+FROM\s+\S+\s*(?:;|\s*$)/i,
+    description: 'Delete all rows (no WHERE clause)',
+    riskLevel: 'critical',
+    category: 'database',
+  },
+  // Package management — high
+  {
+    pattern: /\bapt\s+(?:remove|purge)\b/,
+    description: 'Remove system package (apt)',
+    riskLevel: 'high',
+    category: 'package',
+  },
+  {
+    pattern: /\bnpm\s+uninstall\s+-g\b/,
+    description: 'Uninstall global npm package',
+    riskLevel: 'high',
+    category: 'package',
+  },
+  {
+    pattern: /\bpip\s+uninstall\b/,
+    description: 'Uninstall Python package',
+    riskLevel: 'high',
+    category: 'package',
+  },
+  // Network — critical
+  {
+    pattern: /\biptables\s+-F\b/,
+    description: 'Flush all firewall rules',
+    riskLevel: 'critical',
+    category: 'network',
+  },
+  {
+    pattern: /\bufw\s+disable\b/,
+    description: 'Disable firewall',
+    riskLevel: 'critical',
+    category: 'network',
+  },
+];
+
 function isDestructiveCommand(command: string): boolean {
   if (!command || typeof command !== 'string') return false;
 
-  const patterns = [
-    /\brm\s+-rf\b/,
-    /\brm\s+-r\b/,
-    /\brm\s+--recursive\b/,
-    /\bchmod\s+777\b/,
-    /\bdd\s+if=/,
-    /\bmkfs\b/,
-    />\s*\/dev\/sd[a-z]/,
-    /\bsudo\s+rm\b/,
-    /\bdropdb\b/,
-    /\bDROP\s+DATABASE\b/i,
-    /\bDROP\s+TABLE\b/i,
-  ];
+  return DESTRUCTIVE_PATTERNS.some((p) => p.pattern.test(command));
+}
 
-  return patterns.some((p) => p.test(command));
+function getDestructiveDetails(command: string): DestructivePattern | null {
+  if (!command || typeof command !== 'string') return null;
+
+  return DESTRUCTIVE_PATTERNS.find((p) => p.pattern.test(command)) ?? null;
 }
 
 function extractBranch(command: string | undefined): string | null {
@@ -201,4 +405,4 @@ export function authorize(
   return { intent, result, events, blastRadius };
 }
 
-export { detectGitAction, isDestructiveCommand };
+export { detectGitAction, isDestructiveCommand, getDestructiveDetails, DESTRUCTIVE_PATTERNS };

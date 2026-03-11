@@ -1,4 +1,5 @@
 // CLI command: agentguard export — export a governance session to a portable JSONL file.
+// Supports both JSONL (default) and SQLite storage backends.
 
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -7,21 +8,37 @@ import { getEventFilePath } from '../../events/jsonl.js';
 import { getDecisionFilePath } from '../../events/decision-jsonl.js';
 import type { DomainEvent } from '../../core/types.js';
 import type { GovernanceDecisionRecord } from '../../kernel/decisions/types.js';
+import type { StorageConfig } from '../../storage/types.js';
 
 const BASE_DIR = '.agentguard';
 const EVENTS_DIR = join(BASE_DIR, 'events');
 
+/**
+ * Current schema version for the event/decision data shape.
+ * Bump this when the DomainEvent or GovernanceDecisionRecord structure changes.
+ */
+export const EXPORT_SCHEMA_VERSION = 1;
+
 /** Metadata header written as the first line of an exported governance session. */
 export interface GovernanceExportHeader {
   readonly __agentguard_export: true;
+  /** Export wrapper format version */
   readonly version: 1;
+  /** Event/decision data schema version */
+  readonly schemaVersion: number;
   readonly runId: string;
   readonly exportedAt: number;
   readonly eventCount: number;
   readonly decisionCount: number;
+  /** Storage backend the session was exported from */
+  readonly sourceBackend?: 'jsonl' | 'sqlite';
 }
 
-function listRuns(): string[] {
+// ---------------------------------------------------------------------------
+// JSONL helpers
+// ---------------------------------------------------------------------------
+
+function listRunsJsonl(): string[] {
   if (!existsSync(EVENTS_DIR)) return [];
   return readdirSync(EVENTS_DIR)
     .filter((f) => f.endsWith('.jsonl'))
@@ -30,7 +47,7 @@ function listRuns(): string[] {
     .reverse();
 }
 
-function loadRunEvents(runId: string): DomainEvent[] {
+function loadRunEventsJsonl(runId: string): DomainEvent[] {
   const filePath = getEventFilePath(runId);
   if (!existsSync(filePath)) return [];
 
@@ -48,7 +65,7 @@ function loadRunEvents(runId: string): DomainEvent[] {
   return events;
 }
 
-function loadRunDecisions(runId: string): GovernanceDecisionRecord[] {
+function loadRunDecisionsJsonl(runId: string): GovernanceDecisionRecord[] {
   const filePath = getDecisionFilePath(runId);
   if (!existsSync(filePath)) return [];
 
@@ -66,18 +83,38 @@ function loadRunDecisions(runId: string): GovernanceDecisionRecord[] {
   return records;
 }
 
-export async function exportSession(args: string[]): Promise<void> {
+// ---------------------------------------------------------------------------
+// Public command
+// ---------------------------------------------------------------------------
+
+export async function exportSession(args: string[], storageConfig?: StorageConfig): Promise<void> {
   const parsed = parseArgs(args, {
     boolean: ['--last'],
     string: ['--output', '-o'],
     alias: { '-o': '--output' },
   });
 
+  const useSqlite = storageConfig?.backend === 'sqlite';
+
   // Resolve runId
   let runId: string | undefined;
   if (parsed.flags.last) {
-    const runs = listRuns();
-    runId = runs[0];
+    if (useSqlite) {
+      const { createStorageBundle } = await import('../../storage/factory.js');
+      const storage = await createStorageBundle(storageConfig);
+      if (!storage.db) {
+        process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
+        process.exitCode = 1;
+        return;
+      }
+      const { getLatestRunId } = await import('../../storage/sqlite-store.js');
+      const db = storage.db as import('better-sqlite3').Database;
+      runId = getLatestRunId(db) ?? undefined;
+      storage.close();
+    } else {
+      const runs = listRunsJsonl();
+      runId = runs[0];
+    }
     if (!runId) {
       process.stderr.write('\n  \x1b[31mError:\x1b[0m No runs recorded yet.\n\n');
       process.exitCode = 1;
@@ -95,15 +132,35 @@ export async function exportSession(args: string[]): Promise<void> {
   }
 
   // Load events and decisions
-  const events = loadRunEvents(runId);
+  let events: DomainEvent[];
+  let decisions: GovernanceDecisionRecord[];
+
+  if (useSqlite) {
+    const { createStorageBundle } = await import('../../storage/factory.js');
+    const storage = await createStorageBundle(storageConfig);
+    if (!storage.db) {
+      process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
+      process.exitCode = 1;
+      return;
+    }
+    const { loadRunEvents, loadRunDecisions } = await import('../../storage/sqlite-store.js');
+    const db = storage.db as import('better-sqlite3').Database;
+    events = loadRunEvents(db, runId);
+    decisions = loadRunDecisions(db, runId);
+    storage.close();
+  } else {
+    events = loadRunEventsJsonl(runId);
+    decisions = loadRunDecisionsJsonl(runId);
+  }
+
   if (events.length === 0) {
     process.stderr.write(`\n  \x1b[31mError:\x1b[0m Run "${runId}" has no events to export.\n`);
-    process.stderr.write(`  Expected file: ${getEventFilePath(runId)}\n\n`);
+    if (!useSqlite) {
+      process.stderr.write(`  Expected file: ${getEventFilePath(runId)}\n\n`);
+    }
     process.exitCode = 1;
     return;
   }
-
-  const decisions = loadRunDecisions(runId);
 
   // Determine output path
   const outputPath = resolve((parsed.flags.output as string) || `${runId}.agentguard.jsonl`);
@@ -112,10 +169,12 @@ export async function exportSession(args: string[]): Promise<void> {
   const header: GovernanceExportHeader = {
     __agentguard_export: true,
     version: 1,
+    schemaVersion: EXPORT_SCHEMA_VERSION,
     runId,
     exportedAt: Date.now(),
     eventCount: events.length,
     decisionCount: decisions.length,
+    sourceBackend: useSqlite ? 'sqlite' : 'jsonl',
   };
 
   const lines = [

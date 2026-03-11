@@ -11,7 +11,9 @@ import {
   renderKernelResult,
   renderActionGraph,
   renderEventStream,
+  renderPolicyTraces,
 } from '../../src/cli/tui.js';
+import type { PolicyTraceEvent } from '../../src/cli/tui.js';
 import type { KernelResult } from '../../src/kernel/kernel.js';
 import type { MonitorDecision } from '../../src/kernel/monitor.js';
 import type { GovernanceDecisionRecord } from '../../src/kernel/decisions/types.js';
@@ -488,5 +490,244 @@ describe('renderEventStream', () => {
     const lines = output.split('\n');
     const eventLines = lines.filter((l) => l.includes('Action'));
     expect(eventLines).toHaveLength(3);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// renderPolicyTraces
+// ---------------------------------------------------------------------------
+
+function makeTraceEvent(overrides: Partial<PolicyTraceEvent> = {}): PolicyTraceEvent {
+  return {
+    kind: 'PolicyTraceRecorded',
+    timestamp: 1700000000000,
+    actionType: 'file.write',
+    target: 'src/index.ts',
+    decision: 'allow',
+    totalRulesChecked: 2,
+    phaseThatMatched: 'allow',
+    durationMs: 0.15,
+    rulesEvaluated: [
+      {
+        policyId: 'security',
+        policyName: 'Security Policy',
+        ruleIndex: 0,
+        effect: 'deny',
+        actionPattern: 'git.push',
+        actionMatched: false,
+        conditionsMatched: false,
+        conditionDetails: {},
+        outcome: 'no-match',
+      },
+      {
+        policyId: 'security',
+        policyName: 'Security Policy',
+        ruleIndex: 1,
+        effect: 'allow',
+        actionPattern: 'file.*',
+        actionMatched: true,
+        conditionsMatched: true,
+        conditionDetails: { scopeMatched: true },
+        outcome: 'match',
+      },
+    ],
+    ...overrides,
+  };
+}
+
+describe('renderPolicyTraces', () => {
+  it('renders header with evaluation count', () => {
+    const output = renderPolicyTraces([makeTraceEvent()]);
+    expect(output).toContain('Policy Evaluation Traces');
+    expect(output).toContain('1 evaluations');
+  });
+
+  it('renders action type and target', () => {
+    const output = renderPolicyTraces([makeTraceEvent()]);
+    expect(output).toContain('file.write');
+    expect(output).toContain('src/index.ts');
+  });
+
+  it('renders decision in correct color', () => {
+    const allowOutput = renderPolicyTraces([makeTraceEvent({ decision: 'allow' })]);
+    expect(allowOutput).toContain('\x1b[32m'); // green
+    expect(allowOutput).toContain('ALLOW');
+
+    const denyOutput = renderPolicyTraces([makeTraceEvent({ decision: 'deny' })]);
+    expect(denyOutput).toContain('\x1b[31m'); // red
+    expect(denyOutput).toContain('DENY');
+  });
+
+  it('renders phase that matched', () => {
+    const output = renderPolicyTraces([makeTraceEvent({ phaseThatMatched: 'deny' })]);
+    expect(output).toContain('deny');
+
+    const defaultOutput = renderPolicyTraces([makeTraceEvent({ phaseThatMatched: 'default' })]);
+    expect(defaultOutput).toContain('default');
+  });
+
+  it('renders "none" when phaseThatMatched is null', () => {
+    const output = renderPolicyTraces([makeTraceEvent({ phaseThatMatched: null })]);
+    expect(output).toContain('none');
+  });
+
+  it('renders rules checked count', () => {
+    const output = renderPolicyTraces([makeTraceEvent({ totalRulesChecked: 5 })]);
+    expect(output).toContain('rules checked: 5');
+  });
+
+  it('renders evaluation duration', () => {
+    const output = renderPolicyTraces([makeTraceEvent({ durationMs: 1.23 })]);
+    expect(output).toContain('1.23ms');
+  });
+
+  it('renders individual rule evaluations', () => {
+    const output = renderPolicyTraces([makeTraceEvent()]);
+    // Should show the deny rule that didn't match
+    expect(output).toContain('[deny]');
+    expect(output).toContain('git.push');
+    expect(output).toContain('no-match');
+    // Should show the allow rule that matched
+    expect(output).toContain('[allow]');
+    expect(output).toContain('file.*');
+    expect(output).toContain('match');
+  });
+
+  it('renders policy name and rule index', () => {
+    const output = renderPolicyTraces([makeTraceEvent()]);
+    expect(output).toContain('Security Policy#0');
+    expect(output).toContain('Security Policy#1');
+  });
+
+  it('renders skipped rules', () => {
+    const trace = makeTraceEvent({
+      rulesEvaluated: [
+        {
+          policyId: 'p1',
+          policyName: 'Policy',
+          ruleIndex: 0,
+          effect: 'allow',
+          actionPattern: 'file.*',
+          actionMatched: false,
+          conditionsMatched: false,
+          conditionDetails: {},
+          outcome: 'skipped',
+        },
+      ],
+    });
+    const output = renderPolicyTraces([trace]);
+    expect(output).toContain('skipped');
+  });
+
+  it('renders condition details for matching rules', () => {
+    const trace = makeTraceEvent({
+      rulesEvaluated: [
+        {
+          policyId: 'p1',
+          policyName: 'Policy',
+          ruleIndex: 0,
+          effect: 'deny',
+          actionPattern: 'file.write',
+          actionMatched: true,
+          conditionsMatched: true,
+          conditionDetails: { scopeMatched: true, limitExceeded: true },
+          outcome: 'match',
+        },
+      ],
+    });
+    const output = renderPolicyTraces([trace]);
+    expect(output).toContain('matched on:');
+    expect(output).toContain('scope');
+    expect(output).toContain('limit exceeded');
+  });
+
+  it('renders condition mismatch reasons', () => {
+    const trace = makeTraceEvent({
+      rulesEvaluated: [
+        {
+          policyId: 'p1',
+          policyName: 'Policy',
+          ruleIndex: 0,
+          effect: 'deny',
+          actionPattern: 'file.write',
+          actionMatched: true,
+          conditionsMatched: false,
+          conditionDetails: { scopeMatched: false },
+          outcome: 'no-match',
+        },
+      ],
+    });
+    const output = renderPolicyTraces([trace]);
+    expect(output).toContain('reason:');
+    expect(output).toContain('scope mismatch');
+  });
+
+  it('renders multiple trace events', () => {
+    const traces = [
+      makeTraceEvent({ actionType: 'file.write' }),
+      makeTraceEvent({ actionType: 'git.push', decision: 'deny', phaseThatMatched: 'deny' }),
+    ];
+    const output = renderPolicyTraces(traces);
+    expect(output).toContain('2 evaluations');
+    expect(output).toContain('file.write');
+    expect(output).toContain('git.push');
+  });
+
+  it('handles traces with no rules evaluated', () => {
+    const trace = makeTraceEvent({
+      totalRulesChecked: 0,
+      rulesEvaluated: [],
+      phaseThatMatched: 'default',
+    });
+    const output = renderPolicyTraces([trace]);
+    expect(output).toContain('rules checked: 0');
+    // Should not crash
+    expect(output).toContain('Policy Evaluation Traces');
+  });
+
+  it('handles missing target gracefully', () => {
+    const trace = makeTraceEvent({ target: undefined });
+    const output = renderPolicyTraces([trace]);
+    expect(output).toContain('file.write');
+  });
+
+  it('handles array action patterns', () => {
+    const trace = makeTraceEvent({
+      rulesEvaluated: [
+        {
+          policyId: 'p1',
+          policyName: 'Policy',
+          ruleIndex: 0,
+          effect: 'deny',
+          actionPattern: ['git.push', 'git.force-push'],
+          actionMatched: true,
+          conditionsMatched: true,
+          conditionDetails: {},
+          outcome: 'match',
+        },
+      ],
+    });
+    const output = renderPolicyTraces([trace]);
+    expect(output).toContain('git.push, git.force-push');
+  });
+
+  it('renders branch mismatch reason', () => {
+    const trace = makeTraceEvent({
+      rulesEvaluated: [
+        {
+          policyId: 'p1',
+          policyName: 'Policy',
+          ruleIndex: 0,
+          effect: 'deny',
+          actionPattern: 'git.push',
+          actionMatched: true,
+          conditionsMatched: false,
+          conditionDetails: { branchMatched: false },
+          outcome: 'no-match',
+        },
+      ],
+    });
+    const output = renderPolicyTraces([trace]);
+    expect(output).toContain('branch mismatch');
   });
 });

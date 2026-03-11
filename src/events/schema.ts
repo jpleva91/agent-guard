@@ -50,6 +50,9 @@ export const ACTION_FAILED: EventKind = 'ActionFailed';
 // Decision Records
 export const DECISION_RECORDED: EventKind = 'DecisionRecorded';
 
+// Policy Composition
+export const POLICY_COMPOSED: EventKind = 'PolicyComposed';
+
 // Policy Traces
 export const POLICY_TRACE_RECORDED: EventKind = 'PolicyTraceRecorded';
 
@@ -72,6 +75,11 @@ export const COMMIT_CREATED: EventKind = 'CommitCreated';
 export const CODE_REVIEWED: EventKind = 'CodeReviewed';
 export const DEPLOY_COMPLETED: EventKind = 'DeployCompleted';
 export const LINT_COMPLETED: EventKind = 'LintCompleted';
+
+// Agent Liveness
+export const HEARTBEAT_EMITTED: EventKind = 'HeartbeatEmitted';
+export const HEARTBEAT_MISSED: EventKind = 'HeartbeatMissed';
+export const AGENT_UNRESPONSIVE: EventKind = 'AgentUnresponsive';
 
 // --- Event Schemas ---
 const EVENT_SCHEMAS: Record<string, EventSchema> = {
@@ -129,7 +137,13 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   },
   [STATE_CHANGED]: {
     required: ['from', 'to'],
-    optional: [],
+    optional: [
+      'trigger',
+      'totalDenials',
+      'totalViolations',
+      'denialThreshold',
+      'violationThreshold',
+    ],
   },
   [RUN_STARTED]: {
     required: ['runId'],
@@ -195,6 +209,10 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
     required: ['recordId', 'outcome', 'actionType'],
     optional: ['target', 'reason', 'metadata'],
   },
+  [POLICY_COMPOSED]: {
+    required: ['policyCount', 'totalRules', 'sources'],
+    optional: ['layers', 'metadata'],
+  },
   [POLICY_TRACE_RECORDED]: {
     required: ['actionType', 'decision', 'totalRulesChecked'],
     optional: ['target', 'phaseThatMatched', 'rulesEvaluated', 'durationMs', 'metadata'],
@@ -254,6 +272,18 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   [LINT_COMPLETED]: {
     required: ['result'],
     optional: ['tool', 'errors', 'warnings', 'fixed'],
+  },
+  [HEARTBEAT_EMITTED]: {
+    required: ['agentId'],
+    optional: ['sequenceNumber', 'uptimeMs', 'metadata'],
+  },
+  [HEARTBEAT_MISSED]: {
+    required: ['agentId', 'missedCount'],
+    optional: ['lastHeartbeatAt', 'expectedIntervalMs', 'metadata'],
+  },
+  [AGENT_UNRESPONSIVE]: {
+    required: ['agentId', 'missedCount', 'threshold'],
+    optional: ['lastHeartbeatAt', 'metadata'],
   },
 };
 

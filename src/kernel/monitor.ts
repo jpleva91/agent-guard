@@ -8,6 +8,7 @@ import type { RawAgentAction } from './aab.js';
 import { EventBus } from '../events/bus.js';
 import { createInMemoryStore } from '../events/store.js';
 import type { EventStore } from '../core/types.js';
+import { createEvent, STATE_CHANGED } from '../events/schema.js';
 
 export const ESCALATION = {
   NORMAL: 0,
@@ -17,6 +18,13 @@ export const ESCALATION = {
 } as const;
 
 export type EscalationLevel = (typeof ESCALATION)[keyof typeof ESCALATION];
+
+const ESCALATION_NAMES: Record<EscalationLevel, string> = {
+  [ESCALATION.NORMAL]: 'NORMAL',
+  [ESCALATION.ELEVATED]: 'ELEVATED',
+  [ESCALATION.HIGH]: 'HIGH',
+  [ESCALATION.LOCKDOWN]: 'LOCKDOWN',
+};
 
 interface MonitorState {
   escalationLevel: EscalationLevel;
@@ -79,7 +87,9 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
   let escalationLevel: EscalationLevel = ESCALATION.NORMAL;
   const sessionStartTime = Date.now();
 
-  function updateEscalation(): void {
+  function updateEscalation(triggerAction?: string): DomainEvent | null {
+    const previousLevel = escalationLevel;
+
     if (totalDenials >= denialThreshold * 2 || totalViolations >= violationThreshold * 2) {
       escalationLevel = ESCALATION.LOCKDOWN;
     } else if (totalDenials >= denialThreshold || totalViolations >= violationThreshold) {
@@ -91,6 +101,24 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
     }
 
     bus.emit('escalation', { level: escalationLevel });
+
+    if (escalationLevel !== previousLevel) {
+      const stateEvent = createEvent(STATE_CHANGED, {
+        from: ESCALATION_NAMES[previousLevel],
+        to: ESCALATION_NAMES[escalationLevel],
+        trigger: triggerAction || 'unknown',
+        totalDenials,
+        totalViolations,
+        denialThreshold,
+        violationThreshold,
+      });
+      store.append(stateEvent);
+      bus.emit(STATE_CHANGED, stateEvent as unknown as Record<string, unknown>);
+      bus.emit('*', stateEvent as unknown as Record<string, unknown>);
+      return stateEvent;
+    }
+
+    return null;
   }
 
   return {
@@ -156,10 +184,13 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
         violationsByInvariant.set(id, (violationsByInvariant.get(id) || 0) + 1);
       }
 
-      updateEscalation();
+      const stateChangedEvent = updateEscalation(result.intent.action);
+
+      const events = stateChangedEvent ? [...result.events, stateChangedEvent] : result.events;
 
       return {
         ...result,
+        events,
         monitor: {
           escalationLevel,
           totalEvaluations,
@@ -187,6 +218,7 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
     },
 
     resetEscalation() {
+      const previousLevel = escalationLevel;
       escalationLevel = ESCALATION.NORMAL;
       totalDenials = 0;
       totalViolations = 0;
@@ -194,6 +226,21 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
       violationsByInvariant.clear();
       recentDenials.length = 0;
       bus.emit('escalation-reset', { level: ESCALATION.NORMAL });
+
+      if (previousLevel !== ESCALATION.NORMAL) {
+        const stateEvent = createEvent(STATE_CHANGED, {
+          from: ESCALATION_NAMES[previousLevel],
+          to: ESCALATION_NAMES[ESCALATION.NORMAL],
+          trigger: 'manual-reset',
+          totalDenials: 0,
+          totalViolations: 0,
+          denialThreshold,
+          violationThreshold,
+        });
+        store.append(stateEvent);
+        bus.emit(STATE_CHANGED, stateEvent as unknown as Record<string, unknown>);
+        bus.emit('*', stateEvent as unknown as Record<string, unknown>);
+      }
     },
   };
 }

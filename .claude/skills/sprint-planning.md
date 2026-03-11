@@ -1,6 +1,17 @@
 # Skill: Sprint Planning
 
-Analyze the full issue backlog, open PRs, ROADMAP phases, and recent activity to produce a prioritized sprint plan. Apply priority labels to unlabeled issues so the Coder Agent picks the right work next. Designed for daily scheduled execution.
+Analyze the full issue backlog, open PRs, ROADMAP phases, governance risk data, and recent activity to produce a prioritized sprint plan. Apply priority labels to unlabeled issues so the Coder Agent picks the right work next. Designed for daily scheduled execution.
+
+## Autonomy Directive
+
+This skill runs as an **unattended scheduled task**. No human is present to answer questions.
+
+- **NEVER pause to ask for clarification or confirmation** — make your best judgment and proceed
+- **NEVER use AskUserQuestion or any interactive prompt** — all decisions must be made autonomously
+- If data is unavailable or ambiguous, proceed with available data and note limitations
+- If governance activation fails, log the failure and **STOP**
+- If `gh` CLI fails, log the error and **STOP**
+- Default to the **safest option** in every ambiguous situation
 
 ## Prerequisites
 
@@ -12,7 +23,29 @@ Run `start-governance-runtime` first. All scheduled skills must operate under go
 
 Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is active and intercepting all tool calls. If governance cannot be activated, STOP — do not proceed without governance.
 
-### 2. Snapshot the Backlog
+### 2. Collect Governance Context
+
+Read cross-session governance data to inform prioritization:
+
+```bash
+npx agentguard analytics --format json 2>/dev/null | head -100
+```
+
+Extract:
+- **Current escalation level**: NORMAL / ELEVATED / HIGH / LOCKDOWN
+- **Risk score** (0-100) and **risk level**
+- **Recent denial trends**: increasing, stable, or decreasing
+- **Top violation patterns**: which invariants or policy rules are triggering most
+
+Also check current escalation state:
+
+```bash
+cat logs/runtime-events.jsonl 2>/dev/null | grep -i "escalat\|StateChanged" | tail -5
+```
+
+If analytics is not available, note "Governance context: not available" and proceed with standard prioritization.
+
+### 3. Snapshot the Backlog
 
 Fetch all open issues with full metadata:
 
@@ -33,7 +66,7 @@ Also check for existing sprint plan issues:
 gh issue list --state open --label "source:planning-agent" --json number,title
 ```
 
-### 3. Snapshot In-Flight Work
+### 4. Snapshot In-Flight Work
 
 Fetch open PRs to understand what is actively being worked on:
 
@@ -51,7 +84,7 @@ Note:
 - PRs that reference issues (via `Closes #N` or `Implements #N`) indicate near-completion work
 - Failing CI runs may indicate blocking issues
 
-### 4. Analyze Throughput
+### 5. Analyze Throughput
 
 Fetch recently closed issues and merged PRs to measure velocity:
 
@@ -65,7 +98,7 @@ Calculate:
 - **PRs merged in last 7 days** (delivery rate)
 - **Average issue age** for open issues (staleness signal)
 
-### 5. Read ROADMAP
+### 6. Read ROADMAP
 
 Read `ROADMAP.md` to determine phase structure and current progress:
 
@@ -79,7 +112,7 @@ Identify:
 - **Next phase**: The phase after current (Phase 4 — Plugin Ecosystem)
 - **Phase ordering**: Issues should generally be completed in phase order
 
-### 6. Build Dependency Graph
+### 7. Build Dependency Graph
 
 For each open issue, determine its dependencies:
 
@@ -99,7 +132,7 @@ Classify each issue as:
 - **In-flight**: Has an open PR or is `status:in-progress`
 - **Stale candidate**: Open for >30 days with no activity
 
-### 7. Prioritize Unlabeled Issues
+### 8. Prioritize Unlabeled Issues
 
 For issues that lack a `priority:*` label, assign priority using these signals (in order):
 
@@ -113,6 +146,8 @@ For issues that lack a `priority:*` label, assign priority using these signals (
 | Issue is in a future phase (Phase 5+) | `priority:low` |
 | No clear signal | Do not label (leave for human review) |
 
+**Governance risk adjustment**: If the current escalation level is ELEVATED or higher, deprioritize issues with high estimated blast radius (16+ files in scope). If escalation is HIGH, only label issues with small file scope as `priority:high` or above.
+
 Apply labels:
 
 ```bash
@@ -121,7 +156,7 @@ gh issue edit <N> --add-label "priority:<level>"
 
 Cap at **10 label changes per run** to avoid spamming.
 
-### 8. Identify Stale or Obsolete Issues
+### 9. Identify Stale or Obsolete Issues
 
 For each open issue, check for staleness indicators:
 
@@ -141,7 +176,7 @@ gh issue comment <N> --body "**Planning Agent**: This issue may be stale or obso
 
 Cap at **3 staleness comments per run** to avoid noise.
 
-### 9. Generate Sprint Plan
+### 10. Generate Sprint Plan
 
 Compose a structured sprint plan in markdown with these sections:
 
@@ -151,15 +186,23 @@ Compose a structured sprint plan in markdown with these sections:
 - Open issue count, open PR count
 - Current ROADMAP phase
 
+**Governance Context**:
+| Metric | Value |
+|--------|-------|
+| Escalation level | NORMAL / ELEVATED / HIGH / LOCKDOWN |
+| Risk score | <N>/100 |
+| Recent denial trend | increasing / stable / decreasing |
+| Top violation | <invariant or policy rule name> |
+
 **Ready Now** (table):
-| Priority | Issue | Title | Package/Theme | Complexity Estimate |
+| Priority | Issue | Title | Package/Theme | Risk Estimate | Complexity Estimate |
 Sorted by priority (critical > high > medium > low), then by issue age (oldest first).
 
 **Blocked** (table):
 | Issue | Title | Blocked By | Notes |
 
 **Recommended Sequence** (numbered list):
-The top 5-7 issues that should be worked next, in order, with brief reasoning.
+The top 5-7 issues that should be worked next, in order, with brief reasoning. Factor in governance risk — prefer lower-blast-radius issues when escalation is elevated.
 
 **Issues to Close or Reclassify** (list):
 Issues identified as stale/obsolete with reasoning.
@@ -174,8 +217,9 @@ Show phase-level dependencies and any cross-issue dependency chains.
 - Issues older than 30 days
 - Throughput: issues closed / PRs merged in last 7 days
 - CI health: last 5 runs pass/fail
+- Governance risk score and escalation level
 
-### 10. Publish Sprint Plan
+### 11. Publish Sprint Plan
 
 Check if a previous sprint plan issue exists:
 
@@ -198,7 +242,7 @@ gh issue create \
   --label "source:planning-agent" --label "status:pending"
 ```
 
-### 11. Summary
+### 12. Summary
 
 Report:
 - **Issues analyzed**: N
@@ -206,6 +250,7 @@ Report:
 - **Stale issues flagged**: N
 - **Sprint plan issue created**: #N
 - **Previous plan closed**: #N (or "none")
+- **Governance context**: escalation level, risk score, denial trend
 - **Top recommendation**: Brief statement of the single most important thing to work on next
 
 ## Rules
@@ -221,3 +266,4 @@ Report:
 - If no open issues exist, report "Backlog empty — no planning needed" and STOP
 - Do not re-label issues that already have a `priority:*` label — only label unlabeled issues
 - When closing previous sprint plans, verify the issue is actually labeled `source:planning-agent` before closing
+- When escalation is ELEVATED or higher, deprioritize high-blast-radius issues in the recommended sequence

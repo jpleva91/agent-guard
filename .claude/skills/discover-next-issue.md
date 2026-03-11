@@ -1,6 +1,17 @@
 # Skill: Discover Next Issue
 
-Find the next GitHub issue to work on from the project's issue queue. Issues are selected by the `status:pending` label and sorted by priority.
+Find the next GitHub issue to work on from the project's issue queue. Issues are selected by the `status:pending` label, sorted by priority, and assessed for governance risk level. Escalation context is checked to avoid high-risk work during elevated governance states.
+
+## Autonomy Directive
+
+This skill runs as an **unattended scheduled task**. No human is present to answer questions.
+
+- **NEVER pause to ask for clarification or confirmation** — make your best judgment and proceed
+- **NEVER use AskUserQuestion or any interactive prompt** — all decisions must be made autonomously
+- If no issues match criteria, report cleanly and **STOP**
+- If governance activation fails, log the failure and **STOP**
+- If `gh` CLI fails, log the error and **STOP**
+- Default to the **safest option** in every ambiguous situation
 
 ## Prerequisites
 
@@ -54,12 +65,49 @@ If any dependency is still `OPEN`:
 - Skip this issue and select the next highest-priority issue
 - Repeat until an issue with no blocking dependencies is found
 
-### 5. Display Issue Details
+### 5. Check Escalation Context
+
+Before finalizing issue selection, check the current governance escalation level:
+
+```bash
+cat logs/runtime-events.jsonl 2>/dev/null | grep -i "escalat\|StateChanged" | tail -5
+```
+
+Determine the current escalation state:
+- **NORMAL** (level 0): all issues eligible
+- **ELEVATED** (level 1): prefer issues with smaller File Scope (fewer files)
+- **HIGH** (level 2): only select issues with explicit File Scope of 5 files or fewer
+- **LOCKDOWN** (level 3): report "Governance LOCKDOWN active — deferring new work" and STOP
+
+If telemetry data is unavailable, assume NORMAL and proceed.
+
+### 6. Estimate Blast Radius
+
+For the selected issue, estimate the governance risk:
+
+If the issue body contains a `## File Scope` section, count the listed files. Then simulate:
+
+```bash
+npx agentguard simulate --action file.write --target <first-file-in-scope> --policy agentguard.yaml --json 2>/dev/null
+```
+
+Classify the estimated blast radius:
+- **1-5 files**: low risk
+- **6-15 files**: medium risk
+- **16+ files**: high risk
+
+If escalation is ELEVATED and the estimated blast radius is high, prefer the next lower-risk issue.
+
+If the simulate command is not available, skip this step.
+
+### 7. Display Issue Details
 
 For the selected issue, output:
 
 - **Issue number** and **title**
 - **Labels** (all)
+- **Estimated risk level**: low / medium / high (from blast radius estimate)
+- **Current escalation**: NORMAL / ELEVATED / HIGH
 - **Task Description** section from the body
 - **Acceptance Criteria** section from the body
 - **File Scope** section from the body (if present)
@@ -69,5 +117,7 @@ For the selected issue, output:
 
 - If no pending issues exist, report "No work available" and STOP
 - If all pending issues have unresolved dependencies, report "All pending issues blocked by dependencies" and STOP
+- If governance is in LOCKDOWN, report and STOP — do not select any issue
+- If escalation is HIGH, only select issues with small file scope (5 files or fewer)
 - Do not select issues that are already `status:in-progress` or `status:assigned`
 - Output the selected issue number clearly — it is needed by `claim-issue`

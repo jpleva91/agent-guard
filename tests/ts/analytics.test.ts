@@ -17,7 +17,11 @@ import type { ViolationRecord, ClusterDimension } from '../../src/analytics/type
 import { clusterViolations, clusterByDimension } from '../../src/analytics/cluster.js';
 import { computeTrends, computeAllTrends } from '../../src/analytics/trends.js';
 import { toMarkdown, toJson, toTerminal } from '../../src/analytics/reporter.js';
-import { aggregateViolations, listSessionIds, loadSessionEvents } from '../../src/analytics/aggregator.js';
+import {
+  aggregateViolations,
+  listSessionIds,
+  loadSessionEvents,
+} from '../../src/analytics/aggregator.js';
 import { analyze } from '../../src/analytics/engine.js';
 
 // --- Helpers ---
@@ -56,7 +60,11 @@ describe('aggregator', () => {
 
     it('returns sorted session IDs from JSONL files', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readdirSync).mockReturnValue(['run_b.jsonl', 'run_a.jsonl', 'readme.md'] as unknown as ReturnType<typeof readdirSync>);
+      vi.mocked(readdirSync).mockReturnValue([
+        'run_b.jsonl',
+        'run_a.jsonl',
+        'readme.md',
+      ] as unknown as ReturnType<typeof readdirSync>);
       expect(listSessionIds()).toEqual(['run_a', 'run_b']);
     });
   });
@@ -73,7 +81,7 @@ describe('aggregator', () => {
         makeJsonlContent([
           { id: 'evt_1', kind: 'ActionAllowed', timestamp: 1000, fingerprint: 'fp' },
           { id: 'evt_2', kind: 'InvariantViolation', timestamp: 2000, fingerprint: 'fp' },
-        ]),
+        ])
       );
 
       const events = loadSessionEvents('run_1');
@@ -85,7 +93,7 @@ describe('aggregator', () => {
     it('skips malformed lines', () => {
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(readFileSync).mockReturnValue(
-        '{"id":"e1","kind":"ActionAllowed","timestamp":1,"fingerprint":"fp"}\n{invalid\n',
+        '{"id":"e1","kind":"ActionAllowed","timestamp":1,"fingerprint":"fp"}\n{invalid\n'
       );
 
       const events = loadSessionEvents('run_1');
@@ -96,27 +104,48 @@ describe('aggregator', () => {
   describe('aggregateViolations', () => {
     it('extracts violation records from multiple sessions', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl', 's2.jsonl'] as unknown as ReturnType<typeof readdirSync>);
+      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl', 's2.jsonl'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
 
       // First call for s1, second for s2
       vi.mocked(readFileSync)
         .mockReturnValueOnce(
           makeJsonlContent([
             {
-              id: 'e1', kind: 'InvariantViolation', timestamp: 1000, fingerprint: 'fp',
-              invariant: 'protected-branches', actionType: 'git.push', target: 'main',
-              expected: 'no push', actual: 'push',
+              id: 'e1',
+              kind: 'InvariantViolation',
+              timestamp: 1000,
+              fingerprint: 'fp',
+              invariant: 'protected-branches',
+              actionType: 'git.push',
+              target: 'main',
+              expected: 'no push',
+              actual: 'push',
             },
-            { id: 'e2', kind: 'ActionAllowed', timestamp: 2000, fingerprint: 'fp', actionType: 'file.read', target: 'test.ts', capability: 'read' },
-          ]),
+            {
+              id: 'e2',
+              kind: 'ActionAllowed',
+              timestamp: 2000,
+              fingerprint: 'fp',
+              actionType: 'file.read',
+              target: 'test.ts',
+              capability: 'read',
+            },
+          ])
         )
         .mockReturnValueOnce(
           makeJsonlContent([
             {
-              id: 'e3', kind: 'PolicyDenied', timestamp: 3000, fingerprint: 'fp',
-              policy: 'strict', action: 'shell.exec', reason: 'Denied by policy',
+              id: 'e3',
+              kind: 'PolicyDenied',
+              timestamp: 3000,
+              fingerprint: 'fp',
+              policy: 'strict',
+              action: 'shell.exec',
+              reason: 'Denied by policy',
             },
-          ]),
+          ])
         );
 
       const result = aggregateViolations();
@@ -133,12 +162,46 @@ describe('aggregator', () => {
 
 describe('cluster', () => {
   const violations: ViolationRecord[] = [
-    makeViolation({ eventId: 'e1', sessionId: 's1', invariantId: 'protected-branches', actionType: 'git.push' }),
-    makeViolation({ eventId: 'e2', sessionId: 's1', invariantId: 'protected-branches', actionType: 'git.push' }),
-    makeViolation({ eventId: 'e3', sessionId: 's2', invariantId: 'protected-branches', actionType: 'git.push' }),
-    makeViolation({ eventId: 'e4', sessionId: 's1', invariantId: 'blast-radius', actionType: 'file.write', target: 'src/big.ts' }),
-    makeViolation({ eventId: 'e5', sessionId: 's2', invariantId: 'blast-radius', actionType: 'file.write', target: 'src/big.ts' }),
-    makeViolation({ eventId: 'e6', sessionId: 's1', kind: 'PolicyDenied', invariantId: undefined, actionType: 'shell.exec', reason: 'Not allowed' }),
+    makeViolation({
+      eventId: 'e1',
+      sessionId: 's1',
+      invariantId: 'protected-branches',
+      actionType: 'git.push',
+    }),
+    makeViolation({
+      eventId: 'e2',
+      sessionId: 's1',
+      invariantId: 'protected-branches',
+      actionType: 'git.push',
+    }),
+    makeViolation({
+      eventId: 'e3',
+      sessionId: 's2',
+      invariantId: 'protected-branches',
+      actionType: 'git.push',
+    }),
+    makeViolation({
+      eventId: 'e4',
+      sessionId: 's1',
+      invariantId: 'blast-radius',
+      actionType: 'file.write',
+      target: 'src/big.ts',
+    }),
+    makeViolation({
+      eventId: 'e5',
+      sessionId: 's2',
+      invariantId: 'blast-radius',
+      actionType: 'file.write',
+      target: 'src/big.ts',
+    }),
+    makeViolation({
+      eventId: 'e6',
+      sessionId: 's1',
+      kind: 'PolicyDenied',
+      invariantId: undefined,
+      actionType: 'shell.exec',
+      reason: 'Not allowed',
+    }),
   ];
 
   describe('clusterByDimension', () => {
@@ -192,7 +255,7 @@ describe('cluster', () => {
     it('includes inferred causes for known invariants', () => {
       const clusters = clusterViolations(violations);
       const protectedCluster = clusters.find(
-        (c) => c.groupBy === 'invariant' && c.key === 'protected-branches',
+        (c) => c.groupBy === 'invariant' && c.key === 'protected-branches'
       );
       expect(protectedCluster?.inferredCause).toBeDefined();
     });
@@ -290,8 +353,16 @@ describe('trends', () => {
   describe('computeAllTrends', () => {
     it('computes trends across multiple dimensions', () => {
       const violations: ViolationRecord[] = [
-        makeViolation({ timestamp: now - oneDay, invariantId: 'blast-radius', actionType: 'file.write' }),
-        makeViolation({ timestamp: now - oneDay * 2, invariantId: 'blast-radius', actionType: 'file.write' }),
+        makeViolation({
+          timestamp: now - oneDay,
+          invariantId: 'blast-radius',
+          actionType: 'file.write',
+        }),
+        makeViolation({
+          timestamp: now - oneDay * 2,
+          invariantId: 'blast-radius',
+          actionType: 'file.write',
+        }),
       ];
 
       const trends = computeAllTrends(violations, windowMs);
@@ -340,6 +411,47 @@ describe('reporter', () => {
     topInferredCauses: [
       { cause: 'Agent frequently attempts direct pushes to protected branches', count: 2 },
     ],
+    runRiskScores: [
+      {
+        sessionId: 'session-abc123',
+        score: 42.5,
+        riskLevel: 'medium' as const,
+        factors: [
+          {
+            dimension: 'violations' as const,
+            rawValue: 60,
+            normalizedScore: 60,
+            weight: 0.35,
+            details: 'InvariantViolation: 2',
+          },
+          {
+            dimension: 'escalation' as const,
+            rawValue: 1,
+            normalizedScore: 33.33,
+            weight: 0.25,
+            details: 'peak: ELEVATED',
+          },
+          {
+            dimension: 'blastRadius' as const,
+            rawValue: 20,
+            normalizedScore: 20,
+            weight: 0.25,
+            details: '5 files affected',
+          },
+          {
+            dimension: 'operations' as const,
+            rawValue: 30,
+            normalizedScore: 30,
+            weight: 0.15,
+            details: 'git.push: 2',
+          },
+        ],
+        totalActions: 10,
+        totalDenials: 3,
+        totalViolations: 2,
+        peakEscalation: 1,
+      },
+    ],
   };
 
   describe('toMarkdown', () => {
@@ -355,6 +467,10 @@ describe('reporter', () => {
       expect(md).toContain('## Trends');
       expect(md).toContain('blast-radius');
       expect(md).toContain('## Top Inferred Causes');
+      expect(md).toContain('## Run Risk Scores');
+      expect(md).toContain('session-abc1');
+      expect(md).toContain('42.5');
+      expect(md).toContain('medium');
     });
   });
 
@@ -376,6 +492,8 @@ describe('reporter', () => {
       expect(output).toContain('Violations: 10');
       expect(output).toContain('Clusters');
       expect(output).toContain('Trends');
+      expect(output).toContain('Run Risk Scores');
+      expect(output).toContain('session-abc1');
     });
   });
 });
@@ -389,24 +507,43 @@ describe('engine', () => {
 
   it('produces a complete report', () => {
     vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<typeof readdirSync>);
+    vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+      typeof readdirSync
+    >);
     vi.mocked(readFileSync).mockReturnValue(
       makeJsonlContent([
         {
-          id: 'e1', kind: 'InvariantViolation', timestamp: 1000, fingerprint: 'fp',
-          invariant: 'protected-branches', actionType: 'git.push', target: 'main',
-          expected: 'no push', actual: 'push',
+          id: 'e1',
+          kind: 'InvariantViolation',
+          timestamp: 1000,
+          fingerprint: 'fp',
+          invariant: 'protected-branches',
+          actionType: 'git.push',
+          target: 'main',
+          expected: 'no push',
+          actual: 'push',
         },
         {
-          id: 'e2', kind: 'InvariantViolation', timestamp: 2000, fingerprint: 'fp',
-          invariant: 'protected-branches', actionType: 'git.push', target: 'main',
-          expected: 'no push', actual: 'push',
+          id: 'e2',
+          kind: 'InvariantViolation',
+          timestamp: 2000,
+          fingerprint: 'fp',
+          invariant: 'protected-branches',
+          actionType: 'git.push',
+          target: 'main',
+          expected: 'no push',
+          actual: 'push',
         },
         {
-          id: 'e3', kind: 'PolicyDenied', timestamp: 3000, fingerprint: 'fp',
-          policy: 'strict', action: 'shell.exec', reason: 'Denied',
+          id: 'e3',
+          kind: 'PolicyDenied',
+          timestamp: 3000,
+          fingerprint: 'fp',
+          policy: 'strict',
+          action: 'shell.exec',
+          reason: 'Denied',
         },
-      ]),
+      ])
     );
 
     const report = analyze({ minClusterSize: 2 });
@@ -415,6 +552,10 @@ describe('engine', () => {
     expect(report.violationsByKind.InvariantViolation).toBe(2);
     expect(report.violationsByKind.PolicyDenied).toBe(1);
     expect(report.clusters.length).toBeGreaterThan(0);
+    expect(report.runRiskScores).toHaveLength(1);
+    expect(report.runRiskScores[0].sessionId).toBe('s1');
+    expect(report.runRiskScores[0].score).toBeGreaterThan(0);
+    expect(report.runRiskScores[0].totalViolations).toBe(3);
   });
 
   it('handles empty event store', () => {
@@ -425,5 +566,6 @@ describe('engine', () => {
     expect(report.totalViolations).toBe(0);
     expect(report.clusters).toEqual([]);
     expect(report.trends).toEqual([]);
+    expect(report.runRiskScores).toEqual([]);
   });
 });

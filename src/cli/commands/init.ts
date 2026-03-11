@@ -53,11 +53,13 @@ export async function init(args: string[]): Promise<number> {
 
   const extensionName = name ?? `my-${extensionType}`;
 
+
   if (!/^[a-z0-9][a-z0-9-]*$/.test(extensionName)) {
     console.error(`\n  ${color('Error', 'red')}: Invalid extension name "${extensionName}".`);
     console.error(`  Names must match /^[a-z0-9][a-z0-9-]*$/ to be safe for code generation.\n`);
     return 1;
   }
+
 
   const targetDir = resolve(dir ?? extensionName);
 
@@ -89,7 +91,9 @@ export async function init(args: string[]): Promise<number> {
     console.log(`    ${dim(file.path)}`);
   }
   console.log(`\n  ${bold('Next steps:')}`);
+
   console.log(`    cd ${dir ?? extensionName}`);
+
   console.log(`    npm install`);
   console.log(`    # Edit src/index.ts to implement your extension`);
   console.log(`    agentguard plugin install .\n`);

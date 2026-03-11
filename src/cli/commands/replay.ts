@@ -2,8 +2,9 @@
  * replay command — Replay execution events from a session.
  *
  * Supports two modes:
- * 1. Governance replay (--run <runId> or --last): Loads JSONL events from the
+ * 1. Governance replay (--run <runId> or --last): Loads events from the
  *    AgentGuard event store and reconstructs action encounters using the replay engine.
+ *    Supports both JSONL (default) and SQLite storage backends via --store flag.
  * 2. Execution log replay (default): Loads NDJSON execution event logs for raw
  *    event-level display.
  */
@@ -11,7 +12,12 @@
 import type { Command } from 'commander';
 import pino from 'pino';
 import { createExecutionEventLog } from '../../core/execution-log/event-log.js';
-import { loadReplaySession, listRunIds, getLatestRunId } from '../../kernel/replay-engine.js';
+import {
+  loadReplaySession,
+  buildReplaySession,
+  listRunIds as listRunIdsJsonl,
+  getLatestRunId as getLatestRunIdJsonl,
+} from '../../kernel/replay-engine.js';
 import type { ReplaySession, ReplayAction } from '../../kernel/replay-engine.js';
 
 export function registerReplayCommand(program: Command): void {
@@ -30,6 +36,7 @@ export function registerReplayCommand(program: Command): void {
     .option('--summary', 'Show session summary only')
     .option('--denied-only', 'Show only denied actions')
     .option('--base-dir <dir>', 'Base directory for event storage', '.agentguard')
+    .option('--store <backend>', 'Storage backend: jsonl (default) or sqlite')
     .action(
       async (
         file: string | undefined,
@@ -45,25 +52,38 @@ export function registerReplayCommand(program: Command): void {
           summary?: boolean;
           deniedOnly?: boolean;
           baseDir: string;
+          store?: string;
         }
       ) => {
+        const useSqlite = options.store === 'sqlite';
+
         // --- Governance replay mode ---
         if (options.listRuns) {
-          renderRunList(options.baseDir);
+          if (useSqlite) {
+            await renderRunListSqlite();
+          } else {
+            renderRunList(options.baseDir);
+          }
           return;
         }
 
         if (options.run || options.last) {
-          const runId = options.run || getLatestRunId(options.baseDir);
-          if (!runId) {
-            console.error('\n  No governance runs found.');
-            console.error('  Run "agentguard guard" first to generate events.\n');
-            return;
+          let session: ReplaySession | null = null;
+
+          if (useSqlite) {
+            session = await loadReplaySessionSqlite(options.run);
+          } else {
+            const runId = options.run || getLatestRunIdJsonl(options.baseDir);
+            if (!runId) {
+              console.error('\n  No governance runs found.');
+              console.error('  Run "agentguard guard" first to generate events.\n');
+              return;
+            }
+            session = loadReplaySession(runId, { baseDir: options.baseDir });
           }
 
-          const session = loadReplaySession(runId, { baseDir: options.baseDir });
           if (!session) {
-            console.error(`\n  Run "${runId}" not found or has no events.\n`);
+            console.error(`\n  Run not found or has no events.\n`);
             return;
           }
 
@@ -129,11 +149,72 @@ export function registerReplayCommand(program: Command): void {
 }
 
 // ---------------------------------------------------------------------------
+// SQLite helpers
+// ---------------------------------------------------------------------------
+
+async function loadReplaySessionSqlite(
+  runId?: string
+): Promise<ReplaySession | null> {
+  const { createStorageBundle } = await import('../../storage/factory.js');
+  const { getLatestRunId, loadRunEvents } = await import('../../storage/sqlite-store.js');
+  const config = { backend: 'sqlite' as const };
+  const storage = await createStorageBundle(config);
+  if (!storage.db) {
+    console.error('  Error: SQLite storage backend did not initialize database.');
+    return null;
+  }
+  const db = storage.db as import('better-sqlite3').Database;
+
+  const targetRunId = runId || getLatestRunId(db);
+  if (!targetRunId) {
+    console.error('\n  No governance runs found.');
+    console.error('  Run "agentguard guard" first to generate events.\n');
+    storage.close();
+    return null;
+  }
+
+  const events = loadRunEvents(db, targetRunId);
+  storage.close();
+
+  if (events.length === 0) return null;
+  return buildReplaySession(targetRunId, events);
+}
+
+async function renderRunListSqlite(): Promise<void> {
+  const { createStorageBundle } = await import('../../storage/factory.js');
+  const { listRunIds } = await import('../../storage/sqlite-store.js');
+  const config = { backend: 'sqlite' as const };
+  const storage = await createStorageBundle(config);
+  if (!storage.db) {
+    console.error('  Error: SQLite storage backend did not initialize database.');
+    return;
+  }
+  const db = storage.db as import('better-sqlite3').Database;
+  const runIds = listRunIds(db);
+  storage.close();
+
+  if (runIds.length === 0) {
+    console.error('\n  No governance runs found.');
+    console.error('  Run "agentguard guard" first to generate events.\n');
+    return;
+  }
+
+  console.log('\n  Available governance runs:\n');
+  for (const id of runIds.slice(0, 20)) {
+    console.log(`    ${id}`);
+  }
+  if (runIds.length > 20) {
+    console.log(`    ... and ${runIds.length - 20} more`);
+  }
+  console.log('\n  Usage: agentguard replay --run <runId>\n');
+}
+
+// ---------------------------------------------------------------------------
 // Governance replay rendering
 // ---------------------------------------------------------------------------
 
 function renderRunList(baseDir: string): void {
-  const runIds = listRunIds(baseDir);
+  const runIds = listRunIdsJsonl(baseDir);
   if (runIds.length === 0) {
     console.error('\n  No governance runs found.');
     console.error('  Run "agentguard guard" first to generate events.\n');
