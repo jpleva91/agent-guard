@@ -306,6 +306,8 @@ The `SystemState` interface in `src/invariants/definitions.ts` is the bottleneck
 The JSONL persistence layer was the right starting point — append-only, human-readable, zero dependencies. But it doesn't scale: every query requires filesystem enumeration + full file parsing, and hundreds of `.jsonl` files accumulate in `.agentguard/`.
 
 - [x] SQLite storage adapter implementing existing `EventStore` interface
+- [x] Firestore storage adapter (analytics, sink, store) for cloud-native deployments (`src/storage/firestore-*.ts`)
+- [x] `agentguard init firestore` scaffolding (security rules + credentials guide)
 - [x] Schema design: `events`, `decisions`, `sessions` tables with JSON payload columns
 - [x] Indexed columns: `kind`, `timestamp`, `runId`, `actionType`, `fingerprint`
 - [ ] Migration utility: bulk-import existing `.jsonl` files into SQLite (`agentguard migrate`)
