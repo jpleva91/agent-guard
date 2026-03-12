@@ -1129,4 +1129,78 @@ describe('computeFailureRateTrends', () => {
     expect(npmTrend).toBeDefined();
     expect(npmTrend!.direction).toBe('resolved');
   });
+
+  it('returns stable when rate change is exactly +20% (strict > threshold)', () => {
+    // Validates the strict inequality: rateChange of 20.0 is NOT > 20, so direction = 'stable'
+    // even though changePercent (Math.rounded) will display as 20%.
+    const pBase = now - windowMs * 2;
+    const rBase = now - windowMs;
+    const mkEvt = (id: string, ts: number) => ({
+      id,
+      kind: 'ActionAllowed' as const,
+      timestamp: ts,
+      fingerprint: 'fp',
+      actionType: 'file.write',
+    });
+    // 10 events in each window; last event timestamp = now so computed now aligns
+    const allEvents = [
+      ...Array.from({ length: 10 }, (_, i) => mkEvt(`p${i}`, pBase + i * 1000)),
+      ...Array.from({ length: 9 }, (_, i) => mkEvt(`r${i}`, rBase + i * 1000)),
+      mkEvt('r9', now),
+    ];
+    // prev: 5/10 = 0.5 rate; recent: 6/10 = 0.6 rate → rateChange = 20.0 (not > 20) → stable
+    const failures: ViolationRecord[] = [
+      ...Array.from({ length: 5 }, (_, i) =>
+        makeViolation({ eventId: `pf${i}`, actionType: 'file.write', timestamp: pBase + i * 1000 })
+      ),
+      ...Array.from({ length: 6 }, (_, i) =>
+        makeViolation({ eventId: `rf${i}`, actionType: 'file.write', timestamp: rBase + i * 1000 })
+      ),
+    ];
+    const result = computeFailureRateTrends(failures, allEvents, windowMs);
+    const trend = result.find((t) => t.key === 'file.write');
+    expect(trend).toBeDefined();
+    expect(trend!.direction).toBe('stable');
+    expect(trend!.changePercent).toBe(20);
+  });
+
+  it('returns stable when rate change is exactly -20% (strict < threshold)', () => {
+    // Validates the strict inequality: rateChange of -20.0 is NOT < -20, so direction = 'stable'.
+    const pBase = now - windowMs * 2;
+    const rBase = now - windowMs;
+    const mkEvt = (id: string, ts: number) => ({
+      id,
+      kind: 'ActionAllowed' as const,
+      timestamp: ts,
+      fingerprint: 'fp',
+      actionType: 'file.delete',
+    });
+    const allEvents = [
+      ...Array.from({ length: 10 }, (_, i) => mkEvt(`p${i}`, pBase + i * 1000)),
+      ...Array.from({ length: 9 }, (_, i) => mkEvt(`r${i}`, rBase + i * 1000)),
+      mkEvt('r9', now),
+    ];
+    // prev: 5/10 = 0.5 rate; recent: 4/10 = 0.4 rate → rateChange = -20.0 (not < -20) → stable
+    const failures: ViolationRecord[] = [
+      ...Array.from({ length: 5 }, (_, i) =>
+        makeViolation({
+          eventId: `pf${i}`,
+          actionType: 'file.delete',
+          timestamp: pBase + i * 1000,
+        })
+      ),
+      ...Array.from({ length: 4 }, (_, i) =>
+        makeViolation({
+          eventId: `rf${i}`,
+          actionType: 'file.delete',
+          timestamp: rBase + i * 1000,
+        })
+      ),
+    ];
+    const result = computeFailureRateTrends(failures, allEvents, windowMs);
+    const trend = result.find((t) => t.key === 'file.delete');
+    expect(trend).toBeDefined();
+    expect(trend!.direction).toBe('stable');
+    expect(trend!.changePercent).toBe(-20);
+  });
 });
