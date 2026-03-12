@@ -1,11 +1,18 @@
 dist/
 node_modules/
+
+# Database files — never commit (except repo-local governance DB)
+*.db
+*.sqlite
+*.sqlite3
+!.agentguard/agentguard.db
 runtime/events/*
 runtime/replay/*
 !runtime/events/.gitkeep
 !runtime/replay/.gitkeep
-# Governance runtime — ignore per-run artifacts, track audit trail
+# Governance runtime — ignore per-run artifacts, track audit trail and DB
 .agentguard/*
+!.agentguard/agentguard.db
 !.agentguard/events/.gitkeep
 !.agentguard/decisions/.gitkeep
 logs/*
