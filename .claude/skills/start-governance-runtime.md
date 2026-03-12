@@ -22,7 +22,7 @@ Run the AgentGuard hook installer with SQLite storage:
 npx agentguard claude-init --remove 2>/dev/null; npx agentguard claude-init --store sqlite
 ```
 
-This writes both PreToolUse (governance enforcement for all tools) and PostToolUse (Bash error monitoring) hooks into `.claude/settings.json`, configured to persist governance data to SQLite (`.agentguard/agentguard.db`). The `--remove` ensures any existing hooks without SQLite are replaced.
+This writes both PreToolUse (governance enforcement for all tools) and PostToolUse (Bash error monitoring) hooks into `.claude/settings.json`, configured to persist governance data to SQLite (`~/.agentguard/agentguard.db`). The `--remove` ensures any existing hooks without SQLite are replaced.
 
 If installation fails, STOP. Do not proceed with development work without governance.
 
@@ -35,7 +35,7 @@ mkdir -p .agentguard logs
 ```
 
 These directories are used by:
-- `.agentguard/agentguard.db` — SQLite governance database (events, decisions, sessions)
+- `~/.agentguard/agentguard.db` — SQLite governance database (events, decisions, sessions)
 - `logs/runtime-events.jsonl` — aggregated telemetry records
 
 ### 4. Verify Policy File
@@ -55,7 +55,7 @@ Report the status:
 ```
 Governance runtime active.
 PreToolUse hooks: registered
-Storage: SQLite (.agentguard/agentguard.db)
+Storage: SQLite (~/.agentguard/agentguard.db)
 Telemetry paths: ready
 Policy: <filename or "none (fail-open)">
 ```

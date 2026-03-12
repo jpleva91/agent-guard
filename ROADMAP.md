@@ -294,7 +294,7 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [x] Query API: filter by time range, event kind, action type, run ID without loading all events
 - [x] Aggregation queries for analytics (replace in-memory `loadAllEvents()` pattern)
 - [x] JSONL export compatibility — `agentguard export` still produces portable JSONL
-- [ ] Storage location: `~/.agentguard/agentguard.db` (home directory, out of repo tree)
+- [x] Storage location: `~/.agentguard/agentguard.db` (home directory, out of repo tree)
 - [x] Retain JSONL as optional fallback/streaming sink for real-time tailing
 
 ### Phase 11 — Runtime Tracing & Observability `PLANNED`
