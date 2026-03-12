@@ -11,6 +11,7 @@ import {
 import { clusterViolations, clusterFailures } from './cluster.js';
 import { computeAllRunRiskScores } from './risk-scorer.js';
 import { computeAllTrends, computeFailureRateTrends } from './trends.js';
+import type { DomainEvent } from '../core/types.js';
 import type {
   AnalyticsReport,
   AnalyticsOptions,
@@ -30,7 +31,7 @@ export function analyze(options: AnalyticsOptions = {}): AnalyticsReport {
   const trendWindowMs = options.trendWindowMs ?? DEFAULT_TREND_WINDOW_MS;
 
   // 1. Aggregate violations from all sessions
-  const { violations, sessionCount, allEvents } = aggregateViolations(baseDir);
+  const { violations, sessionCount } = aggregateViolations(baseDir);
 
   // 2. Count by kind
   const violationsByKind: Record<string, number> = {};
@@ -58,7 +59,7 @@ export function analyze(options: AnalyticsOptions = {}): AnalyticsReport {
 
   // 6. Compute per-run risk scores
   const sessionIds = listSessionIds(baseDir);
-  const sessionEventsMap = new Map<string, typeof allEvents>();
+  const sessionEventsMap = new Map<string, DomainEvent[]>();
   for (const sid of sessionIds) {
     sessionEventsMap.set(sid, loadSessionEvents(sid, baseDir));
   }
