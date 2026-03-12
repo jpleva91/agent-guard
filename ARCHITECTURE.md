@@ -52,7 +52,7 @@ src/
 ├── plugins/       Plugin ecosystem (discovery, registry, validation, sandboxing)
 ├── renderers/     Renderer plugin system (registry, TUI renderer)
 ├── cli/           CLI entry point and commands
-├── storage/       SQLite storage backend (opt-in alternative to JSONL)
+├── storage/       Storage backends: SQLite and Firestore (opt-in alternatives to JSONL)
 ├── telemetry/     Runtime telemetry and logging
 └── core/          Shared utilities (types, actions, hash, execution-log)
 

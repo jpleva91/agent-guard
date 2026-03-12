@@ -179,7 +179,7 @@ agentguard traces --last --json          # JSON output
 
 # === Integration ===
 agentguard claude-init                    # Set up Claude Code hook integration
-agentguard init <type>                    # Scaffold governance extensions
+agentguard init <type>                    # Scaffold governance extensions or storage backends
 agentguard help                           # Show all commands
 ```
 
@@ -293,7 +293,7 @@ src/
 │   ├── bin.ts              # Main entry
 │   ├── evidence-summary.ts # Evidence summary generator for PR reports
 │   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, claude-hook, claude-init, init, diff, evidence-pr, traces
-├── storage/                # SQLite storage backend (opt-in alternative to JSONL)
+├── storage/                # Storage backends: SQLite and Firestore (opt-in alternatives to JSONL)
 ├── telemetry/              # Runtime telemetry and logging
 └── core/                   # Shared utilities (types, actions, hash, rng, execution-log)
 
