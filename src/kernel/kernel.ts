@@ -23,6 +23,8 @@ import {
 import { simpleHash } from '../core/hash.js';
 import type { GovernanceDecisionRecord, DecisionSink } from './decisions/types.js';
 import { buildDecisionRecord } from './decisions/factory.js';
+import { checkAllInvariants, buildSystemState } from '../invariants/checker.js';
+import { DEFAULT_INVARIANTS } from '../invariants/definitions.js';
 import type { SimulatorRegistry, ImpactForecast } from './simulation/types.js';
 import { buildImpactForecast } from './simulation/forecast.js';
 import type { SeededRng } from '../core/rng.js';
@@ -238,11 +240,6 @@ export function createKernel(config: KernelConfig = {}): Kernel {
             simulationResult.blastRadius > blastRadiusThreshold ||
             simulationResult.riskLevel === 'high'
           ) {
-            // Import checker for re-check
-            const { checkAllInvariants, buildSystemState } =
-              await import('../invariants/checker.js');
-            const { DEFAULT_INVARIANTS } = await import('../invariants/definitions.js');
-
             const reCheckState = buildSystemState({
               ...systemContext,
               filesAffected: simulationResult.blastRadius,
