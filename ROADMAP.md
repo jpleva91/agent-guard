@@ -248,6 +248,24 @@ This is the architectural hinge. These changes transform the AAB from advisory i
 - [x] Persist escalation state changes as `StateChanged` DomainEvents in `src/kernel/monitor.ts`
 - [x] Expand destructive command patterns in `src/kernel/aab.ts` (expanded from 10 to 87 patterns covering sudo, pkill, docker, systemctl, database commands, and more)
 - [ ] Enforce intervention types beyond DENY (implement PAUSE and ROLLBACK behaviors in kernel execution)
+- [ ] Governance self-modification invariant — agents must not modify `agentguard.yaml`, `.agentguard/`, or `policies/` (prerequisite for tamper-resistance claim)
+
+### Phase 6.5 — Invariant Expansion `NEXT`
+
+> **Theme:** Close invariant coverage gaps. The current 8 invariants leave large classes of agent behavior ungoverned.
+
+The `SystemState` interface in `src/invariants/definitions.ts` is the bottleneck for invariant expansion — it needs to become a richer context object with action-specific fields.
+
+- [ ] CI/CD config modification invariant (severity 5) — block writes to `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `.circleci/config.yml`
+- [ ] Network egress governance invariant (severity 4) — deny HTTP requests to non-allowlisted domains (extend `SystemState` with `isNetworkRequest`, `requestUrl`, `requestDomain`)
+- [ ] Credential file creation invariant (severity 5) — inspect `currentTarget` for SSH keys, `.netrc`, `~/.aws/credentials`, Docker config (closes gap where `no-secret-exposure` misses new file creation)
+- [ ] Package.json script injection invariant (severity 4) — flag `package.json` modifications that alter `scripts` entries
+- [ ] Large single-file write invariant (severity 3) — enforce per-file size limit (extend `SystemState` with `writeSizeBytes`)
+- [ ] Docker/container config modification invariant (severity 3) — protect `Dockerfile`, `docker-compose.yml`, `.dockerignore`
+- [ ] Database migration safety invariant (severity 3) — flag writes to migration directories containing destructive DDL
+- [ ] Permission escalation invariant (severity 4) — catch `chmod` to world-writable, `setuid`, ownership changes at invariant level (not just AAB pattern)
+- [ ] Environment variable modification invariant (severity 3) — scan for `export`, `setenv`, writes to shell profile files
+- [ ] Recursive operation guard (severity 2) — flag `find -exec`, `xargs` combined with write/delete operations
 
 ### Phase 7 — Capability-Scoped Sessions `PLANNED`
 
@@ -296,6 +314,13 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [x] JSONL export compatibility — `agentguard export` still produces portable JSONL
 - [x] Storage location: `~/.agentguard/agentguard.db` (home directory, out of repo tree)
 - [x] Retain JSONL as optional fallback/streaming sink for real-time tailing
+- [ ] Wire up `sessions` table — insert on `RunStarted`, update on `RunEnded` (dead schema today)
+- [ ] Migration v2: add `action_type` column to `events` table, `severity` column to `decisions` table
+- [ ] Add composite index `(kind, timestamp)` on events for covering index scans
+- [ ] Add standalone index on `decisions.action_type` for filtered queries
+- [ ] Built-in SQL analytics queries: top denied actions, violation rate over time, session duration/action count
+- [ ] Replace `loadAllEventsSqlite` full table scan with SQL-native aggregation (`GROUP BY`, pagination)
+- [ ] Prepared statement caching for `EventStore.query()` hot paths
 
 ### Phase 11 — Runtime Tracing & Observability `PLANNED`
 
@@ -382,6 +407,16 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [ ] Centralized event ingestion from multiple agents
 - [ ] Multi-repo governance (single policy across repositories)
 - [ ] Team policy management dashboard
+
+### Ongoing — Documentation & White Paper `CONTINUOUS`
+
+> **Theme:** Keep documentation in sync with implementation as the system evolves.
+
+- [ ] Periodic white paper update — agent-driven sync of `paper/agentguard-whitepaper.md` with current architecture, invariant count, event kinds, and evaluation scenarios
+- [ ] Update white paper invariant table (Section 6.2) when new invariants are added
+- [ ] Update white paper component mapping (Section 8.2) when source paths change
+- [ ] Sync white paper Appendix A repo structure with actual `src/` layout
+- [ ] Update CLAUDE.md project structure and test counts after significant changes
 
 ---
 

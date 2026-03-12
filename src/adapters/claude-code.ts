@@ -119,8 +119,8 @@ export async function processClaudeCodeHook(
 
 export function formatHookResponse(result: KernelResult): string {
   if (!result.allowed) {
-    const reason = result.decision.decision.reason;
-    const violations = result.decision.violations;
+    const reason = result.decision?.decision?.reason ?? 'Action denied';
+    const violations = result.decision?.violations ?? [];
     const parts = [`DENIED: ${reason}`];
     if (violations.length > 0) {
       parts.push(`Violations: ${violations.map((v) => v.name).join(', ')}`);
