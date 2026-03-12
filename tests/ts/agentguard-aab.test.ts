@@ -40,8 +40,8 @@ describe('agentguard/core/aab', () => {
   });
 
   describe('DESTRUCTIVE_PATTERNS', () => {
-    it('has at least 87 patterns', () => {
-      expect(DESTRUCTIVE_PATTERNS.length).toBeGreaterThanOrEqual(87);
+    it('has at least 92 patterns', () => {
+      expect(DESTRUCTIVE_PATTERNS.length).toBeGreaterThanOrEqual(92);
     });
 
     it('every pattern has required fields', () => {
@@ -482,6 +482,35 @@ describe('agentguard/core/aab', () => {
       expect(isDestructiveCommand('git filter-branch --tree-filter "rm -rf secrets"')).toBe(true);
     });
 
+    // Bare kill (process termination)
+    it('detects bare kill with PID', () => {
+      expect(isDestructiveCommand('kill 1234')).toBe(true);
+      expect(isDestructiveCommand('kill 42')).toBe(true);
+    });
+
+    // systemctl restart
+    it('detects systemctl restart', () => {
+      expect(isDestructiveCommand('systemctl restart nginx')).toBe(true);
+      expect(isDestructiveCommand('systemctl restart sshd')).toBe(true);
+    });
+
+    // chmod -R (recursive permission changes)
+    it('detects chmod -R', () => {
+      expect(isDestructiveCommand('chmod -R 755 /var/www')).toBe(true);
+      expect(isDestructiveCommand('chmod -R u+x scripts/')).toBe(true);
+    });
+
+    // npm publish (package publication)
+    it('detects npm publish', () => {
+      expect(isDestructiveCommand('npm publish')).toBe(true);
+      expect(isDestructiveCommand('npm publish --access public')).toBe(true);
+    });
+
+    // docker kill
+    it('detects docker kill', () => {
+      expect(isDestructiveCommand('docker kill my-container')).toBe(true);
+    });
+
     // Safe commands
     it('returns false for safe commands', () => {
       expect(isDestructiveCommand('ls -la')).toBe(false);
@@ -510,8 +539,10 @@ describe('agentguard/core/aab', () => {
       expect(isDestructiveCommand('gcloud compute instances list')).toBe(false);
       expect(isDestructiveCommand('az vm list')).toBe(false);
       expect(isDestructiveCommand('kubectl get nodes')).toBe(false);
-      expect(isDestructiveCommand('npm publish')).toBe(false);
+      expect(isDestructiveCommand('npm pack')).toBe(false);
       expect(isDestructiveCommand('git log --all')).toBe(false);
+      expect(isDestructiveCommand('chmod 644 file.txt')).toBe(false);
+      expect(isDestructiveCommand('systemctl status nginx')).toBe(false);
     });
 
     it('returns false for empty/null input', () => {
@@ -581,6 +612,12 @@ describe('agentguard/core/aab', () => {
       expect(getDestructiveDetails('pg_dropcluster 14 main')!.category).toBe('database');
       expect(getDestructiveDetails('DROP KEYSPACE ks')!.category).toBe('database');
       expect(getDestructiveDetails('git filter-branch')!.category).toBe('filesystem');
+      // Issue #285 expanded patterns
+      expect(getDestructiveDetails('kill 1234')!.category).toBe('process');
+      expect(getDestructiveDetails('systemctl restart nginx')!.category).toBe('service');
+      expect(getDestructiveDetails('chmod -R 755 /var')!.category).toBe('system');
+      expect(getDestructiveDetails('npm publish')!.category).toBe('package');
+      expect(getDestructiveDetails('docker kill ctr')!.category).toBe('container');
     });
 
     it('returns critical risk level for high-severity commands', () => {
@@ -639,6 +676,12 @@ describe('agentguard/core/aab', () => {
       expect(getDestructiveDetails('reboot')!.riskLevel).toBe('high');
       expect(getDestructiveDetails('kubectl drain node')!.riskLevel).toBe('high');
       expect(getDestructiveDetails('docker swarm leave')!.riskLevel).toBe('high');
+      // Issue #285 expanded patterns
+      expect(getDestructiveDetails('kill 1234')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('systemctl restart nginx')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('chmod -R 755 /var')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('npm publish')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('docker kill ctr')!.riskLevel).toBe('high');
     });
 
     it('matches rm -rf even within sudo rm -rf', () => {

@@ -627,6 +627,41 @@ const DESTRUCTIVE_PATTERNS: DestructivePattern[] = [
     riskLevel: 'critical',
     category: 'filesystem',
   },
+  // Process management — high (bare kill with PID)
+  {
+    pattern: /\bkill\s+\d/,
+    description: 'Kill process by PID',
+    riskLevel: 'high',
+    category: 'process',
+  },
+  // Service management — high (restart causes downtime)
+  {
+    pattern: /\bsystemctl\s+restart\b/,
+    description: 'Restart system service',
+    riskLevel: 'high',
+    category: 'service',
+  },
+  // System — high (recursive permission changes)
+  {
+    pattern: /\bchmod\s+-R\b/,
+    description: 'Recursive permission change',
+    riskLevel: 'high',
+    category: 'system',
+  },
+  // Package management — high (irreversible publication)
+  {
+    pattern: /\bnpm\s+publish\b/,
+    description: 'Publish npm package (irreversible public release)',
+    riskLevel: 'high',
+    category: 'package',
+  },
+  // Container operations — high (force kill container)
+  {
+    pattern: /\bdocker\s+kill\b/,
+    description: 'Force kill Docker container',
+    riskLevel: 'high',
+    category: 'container',
+  },
 ];
 
 function isDestructiveCommand(command: string): boolean {
