@@ -134,9 +134,40 @@ function matchConditions(
   return { matched: true, scopeMatched, limitExceeded, branchMatched };
 }
 
+function ruleKey(policyId: string, ruleIndex: number): string {
+  return `${policyId}:${ruleIndex}`;
+}
+
+function createRuleEval(
+  policy: LoadedPolicy,
+  ruleIndex: number,
+  rule: PolicyRule,
+  actionMatched: boolean,
+  conditionResult: ConditionMatchResult | null,
+  outcome: RuleEvaluation['outcome']
+): RuleEvaluation {
+  return {
+    policyId: policy.id,
+    policyName: policy.name,
+    ruleIndex,
+    rule,
+    actionMatched,
+    conditionsMatched: conditionResult?.matched ?? false,
+    conditionDetails: conditionResult
+      ? {
+          scopeMatched: conditionResult.scopeMatched,
+          limitExceeded: conditionResult.limitExceeded,
+          branchMatched: conditionResult.branchMatched,
+        }
+      : {},
+    outcome,
+  };
+}
+
 export function evaluate(intent: NormalizedIntent, policies: LoadedPolicy[]): EvalResult {
   const startTime = performance.now();
   const rulesEvaluated: RuleEvaluation[] = [];
+  const ruleIndexMap = new Map<string, number>();
 
   if (!intent || !intent.action) {
     return {
@@ -159,17 +190,11 @@ export function evaluate(intent: NormalizedIntent, policies: LoadedPolicy[]): Ev
   for (const policy of policies) {
     for (let ruleIndex = 0; ruleIndex < policy.rules.length; ruleIndex++) {
       const rule = policy.rules[ruleIndex];
+      const key = ruleKey(policy.id, ruleIndex);
+
       if (rule.effect !== 'deny') {
-        rulesEvaluated.push({
-          policyId: policy.id,
-          policyName: policy.name,
-          ruleIndex,
-          rule,
-          actionMatched: false,
-          conditionsMatched: false,
-          conditionDetails: {},
-          outcome: 'skipped',
-        });
+        ruleIndexMap.set(key, rulesEvaluated.length);
+        rulesEvaluated.push(createRuleEval(policy, ruleIndex, rule, false, null, 'skipped'));
         continue;
       }
 
@@ -177,36 +202,18 @@ export function evaluate(intent: NormalizedIntent, policies: LoadedPolicy[]): Ev
       const actionMatched = actions.some((pattern) => matchAction(pattern, intent.action));
 
       if (!actionMatched) {
-        rulesEvaluated.push({
-          policyId: policy.id,
-          policyName: policy.name,
-          ruleIndex,
-          rule,
-          actionMatched: false,
-          conditionsMatched: false,
-          conditionDetails: {},
-          outcome: 'no-match',
-        });
+        ruleIndexMap.set(key, rulesEvaluated.length);
+        rulesEvaluated.push(createRuleEval(policy, ruleIndex, rule, false, null, 'no-match'));
         continue;
       }
 
       const conditionResult = matchConditions(rule.conditions, intent);
 
       if (conditionResult.matched) {
-        rulesEvaluated.push({
-          policyId: policy.id,
-          policyName: policy.name,
-          ruleIndex,
-          rule,
-          actionMatched: true,
-          conditionsMatched: true,
-          conditionDetails: {
-            scopeMatched: conditionResult.scopeMatched,
-            limitExceeded: conditionResult.limitExceeded,
-            branchMatched: conditionResult.branchMatched,
-          },
-          outcome: 'match',
-        });
+        ruleIndexMap.set(key, rulesEvaluated.length);
+        rulesEvaluated.push(
+          createRuleEval(policy, ruleIndex, rule, true, conditionResult, 'match')
+        );
 
         return {
           allowed: false,
@@ -224,20 +231,10 @@ export function evaluate(intent: NormalizedIntent, policies: LoadedPolicy[]): Ev
         };
       }
 
-      rulesEvaluated.push({
-        policyId: policy.id,
-        policyName: policy.name,
-        ruleIndex,
-        rule,
-        actionMatched: true,
-        conditionsMatched: false,
-        conditionDetails: {
-          scopeMatched: conditionResult.scopeMatched,
-          limitExceeded: conditionResult.limitExceeded,
-          branchMatched: conditionResult.branchMatched,
-        },
-        outcome: 'no-match',
-      });
+      ruleIndexMap.set(key, rulesEvaluated.length);
+      rulesEvaluated.push(
+        createRuleEval(policy, ruleIndex, rule, true, conditionResult, 'no-match')
+      );
     }
   }
 
@@ -247,26 +244,17 @@ export function evaluate(intent: NormalizedIntent, policies: LoadedPolicy[]): Ev
       const rule = policy.rules[ruleIndex];
       if (rule.effect !== 'allow') continue;
 
-      // This rule was already recorded in the deny phase as 'skipped'
-      const alreadyRecorded = rulesEvaluated.some(
-        (r) => r.policyId === policy.id && r.ruleIndex === ruleIndex
-      );
+      const key = ruleKey(policy.id, ruleIndex);
+      const existingIdx = ruleIndexMap.get(key);
+      const alreadyRecorded = existingIdx !== undefined;
 
       const actions = Array.isArray(rule.action) ? rule.action : [rule.action];
       const actionMatched = actions.some((pattern) => matchAction(pattern, intent.action));
 
       if (!actionMatched) {
         if (!alreadyRecorded) {
-          rulesEvaluated.push({
-            policyId: policy.id,
-            policyName: policy.name,
-            ruleIndex,
-            rule,
-            actionMatched: false,
-            conditionsMatched: false,
-            conditionDetails: {},
-            outcome: 'no-match',
-          });
+          ruleIndexMap.set(key, rulesEvaluated.length);
+          rulesEvaluated.push(createRuleEval(policy, ruleIndex, rule, false, null, 'no-match'));
         }
         continue;
       }
@@ -274,40 +262,12 @@ export function evaluate(intent: NormalizedIntent, policies: LoadedPolicy[]): Ev
       const conditionResult = matchConditions(rule.conditions, intent);
 
       if (conditionResult.matched) {
-        // Update the existing 'skipped' entry or add new one
+        const evalRecord = createRuleEval(policy, ruleIndex, rule, true, conditionResult, 'match');
         if (alreadyRecorded) {
-          const idx = rulesEvaluated.findIndex(
-            (r) => r.policyId === policy.id && r.ruleIndex === ruleIndex
-          );
-          rulesEvaluated[idx] = {
-            policyId: policy.id,
-            policyName: policy.name,
-            ruleIndex,
-            rule,
-            actionMatched: true,
-            conditionsMatched: true,
-            conditionDetails: {
-              scopeMatched: conditionResult.scopeMatched,
-              limitExceeded: conditionResult.limitExceeded,
-              branchMatched: conditionResult.branchMatched,
-            },
-            outcome: 'match',
-          };
+          rulesEvaluated[existingIdx] = evalRecord;
         } else {
-          rulesEvaluated.push({
-            policyId: policy.id,
-            policyName: policy.name,
-            ruleIndex,
-            rule,
-            actionMatched: true,
-            conditionsMatched: true,
-            conditionDetails: {
-              scopeMatched: conditionResult.scopeMatched,
-              limitExceeded: conditionResult.limitExceeded,
-              branchMatched: conditionResult.branchMatched,
-            },
-            outcome: 'match',
-          });
+          ruleIndexMap.set(key, rulesEvaluated.length);
+          rulesEvaluated.push(evalRecord);
         }
 
         return {
@@ -327,20 +287,10 @@ export function evaluate(intent: NormalizedIntent, policies: LoadedPolicy[]): Ev
       }
 
       if (!alreadyRecorded) {
-        rulesEvaluated.push({
-          policyId: policy.id,
-          policyName: policy.name,
-          ruleIndex,
-          rule,
-          actionMatched: true,
-          conditionsMatched: false,
-          conditionDetails: {
-            scopeMatched: conditionResult.scopeMatched,
-            limitExceeded: conditionResult.limitExceeded,
-            branchMatched: conditionResult.branchMatched,
-          },
-          outcome: 'no-match',
-        });
+        ruleIndexMap.set(key, rulesEvaluated.length);
+        rulesEvaluated.push(
+          createRuleEval(policy, ruleIndex, rule, true, conditionResult, 'no-match')
+        );
       }
     }
   }

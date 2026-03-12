@@ -1,14 +1,14 @@
 // Git operation adapter — executes git.commit, git.push, etc.
 // Node.js adapter. Wraps shell execution with git-specific validation.
 
-import { exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import type { CanonicalAction } from '../core/types.js';
 
 const GIT_TIMEOUT = 30_000;
 
-function execGit(command: string, cwd?: string): Promise<{ stdout: string; stderr: string }> {
+function execGit(args: string[], cwd?: string): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    exec(command, { timeout: GIT_TIMEOUT, cwd }, (error, stdout, stderr) => {
+    execFile('git', args, { timeout: GIT_TIMEOUT, cwd }, (error, stdout, stderr) => {
       if (error) {
         reject(new Error(`Git command failed: ${stderr || error.message}`));
         return;
@@ -27,43 +27,44 @@ export async function gitAdapter(action: CanonicalAction): Promise<unknown> {
       if (!message) {
         throw new Error('git.commit requires a message');
       }
-      const result = await execGit(`git commit -m "${message.replace(/"/g, '\\"')}"`, cwd);
+      const result = await execGit(['commit', '-m', message], cwd);
       return { committed: true, output: result.stdout.trim() };
     }
 
     case 'git.push': {
       const branch = action.target || 'HEAD';
-      const remote = ((action as Record<string, unknown>).remote as string | undefined) || 'origin';
-      const result = await execGit(`git push ${remote} ${branch}`, cwd);
+      const remote =
+        ((action as Record<string, unknown>).remote as string | undefined) || 'origin';
+      const result = await execGit(['push', remote, branch], cwd);
       return { pushed: true, branch, remote, output: result.stdout.trim() };
     }
 
     case 'git.diff': {
-      const result = await execGit('git diff', cwd);
+      const result = await execGit(['diff'], cwd);
       return { diff: result.stdout };
     }
 
     case 'git.branch.create': {
       const branch = action.target;
-      const result = await execGit(`git checkout -b ${branch}`, cwd);
+      const result = await execGit(['checkout', '-b', branch], cwd);
       return { created: true, branch, output: result.stdout.trim() };
     }
 
     case 'git.branch.delete': {
       const branch = action.target;
-      const result = await execGit(`git branch -d ${branch}`, cwd);
+      const result = await execGit(['branch', '-d', branch], cwd);
       return { deleted: true, branch, output: result.stdout.trim() };
     }
 
     case 'git.checkout': {
       const branch = action.target;
-      const result = await execGit(`git checkout ${branch}`, cwd);
+      const result = await execGit(['checkout', branch], cwd);
       return { checkedOut: true, branch, output: result.stdout.trim() };
     }
 
     case 'git.merge': {
       const branch = action.target;
-      const result = await execGit(`git merge ${branch}`, cwd);
+      const result = await execGit(['merge', branch], cwd);
       return { merged: true, branch, output: result.stdout.trim() };
     }
 

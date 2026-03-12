@@ -12,6 +12,8 @@ const DECISIONS_DIR = 'decisions';
 export interface DecisionJsonlSinkOptions {
   baseDir?: string;
   runId: string;
+  /** Optional callback invoked when a write fails. Errors are never thrown to avoid crashing the kernel. */
+  onError?: (error: Error) => void;
 }
 
 export function createDecisionJsonlSink(options: DecisionJsonlSinkOptions): DecisionSink {
@@ -39,8 +41,9 @@ export function createDecisionJsonlSink(options: DecisionJsonlSinkOptions): Deci
 
       try {
         appendFileSync(filePath, line, 'utf8');
-      } catch {
-        // Swallow write errors — don't crash the kernel
+      } catch (err) {
+        // Never crash the kernel — report via callback if available
+        options.onError?.(err as Error);
       }
     },
 

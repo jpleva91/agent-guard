@@ -2,11 +2,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('node:child_process', () => ({
-  exec: vi.fn(),
+  execFile: vi.fn(),
 }));
 
 import { gitAdapter } from '../../src/adapters/git.js';
-import { exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import type { CanonicalAction } from '../../src/core/types.js';
 
 function makeAction(overrides: Record<string, unknown>): CanonicalAction {
@@ -22,16 +22,16 @@ function makeAction(overrides: Record<string, unknown>): CanonicalAction {
 }
 
 function mockExecSuccess(stdout = '', stderr = '') {
-  vi.mocked(exec).mockImplementation((_cmd, _opts, cb) => {
+  vi.mocked(execFile).mockImplementation((_cmd, _args, _opts, cb) => {
     (cb as (...args: unknown[]) => void)(null, stdout, stderr);
-    return {} as ReturnType<typeof exec>;
+    return {} as ReturnType<typeof execFile>;
   });
 }
 
 function mockExecFailure(stderr: string) {
-  vi.mocked(exec).mockImplementation((_cmd, _opts, cb) => {
+  vi.mocked(execFile).mockImplementation((_cmd, _args, _opts, cb) => {
     (cb as (...args: unknown[]) => void)(new Error(stderr), '', stderr);
-    return {} as ReturnType<typeof exec>;
+    return {} as ReturnType<typeof execFile>;
   });
 }
 
@@ -47,26 +47,26 @@ describe('gitAdapter', () => {
         makeAction({ type: 'git.commit', message: 'fix: resolve bug' })
       );
       expect(result).toEqual({ committed: true, output: '1 file changed' });
-      expect(exec).toHaveBeenCalledWith(
-        'git commit -m "fix: resolve bug"',
+      expect(execFile).toHaveBeenCalledWith(
+        'git',
+        ['commit', '-m', 'fix: resolve bug'],
         expect.any(Object),
         expect.any(Function)
       );
     });
 
     it('throws when message is missing', async () => {
-      await expect(
-        gitAdapter(makeAction({ type: 'git.commit' }))
-      ).rejects.toThrow('git.commit requires a message');
+      await expect(gitAdapter(makeAction({ type: 'git.commit' }))).rejects.toThrow(
+        'git.commit requires a message'
+      );
     });
 
-    it('escapes double quotes in commit message', async () => {
+    it('passes message as a separate argument (no shell escaping needed)', async () => {
       mockExecSuccess('ok');
-      await gitAdapter(
-        makeAction({ type: 'git.commit', message: 'fix "quotes" issue' })
-      );
-      expect(exec).toHaveBeenCalledWith(
-        expect.stringContaining('\\"quotes\\"'),
+      await gitAdapter(makeAction({ type: 'git.commit', message: 'fix "quotes" issue' }));
+      expect(execFile).toHaveBeenCalledWith(
+        'git',
+        ['commit', '-m', 'fix "quotes" issue'],
         expect.any(Object),
         expect.any(Function)
       );
@@ -83,17 +83,16 @@ describe('gitAdapter', () => {
   describe('git.push', () => {
     it('pushes to origin by default', async () => {
       mockExecSuccess('pushed');
-      const result = await gitAdapter(
-        makeAction({ type: 'git.push', target: 'main' })
-      );
+      const result = await gitAdapter(makeAction({ type: 'git.push', target: 'main' }));
       expect(result).toEqual({
         pushed: true,
         branch: 'main',
         remote: 'origin',
         output: 'pushed',
       });
-      expect(exec).toHaveBeenCalledWith(
-        'git push origin main',
+      expect(execFile).toHaveBeenCalledWith(
+        'git',
+        ['push', 'origin', 'main'],
         expect.any(Object),
         expect.any(Function)
       );
@@ -101,11 +100,10 @@ describe('gitAdapter', () => {
 
     it('uses custom remote when provided', async () => {
       mockExecSuccess('');
-      await gitAdapter(
-        makeAction({ type: 'git.push', target: 'dev', remote: 'upstream' })
-      );
-      expect(exec).toHaveBeenCalledWith(
-        'git push upstream dev',
+      await gitAdapter(makeAction({ type: 'git.push', target: 'dev', remote: 'upstream' }));
+      expect(execFile).toHaveBeenCalledWith(
+        'git',
+        ['push', 'upstream', 'dev'],
         expect.any(Object),
         expect.any(Function)
       );
@@ -114,8 +112,9 @@ describe('gitAdapter', () => {
     it('defaults target to HEAD when not set', async () => {
       mockExecSuccess('');
       await gitAdapter(makeAction({ type: 'git.push', target: '' }));
-      expect(exec).toHaveBeenCalledWith(
-        'git push origin HEAD',
+      expect(execFile).toHaveBeenCalledWith(
+        'git',
+        ['push', 'origin', 'HEAD'],
         expect.any(Object),
         expect.any(Function)
       );
@@ -141,8 +140,9 @@ describe('gitAdapter', () => {
         branch: 'feature',
         output: "Switched to new branch 'feature'",
       });
-      expect(exec).toHaveBeenCalledWith(
-        'git checkout -b feature',
+      expect(execFile).toHaveBeenCalledWith(
+        'git',
+        ['checkout', '-b', 'feature'],
         expect.any(Object),
         expect.any(Function)
       );
@@ -162,9 +162,7 @@ describe('gitAdapter', () => {
   describe('git.checkout', () => {
     it('checks out a branch', async () => {
       mockExecSuccess("Switched to branch 'main'");
-      const result = await gitAdapter(
-        makeAction({ type: 'git.checkout', target: 'main' })
-      );
+      const result = await gitAdapter(makeAction({ type: 'git.checkout', target: 'main' }));
       expect(result).toEqual({
         checkedOut: true,
         branch: 'main',
@@ -176,9 +174,7 @@ describe('gitAdapter', () => {
   describe('git.merge', () => {
     it('merges a branch', async () => {
       mockExecSuccess('Merge made by recursive');
-      const result = await gitAdapter(
-        makeAction({ type: 'git.merge', target: 'feature' })
-      );
+      const result = await gitAdapter(makeAction({ type: 'git.merge', target: 'feature' }));
       expect(result).toEqual({
         merged: true,
         branch: 'feature',
@@ -189,9 +185,9 @@ describe('gitAdapter', () => {
 
   describe('unsupported action', () => {
     it('throws for unknown git action type', async () => {
-      await expect(
-        gitAdapter(makeAction({ type: 'git.rebase' }))
-      ).rejects.toThrow('Unsupported git action: git.rebase');
+      await expect(gitAdapter(makeAction({ type: 'git.rebase' }))).rejects.toThrow(
+        'Unsupported git action: git.rebase'
+      );
     });
   });
 });

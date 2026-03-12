@@ -7,7 +7,11 @@ import type { EventSink } from '../kernel/kernel.js';
 import type { GovernanceDecisionRecord, DecisionSink } from '../kernel/decisions/types.js';
 
 /** Create an EventSink that writes events to the SQLite events table */
-export function createSqliteEventSink(db: Database.Database, runId: string): EventSink {
+export function createSqliteEventSink(
+  db: Database.Database,
+  runId: string,
+  onError?: (error: Error) => void
+): EventSink {
   const stmt = db.prepare(`
     INSERT OR IGNORE INTO events (id, run_id, kind, timestamp, fingerprint, data)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -24,8 +28,9 @@ export function createSqliteEventSink(db: Database.Database, runId: string): Eve
           event.fingerprint,
           JSON.stringify(event)
         );
-      } catch {
-        // Swallow write errors — don't crash the kernel
+      } catch (err) {
+        // Never crash the kernel — report via callback if available
+        onError?.(err as Error);
       }
     },
 
@@ -36,7 +41,11 @@ export function createSqliteEventSink(db: Database.Database, runId: string): Eve
 }
 
 /** Create a DecisionSink that writes decision records to the SQLite decisions table */
-export function createSqliteDecisionSink(db: Database.Database, runId: string): DecisionSink {
+export function createSqliteDecisionSink(
+  db: Database.Database,
+  runId: string,
+  onError?: (error: Error) => void
+): DecisionSink {
   const stmt = db.prepare(`
     INSERT OR IGNORE INTO decisions (record_id, run_id, timestamp, outcome, action_type, target, reason, data)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -55,8 +64,9 @@ export function createSqliteDecisionSink(db: Database.Database, runId: string): 
           record.reason,
           JSON.stringify(record)
         );
-      } catch {
-        // Swallow write errors — don't crash the kernel
+      } catch (err) {
+        // Never crash the kernel — report via callback if available
+        onError?.(err as Error);
       }
     },
 

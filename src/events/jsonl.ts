@@ -12,6 +12,8 @@ const EVENTS_DIR = 'events';
 export interface JsonlSinkOptions {
   baseDir?: string;
   runId: string;
+  /** Optional callback invoked when a write fails. Errors are never thrown to avoid crashing the kernel. */
+  onError?: (error: Error) => void;
 }
 
 export function createJsonlSink(options: JsonlSinkOptions): EventSink {
@@ -42,8 +44,9 @@ export function createJsonlSink(options: JsonlSinkOptions): EventSink {
       // Write immediately for durability
       try {
         appendFileSync(filePath, line, 'utf8');
-      } catch {
-        // Swallow write errors — don't crash the kernel
+      } catch (err) {
+        // Never crash the kernel — report via callback if available
+        options.onError?.(err as Error);
       }
     },
 
