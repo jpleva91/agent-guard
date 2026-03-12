@@ -249,6 +249,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                 filesAffected: simulationResult.blastRadius,
                 simulatedBlastRadius: simulationResult.blastRadius,
                 simulatedRiskLevel: simulationResult.riskLevel,
+                currentActionType: decision.intent.action,
                 targetBranch: decision.intent.branch || (systemContext.targetBranch as string),
                 forcePush: decision.intent.action === 'git.force-push',
                 directPush: decision.intent.action === 'git.push',

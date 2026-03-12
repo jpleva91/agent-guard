@@ -124,6 +124,7 @@ export function createEngine(config: EngineConfig = {}): Engine {
         ...systemContext,
         currentTarget: intent.target,
         currentCommand: intent.command,
+        currentActionType: intent.action,
         filesAffected: intent.filesAffected || systemContext.filesAffected,
         targetBranch: intent.branch || systemContext.targetBranch,
         forcePush: intent.action === 'git.force-push',

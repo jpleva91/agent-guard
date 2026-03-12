@@ -33,6 +33,8 @@ export interface SystemState {
   currentTarget?: string;
   /** Shell command of the current action (for shell.exec detection) */
   currentCommand?: string;
+  /** Canonical action type of the current action (e.g. 'file.write', 'git.push') */
+  currentActionType?: string;
 }
 
 /** Patterns matched as substrings (case-insensitive) against file paths. */
@@ -59,6 +61,58 @@ export const SENSITIVE_FILE_PATTERNS = [
   'secrets.yml',
   'vault.json',
 ];
+
+/** Well-known credential file paths and directory prefixes.
+ * Checked as case-insensitive substring matches against currentTarget. */
+export const CREDENTIAL_PATH_PATTERNS = [
+  // SSH
+  '/.ssh/',
+  '\\.ssh\\',
+  // AWS
+  '/.aws/credentials',
+  '/.aws/config',
+  '\\.aws\\credentials',
+  '\\.aws\\config',
+  // Google Cloud
+  '/.config/gcloud/',
+  '\\.config\\gcloud\\',
+  // Azure
+  '/.azure/',
+  '\\.azure\\',
+  // Docker
+  '/.docker/config.json',
+  '\\.docker\\config.json',
+];
+
+/** Exact basenames (case-insensitive) that are credential files at any depth. */
+export const CREDENTIAL_BASENAME_PATTERNS = ['.npmrc', '.pypirc', '.netrc', '.curlrc'];
+
+/** Matches .env files: .env, .env.local, .env.production, etc. */
+const ENV_FILE_REGEX = /(?:^|[\\/])\.env(?:\.\w+)?$/i;
+
+/** Returns true if the given path targets a well-known credential file location. */
+export function isCredentialPath(filePath: string): boolean {
+  const lower = filePath.toLowerCase();
+
+  // Check directory-based patterns (substring match)
+  if (CREDENTIAL_PATH_PATTERNS.some((p) => lower.includes(p.toLowerCase()))) {
+    return true;
+  }
+
+  // Check basename patterns
+  const basename = filePath.split(/[\\/]/).pop() || '';
+  const lowerBase = basename.toLowerCase();
+  if (CREDENTIAL_BASENAME_PATTERNS.some((p) => lowerBase === p)) {
+    return true;
+  }
+
+  // Check .env file pattern
+  if (ENV_FILE_REGEX.test(filePath)) {
+    return true;
+  }
+
+  return false;
+}
 
 export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
   {
@@ -215,6 +269,40 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         actual: holds
           ? 'No scheduled task files affected'
           : `Scheduled task modification detected (${violations.join('; ')})`,
+      };
+    },
+  },
+
+  {
+    id: 'no-credential-file-creation',
+    name: 'No Credential File Creation',
+    description:
+      'Agents must not create or overwrite well-known credential files (SSH keys, cloud configs, auth tokens)',
+    severity: 5,
+    check(state) {
+      const actionType = state.currentActionType || '';
+      const writingActions = ['file.write', 'file.move'];
+
+      // Only applies to write/move actions — reading credential files is allowed
+      if (actionType !== '' && !writingActions.includes(actionType)) {
+        return {
+          holds: true,
+          expected: 'N/A',
+          actual: `Action type ${actionType} is not a write operation`,
+        };
+      }
+
+      const target = state.currentTarget || '';
+      if (target === '') {
+        return { holds: true, expected: 'N/A', actual: 'No target specified' };
+      }
+
+      const violation = isCredentialPath(target);
+
+      return {
+        holds: !violation,
+        expected: 'No creation or modification of credential files',
+        actual: violation ? `Credential file targeted: ${target}` : 'No credential files affected',
       };
     },
   },

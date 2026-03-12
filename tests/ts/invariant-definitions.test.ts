@@ -1,6 +1,12 @@
 // Tests for invariant definitions and checker — TypeScript version
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DEFAULT_INVARIANTS, SENSITIVE_FILE_PATTERNS } from '../../src/invariants/definitions.js';
+import {
+  DEFAULT_INVARIANTS,
+  SENSITIVE_FILE_PATTERNS,
+  CREDENTIAL_PATH_PATTERNS,
+  CREDENTIAL_BASENAME_PATTERNS,
+  isCredentialPath,
+} from '../../src/invariants/definitions.js';
 import type { SystemState } from '../../src/invariants/definitions.js';
 import { checkAllInvariants, buildSystemState } from '../../src/invariants/checker.js';
 import { resetEventCounter } from '../../src/events/schema.js';
@@ -349,6 +355,207 @@ describe('no-scheduled-task-modification', () => {
   });
 });
 
+describe('isCredentialPath', () => {
+  it('detects SSH key paths', () => {
+    expect(isCredentialPath('/home/user/.ssh/id_rsa')).toBe(true);
+    expect(isCredentialPath('/home/user/.ssh/id_ed25519')).toBe(true);
+    expect(isCredentialPath('/home/user/.ssh/authorized_keys')).toBe(true);
+    expect(isCredentialPath('/home/user/.ssh/config')).toBe(true);
+  });
+
+  it('detects AWS credential paths', () => {
+    expect(isCredentialPath('/home/user/.aws/credentials')).toBe(true);
+    expect(isCredentialPath('/home/user/.aws/config')).toBe(true);
+  });
+
+  it('detects Google Cloud paths', () => {
+    expect(isCredentialPath('/home/user/.config/gcloud/credentials.json')).toBe(true);
+  });
+
+  it('detects Azure paths', () => {
+    expect(isCredentialPath('/home/user/.azure/credentials')).toBe(true);
+  });
+
+  it('detects Docker config', () => {
+    expect(isCredentialPath('/home/user/.docker/config.json')).toBe(true);
+  });
+
+  it('detects .npmrc at any depth', () => {
+    expect(isCredentialPath('.npmrc')).toBe(true);
+    expect(isCredentialPath('/home/user/.npmrc')).toBe(true);
+  });
+
+  it('detects .pypirc', () => {
+    expect(isCredentialPath('/home/user/.pypirc')).toBe(true);
+  });
+
+  it('detects .netrc and .curlrc', () => {
+    expect(isCredentialPath('/home/user/.netrc')).toBe(true);
+    expect(isCredentialPath('/home/user/.curlrc')).toBe(true);
+  });
+
+  it('detects .env files at any depth', () => {
+    expect(isCredentialPath('.env')).toBe(true);
+    expect(isCredentialPath('.env.local')).toBe(true);
+    expect(isCredentialPath('.env.production')).toBe(true);
+    expect(isCredentialPath('config/.env')).toBe(true);
+    expect(isCredentialPath('apps/web/.env.staging')).toBe(true);
+  });
+
+  it('handles Windows backslash paths', () => {
+    expect(isCredentialPath('C:\\Users\\user\\.ssh\\id_rsa')).toBe(true);
+    expect(isCredentialPath('C:\\Users\\user\\.aws\\credentials')).toBe(true);
+    expect(isCredentialPath('C:\\Users\\user\\.docker\\config.json')).toBe(true);
+  });
+
+  it('returns false for safe paths', () => {
+    expect(isCredentialPath('src/index.ts')).toBe(false);
+    expect(isCredentialPath('README.md')).toBe(false);
+    expect(isCredentialPath('package.json')).toBe(false);
+    expect(isCredentialPath('.eslintrc.json')).toBe(false);
+  });
+
+  it('returns false for paths that partially match but are not credential files', () => {
+    expect(isCredentialPath('docs/ssh-guide.md')).toBe(false);
+    expect(isCredentialPath('src/aws-client.ts')).toBe(false);
+    // .env-like but not .env pattern
+    expect(isCredentialPath('environment.ts')).toBe(false);
+  });
+});
+
+describe('CREDENTIAL_PATH_PATTERNS export', () => {
+  it('is a non-empty array', () => {
+    expect(Array.isArray(CREDENTIAL_PATH_PATTERNS)).toBe(true);
+    expect(CREDENTIAL_PATH_PATTERNS.length).toBeGreaterThan(0);
+  });
+});
+
+describe('CREDENTIAL_BASENAME_PATTERNS export', () => {
+  it('includes key credential basenames', () => {
+    expect(CREDENTIAL_BASENAME_PATTERNS).toContain('.npmrc');
+    expect(CREDENTIAL_BASENAME_PATTERNS).toContain('.pypirc');
+    expect(CREDENTIAL_BASENAME_PATTERNS).toContain('.netrc');
+    expect(CREDENTIAL_BASENAME_PATTERNS).toContain('.curlrc');
+  });
+});
+
+describe('no-credential-file-creation', () => {
+  const inv = findInvariant('no-credential-file-creation');
+
+  it('has severity 5', () => {
+    expect(inv.severity).toBe(5);
+  });
+
+  it('fails when file.write targets SSH key', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.ssh/id_rsa',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('.ssh/id_rsa');
+  });
+
+  it('fails when file.write targets .env file', () => {
+    const result = inv.check({
+      currentTarget: '.env',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when file.write targets .env.local', () => {
+    const result = inv.check({
+      currentTarget: '.env.local',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when file.move targets AWS credentials', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.aws/credentials',
+      currentActionType: 'file.move',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when file.write targets .npmrc', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.npmrc',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when file.write targets Docker config', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.docker/config.json',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when file.write targets Google Cloud credentials', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.config/gcloud/application_default_credentials.json',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when file.write targets Azure credentials', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.azure/accessTokens.json',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('holds when file.read targets credential file (reads are allowed)', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.ssh/id_rsa',
+      currentActionType: 'file.read',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when file.delete targets credential file (deletion not blocked)', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.ssh/id_rsa',
+      currentActionType: 'file.delete',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when file.write targets a safe path', () => {
+    const result = inv.check({
+      currentTarget: 'src/index.ts',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds with empty state', () => {
+    const result = inv.check({});
+    expect(result.holds).toBe(true);
+  });
+
+  it('still checks credential path when actionType is not set (conservative)', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.ssh/id_rsa',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('handles Windows backslash paths', () => {
+    const result = inv.check({
+      currentTarget: 'C:\\Users\\user\\.ssh\\id_rsa',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+});
+
 describe('lockfile-integrity', () => {
   const inv = findInvariant('lockfile-integrity');
 
@@ -450,6 +657,7 @@ describe('buildSystemState', () => {
     expect(state.protectedBranches).toEqual(['main', 'master']);
     expect(state.currentTarget).toBe('');
     expect(state.currentCommand).toBe('');
+    expect(state.currentActionType).toBe('');
   });
 
   it('populates from context values', () => {
@@ -465,6 +673,7 @@ describe('buildSystemState', () => {
       protectedBranches: ['production'],
       currentTarget: 'src/index.ts',
       currentCommand: 'npm test',
+      currentActionType: 'file.write',
     });
     expect(state.modifiedFiles).toEqual(['a.ts', 'b.ts']);
     expect(state.targetBranch).toBe('main');
@@ -472,6 +681,7 @@ describe('buildSystemState', () => {
     expect(state.filesAffected).toBe(5);
     expect(state.currentTarget).toBe('src/index.ts');
     expect(state.currentCommand).toBe('npm test');
+    expect(state.currentActionType).toBe('file.write');
   });
 
   it('computes filesAffected from modifiedFiles when not specified', () => {

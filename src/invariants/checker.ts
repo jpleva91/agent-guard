@@ -73,5 +73,6 @@ export function buildSystemState(context: Record<string, unknown> = {}): SystemS
     protectedBranches: (context.protectedBranches as string[]) || ['main', 'master'],
     currentTarget: (context.currentTarget as string) || '',
     currentCommand: (context.currentCommand as string) || '',
+    currentActionType: (context.currentActionType as string) || '',
   };
 }
