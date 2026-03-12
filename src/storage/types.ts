@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 /** Supported storage backends */
-export type StorageBackend = 'jsonl' | 'sqlite';
+export type StorageBackend = 'jsonl' | 'sqlite' | 'firestore';
 
 /** Configuration for the storage layer */
 export interface StorageConfig {
@@ -14,6 +14,10 @@ export interface StorageConfig {
   readonly dbPath?: string;
   /** Base directory for JSONL event data. Default: .agentguard (repo-local) */
   readonly baseDir?: string;
+  /** For firestore: GCP project ID. Falls back to GCLOUD_PROJECT env var. */
+  readonly firestoreProjectId?: string;
+  /** For firestore: collection name prefix (e.g. 'myrepo_'). Default: '' */
+  readonly firestorePrefix?: string;
 }
 
 /** Default paths */

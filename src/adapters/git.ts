@@ -33,8 +33,7 @@ export async function gitAdapter(action: CanonicalAction): Promise<unknown> {
 
     case 'git.push': {
       const branch = action.target || 'HEAD';
-      const remote =
-        ((action as Record<string, unknown>).remote as string | undefined) || 'origin';
+      const remote = ((action as Record<string, unknown>).remote as string | undefined) || 'origin';
       const result = await execGit(['push', remote, branch], cwd);
       return { pushed: true, branch, remote, output: result.stdout.trim() };
     }

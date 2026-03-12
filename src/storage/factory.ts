@@ -25,6 +25,9 @@ export async function createStorageBundle(config: StorageConfig): Promise<Storag
   if (config.backend === 'sqlite') {
     return createSqliteBundle(config);
   }
+  if (config.backend === 'firestore') {
+    return createFirestoreBundle(config);
+  }
   return createJsonlBundle(config);
 }
 
@@ -92,6 +95,41 @@ async function createSqliteBundle(config: StorageConfig): Promise<StorageBundle>
   };
 }
 
+async function createFirestoreBundle(config: StorageConfig): Promise<StorageBundle> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let Firestore: any;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = await (Function('return import("@google-cloud/firestore")')() as Promise<
+      Record<string, unknown>
+    >);
+    Firestore = mod.Firestore ?? (mod.default as Record<string, unknown>)?.Firestore ?? mod.default;
+  } catch {
+    throw new Error(
+      'Firestore backend requires @google-cloud/firestore. Install it with: npm install @google-cloud/firestore'
+    );
+  }
+
+  const { createFirestoreEventSink, createFirestoreDecisionSink } =
+    await import('./firestore-sink.js');
+
+  const projectId = config.firestoreProjectId ?? process.env.GCLOUD_PROJECT ?? undefined;
+  const db = new Firestore(projectId ? { projectId } : {});
+
+  return {
+    createEventSink(runId: string): EventSink {
+      return createFirestoreEventSink(db, runId);
+    },
+    createDecisionSink(runId: string): DecisionSink {
+      return createFirestoreDecisionSink(db, runId);
+    },
+    close(): void {
+      // Firestore client manages its own connection lifecycle
+    },
+    db,
+  };
+}
+
 /**
  * Resolve the SQLite database path from config, with home-dir default.
  *
@@ -126,7 +164,7 @@ export function resolveStorageConfig(args: string[]): StorageConfig {
   const envStore = process.env.AGENTGUARD_STORE;
 
   const raw = storeArg !== undefined ? storeArg : envStore;
-  const backend = raw === 'sqlite' ? 'sqlite' : 'jsonl';
+  const backend = raw === 'sqlite' ? 'sqlite' : raw === 'firestore' ? 'firestore' : 'jsonl';
 
   const dirIdx = args.findIndex((a) => a === '--dir' || a === '-d');
   const baseDir = dirIdx !== -1 ? args[dirIdx + 1] : undefined;

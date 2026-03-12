@@ -16,5 +16,13 @@ export {
 } from './sqlite-store.js';
 export { createSqliteEventSink, createSqliteDecisionSink } from './sqlite-sink.js';
 export { aggregateViolationsSqlite, loadAllEventsSqlite } from './sqlite-analytics.js';
+export { createFirestoreEventSink, createFirestoreDecisionSink } from './firestore-sink.js';
+export {
+  createFirestoreEventStore,
+  listRunIdsFirestore,
+  getLatestRunIdFirestore,
+  loadRunEventsFirestore,
+} from './firestore-store.js';
+export { aggregateViolationsFirestore, loadAllEventsFirestore } from './firestore-analytics.js';
 export type { StorageBundle } from './factory.js';
 export { createStorageBundle, resolveStorageConfig, resolveSqlitePath } from './factory.js';
