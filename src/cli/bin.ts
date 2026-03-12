@@ -235,7 +235,8 @@ const COMMANDS: Record<string, CommandHelp> = {
     flags: [
       {
         flag: '--extension, -e <type>',
-        description: 'Extension type: invariant, policy-pack, adapter, renderer, replay-processor',
+        description:
+          'Extension type: invariant, policy-pack, adapter, renderer, replay-processor, firestore',
       },
       { flag: '--name, -n <name>', description: 'Extension name (default: my-<type>)' },
       { flag: '--dir, -d <path>', description: 'Output directory (default: ./<name>)' },

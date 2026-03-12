@@ -270,6 +270,81 @@ describe('init command', () => {
     });
   });
 
+  describe('firestore backend setup', () => {
+    it('should scaffold firestore.rules and .env.firestore.example', async () => {
+      const code = await init(['firestore']);
+      expect(code).toBe(0);
+
+      const writeCalls = vi.mocked(writeFileSync).mock.calls;
+      const rulesCall = writeCalls.find(
+        (call) => typeof call[0] === 'string' && (call[0] as string).endsWith('firestore.rules')
+      );
+      const envCall = writeCalls.find(
+        (call) =>
+          typeof call[0] === 'string' && (call[0] as string).endsWith('.env.firestore.example')
+      );
+      expect(rulesCall).toBeDefined();
+      expect(envCall).toBeDefined();
+    });
+
+    it('should include security rules with append-only writes', async () => {
+      await init(['firestore']);
+
+      const writeCalls = vi.mocked(writeFileSync).mock.calls;
+      const rulesCall = writeCalls.find(
+        (call) => typeof call[0] === 'string' && (call[0] as string).endsWith('firestore.rules')
+      );
+      const content = rulesCall?.[1] as string;
+      expect(content).toContain('allow update, delete: if false');
+      expect(content).toContain('request.auth != null');
+      expect(content).toContain('/events/{eventId}');
+      expect(content).toContain('/decisions/{decisionId}');
+    });
+
+    it('should include env example with required variables', async () => {
+      await init(['firestore']);
+
+      const writeCalls = vi.mocked(writeFileSync).mock.calls;
+      const envCall = writeCalls.find(
+        (call) =>
+          typeof call[0] === 'string' && (call[0] as string).endsWith('.env.firestore.example')
+      );
+      const content = envCall?.[1] as string;
+      expect(content).toContain('GCLOUD_PROJECT');
+      expect(content).toContain('GOOGLE_APPLICATION_CREDENTIALS');
+      expect(content).toContain('AGENTGUARD_STORE=firestore');
+    });
+
+    it('should return 1 if firestore.rules already exists', async () => {
+      vi.mocked(existsSync).mockImplementation((p: unknown) => {
+        return String(p).endsWith('firestore.rules');
+      });
+      const code = await init(['firestore']);
+      expect(code).toBe(1);
+      expect(console.error).toHaveBeenCalled();
+    });
+
+    it('should write to custom directory when --dir is provided', async () => {
+      await init(['firestore', '--dir', '/tmp/my-firestore']);
+
+      const writeCalls = vi.mocked(writeFileSync).mock.calls;
+      const rulesCall = writeCalls.find(
+        (call) => typeof call[0] === 'string' && (call[0] as string).includes('my-firestore')
+      );
+      expect(rulesCall).toBeDefined();
+    });
+
+    it('should print GCP setup instructions', async () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init(['firestore']);
+
+      const allOutput = consoleSpy.mock.calls.flat().join('\n');
+      expect(allOutput).toContain('gcloud iam service-accounts create');
+      expect(allOutput).toContain('roles/datastore.user');
+      expect(allOutput).toContain('firebase deploy');
+    });
+  });
+
   describe('policy templates', () => {
     const MOCK_TEMPLATE = `# Mock template\nid: mock-policy\nrules: []\n`;
 

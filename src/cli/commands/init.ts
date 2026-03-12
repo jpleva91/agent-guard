@@ -58,6 +58,11 @@ export async function init(args: string[]): Promise<number> {
   const name = parsed.flags.name as string | undefined;
   const dir = parsed.flags.dir as string | undefined;
 
+  // Firestore setup mode
+  if (extensionType === 'firestore') {
+    return initFirestore(dir);
+  }
+
   if (!extensionType) {
     printInitHelp();
     return 1;
@@ -938,6 +943,97 @@ agentguard plugin install .
   ];
 }
 
+/**
+ * Scaffold Firestore backend configuration: security rules, env example, and setup guide.
+ */
+function initFirestore(targetDir?: string): number {
+  const outputDir = resolve(targetDir ?? '.');
+
+  // --- firestore.rules ---
+  const rulesPath = join(outputDir, 'firestore.rules');
+  if (existsSync(rulesPath)) {
+    console.error(`\n  ${color('Error', 'red')}: ${rulesPath} already exists.`);
+    console.error(`  Remove or rename the existing file before running init firestore.\n`);
+    return 1;
+  }
+
+  const rulesContent = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // AgentGuard governance events — append-only for authenticated service accounts
+    match /events/{eventId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll(['id', 'run_id', 'kind', 'timestamp', 'data']);
+      allow update, delete: if false; // Immutable audit trail
+    }
+
+    // AgentGuard governance decisions — append-only
+    match /decisions/{decisionId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll(['record_id', 'run_id', 'outcome', 'timestamp', 'data']);
+      allow update, delete: if false; // Immutable audit trail
+    }
+
+    // Deny everything else by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+`;
+
+  // --- .env.example ---
+  const envPath = join(outputDir, '.env.firestore.example');
+  const envContent = `# AgentGuard Firestore Configuration
+# Copy to .env and fill in your values.
+
+# Required: GCP project ID
+GCLOUD_PROJECT=your-project-id
+
+# Required for local dev / CI (not needed on GCP compute):
+# Path to a service account key with roles/datastore.user
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/agentguard-sa.json
+
+# Tell AgentGuard to use Firestore
+AGENTGUARD_STORE=firestore
+`;
+
+  writeFileSync(rulesPath, rulesContent, 'utf8');
+  writeFileSync(envPath, envContent, 'utf8');
+
+  console.log(`\n  ${color('✓', 'green')} Scaffolded ${bold('Firestore')} backend configuration\n`);
+  console.log(`  ${bold('Files created:')}`);
+  console.log(`    ${dim('firestore.rules')}    — Deploy to Firestore to lock down access`);
+  console.log(`    ${dim('.env.firestore.example')} — Copy to .env with your GCP project ID\n`);
+
+  console.log(`  ${bold('Setup (GCP):')}`);
+  console.log(`    ${dim('# 1. Create a service account with minimal permissions')}`);
+  console.log(`    gcloud iam service-accounts create agentguard-writer \\`);
+  console.log(`      --display-name="AgentGuard Event Writer"`);
+  console.log();
+  console.log(`    ${dim('# 2. Grant only datastore.user (read/write docs, no admin)')}`);
+  console.log(`    gcloud projects add-iam-policy-binding $GCLOUD_PROJECT \\`);
+  console.log(
+    `      --member="serviceAccount:agentguard-writer@$GCLOUD_PROJECT.iam.gserviceaccount.com" \\`
+  );
+  console.log(`      --role="roles/datastore.user"`);
+  console.log();
+  console.log(`    ${dim('# 3. Generate a key (never commit this)')}`);
+  console.log(`    gcloud iam service-accounts keys create agentguard-sa.json \\`);
+  console.log(`      --iam-account=agentguard-writer@$GCLOUD_PROJECT.iam.gserviceaccount.com`);
+  console.log();
+  console.log(`    ${dim('# 4. Deploy security rules')}`);
+  console.log(`    firebase deploy --only firestore:rules`);
+  console.log();
+  console.log(`    ${dim('# 5. Run AgentGuard with Firestore')}`);
+  console.log(`    agentguard guard --store firestore --policy agentguard.yaml\n`);
+
+  return 0;
+}
+
 function printInitHelp(): void {
   console.log(`
   ${bold('agentguard init')} — Scaffold a new governance extension or policy template
@@ -953,6 +1049,9 @@ function printInitHelp(): void {
     adapter            Custom execution adapter
     renderer           Custom governance renderer
     replay-processor   Custom replay processor
+
+  ${bold('Storage backends:')}
+    firestore          Set up Firestore backend (security rules + credentials guide)
 
   ${bold('Policy templates:')}
     strict             Maximum guardrails — deny all destructive ops
@@ -972,5 +1071,6 @@ function printInitHelp(): void {
     agentguard init --extension renderer --name json-renderer
     agentguard init invariant --name vendor-guard
     agentguard init policy-pack --name strict-policy
+    agentguard init firestore
 `);
 }
