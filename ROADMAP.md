@@ -256,9 +256,9 @@ This is the architectural hinge. These changes transform the AAB from advisory i
 
 The `SystemState` interface in `src/invariants/definitions.ts` is the bottleneck for invariant expansion — it needs to become a richer context object with action-specific fields.
 
-- [x] CI/CD config modification invariant (severity 5) — block writes to `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `.circleci/config.yml`
+- [ ] CI/CD config modification invariant (severity 5) — block writes to `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `.circleci/config.yml`
 - [ ] Network egress governance invariant (severity 4) — deny HTTP requests to non-allowlisted domains (extend `SystemState` with `isNetworkRequest`, `requestUrl`, `requestDomain`)
-- [ ] Credential file creation invariant (severity 5) — inspect `currentTarget` for SSH keys, `.netrc`, `~/.aws/credentials`, Docker config (closes gap where `no-secret-exposure` misses new file creation)
+- [x] Credential file creation invariant (severity 5) — inspect `currentTarget` for SSH keys, `.netrc`, `~/.aws/credentials`, Docker config (closes gap where `no-secret-exposure` misses new file creation)
 - [ ] Package.json script injection invariant (severity 4) — flag `package.json` modifications that alter `scripts` entries
 - [ ] Large single-file write invariant (severity 3) — enforce per-file size limit (extend `SystemState` with `writeSizeBytes`)
 - [ ] Docker/container config modification invariant (severity 3) — protect `Dockerfile`, `docker-compose.yml`, `.dockerignore`
@@ -444,7 +444,7 @@ The pre-execution simulation system is the most mature advanced feature and a ke
 
 AgentGuard is built for contributors. Here are the best places to start:
 
-- **Write an invariant pack** — Define domain-specific invariants in `src/invariants/community/`. See `src/invariants/definitions.ts` for the 8 built-in invariants as a reference.
+- **Write an invariant pack** — Define domain-specific invariants in `src/invariants/community/`. See `src/invariants/definitions.ts` for the 9 built-in invariants as a reference.
 - **Create a policy pack** — Ship a reusable policy YAML in `policies/`. See `agentguard.yaml` for the format and `src/policy/pack-loader.ts` for the pack loading contract.
 - **Build an adapter** — Add support for a new agent framework in `src/adapters/`. Follow the pattern in `src/adapters/claude-code.ts`.
 - **Add a renderer** — Create a custom governance output renderer implementing the `GovernanceRenderer` interface in `src/renderers/types.ts`.

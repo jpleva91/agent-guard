@@ -111,7 +111,7 @@ Drop an `agentguard.yaml` in your repo root — the CLI picks it up automaticall
 | Invariant | Severity | Description |
 |-----------|----------|-------------|
 | **no-secret-exposure** | 5 (critical) | Blocks access to .env, credentials, .pem, .key files |
-| **no-cicd-config-modification** | 5 (critical) | Blocks modification of CI/CD pipeline configs (.github/workflows/, Jenkinsfile, etc.) |
+| **no-credential-file-creation** | 5 (critical) | Blocks creation or modification of well-known credential files (SSH keys, cloud configs, auth tokens) |
 | **protected-branch** | 4 (high) | Prevents direct push to main/master |
 | **no-force-push** | 4 (high) | Forbids force push |
 | **no-skill-modification** | 4 (high) | Prevents modification of .claude/skills/ files |
