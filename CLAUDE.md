@@ -8,7 +8,7 @@ The system has one architectural spine: the **canonical event model**. All syste
 
 **Key characteristics:**
 - Governed action kernel: propose → normalize → evaluate → execute → emit
-- 9 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, no skill modification, no scheduled task modification, credential file creation, lockfile integrity)
+- 10 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, no skill modification, no scheduled task modification, credential file creation, package script injection, lockfile integrity)
 - YAML/JSON policy format with pattern matching, scopes, and branch conditions
 - Escalation tracking: NORMAL → ELEVATED → HIGH → LOCKDOWN
 - JSONL event persistence for audit trail and replay
@@ -71,7 +71,7 @@ src/
 │   ├── pack-loader.ts      # Policy pack loader (community policy sets)
 │   └── yaml-loader.ts      # YAML policy parser
 ├── invariants/             # Invariant system
-│   ├── definitions.ts      # 9 built-in invariant definitions
+│   ├── definitions.ts      # 10 built-in invariant definitions
 │   └── checker.ts          # Invariant evaluation engine
 ├── analytics/              # Cross-session violation analytics
 │   ├── aggregator.ts       # Violation aggregation across sessions
@@ -190,7 +190,7 @@ The kernel loop is the core of AgentGuard. Every agent action passes through it:
 1. Agent proposes action (Claude Code tool call → `RawAgentAction`)
 2. AAB normalizes intent (tool → action type, detect git/destructive commands)
 3. Policy evaluator matches rules (deny/allow with scopes, branches, limits)
-4. Invariant checker verifies system state (9 defaults)
+4. Invariant checker verifies system state (10 defaults)
 5. If allowed: execute via adapter (file/shell/git handlers)
 6. Emit lifecycle events: `ACTION_REQUESTED` → `ACTION_ALLOWED/DENIED` → `ACTION_EXECUTED/FAILED`
 7. Sink all events to JSONL for audit trail

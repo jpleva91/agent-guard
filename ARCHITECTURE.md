@@ -47,7 +47,7 @@ src/
 ├── kernel/        Governed action kernel (orchestrate, normalize, decide, escalate)
 ├── events/        Canonical event model (schema, bus, store, JSONL persistence)
 ├── policy/        Policy system (composer, evaluator, loaders, pack loader)
-├── invariants/    Invariant system (9 built-in definitions, checker)
+├── invariants/    Invariant system (10 built-in definitions, checker)
 ├── adapters/      Execution adapters (file, shell, git, claude-code)
 ├── plugins/       Plugin ecosystem (discovery, registry, validation, sandboxing)
 ├── renderers/     Renderer plugin system (registry, TUI renderer)

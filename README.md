@@ -48,7 +48,7 @@ AI coding agents execute file writes, shell commands, and git operations autonom
 AgentGuard adds a **deterministic decision point** between proposal and execution:
 
 - **Safety policies** — declare what agents can and cannot do in YAML
-- **Invariant enforcement** — 9 built-in checks (secrets, protected branches, blast radius, skill/task protection, CI/CD config) run on every action
+- **Invariant enforcement** — 10 built-in checks (secrets, protected branches, blast radius, skill/task protection, package script injection, CI/CD config) run on every action
 - **Audit trail** — every decision is recorded as structured JSONL, inspectable after the fact
 - **Session debugging** — replay any agent session to see exactly what happened and why
 
@@ -58,7 +58,7 @@ AgentGuard evaluates every agent action through a **governed action kernel**:
 
 1. **Normalize** — Claude Code tool calls (Bash, Write, Edit, Read) are mapped to canonical action types (shell.exec, file.write, file.read)
 2. **Evaluate** — policies match against the action (deny git.push to main, deny destructive commands, enforce scope limits)
-3. **Check invariants** — 9 built-in safety checks run on every action
+3. **Check invariants** — 10 built-in safety checks run on every action
 4. **Execute** — if allowed, the action runs via adapters (file, shell, git handlers)
 5. **Emit events** — full lifecycle events sunk to JSONL for audit trail
 
@@ -66,7 +66,7 @@ AgentGuard evaluates every agent action through a **governed action kernel**:
 
 ```
   AgentGuard Runtime Active
-  policy: agentguard.yaml | invariants: 9 active
+  policy: agentguard.yaml | invariants: 10 active
 
   ✓ file.write src/auth/service.ts
   ✓ shell.exec npm test
@@ -106,7 +106,7 @@ Drop an `agentguard.yaml` in your repo root — the CLI picks it up automaticall
 
 ## Built-in Invariants
 
-9 safety invariants run on every action evaluation:
+10 safety invariants run on every action evaluation:
 
 | Invariant | Severity | Description |
 |-----------|----------|-------------|
@@ -116,6 +116,7 @@ Drop an `agentguard.yaml` in your repo root — the CLI picks it up automaticall
 | **no-force-push** | 4 (high) | Forbids force push |
 | **no-skill-modification** | 4 (high) | Prevents modification of .claude/skills/ files |
 | **no-scheduled-task-modification** | 4 (high) | Prevents modification of scheduled task files |
+| **no-package-script-injection** | 4 (high) | Blocks package.json modifications that alter lifecycle script entries |
 | **blast-radius-limit** | 3 (medium) | Enforces file modification limit (default 20) |
 | **test-before-push** | 3 (medium) | Requires tests pass before push |
 | **lockfile-integrity** | 2 (low) | Ensures package.json changes sync with lockfiles |
@@ -263,7 +264,7 @@ src/
 │   ├── pack-loader.ts      # Policy pack loader (community policy sets)
 │   └── yaml-loader.ts      # YAML policy parser
 ├── invariants/             # Invariant system
-│   ├── definitions.ts      # 9 built-in invariants
+│   ├── definitions.ts      # 10 built-in invariants
 │   └── checker.ts          # Invariant evaluation engine
 ├── analytics/              # Cross-session violation analytics
 │   ├── aggregator.ts       # Violation aggregation across sessions
