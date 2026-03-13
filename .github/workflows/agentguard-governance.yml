@@ -156,7 +156,7 @@ jobs:
 
       - name: Upload governance report
         if: steps.ci-check.outputs.skip != 'true' && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: governance-report
           path: governance-result.json
@@ -164,7 +164,7 @@ jobs:
 
       - name: Upload full governance session
         if: steps.export-session.outputs.exported == 'true' && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: governance-session
           path: governance-session.agentguard.jsonl
