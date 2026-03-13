@@ -20,6 +20,27 @@ export function createSqliteEventStore(db: Database.Database, runId?: string): E
 
   const countStmt = db.prepare('SELECT COUNT(*) as c FROM events');
 
+  // Pre-prepare replay helper statements
+  const anchorStmt = db.prepare('SELECT timestamp FROM events WHERE id = ?');
+  const replayFromStmt = db.prepare(
+    'SELECT data FROM events WHERE timestamp >= ? ORDER BY timestamp'
+  );
+
+  // Prepared statement cache for dynamic query() SQL — keyed by SQL string.
+  // The query() method builds SQL from up to 4 optional filter conditions,
+  // producing at most 16 distinct SQL shapes. Caching avoids recompiling
+  // the same statement on every call.
+  const queryCache = new Map<string, Database.Statement>();
+
+  function cachedPrepare(sql: string): Database.Statement {
+    let stmt = queryCache.get(sql);
+    if (!stmt) {
+      stmt = db.prepare(sql);
+      queryCache.set(sql, stmt);
+    }
+    return stmt;
+  }
+
   return {
     append(event: DomainEvent): void {
       const rid = runId ?? extractRunId(event) ?? 'unknown';
@@ -56,7 +77,7 @@ export function createSqliteEventStore(db: Database.Database, runId?: string): E
 
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
       const sql = `SELECT data FROM events ${where} ORDER BY timestamp`;
-      const rows = db.prepare(sql).all(...params) as { data: string }[];
+      const rows = cachedPrepare(sql).all(...params) as { data: string }[];
       return rows.map((r) => JSON.parse(r.data) as DomainEvent);
     },
 
@@ -67,14 +88,10 @@ export function createSqliteEventStore(db: Database.Database, runId?: string): E
       }
 
       // Find the event's timestamp, then return all events from that point
-      const anchor = db.prepare('SELECT timestamp FROM events WHERE id = ?').get(fromId) as
-        | { timestamp: number }
-        | undefined;
+      const anchor = anchorStmt.get(fromId) as { timestamp: number } | undefined;
       if (!anchor) return [];
 
-      const rows = db
-        .prepare('SELECT data FROM events WHERE timestamp >= ? ORDER BY timestamp')
-        .all(anchor.timestamp) as { data: string }[];
+      const rows = replayFromStmt.all(anchor.timestamp) as { data: string }[];
       return rows.map((r) => JSON.parse(r.data) as DomainEvent);
     },
 

@@ -213,4 +213,68 @@ describe('SQLite EventStore', () => {
       expect(events[0].id).toBe('e1');
     });
   });
+
+  describe('prepared statement caching', () => {
+    it('returns correct results on repeated queries with the same filter shape', () => {
+      const store = createSqliteEventStore(db, 'run_1');
+      store.append(makeEvent({ id: 'e1', kind: 'ActionRequested', timestamp: 100 }));
+      store.append(makeEvent({ id: 'e2', kind: 'ActionDenied', timestamp: 200 }));
+      store.append(makeEvent({ id: 'e3', kind: 'ActionRequested', timestamp: 300 }));
+
+      // First call compiles and caches the statement
+      const first = store.query({ kind: 'ActionRequested' });
+      expect(first).toHaveLength(2);
+
+      // Add another event and query again — cached statement must still work
+      store.append(makeEvent({ id: 'e4', kind: 'ActionRequested', timestamp: 400 }));
+      const second = store.query({ kind: 'ActionRequested' });
+      expect(second).toHaveLength(3);
+    });
+
+    it('caches different SQL shapes independently', () => {
+      const store = createSqliteEventStore(db, 'run_1');
+      store.append(
+        makeEvent({ id: 'e1', kind: 'ActionDenied', timestamp: 100, fingerprint: 'fp_x' })
+      );
+      store.append(
+        makeEvent({ id: 'e2', kind: 'ActionDenied', timestamp: 200, fingerprint: 'fp_y' })
+      );
+      store.append(
+        makeEvent({ id: 'e3', kind: 'ActionRequested', timestamp: 300, fingerprint: 'fp_x' })
+      );
+
+      // Query by kind only
+      const byKind = store.query({ kind: 'ActionDenied' });
+      expect(byKind).toHaveLength(2);
+
+      // Query by kind + fingerprint (different SQL shape)
+      const byKindFp = store.query({ kind: 'ActionDenied', fingerprint: 'fp_x' });
+      expect(byKindFp).toHaveLength(1);
+      expect(byKindFp[0].id).toBe('e1');
+
+      // Query by time range (yet another shape)
+      const byTime = store.query({ since: 150, until: 250 });
+      expect(byTime).toHaveLength(1);
+      expect(byTime[0].id).toBe('e2');
+    });
+
+    it('replay uses pre-prepared statements correctly', () => {
+      const store = createSqliteEventStore(db, 'run_1');
+      store.append(makeEvent({ id: 'e1', timestamp: 100 }));
+      store.append(makeEvent({ id: 'e2', timestamp: 200 }));
+      store.append(makeEvent({ id: 'e3', timestamp: 300 }));
+
+      // First replay from e2
+      const first = store.replay('e2');
+      expect(first).toHaveLength(2);
+
+      // Second replay from e1 — must reuse prepared statements correctly
+      const second = store.replay('e1');
+      expect(second).toHaveLength(3);
+
+      // Replay with no anchor
+      const all = store.replay();
+      expect(all).toHaveLength(3);
+    });
+  });
 });
