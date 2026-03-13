@@ -390,7 +390,6 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     },
   },
 
-
   {
     id: 'recursive-operation-guard',
     name: 'Recursive Operation Guard',
