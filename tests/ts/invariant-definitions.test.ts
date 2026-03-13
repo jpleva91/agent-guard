@@ -557,17 +557,13 @@ describe('no-credential-file-creation', () => {
 });
 
 
+
 describe('no-package-script-injection', () => {
   const inv = findInvariant('no-package-script-injection');
-
-describe('no-permission-escalation', () => {
-  const inv = findInvariant('no-permission-escalation');
-
 
   it('has severity 4', () => {
     expect(inv.severity).toBe(4);
   });
-
 
   it('holds when target is not package.json', () => {
     const result = inv.check({
@@ -696,13 +692,10 @@ describe('no-permission-escalation', () => {
     expect(result.actual).toContain('scripts section modified');
   });
 
-
-
   it('holds with empty state', () => {
     const result = inv.check({});
     expect(result.holds).toBe(true);
   });
-
 
   it('detects install lifecycle script', () => {
     const result = inv.check({
@@ -731,6 +724,20 @@ describe('no-permission-escalation', () => {
       fileContentDiff: '"scripts": { "postinstall": "bad" }',
     });
     expect(result.holds).toBe(false);
+  });
+});
+
+describe('no-permission-escalation', () => {
+  const inv = findInvariant('no-permission-escalation');
+
+  it('has severity 4', () => {
+    expect(inv.severity).toBe(4);
+  });
+
+  it('holds with empty state', () => {
+    const result = inv.check({});
+    expect(result.holds).toBe(true);
+  });
 
   it('holds for safe shell commands', () => {
     const result = inv.check({ currentCommand: 'ls -la /tmp' });
@@ -878,7 +885,6 @@ describe('no-permission-escalation', () => {
   it('does not false-positive on chown substring in other words', () => {
     const result = inv.check({ currentCommand: 'echo "achowner" | cat' });
     expect(result.holds).toBe(true);
-
   });
 });
 
