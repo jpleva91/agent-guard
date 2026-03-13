@@ -1006,4 +1006,28 @@ describe('recursive-operation-guard', () => {
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('xargs cp');
   });
+
+  it('detects find -exec shred', () => {
+    const result = inv.check({ currentCommand: 'find . -exec shred -u {} ;', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find -exec shred');
+  });
+
+  it('detects find -exec sh -c with rm (sh -c bypass)', () => {
+    const result = inv.check({ currentCommand: "find . -exec sh -c 'rm {}' ;", currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find -exec sh -c (rm)');
+  });
+
+  it('detects find -exec bash -c with rm -rf (bash -c bypass)', () => {
+    const result = inv.check({ currentCommand: "find . -exec bash -c 'rm -rf {}' ;", currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find -exec sh -c (rm)');
+  });
+
+  it('detects find -exec sh -c with shred (sh -c shred bypass)', () => {
+    const result = inv.check({ currentCommand: "find . -type f -exec sh -c 'shred -uz {}' ;", currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find -exec sh -c (shred)');
+  });
 });
