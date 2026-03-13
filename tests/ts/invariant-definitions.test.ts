@@ -988,4 +988,22 @@ describe('recursive-operation-guard', () => {
     const result = inv.check({ currentCommand: 'find . -name "*.ts" | xargs grep "import"', currentActionType: 'shell.exec' });
     expect(result.holds).toBe(true);
   });
+
+  it('detects find -execdir rm (execdir bypass)', () => {
+    const result = inv.check({ currentCommand: 'find . -execdir rm -f {} ;', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find -exec rm');
+  });
+
+  it('detects find -execdir mv', () => {
+    const result = inv.check({ currentCommand: 'find . -name "*.bak" -execdir mv {} /trash/ ;', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find -exec mv');
+  });
+
+  it('detects xargs cp', () => {
+    const result = inv.check({ currentCommand: 'find . -name "*.conf" | xargs cp /backup/', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('xargs cp');
+  });
 });

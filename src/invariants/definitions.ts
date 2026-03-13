@@ -420,11 +420,11 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         violations.push('find with -delete');
       }
 
-      // find with -exec combined with destructive commands
-      if (/\bfind\b/.test(lower) && /\s-exec\s/.test(lower)) {
+      // find with -exec/-execdir combined with destructive commands
+      if (/\bfind\b/.test(lower) && /\s-exec(?:dir)?\s/.test(lower)) {
         const destructiveExecCmds = ['rm', 'mv', 'cp', 'chmod', 'chown', 'shred'];
         for (const cmd of destructiveExecCmds) {
-          if (new RegExp(`-exec\\s+(?:\\S+/)?${cmd}\\b`).test(lower)) {
+          if (new RegExp(`-exec(?:dir)?\\s+(?:\\S+/)?${cmd}\\b`).test(lower)) {
             violations.push(`find -exec ${cmd}`);
           }
         }
@@ -432,7 +432,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
 
       // xargs combined with destructive commands
       if (/\bxargs\b/.test(lower)) {
-        const destructiveXargsCmds = ['rm', 'mv', 'chmod', 'chown', 'shred'];
+        const destructiveXargsCmds = ['rm', 'mv', 'cp', 'chmod', 'chown', 'shred'];
         for (const cmd of destructiveXargsCmds) {
           if (new RegExp(`xargs\\s+(?:\\S+\\s+)*(?:\\S+/)?${cmd}\\b`).test(lower)) {
             violations.push(`xargs ${cmd}`);
