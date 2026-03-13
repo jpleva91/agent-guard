@@ -48,7 +48,7 @@ AI coding agents execute file writes, shell commands, and git operations autonom
 AgentGuard adds a **deterministic decision point** between proposal and execution:
 
 - **Safety policies** — declare what agents can and cannot do in YAML
-- **Invariant enforcement** — 10 built-in checks (secrets, protected branches, blast radius, skill/task protection, package script injection, CI/CD config) run on every action
+- **Invariant enforcement** — 10 built-in checks (secrets, protected branches, blast radius, skill/task protection, package script injection, lockfile integrity) run on every action
 - **Audit trail** — every decision is recorded as structured JSONL, inspectable after the fact
 - **Session debugging** — replay any agent session to see exactly what happened and why
 

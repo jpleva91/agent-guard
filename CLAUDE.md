@@ -115,6 +115,7 @@ src/
 │   ├── index.ts            # Module re-exports
 │   ├── migrations.ts       # Schema migrations (version-based)
 │   ├── sqlite-analytics.ts # SQLite-backed analytics queries
+│   ├── sqlite-session.ts   # SQLite session lifecycle (insert on start, update on end)
 │   ├── sqlite-sink.ts      # SQLite event/decision sink
 │   ├── sqlite-store.ts     # SQLite event store implementation
 │   ├── firestore-analytics.ts # Firestore-backed analytics queries
@@ -150,7 +151,7 @@ vscode-extension/              # VS Code extension
 
 tests/
 ├── *.test.js               # 14 JS test files (custom zero-dependency harness)
-└── ts/*.test.ts            # 76 TS test files (vitest)
+└── ts/*.test.ts            # 77 TS test files (vitest)
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
 policies/                   # Policy packs (YAML: ci-safe, enterprise, open-source, strict)
 docs/                       # System documentation (architecture, event model, specs)
@@ -300,8 +301,8 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 
 **Test structure:**
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (`tests/ts/*.test.ts`): 76 files using vitest
-- **Coverage areas**: adapters, analytics (including risk scorer), kernel (AAB, engine, monitor, blast radius, heartbeat, integration, e2e pipeline), CLI commands (args, guard, inspect, init, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate, diff, evidence-pr, traces), decision records, domain models, events, evidence packs, evidence summary, execution log, export-import roundtrip, impact forecast, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, validation), policy evaluation (including composer, pack loader, policy packs, evaluation trace), renderers, replay (engine, comparator, processor), simulation, SQLite storage (analytics, commands, migrations, sink, store, factory), Firestore storage, telemetry (including tracepoint), TUI renderer, violation mapper, VS Code event reader, YAML loading
+- **TypeScript tests** (`tests/ts/*.test.ts`): 77 files using vitest
+- **Coverage areas**: adapters, analytics (including risk scorer), kernel (AAB, engine, monitor, blast radius, heartbeat, integration, e2e pipeline), CLI commands (args, guard, inspect, init, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate, diff, evidence-pr, traces), decision records, domain models, events, evidence packs, evidence summary, execution log, export-import roundtrip, impact forecast, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, validation), policy evaluation (including composer, pack loader, policy packs, evaluation trace), renderers, replay (engine, comparator, processor), simulation, SQLite storage (analytics, commands, migrations, session, sink, store, factory), Firestore storage, telemetry (including tracepoint), TUI renderer, violation mapper, VS Code event reader, YAML loading
 
 ## CI/CD & Automation
 

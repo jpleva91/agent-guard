@@ -252,7 +252,7 @@ This is the architectural hinge. These changes transform the AAB from advisory i
 
 ### Phase 6.5 — Invariant Expansion `NEXT`
 
-> **Theme:** Close invariant coverage gaps. The current 9 invariants leave large classes of agent behavior ungoverned.
+> **Theme:** Close invariant coverage gaps. The current 10 invariants leave large classes of agent behavior ungoverned.
 
 The `SystemState` interface in `src/invariants/definitions.ts` is the bottleneck for invariant expansion — it needs to become a richer context object with action-specific fields.
 
@@ -318,7 +318,7 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [x] Retain JSONL as optional fallback/streaming sink for real-time tailing
 - [x] Firestore NoSQL storage backend for cross-session governance data sharing (`src/storage/firestore-store.ts`, `firestore-sink.ts`, `firestore-analytics.ts`)
 - [x] `agentguard init firestore` scaffold command for secure Firestore backend setup
-- [ ] Wire up `sessions` table — insert on `RunStarted`, update on `RunEnded` (dead schema today)
+- [x] Wire up `sessions` table — insert on `RunStarted`, update on `RunEnded` (`src/storage/sqlite-session.ts`)
 - [ ] Migration v2: add `action_type` column to `events` table, `severity` column to `decisions` table
 - [ ] Add composite index `(kind, timestamp)` on events for covering index scans
 - [ ] Add standalone index on `decisions.action_type` for filtered queries
