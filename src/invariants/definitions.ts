@@ -390,6 +390,75 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     },
   },
 
+
+  {
+    id: 'recursive-operation-guard',
+    name: 'Recursive Operation Guard',
+    description:
+      'Flags recursive operations (find -exec, xargs) combined with write/delete operations that could cause widespread damage',
+    severity: 2,
+    check(state) {
+      const command = state.currentCommand || '';
+      if (command === '') {
+        return { holds: true, expected: 'N/A', actual: 'No command specified' };
+      }
+
+      const actionType = state.currentActionType || '';
+      if (actionType !== '' && actionType !== 'shell.exec') {
+        return {
+          holds: true,
+          expected: 'N/A',
+          actual: `Action type ${actionType} is not a shell command`,
+        };
+      }
+
+      const lower = command.toLowerCase();
+      const violations: string[] = [];
+
+      // find with -delete flag
+      if (/\bfind\b/.test(lower) && /\s-delete\b/.test(lower)) {
+        violations.push('find with -delete');
+      }
+
+      // find with -exec combined with destructive commands
+      if (/\bfind\b/.test(lower) && /\s-exec\s/.test(lower)) {
+        const destructiveExecCmds = ['rm', 'mv', 'cp', 'chmod', 'chown', 'shred'];
+        for (const cmd of destructiveExecCmds) {
+          if (new RegExp(`-exec\\s+(?:\\S+/)?${cmd}\\b`).test(lower)) {
+            violations.push(`find -exec ${cmd}`);
+          }
+        }
+      }
+
+      // xargs combined with destructive commands
+      if (/\bxargs\b/.test(lower)) {
+        const destructiveXargsCmds = ['rm', 'mv', 'chmod', 'chown', 'shred'];
+        for (const cmd of destructiveXargsCmds) {
+          if (new RegExp(`xargs\\s+(?:\\S+\\s+)*(?:\\S+/)?${cmd}\\b`).test(lower)) {
+            violations.push(`xargs ${cmd}`);
+          }
+        }
+      }
+
+      // Recursive chmod/chown
+      if (/\b(?:chmod|chown)\b/.test(lower) && /\s(?:-R\b|-r\b|--recursive\b)/.test(lower)) {
+        const match = lower.match(/\b(chmod|chown)\b/);
+        if (match) {
+          violations.push(`recursive ${match[1]}`);
+        }
+      }
+
+      const holds = violations.length === 0;
+      return {
+        holds,
+        expected: 'No recursive destructive operations',
+        actual: holds
+          ? 'No recursive destructive operations detected'
+          : `Recursive destructive operation detected: ${violations.join(', ')}`,
+      };
+    },
+  },
+
   {
     id: 'lockfile-integrity',
     name: 'Lockfile Integrity',

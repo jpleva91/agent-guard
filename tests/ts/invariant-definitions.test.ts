@@ -863,3 +863,129 @@ describe('buildSystemState', () => {
     expect(state.filesAffected).toBe(3);
   });
 });
+
+describe('recursive-operation-guard', () => {
+  const inv = findInvariant('recursive-operation-guard');
+
+  it('holds when no command is specified', () => {
+    const result = inv.check({});
+    expect(result.holds).toBe(true);
+    expect(result.actual).toBe('No command specified');
+  });
+
+  it('holds for non-shell action types', () => {
+    const result = inv.check({ currentCommand: 'find . -exec rm {} ;', currentActionType: 'file.write' });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('not a shell command');
+  });
+
+  it('holds for safe commands', () => {
+    const result = inv.check({ currentCommand: 'find . -name "*.ts" -type f', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('detects find with -delete', () => {
+    const result = inv.check({ currentCommand: 'find /tmp -name "*.log" -delete', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find with -delete');
+  });
+
+  it('detects find -exec rm', () => {
+    const result = inv.check({ currentCommand: 'find . -name "*.bak" -exec rm {} ;', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find -exec rm');
+  });
+
+  it('detects find -exec mv', () => {
+    const result = inv.check({ currentCommand: 'find . -exec mv {} /trash/ ;', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find -exec mv');
+  });
+
+  it('detects find -exec cp', () => {
+    const result = inv.check({ currentCommand: 'find . -exec cp {} /backup/ ;', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find -exec cp');
+  });
+
+  it('detects find -exec chmod', () => {
+    const result = inv.check({ currentCommand: 'find . -exec chmod 777 {} ;', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find -exec chmod');
+  });
+
+  it('detects find -exec chown', () => {
+    const result = inv.check({ currentCommand: 'find . -exec chown root {} ;', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find -exec chown');
+  });
+
+  it('detects find -exec with absolute path to rm', () => {
+    const result = inv.check({ currentCommand: 'find . -exec /usr/bin/rm -f {} ;', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find -exec rm');
+  });
+
+  it('detects xargs rm', () => {
+    const result = inv.check({ currentCommand: 'find . -name "*.tmp" | xargs rm', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('xargs rm');
+  });
+
+  it('detects xargs chmod', () => {
+    const result = inv.check({ currentCommand: 'find . | xargs chmod 644', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('xargs chmod');
+  });
+
+  it('detects xargs with flags before command', () => {
+    const result = inv.check({ currentCommand: 'find . | xargs -I {} rm {}', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('xargs rm');
+  });
+
+  it('detects recursive chmod -R', () => {
+    const result = inv.check({ currentCommand: 'chmod -R 777 /var/www', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('recursive chmod');
+  });
+
+  it('detects recursive chmod --recursive', () => {
+    const result = inv.check({ currentCommand: 'chmod --recursive 755 /opt', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('recursive chmod');
+  });
+
+  it('detects recursive chown -R', () => {
+    const result = inv.check({ currentCommand: 'chown -R user:group /home/user', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('recursive chown');
+  });
+
+  it('allows non-recursive chmod', () => {
+    const result = inv.check({ currentCommand: 'chmod 644 file.txt', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('allows non-recursive chown', () => {
+    const result = inv.check({ currentCommand: 'chown user file.txt', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('detects multiple violations', () => {
+    const result = inv.check({ currentCommand: 'find . -exec rm {} ; && chmod -R 777 /', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('find -exec rm');
+    expect(result.actual).toContain('recursive chmod');
+  });
+
+  it('is conservative when actionType is not set', () => {
+    const result = inv.check({ currentCommand: 'find . -exec rm {} ;' });
+    expect(result.holds).toBe(false);
+  });
+
+  it('allows xargs with safe commands', () => {
+    const result = inv.check({ currentCommand: 'find . -name "*.ts" | xargs grep "import"', currentActionType: 'shell.exec' });
+    expect(result.holds).toBe(true);
+  });
+});
