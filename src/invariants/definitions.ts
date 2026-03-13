@@ -432,7 +432,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
 
       // Shell wrapper bypass: find -exec sh/bash -c 'destructive ...'
       const shcMatch = lower.match(
-        /-exec(?:dir)?\s+(?:\S+\/)?(?:sh|bash)\b(?:\s+\S+)*\s+-c\s+(.*)/,
+        /-exec(?:dir)?\s+(?:\S+\/)?(?:sh|bash)\b(?:\s+\S+)*\s+-c\s+(.*)/
       );
       if (/\bfind\b/.test(lower) && shcMatch) {
         const innerCmd = shcMatch[1];
