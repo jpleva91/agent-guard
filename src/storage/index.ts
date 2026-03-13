@@ -28,7 +28,19 @@ export {
   getSession,
   listSessions,
 } from './sqlite-session.js';
-export { aggregateViolationsSqlite, loadAllEventsSqlite } from './sqlite-analytics.js';
+export {
+  aggregateViolationsSqlite,
+  loadAllEventsSqlite,
+  queryTopDeniedActions,
+  queryViolationRateOverTime,
+  querySessionStats,
+} from './sqlite-analytics.js';
+export type {
+  TopDeniedAction,
+  ViolationTimeBucket,
+  SessionSummary,
+  TimeBucketGranularity,
+} from './sqlite-analytics.js';
 export { createFirestoreEventSink, createFirestoreDecisionSink } from './firestore-sink.js';
 export {
   createFirestoreEventStore,
