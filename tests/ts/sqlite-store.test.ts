@@ -173,6 +173,48 @@ describe('SQLite EventStore', () => {
     });
   });
 
+  describe('action_type column', () => {
+    it('populates action_type on append for events with actionType', () => {
+      const store = createSqliteEventStore(db, 'run_1');
+      const event = makeEvent({ id: 'e_at', actionType: 'git.push' } as Partial<DomainEvent>);
+      store.append(event);
+
+      const row = db.prepare('SELECT action_type FROM events WHERE id = ?').get('e_at') as {
+        action_type: string | null;
+      };
+      expect(row.action_type).toBe('git.push');
+    });
+
+    it('sets action_type to null for events without actionType', () => {
+      const store = createSqliteEventStore(db, 'run_1');
+      store.append(makeEvent({ id: 'e_no_at' }));
+
+      const row = db.prepare('SELECT action_type FROM events WHERE id = ?').get('e_no_at') as {
+        action_type: string | null;
+      };
+      expect(row.action_type).toBeNull();
+    });
+
+    it('populates action_type during fromNDJSON import', () => {
+      const event = {
+        id: 'e_ndjson',
+        kind: 'ActionRequested',
+        actionType: 'file.write',
+        timestamp: 100,
+        fingerprint: 'fp',
+      };
+      const ndjson = JSON.stringify(event);
+
+      const store = createSqliteEventStore(db, 'run_1');
+      store.fromNDJSON(ndjson);
+
+      const row = db.prepare('SELECT action_type FROM events WHERE id = ?').get('e_ndjson') as {
+        action_type: string | null;
+      };
+      expect(row.action_type).toBe('file.write');
+    });
+  });
+
   describe('run-scoped helpers', () => {
     it('listRunIds returns runs ordered by most recent', () => {
       const store = createSqliteEventStore(db);

@@ -63,6 +63,57 @@ const MIGRATIONS: readonly Migration[] = [
       db.exec('CREATE INDEX IF NOT EXISTS idx_events_kind_timestamp ON events (kind, timestamp)');
     },
   },
+
+  {
+    version: 3,
+    description: 'Add action_type to events, severity to decisions; backfill from JSON data',
+    up(db) {
+      // Add new columns (nullable — old rows start as NULL until backfilled)
+      db.exec('ALTER TABLE events ADD COLUMN action_type TEXT');
+      db.exec('ALTER TABLE decisions ADD COLUMN severity INTEGER');
+
+      // Backfill events.action_type from JSON data payload
+      const eventRows = db
+        .prepare('SELECT id, data FROM events WHERE action_type IS NULL')
+        .all() as { id: string; data: string }[];
+
+      const updateEvent = db.prepare('UPDATE events SET action_type = ? WHERE id = ?');
+      for (const row of eventRows) {
+        try {
+          const parsed = JSON.parse(row.data) as Record<string, unknown>;
+          const actionType = (parsed.actionType as string) ?? null;
+          if (actionType) {
+            updateEvent.run(actionType, row.id);
+          }
+        } catch {
+          // Skip malformed JSON rows — don't crash the migration
+        }
+      }
+
+      // Backfill decisions.severity from JSON data payload
+      const decisionRows = db
+        .prepare('SELECT record_id, data FROM decisions WHERE severity IS NULL')
+        .all() as { record_id: string; data: string }[];
+
+      const updateDecision = db.prepare('UPDATE decisions SET severity = ? WHERE record_id = ?');
+      for (const row of decisionRows) {
+        try {
+          const parsed = JSON.parse(row.data) as Record<string, unknown>;
+          const policy = parsed.policy as Record<string, unknown> | undefined;
+          const severity = (policy?.severity as number) ?? null;
+          if (severity !== null) {
+            updateDecision.run(severity, row.record_id);
+          }
+        } catch {
+          // Skip malformed JSON rows
+        }
+      }
+
+      // Add indexes on the new columns for fast filtered queries
+      db.exec('CREATE INDEX IF NOT EXISTS idx_events_action_type ON events (action_type)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_decisions_severity ON decisions (severity)');
+    },
+  },
 ];
 
 /**

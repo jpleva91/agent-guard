@@ -12,8 +12,8 @@ import type { GovernanceDecisionRecord } from '../kernel/decisions/types.js';
  */
 export function createSqliteEventStore(db: Database.Database, runId?: string): EventStore {
   const insertStmt = db.prepare(`
-    INSERT OR IGNORE INTO events (id, run_id, kind, timestamp, fingerprint, data)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT OR IGNORE INTO events (id, run_id, kind, timestamp, fingerprint, data, action_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
   const allStmt = db.prepare('SELECT data FROM events ORDER BY timestamp');
@@ -44,13 +44,15 @@ export function createSqliteEventStore(db: Database.Database, runId?: string): E
   return {
     append(event: DomainEvent): void {
       const rid = runId ?? extractRunId(event) ?? 'unknown';
+      const actionType = extractActionType(event);
       insertStmt.run(
         event.id,
         rid,
         event.kind,
         event.timestamp,
         event.fingerprint,
-        JSON.stringify(event)
+        JSON.stringify(event),
+        actionType
       );
     },
 
@@ -115,7 +117,16 @@ export function createSqliteEventStore(db: Database.Database, runId?: string): E
         for (const line of lines) {
           const event = JSON.parse(line) as DomainEvent;
           const rid = runId ?? extractRunId(event) ?? 'unknown';
-          insertStmt.run(event.id, rid, event.kind, event.timestamp, event.fingerprint, line);
+          const actionType = extractActionType(event);
+          insertStmt.run(
+            event.id,
+            rid,
+            event.kind,
+            event.timestamp,
+            event.fingerprint,
+            line,
+            actionType
+          );
           loaded++;
         }
         return loaded;
@@ -165,4 +176,11 @@ function extractRunId(event: DomainEvent): string | undefined {
   if (meta && typeof meta.runId === 'string') return meta.runId;
   if (typeof event.runId === 'string') return event.runId;
   return undefined;
+}
+
+/** Extract actionType from event payload if present (reference monitor events) */
+function extractActionType(event: DomainEvent): string | null {
+  const rec = event as unknown as Record<string, unknown>;
+  if (typeof rec.actionType === 'string') return rec.actionType;
+  return null;
 }
