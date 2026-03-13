@@ -18,6 +18,8 @@ export interface StorageBundle {
   close(): void;
   /** The raw better-sqlite3 Database instance, if using SQLite. Cast to Database.Database to use. */
   readonly db?: unknown;
+  /** Session lifecycle tracker (SQLite only — undefined for JSONL/Firestore) */
+  readonly sessions?: import("./sqlite-session.js").SessionTracker;
 }
 
 /** Create a storage bundle based on configuration */
@@ -61,6 +63,7 @@ async function createSqliteBundle(config: StorageConfig): Promise<StorageBundle>
 
   const { runMigrations } = await import('./migrations.js');
   const { createSqliteEventSink, createSqliteDecisionSink } = await import('./sqlite-sink.js');
+  const { createSessionTracker } = await import('./sqlite-session.js');
 
   const dbPath = resolveSqlitePath(config);
 
@@ -92,6 +95,7 @@ async function createSqliteBundle(config: StorageConfig): Promise<StorageBundle>
       }
     },
     db,
+    sessions: createSessionTracker(db),
   };
 }
 

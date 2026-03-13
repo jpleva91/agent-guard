@@ -15,6 +15,19 @@ export {
   loadRunEvents,
 } from './sqlite-store.js';
 export { createSqliteEventSink, createSqliteDecisionSink } from './sqlite-sink.js';
+export type {
+  SessionTracker,
+  SessionRow,
+  SessionStartData,
+  SessionEndData,
+} from './sqlite-session.js';
+export {
+  createSessionTracker,
+  insertSession,
+  updateSessionEnd,
+  getSession,
+  listSessions,
+} from './sqlite-session.js';
 export { aggregateViolationsSqlite, loadAllEventsSqlite } from './sqlite-analytics.js';
 export { createFirestoreEventSink, createFirestoreDecisionSink } from './firestore-sink.js';
 export {

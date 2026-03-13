@@ -21,6 +21,7 @@ import { createTuiRenderer } from '../../renderers/tui-renderer.js';
 import { createEvent, POLICY_COMPOSED, POLICY_TRACE_RECORDED } from '../../events/schema.js';
 
 import { createStorageBundle } from '../../storage/factory.js';
+import type { StorageBundle } from '../../storage/factory.js';
 import type { StorageConfig } from '../../storage/types.js';
 import type { PolicyTracePayload } from '../../renderers/types.js';
 
@@ -116,8 +117,18 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     renderers.register(createTuiRenderer({ verbose: options.verbose, trace: options.trace }));
   }
 
-  // Notify renderers: run started
+  // Record session start in the sessions table (SQLite only)
   const simCount = simulators.all().length;
+  if (storage.sessions) {
+    storage.sessions.start(runId, "guard", {
+      policyFile: policyName,
+      dryRun: options.dryRun,
+      storageBackend: storeConfig.backend,
+      simulatorCount: simCount,
+    });
+  }
+
+  // Notify renderers: run started
   renderers.notifyRunStarted({
     runId,
     policyName,
@@ -142,7 +153,7 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
 async function processStdin(
   kernel: ReturnType<typeof createKernel>,
   renderers: RendererRegistry,
-  storage: { close(): void }
+  storage: StorageBundle
 ): Promise<number> {
   const startTime = Date.now();
   let totalActions = 0;
@@ -208,6 +219,18 @@ async function processStdin(
 
     const shutdown = () => {
       kernel.shutdown();
+
+      // Record session end in the sessions table (SQLite only)
+      if (storage.sessions) {
+        storage.sessions.end(kernel.getRunId(), {
+          totalActions,
+          allowed: allowedCount,
+          denied: deniedCount,
+          violations: violationCount,
+          durationMs: Date.now() - startTime,
+        });
+      }
+
       renderers.notifyRunEnded({
         runId: kernel.getRunId(),
         totalActions,

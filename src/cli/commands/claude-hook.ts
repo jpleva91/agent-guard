@@ -96,6 +96,15 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[
     ) as import('../../kernel/decisions/types.js').DecisionSink[],
   });
 
+  // Record session in the sessions table (SQLite only).
+  // Uses session_id from Claude Code so multiple hook invocations share one session row.
+  const sessionKey = normalizedPayload.session_id || runId;
+  if (storage?.sessions) {
+    storage.sessions.start(sessionKey, 'claude-hook', {
+      storageBackend: storageConfig.backend,
+    });
+  }
+
   const result = await processClaudeCodeHook(kernel, normalizedPayload);
   kernel.shutdown();
 
