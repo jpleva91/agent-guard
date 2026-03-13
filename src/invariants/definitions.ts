@@ -35,6 +35,8 @@ export interface SystemState {
   currentCommand?: string;
   /** Canonical action type of the current action (e.g. 'file.write', 'git.push') */
   currentActionType?: string;
+  /** Content diff or new content for the current file action (for content-aware invariants) */
+  fileContentDiff?: string;
 }
 
 /** Patterns matched as substrings (case-insensitive) against file paths. */
@@ -303,6 +305,83 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         holds: !violation,
         expected: 'No creation or modification of credential files',
         actual: violation ? `Credential file targeted: ${target}` : 'No credential files affected',
+      };
+    },
+  },
+
+  {
+    id: 'no-package-script-injection',
+    name: 'No Package Script Injection',
+    description:
+      'Modifications to package.json scripts are flagged as potential supply chain attack vectors',
+    severity: 4,
+    check(state) {
+      const target = state.currentTarget || '';
+      const actionType = state.currentActionType || '';
+      const writingActions = ['file.write', 'file.move'];
+
+      // Only applies to write/move actions targeting package.json
+      if (actionType !== '' && !writingActions.includes(actionType)) {
+        return { holds: true, expected: 'N/A', actual: `Action type ${actionType} is not a write` };
+      }
+
+      const isPackageJson =
+        target === 'package.json' ||
+        target.endsWith('/package.json') ||
+        target.endsWith('\\package.json');
+
+      if (!isPackageJson) {
+        return { holds: true, expected: 'N/A', actual: 'Target is not package.json' };
+      }
+
+      const diff = state.fileContentDiff || '';
+
+      // If no diff provided, we can't determine if scripts changed — allow conservatively
+      // (the lockfile-integrity invariant covers manifest-without-lockfile cases)
+      if (diff === '') {
+        return {
+          holds: true,
+          expected: 'N/A',
+          actual: 'No content diff available for package.json write',
+        };
+      }
+
+      // Check if the diff touches the "scripts" section
+      const scriptsPattern = /["']scripts["']\s*:/;
+      if (!scriptsPattern.test(diff)) {
+        return {
+          holds: true,
+          expected: 'No script modifications in package.json',
+          actual: 'package.json modified without script changes',
+        };
+      }
+
+      // Lifecycle scripts are especially dangerous — they auto-execute
+      const LIFECYCLE_SCRIPTS = [
+        'preinstall',
+        'postinstall',
+        'prepare',
+        'prepublishOnly',
+        'prepack',
+        'postpack',
+        'install',
+      ];
+
+      const detectedLifecycle = LIFECYCLE_SCRIPTS.filter((script) => diff.includes(script));
+
+      if (detectedLifecycle.length > 0) {
+        return {
+          holds: false,
+          expected: 'No lifecycle script injection in package.json',
+          actual: `Lifecycle script modification detected: ${detectedLifecycle.join(', ')}`,
+        };
+      }
+
+      // Non-lifecycle script changes are still flagged
+      return {
+        holds: false,
+        expected: 'No script modifications in package.json',
+        actual: 'package.json scripts section modified',
       };
     },
   },

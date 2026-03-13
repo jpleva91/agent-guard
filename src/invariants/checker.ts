@@ -74,5 +74,6 @@ export function buildSystemState(context: Record<string, unknown> = {}): SystemS
     currentTarget: (context.currentTarget as string) || '',
     currentCommand: (context.currentCommand as string) || '',
     currentActionType: (context.currentActionType as string) || '',
+    fileContentDiff: (context.fileContentDiff as string) || '',
   };
 }
