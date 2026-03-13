@@ -157,7 +157,10 @@ docs/                       # System documentation (architecture, event model, s
 hooks/                      # Git hooks (post-commit, post-merge)
 examples/                   # Example governance scenarios and error demos
 scripts/                    # Build and utility scripts
+site/                       # GitHub Pages landing page
 spec/                       # Feature specifications and templates
+paper/                      # White paper (diagrams, references, scenarios)
+templates/                  # Policy templates (ci-only, development, permissive, strict)
 ```
 
 ## Development Commands
@@ -313,3 +316,4 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 | `publish.yml` | GitHub Release published | Validates version, runs tests, publishes npm package with provenance |
 | `agentguard-governance.yml` | Reusable workflow (called from other repos) | CI governance verification for sessions |
 | `codeql.yml` | PR to `main`/`master` + weekly schedule | CodeQL security analysis |
+| `deploy-pages.yml` | Push to `main` (when `site/**` changes) | Deploys GitHub Pages landing page |
