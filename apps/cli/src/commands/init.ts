@@ -43,7 +43,8 @@ interface ScaffoldFile {
  */
 export async function init(args: string[]): Promise<number> {
   const parsed = parseArgs(args, {
-    string: ['--extension', '--name', '--dir', '--template'],
+    string: ['--extension', '--name', '--dir', '--template', '--tiers'],
+    boolean: ['--force'],
     alias: { '-e': '--extension', '-n': '--name', '-d': '--dir', '-t': '--template' },
   });
 
@@ -61,6 +62,11 @@ export async function init(args: string[]): Promise<number> {
   // Firestore setup mode
   if (extensionType === 'firestore') {
     return initFirestore(dir);
+  }
+
+  // Swarm scaffolding mode
+  if (extensionType === 'swarm') {
+    return initSwarm(parsed);
   }
 
   if (!extensionType) {
@@ -1034,9 +1040,110 @@ AGENTGUARD_STORE=firestore
   return 0;
 }
 
+/**
+ * Scaffold the agent swarm: copy skill templates, render config, and output
+ * scheduled task definitions for registration.
+ */
+async function initSwarm(parsed: ReturnType<typeof parseArgs>): Promise<number> {
+  const dir = parsed.flags.dir as string | undefined;
+  const force = parsed.flags.force === true || parsed.flags.force === 'true';
+  const tiersFlag = parsed.flags.tiers as string | undefined;
+  const tiers = tiersFlag ? tiersFlag.split(',').map((t) => t.trim()) : undefined;
+  const projectRoot = resolve(dir ?? '.');
+
+  let scaffoldFn: typeof import('@red-codes/swarm').scaffold;
+  try {
+    const swarmModule = await import('@red-codes/swarm');
+    scaffoldFn = swarmModule.scaffold;
+  } catch {
+    console.error(
+      `\n  ${color('Error', 'red')}: @red-codes/swarm package not found.`,
+    );
+    console.error(`  Install it with: pnpm add @red-codes/swarm\n`);
+    return 1;
+  }
+
+  const result = scaffoldFn({ projectRoot, force, tiers });
+
+  console.log(
+    `\n  ${color('✓', 'green')} Swarm initialized (${bold(String(result.agents.length))} agents, ${bold(String(result.skillsWritten + result.skillsSkipped))} skills)\n`,
+  );
+
+  if (result.configWritten) {
+    console.log(`  ${dim('Created')} agentguard-swarm.yaml ${dim('(customize schedules, paths, labels)')}`);
+  }
+
+  console.log(
+    `  ${dim('Skills written:')} ${result.skillsWritten}  ${dim('Skipped (existing):')} ${result.skillsSkipped}\n`,
+  );
+
+  // Print agent table
+  console.log(`  ${bold('Agent')}${' '.repeat(28)}${bold('Tier')}${' '.repeat(8)}${bold('Schedule')}`);
+  console.log(`  ${'─'.repeat(65)}`);
+  for (const agent of result.agents) {
+    const name = agent.name.padEnd(33);
+    const tier = agent.tier.padEnd(12);
+    console.log(`  ${name}${tier}${agent.cron}`);
+  }
+
+  console.log(`\n  ${bold('Next steps:')}`);
+  console.log(`    ${dim('# Register scheduled tasks (run inside Claude Code):')}`);
+  console.log(`    ${dim('# The agent prompts are in .claude/skills/ — use them with the scheduled tasks API')}`);
+  console.log(`    ${dim('# Or use the register-swarm-tasks skill to auto-register all agents')}\n`);
+
+  // Write a register-swarm-tasks skill
+  const registerSkillPath = join(projectRoot, '.claude', 'skills', 'register-swarm-tasks.md');
+  if (!existsSync(registerSkillPath) || force) {
+    const registerContent = buildRegisterSkill(result);
+    mkdirSync(join(projectRoot, '.claude', 'skills'), { recursive: true });
+    writeFileSync(registerSkillPath, registerContent, 'utf8');
+    console.log(`  ${dim('Created')} .claude/skills/register-swarm-tasks.md\n`);
+  }
+
+  return 0;
+}
+
+function buildRegisterSkill(
+  result: { agents: ReadonlyArray<{ id: string; name: string; tier: string; cron: string; description: string; prompt: string }> },
+): string {
+  const lines = [
+    '# Skill: Register Swarm Tasks',
+    '',
+    'Register all swarm agents as scheduled tasks. Run this once after `agentguard init swarm`.',
+    '',
+    '## Autonomy Directive',
+    '',
+    'This skill runs interactively. Confirm with the user before creating tasks.',
+    '',
+    '## Steps',
+    '',
+    '### 1. Create Scheduled Tasks',
+    '',
+    'Use the `mcp__scheduled-tasks__create_scheduled_task` tool to register each agent:',
+    '',
+  ];
+
+  for (const agent of result.agents) {
+    lines.push(`#### ${agent.name}`);
+    lines.push('');
+    lines.push(`- **Task ID**: \`${agent.id}\``);
+    lines.push(`- **Cron**: \`${agent.cron}\``);
+    lines.push(`- **Description**: ${agent.description}`);
+    lines.push(`- **Prompt**: Use the content from the \`${agent.id}\` prompt template`);
+    lines.push('');
+  }
+
+  lines.push('### 2. Verify');
+  lines.push('');
+  lines.push('After creating all tasks, use `mcp__scheduled-tasks__list_scheduled_tasks` to verify they are registered.');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
 function printInitHelp(): void {
   console.log(`
-  ${bold('agentguard init')} — Scaffold a new governance extension or policy template
+  ${bold('agentguard init')} — Scaffold a new governance extension, policy template, or agent swarm
 
   ${bold('Usage:')}
     agentguard init --extension <type> [--name <name>] [--dir <path>]
@@ -1049,6 +1156,9 @@ function printInitHelp(): void {
     adapter            Custom execution adapter
     renderer           Custom governance renderer
     replay-processor   Custom replay processor
+
+  ${bold('Agent swarm:')}
+    swarm              Scaffold the full agent swarm (skills, config, task definitions)
 
   ${bold('Storage backends:')}
     firestore          Set up Firestore backend (security rules + credentials guide)
@@ -1064,6 +1174,8 @@ function printInitHelp(): void {
     --template, -t     Policy template name (creates agentguard.yaml)
     --name, -n         Extension name (default: my-<type>)
     --dir, -d          Output directory (default: ./<name> or . for templates)
+    --tiers            Comma-separated tiers for swarm (core,governance,ops,quality,marketing)
+    --force            Overwrite existing skill files during swarm init
 
   ${bold('Examples:')}
     agentguard init --template strict
@@ -1072,5 +1184,8 @@ function printInitHelp(): void {
     agentguard init invariant --name vendor-guard
     agentguard init policy-pack --name strict-policy
     agentguard init firestore
+    agentguard init swarm
+    agentguard init swarm --tiers core,governance
+    agentguard init swarm --force
 `);
 }

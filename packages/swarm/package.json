@@ -1,0 +1,38 @@
+{
+  "name": "@red-codes/swarm",
+  "version": "0.1.0",
+  "description": "Agent swarm templates and scaffolder for AgentGuard",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "manifest.json",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "ts:check": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "yaml": "^2.7.1"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.1",
+    "typescript": "^5.8.3"
+  },
+  "keywords": [
+    "agentguard",
+    "swarm",
+    "agent",
+    "scaffolder"
+  ]
+}
