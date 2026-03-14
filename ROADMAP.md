@@ -324,7 +324,7 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [ ] Add standalone index on `decisions.action_type` for filtered queries
 - [ ] Built-in SQL analytics queries: top denied actions, violation rate over time, session duration/action count
 - [ ] Replace `loadAllEventsSqlite` full table scan with SQL-native aggregation (`GROUP BY`, pagination)
-- [ ] Prepared statement caching for `EventStore.query()` hot paths
+- [x] Prepared statement caching for `EventStore.query()` hot paths (`src/storage/sqlite-store.ts`)
 
 ### Phase 11 — Runtime Tracing & Observability `PLANNED`
 
