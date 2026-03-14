@@ -967,7 +967,6 @@ describe('no-cicd-config-modification', () => {
   });
 });
 
-
 describe('no-permission-escalation', () => {
   const inv = findInvariant('no-permission-escalation');
 
@@ -1129,6 +1128,125 @@ describe('no-permission-escalation', () => {
   });
 });
 
+describe('no-governance-self-modification', () => {
+  const inv = findInvariant('no-governance-self-modification');
+
+  it('has severity 5', () => {
+    expect(inv.severity).toBe(5);
+  });
+
+  it('holds when target is outside governance paths', () => {
+    const result = inv.check({ currentTarget: 'src/index.ts' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('fails when currentTarget is agentguard.yaml', () => {
+    const result = inv.check({ currentTarget: 'agentguard.yaml' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('target');
+  });
+
+  it('fails when currentTarget is agentguard.yml', () => {
+    const result = inv.check({ currentTarget: 'agentguard.yml' });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when currentTarget is .agentguard.yaml', () => {
+    const result = inv.check({ currentTarget: '.agentguard.yaml' });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when currentTarget is nested policy file', () => {
+    const result = inv.check({ currentTarget: 'config/agentguard.yaml' });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when currentTarget is in .agentguard/ directory', () => {
+    const result = inv.check({ currentTarget: '.agentguard/events/run-123.jsonl' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('target');
+  });
+
+  it('fails when currentTarget is in policies/ directory', () => {
+    const result = inv.check({ currentTarget: 'policies/enterprise.yaml' });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when currentCommand references .agentguard/', () => {
+    const result = inv.check({ currentCommand: 'rm -rf .agentguard/events/' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('command');
+  });
+
+  it('fails when currentCommand references policies/', () => {
+    const result = inv.check({ currentCommand: 'cat policies/strict.yaml' });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when currentCommand references agentguard.yaml', () => {
+    const result = inv.check({ currentCommand: 'sed -i s/deny/allow/ agentguard.yaml' });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when modifiedFiles includes governance files', () => {
+    const result = inv.check({
+      modifiedFiles: ['src/index.ts', 'agentguard.yaml'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('modified');
+  });
+
+  it('fails when modifiedFiles includes .agentguard/ files', () => {
+    const result = inv.check({
+      modifiedFiles: ['.agentguard/decisions/run-456.jsonl'],
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when modifiedFiles includes policies/ files', () => {
+    const result = inv.check({
+      modifiedFiles: ['policies/ci-safe.yaml'],
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('handles Windows backslash paths', () => {
+    const result = inv.check({ currentTarget: '.agentguard\\events\\run-123.jsonl' });
+    expect(result.holds).toBe(false);
+  });
+
+  it('handles Windows backslash paths for policies/', () => {
+    const result = inv.check({ currentTarget: 'policies\\enterprise.yaml' });
+    expect(result.holds).toBe(false);
+  });
+
+  it('holds with empty state', () => {
+    const result = inv.check({});
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when path contains "agentguard" but not as a policy file', () => {
+    const result = inv.check({ currentTarget: 'src/agentguard-utils.ts' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when path contains "policies" as part of a different name', () => {
+    const result = inv.check({ currentTarget: 'src/company-policies-handler.ts' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('detects all three violation vectors simultaneously', () => {
+    const result = inv.check({
+      currentTarget: 'agentguard.yaml',
+      currentCommand: 'cat .agentguard/events/latest.jsonl',
+      modifiedFiles: ['policies/open-source.yaml'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('target');
+    expect(result.actual).toContain('command');
+    expect(result.actual).toContain('modified');
+  });
+});
 
 describe('lockfile-integrity', () => {
   const inv = findInvariant('lockfile-integrity');
@@ -1475,106 +1593,160 @@ describe('recursive-operation-guard', () => {
   });
 
   it('holds for non-shell action types', () => {
-    const result = inv.check({ currentCommand: 'find . -exec rm {} ;', currentActionType: 'file.write' });
+    const result = inv.check({
+      currentCommand: 'find . -exec rm {} ;',
+      currentActionType: 'file.write',
+    });
     expect(result.holds).toBe(true);
     expect(result.actual).toContain('not a shell command');
   });
 
   it('holds for safe commands', () => {
-    const result = inv.check({ currentCommand: 'find . -name "*.ts" -type f', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -name "*.ts" -type f',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(true);
   });
 
   it('detects find with -delete', () => {
-    const result = inv.check({ currentCommand: 'find /tmp -name "*.log" -delete', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find /tmp -name "*.log" -delete',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find with -delete');
   });
 
   it('detects find -exec rm', () => {
-    const result = inv.check({ currentCommand: 'find . -name "*.bak" -exec rm {} ;', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -name "*.bak" -exec rm {} ;',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec rm');
   });
 
   it('detects find -exec mv', () => {
-    const result = inv.check({ currentCommand: 'find . -exec mv {} /trash/ ;', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -exec mv {} /trash/ ;',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec mv');
   });
 
   it('detects find -exec cp', () => {
-    const result = inv.check({ currentCommand: 'find . -exec cp {} /backup/ ;', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -exec cp {} /backup/ ;',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec cp');
   });
 
   it('detects find -exec chmod', () => {
-    const result = inv.check({ currentCommand: 'find . -exec chmod 777 {} ;', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -exec chmod 777 {} ;',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec chmod');
   });
 
   it('detects find -exec chown', () => {
-    const result = inv.check({ currentCommand: 'find . -exec chown root {} ;', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -exec chown root {} ;',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec chown');
   });
 
   it('detects find -exec with absolute path to rm', () => {
-    const result = inv.check({ currentCommand: 'find . -exec /usr/bin/rm -f {} ;', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -exec /usr/bin/rm -f {} ;',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec rm');
   });
 
   it('detects xargs rm', () => {
-    const result = inv.check({ currentCommand: 'find . -name "*.tmp" | xargs rm', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -name "*.tmp" | xargs rm',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('xargs rm');
   });
 
   it('detects xargs chmod', () => {
-    const result = inv.check({ currentCommand: 'find . | xargs chmod 644', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . | xargs chmod 644',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('xargs chmod');
   });
 
   it('detects xargs with flags before command', () => {
-    const result = inv.check({ currentCommand: 'find . | xargs -I {} rm {}', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . | xargs -I {} rm {}',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('xargs rm');
   });
 
   it('detects recursive chmod -R', () => {
-    const result = inv.check({ currentCommand: 'chmod -R 777 /var/www', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'chmod -R 777 /var/www',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('recursive chmod');
   });
 
   it('detects recursive chmod --recursive', () => {
-    const result = inv.check({ currentCommand: 'chmod --recursive 755 /opt', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'chmod --recursive 755 /opt',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('recursive chmod');
   });
 
   it('detects recursive chown -R', () => {
-    const result = inv.check({ currentCommand: 'chown -R user:group /home/user', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'chown -R user:group /home/user',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('recursive chown');
   });
 
   it('allows non-recursive chmod', () => {
-    const result = inv.check({ currentCommand: 'chmod 644 file.txt', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'chmod 644 file.txt',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(true);
   });
 
   it('allows non-recursive chown', () => {
-    const result = inv.check({ currentCommand: 'chown user file.txt', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'chown user file.txt',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(true);
   });
 
   it('detects multiple violations', () => {
-    const result = inv.check({ currentCommand: 'find . -exec rm {} ; && chmod -R 777 /', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -exec rm {} ; && chmod -R 777 /',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec rm');
     expect(result.actual).toContain('recursive chmod');
@@ -1586,48 +1758,72 @@ describe('recursive-operation-guard', () => {
   });
 
   it('allows xargs with safe commands', () => {
-    const result = inv.check({ currentCommand: 'find . -name "*.ts" | xargs grep "import"', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -name "*.ts" | xargs grep "import"',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(true);
   });
 
   it('detects find -execdir rm (execdir bypass)', () => {
-    const result = inv.check({ currentCommand: 'find . -execdir rm -f {} ;', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -execdir rm -f {} ;',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec rm');
   });
 
   it('detects find -execdir mv', () => {
-    const result = inv.check({ currentCommand: 'find . -name "*.bak" -execdir mv {} /trash/ ;', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -name "*.bak" -execdir mv {} /trash/ ;',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec mv');
   });
 
   it('detects xargs cp', () => {
-    const result = inv.check({ currentCommand: 'find . -name "*.conf" | xargs cp /backup/', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -name "*.conf" | xargs cp /backup/',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('xargs cp');
   });
 
   it('detects find -exec shred', () => {
-    const result = inv.check({ currentCommand: 'find . -exec shred -u {} ;', currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: 'find . -exec shred -u {} ;',
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec shred');
   });
 
   it('detects find -exec sh -c with rm (sh -c bypass)', () => {
-    const result = inv.check({ currentCommand: "find . -exec sh -c 'rm {}' ;", currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: "find . -exec sh -c 'rm {}' ;",
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec sh -c (rm)');
   });
 
   it('detects find -exec bash -c with rm -rf (bash -c bypass)', () => {
-    const result = inv.check({ currentCommand: "find . -exec bash -c 'rm -rf {}' ;", currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: "find . -exec bash -c 'rm -rf {}' ;",
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec sh -c (rm)');
   });
 
   it('detects find -exec sh -c with shred (sh -c shred bypass)', () => {
-    const result = inv.check({ currentCommand: "find . -type f -exec sh -c 'shred -uz {}' ;", currentActionType: 'shell.exec' });
+    const result = inv.check({
+      currentCommand: "find . -type f -exec sh -c 'shred -uz {}' ;",
+      currentActionType: 'shell.exec',
+    });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec sh -c (shred)');
   });
