@@ -46,19 +46,24 @@ packages/
 ├── core/          @red-codes/core — Shared utilities (types, actions, hash, execution-log)
 ├── events/        @red-codes/events — Canonical event model (schema, bus, store, JSONL persistence)
 ├── policy/        @red-codes/policy — Policy system (composer, evaluator, loaders, pack loader)
-├── invariants/    @red-codes/invariants — Invariant system (10 built-in definitions, checker)
+├── invariants/    @red-codes/invariants — Invariant system (17 built-in definitions, checker)
 ├── kernel/        @red-codes/kernel — Governed action kernel (orchestrate, normalize, decide, escalate)
 ├── adapters/      @red-codes/adapters — Execution adapters (file, shell, git, claude-code)
 ├── analytics/     @red-codes/analytics — Cross-session violation analytics
 ├── storage/       @red-codes/storage — SQLite and Firestore backends (opt-in)
 ├── telemetry/     @red-codes/telemetry — Runtime telemetry and logging
 ├── plugins/       @red-codes/plugins — Plugin ecosystem (discovery, registry, validation, sandboxing)
-└── renderers/     @red-codes/renderers — Renderer plugin system (registry, TUI renderer)
+├── renderers/     @red-codes/renderers — Renderer plugin system (registry, TUI renderer)
+├── swarm/         @red-codes/swarm — Shareable agent swarm templates
+├── runtime/       @red-codes/runtime — Agent runtime (placeholder)
+├── sentinel01/    @red-codes/sentinel01 — Robotics/edge module (placeholder)
+├── adapter-openclaw/ @red-codes/adapter-openclaw — OpenClaw adapter (placeholder)
+└── telemetry-client/ @red-codes/telemetry-client — Telemetry client (identity, signing, queue, sender)
 
 apps/
 ├── cli/           @red-codes/agentguard — CLI entry point and commands (published npm package)
 ├── vscode-extension/  agentguard-vscode — VS Code extension (sidebar panels, notifications, diagnostics)
-└── telemetry-server/  Telemetry server (placeholder)
+└── telemetry-server/  @red-codes/telemetry-server — Telemetry ingestion server (enrollment, batch ingest)
 
 policies/          Policy packs (YAML: ci-safe, enterprise, open-source, strict)
 ```

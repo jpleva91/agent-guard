@@ -50,7 +50,7 @@ AI coding agents execute file writes, shell commands, and git operations autonom
 AgentGuard adds a **deterministic decision point** between proposal and execution:
 
 - **Safety policies** — declare what agents can and cannot do in YAML
-- **Invariant enforcement** — 10 built-in checks (secrets, protected branches, blast radius, skill/task protection, package script injection, lockfile integrity) run on every action
+- **Invariant enforcement** — 17 built-in checks (secrets, protected branches, blast radius, skill/task protection, package script injection, lockfile integrity, CI/CD config, permission escalation, governance self-modification, container config, environment variables, recursive operations, large file writes) run on every action
 - **Audit trail** — every decision is recorded as structured JSONL, inspectable after the fact
 - **Session debugging** — replay any agent session to see exactly what happened and why
 
@@ -60,7 +60,7 @@ AgentGuard evaluates every agent action through a **governed action kernel**:
 
 1. **Normalize** — Claude Code tool calls (Bash, Write, Edit, Read) are mapped to canonical action types (shell.exec, file.write, file.read)
 2. **Evaluate** — policies match against the action (deny git.push to main, deny destructive commands, enforce scope limits)
-3. **Check invariants** — 10 built-in safety checks run on every action
+3. **Check invariants** — 17 built-in safety checks run on every action
 4. **Execute** — if allowed, the action runs via adapters (file, shell, git handlers)
 5. **Emit events** — full lifecycle events sunk to JSONL for audit trail
 
@@ -68,7 +68,7 @@ AgentGuard evaluates every agent action through a **governed action kernel**:
 
 ```
   AgentGuard Runtime Active
-  policy: agentguard.yaml | invariants: 10 active
+  policy: agentguard.yaml | invariants: 17 active
 
   ✓ file.write src/auth/service.ts
   ✓ shell.exec npm test
@@ -108,19 +108,26 @@ Drop an `agentguard.yaml` in your repo root — the CLI picks it up automaticall
 
 ## Built-in Invariants
 
-10 safety invariants run on every action evaluation:
+17 safety invariants run on every action evaluation:
 
 | Invariant | Severity | Description |
 |-----------|----------|-------------|
 | **no-secret-exposure** | 5 (critical) | Blocks access to .env, credentials, .pem, .key files |
 | **no-credential-file-creation** | 5 (critical) | Blocks creation or modification of well-known credential files (SSH keys, cloud configs, auth tokens) |
+| **no-scheduled-task-modification** | 5 (critical) | Prevents modification of scheduled task files |
+| **no-cicd-config-modification** | 5 (critical) | Blocks writes to CI/CD pipeline configs (.github/workflows/, .gitlab-ci.yml, Jenkinsfile) |
+| **no-governance-self-modification** | 5 (critical) | Prevents agents from modifying governance config (policy files, governance data) |
 | **protected-branch** | 4 (high) | Prevents direct push to main/master |
 | **no-force-push** | 4 (high) | Forbids force push |
 | **no-skill-modification** | 4 (high) | Prevents modification of .claude/skills/ files |
-| **no-scheduled-task-modification** | 4 (high) | Prevents modification of scheduled task files |
 | **no-package-script-injection** | 4 (high) | Blocks package.json modifications that alter lifecycle script entries |
+| **no-permission-escalation** | 4 (high) | Catches chmod to world-writable, setuid/setgid, ownership changes |
 | **blast-radius-limit** | 3 (medium) | Enforces file modification limit (default 20) |
 | **test-before-push** | 3 (medium) | Requires tests pass before push |
+| **large-file-write** | 3 (medium) | Enforces per-file size limit to prevent data dumps |
+| **no-container-config-modification** | 3 (medium) | Protects Dockerfile, docker-compose.yml, .dockerignore |
+| **no-env-var-modification** | 3 (medium) | Detects attempts to modify environment variables or shell profile files |
+| **recursive-operation-guard** | 2 (low) | Flags find -exec, xargs combined with write/delete operations |
 | **lockfile-integrity** | 2 (low) | Ensures package.json changes sync with lockfiles |
 
 ## Escalation
@@ -181,9 +188,13 @@ agentguard traces --last                  # Show traces for the most recent run
 agentguard traces --last --summary       # Summary statistics only
 agentguard traces --last --json          # JSON output
 
+# === Telemetry ===
+agentguard telemetry                      # Manage telemetry enrollment and settings
+
 # === Integration ===
 agentguard claude-init                    # Set up Claude Code hook integration
 agentguard init <type>                    # Scaffold governance extensions or storage backends
+agentguard policy-verify <file>          # Verify policy file structure and rules
 agentguard help                           # Show all commands
 ```
 
@@ -245,7 +256,7 @@ packages/
 ├── core/src/               # @red-codes/core — Shared types, actions, hash, rng, execution-log
 ├── events/src/             # @red-codes/events — Canonical event model (schema, bus, store, JSONL)
 ├── policy/src/             # @red-codes/policy — Policy evaluation, YAML/JSON loaders, composition
-├── invariants/src/         # @red-codes/invariants — 10 built-in invariant definitions + checker
+├── invariants/src/         # @red-codes/invariants — 17 built-in invariant definitions + checker
 ├── kernel/src/             # @red-codes/kernel — Governed action kernel (orchestrator, AAB, decisions, simulation)
 ├── adapters/src/           # @red-codes/adapters — Execution adapters (file, shell, git, claude-code)
 ├── analytics/src/          # @red-codes/analytics — Cross-session violation analytics
@@ -255,8 +266,9 @@ packages/
 ├── renderers/src/          # @red-codes/renderers — Renderer plugin system (TUI renderer)
 ├── runtime/src/            # @red-codes/runtime — Agent runtime (placeholder)
 ├── sentinel01/src/         # @red-codes/sentinel01 — Robotics/edge module (placeholder)
+├── swarm/src/              # @red-codes/swarm — Shareable agent swarm templates
 ├── adapter-openclaw/src/   # @red-codes/adapter-openclaw — OpenClaw adapter (placeholder)
-└── telemetry-client/src/   # @red-codes/telemetry-client — Telemetry client (placeholder)
+└── telemetry-client/src/   # @red-codes/telemetry-client — Telemetry client (identity, signing, queue, sender)
 
 apps/
 ├── cli/src/                # @red-codes/agentguard — CLI (published npm package)
@@ -267,7 +279,7 @@ apps/
 │   ├── extension.ts        # Sidebar panels, file watcher, notifications
 │   ├── providers/          # Tree data providers (run status, run history, recent events)
 │   └── services/           # Event reader, notification formatter, diagnostics, violation mapper
-└── telemetry-server/src/   # Telemetry server (placeholder)
+└── telemetry-server/src/   # @red-codes/telemetry-server — Telemetry ingestion server (enrollment, batch ingest, rate limiting)
 
 policies/                   # Policy packs (YAML: ci-safe, enterprise, open-source, strict)
 ```

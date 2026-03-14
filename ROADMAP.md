@@ -59,7 +59,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Canonical Action Representation (23 types, 8 classes) | Implemented | `packages/core/src/actions.ts` |
 | Action Authorization Boundary (AAB) | Implemented (2 bypass vectors) | `packages/kernel/src/aab.ts` |
 | Policy Evaluator (two-phase deny/allow) | Implemented | `packages/policy/src/evaluator.ts` |
-| 10 Built-in Invariants | Fully Implemented | `packages/invariants/src/definitions.ts`, `packages/invariants/src/checker.ts` |
+| 17 Built-in Invariants | Fully Implemented | `packages/invariants/src/definitions.ts`, `packages/invariants/src/checker.ts` |
 | Event Model (49 event kinds) | Comprehensive | `packages/events/src/schema.ts` |
 | JSONL Persistence | Implemented | `packages/events/src/jsonl.ts` |
 | Simulation Engine (3 simulators + impact forecast) | Fully Implemented | `packages/kernel/src/simulation/` |
@@ -76,7 +76,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Cross-session Analytics (aggregation, clustering, trends) | Implemented | `packages/analytics/src/` |
 | Plugin Ecosystem (discovery, registry, validation) | Implemented | `packages/plugins/src/` |
 | Renderer Plugin System | Implemented | `packages/renderers/src/` |
-| CLI (guard, inspect, events, replay, export, import, simulate, ci-check, analytics, plugin, policy, claude-hook, claude-init, init, diff, evidence-pr, traces) | Implemented | `apps/cli/src/` |
+| CLI (guard, inspect, events, replay, export, import, simulate, ci-check, analytics, plugin, policy, policy-verify, claude-hook, claude-init, init, diff, evidence-pr, traces, telemetry) | Implemented | `apps/cli/src/` |
 | Claude Code Hook Integration | Implemented | `packages/adapters/src/claude-code.ts` |
 | VS Code Extension (sidebar panels, event reader, inline diagnostics) | Implemented | `apps/vscode-extension/` |
 | Policy Pack Loader | Implemented | `packages/policy/src/pack-loader.ts` |
@@ -104,7 +104,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Canonical Action Representation | Implemented | Production |
 | AAB Reference Monitor | Implemented | 1 bypass vector to close (missing-adapter fixed) |
 | Policy Evaluator | Implemented | Production |
-| 10 Built-in Invariants | Fully Implemented | Production |
+| 17 Built-in Invariants | Fully Implemented | Production |
 | Event Model (49 kinds) | Comprehensive | Production |
 | Simulation & Forecasting | Fully Implemented | Production |
 | Escalation State Machine | Implemented | Functional (events persisted as StateChanged) |
@@ -248,25 +248,25 @@ This is the architectural hinge. These changes transform the AAB from advisory i
 - [x] Persist escalation state changes as `StateChanged` DomainEvents in `packages/kernel/src/monitor.ts`
 - [x] Expand destructive command patterns in `packages/kernel/src/aab.ts` (expanded from 10 to 87 patterns covering sudo, pkill, docker, systemctl, database commands, and more)
 - [ ] Enforce intervention types beyond DENY (implement PAUSE and ROLLBACK behaviors in kernel execution)
-- [ ] Governance self-modification invariant — agents must not modify `agentguard.yaml`, `.agentguard/`, or `policies/` (prerequisite for tamper-resistance claim)
+- [x] Governance self-modification invariant — agents must not modify `agentguard.yaml`, `.agentguard/`, or `policies/` (`no-governance-self-modification` invariant, severity 5)
 - [ ] Performance benchmark suite — formal latency measurement (p50/p95/p99) per action type for policy evaluation, invariant checking, and simulation overhead. Publish results as a marketing asset and regression gate in CI
 
-### Phase 6.5 — Invariant Expansion `NEXT`
+### Phase 6.5 — Invariant Expansion `IN PROGRESS`
 
-> **Theme:** Close invariant coverage gaps. The current 10 invariants leave large classes of agent behavior ungoverned.
+> **Theme:** Close invariant coverage gaps. Expanded from 10 to 17 built-in invariants; remaining items cover network egress, database migration safety, and transitive effect analysis.
 
 The `SystemState` interface in `packages/invariants/src/definitions.ts` is the bottleneck for invariant expansion — it needs to become a richer context object with action-specific fields.
 
-- [ ] CI/CD config modification invariant (severity 5) — block writes to `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `.circleci/config.yml`
+- [x] CI/CD config modification invariant (severity 5) — block writes to `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `.circleci/config.yml` (`no-cicd-config-modification` invariant)
 - [ ] Network egress governance invariant (severity 4) — deny HTTP requests to non-allowlisted domains (extend `SystemState` with `isNetworkRequest`, `requestUrl`, `requestDomain`)
 - [x] Credential file creation invariant (severity 5) — inspect `currentTarget` for SSH keys, `.netrc`, `~/.aws/credentials`, Docker config (closes gap where `no-secret-exposure` misses new file creation)
 - [x] Package.json script injection invariant (severity 4) — flag `package.json` modifications that alter lifecycle script entries (`packages/invariants/src/definitions.ts`)
-- [ ] Large single-file write invariant (severity 3) — enforce per-file size limit (extend `SystemState` with `writeSizeBytes`)
-- [ ] Docker/container config modification invariant (severity 3) — protect `Dockerfile`, `docker-compose.yml`, `.dockerignore`
+- [x] Large single-file write invariant (severity 3) — enforce per-file size limit (`large-file-write` invariant)
+- [x] Docker/container config modification invariant (severity 3) — protect `Dockerfile`, `docker-compose.yml`, `.dockerignore` (`no-container-config-modification` invariant)
 - [ ] Database migration safety invariant (severity 3) — flag writes to migration directories containing destructive DDL
-- [ ] Permission escalation invariant (severity 4) — catch `chmod` to world-writable, `setuid`, ownership changes at invariant level (not just AAB pattern)
-- [ ] Environment variable modification invariant (severity 3) — scan for `export`, `setenv`, writes to shell profile files
-- [ ] Recursive operation guard (severity 2) — flag `find -exec`, `xargs` combined with write/delete operations
+- [x] Permission escalation invariant (severity 4) — catch `chmod` to world-writable, `setuid`, ownership changes at invariant level (`no-permission-escalation` invariant)
+- [x] Environment variable modification invariant (severity 3) — scan for `export`, `setenv`, writes to shell profile files (`no-env-var-modification` invariant)
+- [x] Recursive operation guard (severity 2) — flag `find -exec`, `xargs` combined with write/delete operations (`recursive-operation-guard` invariant)
 - [ ] Transitive effect analysis (severity 4) — when an agent writes a script or config file, analyze content for downstream effects that would violate policy (e.g., a Python script containing `open('.env').read()` or a shell script with `curl` exfiltration). Closes the creative circumvention gap where agents bypass direct restrictions via indirect file creation
 
 ### Phase 7 — Capability-Scoped Sessions & Intent Contracts `PLANNED`
@@ -470,7 +470,7 @@ The agent governance space is emerging. Several projects address overlapping pro
 
 AgentGuard is built for contributors. Here are the best places to start:
 
-- **Write an invariant pack** — Define domain-specific invariants in `packages/invariants/src/community/`. See `packages/invariants/src/definitions.ts` for the 10 built-in invariants as a reference.
+- **Write an invariant pack** — Define domain-specific invariants in `packages/invariants/src/community/`. See `packages/invariants/src/definitions.ts` for the 17 built-in invariants as a reference.
 - **Create a policy pack** — Ship a reusable policy YAML in `policies/`. See `agentguard.yaml` for the format and `packages/policy/src/pack-loader.ts` for the pack loading contract.
 - **Build an adapter** — Add support for a new agent framework in `packages/adapters/src/`. Follow the pattern in `packages/adapters/src/claude-code.ts`.
 - **Add a renderer** — Create a custom governance output renderer implementing the `GovernanceRenderer` interface in `packages/renderers/src/types.ts`.

@@ -26,7 +26,7 @@ Software side effects and physical side effects belong to the same problem class
 
 ## Current State
 
-AgentGuard has a mature governance kernel (propose → evaluate → execute → emit), 10 built-in invariants, event-sourced JSONL audit trails, pre-execution simulation (filesystem/git/package), escalation state machine (NORMAL → LOCKDOWN), pluggable tracing, cross-session analytics (clustering, trends, risk scoring), a plugin ecosystem, a VS Code extension, SQLite and Firestore storage backends, and a fully autonomous SDLC control plane with 22+ coordinated agents. The only framework adapter is Claude Code.
+AgentGuard has a mature governance kernel (propose → evaluate → execute → emit), 17 built-in invariants, event-sourced JSONL audit trails, pre-execution simulation (filesystem/git/package), escalation state machine (NORMAL → LOCKDOWN), pluggable tracing, cross-session analytics (clustering, trends, risk scoring), a plugin ecosystem, a VS Code extension, SQLite and Firestore storage backends, and a fully autonomous SDLC control plane with 22+ coordinated agents. The only framework adapter is Claude Code.
 
 Completed technical phases: Architecture Clarity, Canonical Event Model, Governance Runtime, Event Persistence + Replay, Plugin Ecosystem (Phases 0–4 STABLE). Currently working on: Editor Integrations (Phase 5), Reference Monitor Hardening (Phase 6), Structured Storage (Phase 10).
 
