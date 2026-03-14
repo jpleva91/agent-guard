@@ -3,6 +3,12 @@
 // No I/O, no Node.js-specific APIs. Suitable for use inside the synchronous authorize() flow.
 
 import type { NormalizedIntent } from '@red-codes/policy';
+import {
+  BLAST_RADIUS_DEFAULT_WEIGHTS,
+  BLAST_RADIUS_SENSITIVE_PATTERNS,
+  BLAST_RADIUS_CONFIG_PATTERNS,
+  BLAST_RADIUS_RISK_THRESHOLDS,
+} from '@red-codes/core';
 
 /** Weights applied to different action categories */
 export interface BlastRadiusWeights {
@@ -47,38 +53,12 @@ export interface BlastRadiusFactor {
   reason: string;
 }
 
-const DEFAULT_WEIGHTS: BlastRadiusWeights = {
-  delete: 3.0,
-  write: 1.5,
-  read: 0.1,
-  git: 2.0,
-  shell: 1.0,
-  sensitivePath: 5.0,
-  configPath: 2.0,
-  destructive: 4.0,
-};
+const DEFAULT_WEIGHTS: BlastRadiusWeights =
+  BLAST_RADIUS_DEFAULT_WEIGHTS as BlastRadiusWeights;
 
-const SENSITIVE_PATTERNS = ['.env', 'credentials', '.pem', '.key', 'secret', 'token', '.password'];
+const SENSITIVE_PATTERNS: string[] = BLAST_RADIUS_SENSITIVE_PATTERNS;
 
-const CONFIG_PATTERNS = [
-  'package.json',
-  'tsconfig.json',
-  'eslint',
-  '.prettierrc',
-  'webpack.config',
-  'vite.config',
-  'next.config',
-  'jest.config',
-  'vitest.config',
-  '.babelrc',
-  'babel.config',
-  'Dockerfile',
-  'docker-compose',
-  '.github/',
-  '.gitlab-ci',
-  'Jenkinsfile',
-  '.circleci/',
-];
+const CONFIG_PATTERNS: string[] = BLAST_RADIUS_CONFIG_PATTERNS;
 
 /** Determine the action weight multiplier based on action type */
 function getActionMultiplier(
@@ -166,8 +146,8 @@ function getDestructiveCommandFactor(
 
 /** Derive risk level from a weighted score */
 function deriveRiskLevel(weightedScore: number): 'low' | 'medium' | 'high' {
-  if (weightedScore >= 50) return 'high';
-  if (weightedScore >= 15) return 'medium';
+  if (weightedScore >= BLAST_RADIUS_RISK_THRESHOLDS.high) return 'high';
+  if (weightedScore >= BLAST_RADIUS_RISK_THRESHOLDS.medium) return 'medium';
   return 'low';
 }
 

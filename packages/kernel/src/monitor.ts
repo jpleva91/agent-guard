@@ -2,6 +2,7 @@
 // Pure domain logic. No DOM, no Node.js-specific APIs.
 
 import type { DomainEvent, EventStore } from '@red-codes/core';
+import { ESCALATION_LEVELS, ESCALATION_DEFAULTS } from '@red-codes/core';
 import { createEngine, INTERVENTION } from './decision.js';
 import type { EngineConfig, EngineDecision } from './decision.js';
 import type { RawAgentAction } from './aab.js';
@@ -9,10 +10,10 @@ import { EventBus, createInMemoryStore } from '@red-codes/events';
 import { createEvent, STATE_CHANGED } from '@red-codes/events';
 
 export const ESCALATION = {
-  NORMAL: 0,
-  ELEVATED: 1,
-  HIGH: 2,
-  LOCKDOWN: 3,
+  NORMAL: ESCALATION_LEVELS.NORMAL,
+  ELEVATED: ESCALATION_LEVELS.ELEVATED,
+  HIGH: ESCALATION_LEVELS.HIGH,
+  LOCKDOWN: ESCALATION_LEVELS.LOCKDOWN,
 } as const;
 
 export type EscalationLevel = (typeof ESCALATION)[keyof typeof ESCALATION];
@@ -72,9 +73,9 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
     },
   });
 
-  const denialThreshold = config.denialThreshold ?? 5;
-  const violationThreshold = config.violationThreshold ?? 3;
-  const windowSize = config.windowSize ?? 10;
+  const denialThreshold = config.denialThreshold ?? ESCALATION_DEFAULTS.denialThreshold;
+  const violationThreshold = config.violationThreshold ?? ESCALATION_DEFAULTS.violationThreshold;
+  const windowSize = config.windowSize ?? ESCALATION_DEFAULTS.windowSize;
 
   let totalEvaluations = 0;
   let totalDenials = 0;

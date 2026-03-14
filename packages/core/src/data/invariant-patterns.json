@@ -1,0 +1,45 @@
+{
+  "sensitiveFilePatterns": [
+    ".env", "credentials", ".pem", ".key", "secret", "token",
+    ".npmrc", ".netrc", ".pgpass", ".htpasswd",
+    "id_rsa", "id_ed25519", "id_ecdsa", "id_dsa",
+    ".p12", ".pfx", ".jks", "keystore",
+    "secrets.yaml", "secrets.yml", "vault.json"
+  ],
+  "credentialPathPatterns": [
+    "/.ssh/", "\\.ssh\\",
+    "/.aws/credentials", "/.aws/config", "\\.aws\\credentials", "\\.aws\\config",
+    "/.config/gcloud/", "\\.config\\gcloud\\",
+    "/.azure/", "\\.azure\\",
+    "/.docker/config.json", "\\.docker\\config.json"
+  ],
+  "credentialBasenamePatterns": [".npmrc", ".pypirc", ".netrc", ".curlrc"],
+  "containerConfigBasenames": [
+    "dockerfile", "docker-compose.yml", "docker-compose.yaml",
+    "compose.yml", "compose.yaml", ".dockerignore", "containerfile"
+  ],
+  "lifecycleScripts": [
+    "preinstall", "postinstall", "prepare", "prepublishOnly",
+    "prepack", "postpack", "install"
+  ],
+  "envFileRegex": "(?:^|[\\\\/])\\.env(?:\\.\\w+)?$",
+  "dockerfileSuffixRegex": "\\.dockerfile$",
+  "invariants": [
+    { "id": "no-secret-exposure", "name": "No Secret Exposure", "description": "Sensitive files (.env, credentials, keys) must not be committed or exposed", "severity": 5 },
+    { "id": "protected-branch", "name": "Protected Branch Safety", "description": "Direct pushes to main/master are forbidden", "severity": 4 },
+    { "id": "blast-radius-limit", "name": "Blast Radius Limit", "description": "A single operation must not modify too many files at once", "severity": 3 },
+    { "id": "test-before-push", "name": "Tests Before Push", "description": "Tests must pass before pushing code", "severity": 3 },
+    { "id": "no-force-push", "name": "No Force Push", "description": "Force pushes are forbidden unless explicitly authorized", "severity": 4 },
+    { "id": "no-skill-modification", "name": "No Skill Modification", "description": "Agent skill files (.claude/skills/) must not be modified by governed actions", "severity": 4 },
+    { "id": "no-scheduled-task-modification", "name": "No Scheduled Task Modification", "description": "Agents must not modify scheduled task definitions (.claude/scheduled-tasks/) directly", "severity": 5 },
+    { "id": "no-credential-file-creation", "name": "No Credential File Creation", "description": "Agents must not create or overwrite well-known credential files (SSH keys, cloud configs, auth tokens)", "severity": 5 },
+    { "id": "no-package-script-injection", "name": "No Package Script Injection", "description": "Modifications to package.json scripts are flagged as potential supply chain attack vectors", "severity": 4 },
+    { "id": "recursive-operation-guard", "name": "Recursive Operation Guard", "description": "Flags recursive operations (find -exec, xargs) combined with write/delete operations that could cause widespread damage", "severity": 2 },
+    { "id": "large-file-write", "name": "Large File Write Limit", "description": "Single file writes must not exceed a size threshold to prevent data dumps or runaway generation", "severity": 3 },
+    { "id": "no-cicd-config-modification", "name": "No CI/CD Config Modification", "description": "CI/CD pipeline configurations must not be modified by governed actions — prevents supply chain attacks via malicious build steps", "severity": 5 },
+    { "id": "no-permission-escalation", "name": "No Permission Escalation", "description": "Agents must not escalate filesystem permissions (world-writable, setuid/setgid, ownership changes, sudoers)", "severity": 4 },
+    { "id": "no-governance-self-modification", "name": "No Governance Self-Modification", "description": "Agents must not modify governance configuration (policy files, governance data, policy packs)", "severity": 5 },
+    { "id": "lockfile-integrity", "name": "Lockfile Integrity", "description": "Package lockfiles must stay in sync with manifests", "severity": 2 },
+    { "id": "no-container-config-modification", "name": "No Container Config Modification", "description": "Container configuration files (Dockerfile, docker-compose, .dockerignore, Containerfile) must not be modified without authorization", "severity": 3 }
+  ]
+}

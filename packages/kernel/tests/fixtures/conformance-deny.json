@@ -1,0 +1,38 @@
+[
+  {
+    "name": "rm -rf is denied as destructive",
+    "input": { "tool": "Bash", "command": "rm -rf /", "agent": "test-agent" },
+    "expected": { "allowed": false, "destructive": true }
+  },
+  {
+    "name": "sudo rm is denied as destructive",
+    "input": { "tool": "Bash", "command": "sudo rm /etc/passwd", "agent": "test-agent" },
+    "expected": { "allowed": false, "destructive": true }
+  },
+  {
+    "name": "DROP TABLE is denied as destructive",
+    "input": { "tool": "Bash", "command": "psql -c 'DROP TABLE users'", "agent": "test-agent" },
+    "expected": { "allowed": false, "destructive": true }
+  },
+  {
+    "name": "git push to protected branch denied by policy",
+    "input": { "tool": "Bash", "command": "git push origin main", "agent": "test-agent" },
+    "policy": [{ "id": "protect-main", "name": "Protect Main", "rules": [{ "action": "git.push", "effect": "deny", "reason": "Protected branch" }], "severity": 4 }],
+    "expected": { "allowed": false }
+  },
+  {
+    "name": "docker system prune is denied",
+    "input": { "tool": "Bash", "command": "docker system prune -a", "agent": "test-agent" },
+    "expected": { "allowed": false, "destructive": true }
+  },
+  {
+    "name": "terraform destroy is denied",
+    "input": { "tool": "Bash", "command": "terraform destroy", "agent": "test-agent" },
+    "expected": { "allowed": false, "destructive": true }
+  },
+  {
+    "name": "force push is denied by invariant",
+    "input": { "tool": "Bash", "command": "git push --force origin main", "agent": "test-agent" },
+    "expected": { "allowed": false }
+  }
+]

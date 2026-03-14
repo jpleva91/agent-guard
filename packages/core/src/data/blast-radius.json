@@ -1,0 +1,36 @@
+{
+  "defaultWeights": {
+    "delete": 3.0,
+    "write": 1.5,
+    "read": 0.1,
+    "git": 2.0,
+    "shell": 1.0,
+    "sensitivePath": 5.0,
+    "configPath": 2.0,
+    "destructive": 4.0
+  },
+  "sensitivePatterns": [".env", "credentials", ".pem", ".key", "secret", "token", ".password"],
+  "configPatterns": [
+    "package.json",
+    "tsconfig.json",
+    "eslint",
+    ".prettierrc",
+    "webpack.config",
+    "vite.config",
+    "next.config",
+    "jest.config",
+    "vitest.config",
+    ".babelrc",
+    "babel.config",
+    "Dockerfile",
+    "docker-compose",
+    ".github/",
+    ".gitlab-ci",
+    "Jenkinsfile",
+    ".circleci/"
+  ],
+  "riskThresholds": {
+    "high": 50,
+    "medium": 15
+  }
+}

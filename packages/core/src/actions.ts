@@ -11,51 +11,22 @@ import type {
 } from './types.js';
 import { simpleHash } from './hash.js';
 
-// --- Action Classes ---
-export const ACTION_CLASS: Record<string, ActionClass> = {
-  FILE: 'file',
-  TEST: 'test',
-  GIT: 'git',
-  SHELL: 'shell',
-  NPM: 'npm',
-  HTTP: 'http',
-  DEPLOY: 'deploy',
-  INFRA: 'infra',
-};
+// --- Action Classes (sourced from data/actions.json) ---
+import { ACTION_CLASS_DATA, ACTION_TYPES_DATA, DECISION_DATA } from './governance-data.js';
 
-// --- Action Types ---
-export const ACTION_TYPES: Record<string, ActionDefinition> = {
-  'file.read': { class: 'file', description: 'Read file contents' },
-  'file.write': { class: 'file', description: 'Write or create a file' },
-  'file.delete': { class: 'file', description: 'Delete a file' },
-  'file.move': { class: 'file', description: 'Move or rename a file' },
-  'test.run': { class: 'test', description: 'Run test suite' },
-  'test.run.unit': { class: 'test', description: 'Run unit tests' },
-  'test.run.integration': { class: 'test', description: 'Run integration tests' },
-  'git.diff': { class: 'git', description: 'View git diff' },
-  'git.commit': { class: 'git', description: 'Create a git commit' },
-  'git.push': { class: 'git', description: 'Push to remote' },
-  'git.branch.create': { class: 'git', description: 'Create a branch' },
-  'git.branch.delete': { class: 'git', description: 'Delete a branch' },
-  'git.checkout': { class: 'git', description: 'Switch branches' },
-  'git.reset': { class: 'git', description: 'Reset git state' },
-  'git.merge': { class: 'git', description: 'Merge branches' },
-  'shell.exec': { class: 'shell', description: 'Execute a shell command' },
-  'npm.install': { class: 'npm', description: 'Install npm packages' },
-  'npm.script.run': { class: 'npm', description: 'Run an npm script' },
-  'npm.publish': { class: 'npm', description: 'Publish to npm registry' },
-  'http.request': { class: 'http', description: 'Make an HTTP request' },
-  'deploy.trigger': { class: 'deploy', description: 'Trigger deployment' },
-  'infra.apply': { class: 'infra', description: 'Apply infrastructure changes' },
-  'infra.destroy': { class: 'infra', description: 'Destroy infrastructure' },
-};
+export const ACTION_CLASS: Record<string, ActionClass> = ACTION_CLASS_DATA as Record<
+  string,
+  ActionClass
+>;
 
-// --- Decisions ---
-export const DECISION: Record<string, Decision> = {
-  ALLOW: 'allow',
-  DENY: 'deny',
-  ESCALATE: 'escalate',
-};
+// --- Action Types (sourced from data/actions.json) ---
+export const ACTION_TYPES: Record<string, ActionDefinition> = ACTION_TYPES_DATA as Record<
+  string,
+  ActionDefinition
+>;
+
+// --- Decisions (sourced from data/actions.json) ---
+export const DECISION: Record<string, Decision> = DECISION_DATA as Record<string, Decision>;
 
 // --- Action Factory ---
 let actionCounter = 0;

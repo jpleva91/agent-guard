@@ -1,0 +1,42 @@
+[
+  {
+    "name": "file read is allowed",
+    "input": { "tool": "Read", "file": "src/index.ts", "agent": "test-agent" },
+    "expected": { "allowed": true, "actionType": "file.read" }
+  },
+  {
+    "name": "file write is allowed without deny policy",
+    "input": { "tool": "Write", "file": "src/foo.ts", "agent": "test-agent" },
+    "expected": { "allowed": true, "actionType": "file.write" }
+  },
+  {
+    "name": "file edit is allowed",
+    "input": { "tool": "Edit", "file": "src/bar.ts", "agent": "test-agent" },
+    "expected": { "allowed": true, "actionType": "file.write" }
+  },
+  {
+    "name": "glob search is allowed",
+    "input": { "tool": "Glob", "file": "**/*.ts", "agent": "test-agent" },
+    "expected": { "allowed": true, "actionType": "file.read" }
+  },
+  {
+    "name": "grep search is allowed",
+    "input": { "tool": "Grep", "file": "src/", "agent": "test-agent" },
+    "expected": { "allowed": true, "actionType": "file.read" }
+  },
+  {
+    "name": "web fetch is allowed",
+    "input": { "tool": "WebFetch", "target": "https://example.com", "agent": "test-agent" },
+    "expected": { "allowed": true, "actionType": "http.request" }
+  },
+  {
+    "name": "benign shell command is allowed",
+    "input": { "tool": "Bash", "command": "echo hello", "agent": "test-agent" },
+    "expected": { "allowed": true, "actionType": "shell.exec" }
+  },
+  {
+    "name": "git commit via shell is allowed",
+    "input": { "tool": "Bash", "command": "git commit -m 'fix'", "agent": "test-agent" },
+    "expected": { "allowed": true, "actionType": "git.commit" }
+  }
+]

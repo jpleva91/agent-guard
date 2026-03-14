@@ -16,3 +16,4 @@ export * from './simulation/forecast.js';
 export * from './simulation/filesystem-simulator.js';
 export * from './simulation/git-simulator.js';
 export * from './simulation/package-simulator.js';
+export * from './contract.js';

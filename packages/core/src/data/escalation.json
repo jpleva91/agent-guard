@@ -1,0 +1,13 @@
+{
+  "levels": {
+    "NORMAL": 0,
+    "ELEVATED": 1,
+    "HIGH": 2,
+    "LOCKDOWN": 3
+  },
+  "defaults": {
+    "denialThreshold": 5,
+    "violationThreshold": 3,
+    "windowSize": 10
+  }
+}

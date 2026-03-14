@@ -1,5 +1,16 @@
 // Default system invariant definitions.
 // Pure domain logic. No DOM, no Node.js-specific APIs.
+// Pattern data sourced from @red-codes/core governance data files.
+
+import {
+  INVARIANT_SENSITIVE_FILE_PATTERNS,
+  INVARIANT_CREDENTIAL_PATH_PATTERNS,
+  INVARIANT_CREDENTIAL_BASENAME_PATTERNS,
+  INVARIANT_CONTAINER_CONFIG_BASENAMES,
+  INVARIANT_LIFECYCLE_SCRIPTS,
+  INVARIANT_ENV_FILE_REGEX_SOURCE,
+  INVARIANT_DOCKERFILE_SUFFIX_REGEX_SOURCE,
+} from '@red-codes/core';
 
 export interface InvariantCheckResult {
   holds: boolean;
@@ -44,71 +55,23 @@ export interface SystemState {
 }
 
 /** Patterns matched as substrings (case-insensitive) against file paths. */
-export const SENSITIVE_FILE_PATTERNS = [
-  '.env',
-  'credentials',
-  '.pem',
-  '.key',
-  'secret',
-  'token',
-  '.npmrc',
-  '.netrc',
-  '.pgpass',
-  '.htpasswd',
-  'id_rsa',
-  'id_ed25519',
-  'id_ecdsa',
-  'id_dsa',
-  '.p12',
-  '.pfx',
-  '.jks',
-  'keystore',
-  'secrets.yaml',
-  'secrets.yml',
-  'vault.json',
-];
+export const SENSITIVE_FILE_PATTERNS: string[] = INVARIANT_SENSITIVE_FILE_PATTERNS;
 
 /** Well-known credential file paths and directory prefixes.
  * Checked as case-insensitive substring matches against currentTarget. */
-export const CREDENTIAL_PATH_PATTERNS = [
-  // SSH
-  '/.ssh/',
-  '\\.ssh\\',
-  // AWS
-  '/.aws/credentials',
-  '/.aws/config',
-  '\\.aws\\credentials',
-  '\\.aws\\config',
-  // Google Cloud
-  '/.config/gcloud/',
-  '\\.config\\gcloud\\',
-  // Azure
-  '/.azure/',
-  '\\.azure\\',
-  // Docker
-  '/.docker/config.json',
-  '\\.docker\\config.json',
-];
+export const CREDENTIAL_PATH_PATTERNS: string[] = INVARIANT_CREDENTIAL_PATH_PATTERNS;
 
 /** Exact basenames (case-insensitive) that are credential files at any depth. */
-export const CREDENTIAL_BASENAME_PATTERNS = ['.npmrc', '.pypirc', '.netrc', '.curlrc'];
+export const CREDENTIAL_BASENAME_PATTERNS: string[] = INVARIANT_CREDENTIAL_BASENAME_PATTERNS;
 
 /** Matches .env files: .env, .env.local, .env.production, etc. */
-const ENV_FILE_REGEX = /(?:^|[\\/])\.env(?:\.\w+)?$/i;
+const ENV_FILE_REGEX = new RegExp(INVARIANT_ENV_FILE_REGEX_SOURCE, 'i');
 
 /** Container configuration file basenames (case-insensitive). */
-const CONTAINER_CONFIG_BASENAMES = [
-  'dockerfile',
-  'docker-compose.yml',
-  'docker-compose.yaml',
-  'compose.yml',
-  'compose.yaml',
-  '.dockerignore',
-  'containerfile',
-];
+const CONTAINER_CONFIG_BASENAMES: string[] = INVARIANT_CONTAINER_CONFIG_BASENAMES;
 
 /** Matches *.dockerfile files (e.g., app.dockerfile, prod.dockerfile). */
-const DOCKERFILE_SUFFIX_REGEX = /\.dockerfile$/i;
+const DOCKERFILE_SUFFIX_REGEX = new RegExp(INVARIANT_DOCKERFILE_SUFFIX_REGEX_SOURCE, 'i');
 
 /** Returns true if the given path targets a container configuration file. */
 export function isContainerConfigPath(filePath: string): boolean {
@@ -127,15 +90,7 @@ export function isContainerConfigPath(filePath: string): boolean {
 }
 
 /** npm lifecycle scripts that auto-execute during install/publish/pack operations. */
-const LIFECYCLE_SCRIPTS = [
-  'preinstall',
-  'postinstall',
-  'prepare',
-  'prepublishOnly',
-  'prepack',
-  'postpack',
-  'install',
-];
+const LIFECYCLE_SCRIPTS: string[] = INVARIANT_LIFECYCLE_SCRIPTS;
 
 /** Returns true if the given path targets a well-known credential file location. */
 export function isCredentialPath(filePath: string): boolean {

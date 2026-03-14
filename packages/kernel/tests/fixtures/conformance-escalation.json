@@ -1,0 +1,16 @@
+[
+  {
+    "name": "repeated denials escalate to ELEVATED then HIGH then LOCKDOWN",
+    "denialThreshold": 3,
+    "violationThreshold": 2,
+    "actions": [
+      { "tool": "Bash", "command": "rm -rf /tmp", "agent": "test-agent" },
+      { "tool": "Bash", "command": "rm -rf /var", "agent": "test-agent" },
+      { "tool": "Bash", "command": "rm -rf /home", "agent": "test-agent" },
+      { "tool": "Bash", "command": "rm -rf /opt", "agent": "test-agent" },
+      { "tool": "Bash", "command": "rm -rf /srv", "agent": "test-agent" },
+      { "tool": "Bash", "command": "rm -rf /usr", "agent": "test-agent" }
+    ],
+    "expectedEscalation": [0, 1, 2, 2, 2, 3]
+  }
+]
