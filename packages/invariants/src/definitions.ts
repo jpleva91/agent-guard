@@ -833,11 +833,11 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     severity: 3,
     check(state) {
       const violations: string[] = [];
+      const actionType = state.currentActionType || '';
 
       // --- Shell command detection ---
       const command = state.currentCommand || '';
       if (command !== '') {
-        const actionType = state.currentActionType || '';
         // Only inspect shell.exec commands (or unset actionType for conservative checking)
         if (actionType === '' || actionType === 'shell.exec') {
           // Detect export of sensitive env vars
@@ -862,7 +862,6 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
 
       // --- File write detection (shell profile files) ---
       const target = state.currentTarget || '';
-      const actionType = state.currentActionType || '';
       const writingActions = ['file.write', 'file.move'];
 
       if (target !== '') {
