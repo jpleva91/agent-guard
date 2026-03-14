@@ -8,12 +8,12 @@ The system has one architectural spine: the **canonical event model**. All syste
 
 **Key characteristics:**
 - Governed action kernel: propose → normalize → evaluate → execute → emit
-- 10 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, no skill modification, no scheduled task modification, credential file creation, package script injection, lockfile integrity)
+- 17 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, no skill modification, no scheduled task modification, credential file creation, package script injection, lockfile integrity, recursive operation guard, large file write, CI/CD config modification, permission escalation, governance self-modification, container config modification, environment variable modification)
 - YAML/JSON policy format with pattern matching, scopes, and branch conditions
 - Escalation tracking: NORMAL → ELEVATED → HIGH → LOCKDOWN
 - JSONL event persistence for audit trail and replay
 - Claude Code adapter for PreToolUse/PostToolUse hooks
-- **pnpm monorepo** with Turbo orchestration: 15 packages under `packages/`, 3 apps under `apps/`
+- **pnpm monorepo** with Turbo orchestration: 16 packages under `packages/`, 3 apps under `apps/`
 - Each package compiles independently via `tsc`; CLI bundle via `esbuild` in `apps/cli`
 - Scoped npm packages: `@red-codes/*` for workspace modules, `@red-codes/agentguard` for published CLI
 - CLI has runtime dependencies (`chokidar`, `commander`, `pino`); optional `better-sqlite3` for SQLite storage backend; optional Firestore for cloud-based governance data sharing
@@ -43,6 +43,8 @@ packages/
 ├── core/src/                   # @red-codes/core — Shared utilities
 │   ├── types.ts                # Shared TypeScript type definitions
 │   ├── actions.ts              # 23 canonical action types across 8 classes
+│   ├── governance-data.ts      # Governance data loader (typed access to shared JSON data)
+│   ├── data/                   # JSON governance data (actions, blast-radius, destructive-patterns, escalation, git-action-patterns, invariant-patterns, tool-action-map)
 │   ├── hash.ts                 # Content hashing utilities
 │   ├── adapters.ts             # Adapter registry interface
 │   ├── rng.ts                  # Seeded random number generator
@@ -65,12 +67,13 @@ packages/
 │   ├── pack-loader.ts          # Policy pack loader (community policy sets)
 │   └── yaml-loader.ts          # YAML policy parser
 ├── invariants/src/             # @red-codes/invariants — Invariant system
-│   ├── definitions.ts          # 10 built-in invariant definitions
+│   ├── definitions.ts          # 17 built-in invariant definitions
 │   └── checker.ts              # Invariant evaluation engine
 ├── kernel/src/                 # @red-codes/kernel — Governed action kernel
 │   ├── kernel.ts               # Orchestrator (propose → evaluate → execute → emit)
 │   ├── aab.ts                  # Action Authorization Boundary (normalization)
 │   ├── blast-radius.ts         # Weighted blast radius computation engine
+│   ├── contract.ts             # Kernel contract definitions
 │   ├── decision.ts             # Runtime assurance engine
 │   ├── monitor.ts              # Escalation state machine
 │   ├── evidence.ts             # Evidence pack generation
@@ -99,6 +102,7 @@ packages/
 │   ├── index.ts                # Module re-exports
 │   ├── reporter.ts             # Output formatters (terminal, JSON, markdown)
 │   ├── risk-scorer.ts          # Per-run risk scoring engine
+│   ├── suggest.ts              # Analytics-based suggestions
 │   ├── trends.ts               # Violation trend computation
 │   └── types.ts                # Analytics type definitions
 ├── plugins/src/                # @red-codes/plugins — Plugin ecosystem
@@ -110,6 +114,7 @@ packages/
 │   └── index.ts                # Module re-exports
 ├── renderers/src/              # @red-codes/renderers — Renderer plugin system
 │   ├── registry.ts             # Renderer registry
+│   ├── tui-formatters.ts       # TUI formatting helpers
 │   ├── tui-renderer.ts         # TUI renderer implementation
 │   ├── types.ts                # Renderer type definitions
 │   └── index.ts                # Module re-exports
@@ -124,6 +129,7 @@ packages/
 │   ├── firestore-analytics.ts  # Firestore-backed analytics queries
 │   ├── firestore-sink.ts       # Firestore event/decision sink
 │   ├── firestore-store.ts      # Firestore event store implementation
+│   ├── webhook-sink.ts         # Webhook event sink
 │   └── types.ts                # Storage type definitions
 ├── telemetry/src/              # @red-codes/telemetry — Runtime telemetry
 │   ├── index.ts                # Module re-exports
@@ -133,8 +139,23 @@ packages/
 │   └── types.ts                # Telemetry type definitions
 ├── runtime/src/                # @red-codes/runtime — Agent runtime (placeholder)
 ├── sentinel01/src/             # @red-codes/sentinel01 — Robotics/edge module (placeholder)
+├── swarm/src/                  # @red-codes/swarm — Shareable agent swarm templates
+│   ├── config.ts               # Swarm configuration
+│   ├── manifest.ts             # Swarm manifest parsing
+│   ├── scaffolder.ts           # Swarm scaffolding
+│   ├── types.ts                # Swarm type definitions
+│   └── index.ts                # Module re-exports
 ├── adapter-openclaw/src/       # @red-codes/adapter-openclaw — OpenClaw adapter (placeholder)
-└── telemetry-client/src/       # @red-codes/telemetry-client — Telemetry client (placeholder)
+└── telemetry-client/src/       # @red-codes/telemetry-client — Telemetry client
+    ├── client.ts               # Telemetry client
+    ├── identity.ts             # Client identity management
+    ├── queue.ts                # Event queue interface
+    ├── queue-jsonl.ts          # JSONL-backed queue
+    ├── queue-sqlite.ts         # SQLite-backed queue
+    ├── sender.ts               # Event sender
+    ├── signing.ts              # Event signing
+    ├── types.ts                # Type definitions
+    └── index.ts                # Module re-exports
 
 apps/
 ├── cli/src/                    # @red-codes/agentguard — CLI (published npm package)
@@ -148,16 +169,24 @@ apps/
 │   ├── session-store.ts        # Session management
 │   ├── file-event-store.ts     # File-based event persistence
 │   ├── evidence-summary.ts     # Evidence summary generator for PR reports
-│   └── commands/               # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, claude-hook, claude-init, init, diff, evidence-pr, traces
+│   └── commands/               # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, policy-verify, claude-hook, claude-init, init, diff, evidence-pr, traces, telemetry
 ├── vscode-extension/src/       # agentguard-vscode — VS Code extension
 │   ├── extension.ts            # Extension entry point (sidebar panels, file watcher)
 │   ├── providers/              # Tree data providers (run status, run history, recent events)
 │   └── services/               # Event reader, notification formatter, notification service, diagnostics service, violation mapper
-└── telemetry-server/src/       # @red-codes/telemetry-server — Telemetry server (placeholder)
+└── telemetry-server/src/       # @red-codes/telemetry-server — Telemetry ingestion server
+    ├── app.ts                  # Express application setup
+    ├── config.ts               # Server configuration
+    ├── entry-lambda.ts         # AWS Lambda entry point
+    ├── entry-vercel.ts         # Vercel serverless entry point
+    ├── server.ts               # HTTP server
+    ├── middleware/              # API key auth, IP whitelist, rate limiter
+    ├── routes/                  # enrollment, batch ingest, events, decisions, health, traces
+    └── store/                   # In-memory store
 
 tests/
-├── *.test.js               # 14 JS test files (custom zero-dependency harness)
-└── ts/*.test.ts            # 77 TS test files (vitest)
+└── *.test.js               # 14 JS test files (custom zero-dependency harness)
+# 105 TS test files (vitest) distributed across packages/ and apps/ directories
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
 policies/                   # Policy packs (YAML: ci-safe, enterprise, open-source, strict)
 docs/                       # System documentation (architecture, event model, specs)
@@ -201,7 +230,7 @@ The kernel loop is the core of AgentGuard. Every agent action passes through it:
 1. Agent proposes action (Claude Code tool call → `RawAgentAction`)
 2. AAB normalizes intent (tool → action type, detect git/destructive commands)
 3. Policy evaluator matches rules (deny/allow with scopes, branches, limits)
-4. Invariant checker verifies system state (10 defaults)
+4. Invariant checker verifies system state (17 defaults)
 5. If allowed: execute via adapter (file/shell/git handlers)
 6. Emit lifecycle events: `ACTION_REQUESTED` → `ACTION_ALLOWED/DENIED` → `ACTION_EXECUTED/FAILED`
 7. Sink all events to JSONL for audit trail
@@ -223,6 +252,8 @@ Each workspace package maps to a single architectural concept:
 - **packages/core/** — Shared utilities (types, actions, hash, execution-log)
 - **packages/storage/** — Storage backends: SQLite and Firestore (opt-in alternatives to JSONL, indexed queries)
 - **packages/telemetry/** — Runtime telemetry and logging
+- **packages/swarm/** — Shareable agent swarm templates (config, manifest, scaffolder)
+- **packages/telemetry-client/** — Telemetry client (identity, signing, queue, sender)
 
 ### CLI Commands
 - `agentguard analytics` — Analyze violation patterns across governance sessions
@@ -244,6 +275,8 @@ Each workspace package maps to a single architectural concept:
 - `agentguard evidence-pr` — Attach governance evidence summary to a pull request
 - `agentguard traces [runId]` — Display policy evaluation traces for a run
 - `agentguard init <type>` — Scaffold governance extensions (invariant, policy-pack, adapter, renderer, replay-processor, firestore)
+- `agentguard telemetry` — Manage telemetry enrollment and settings
+- `agentguard policy-verify <file>` — Verify policy file structure and rules
 
 ### Event Model
 The canonical event model is the architectural spine. Event kinds defined in `packages/events/src/schema.ts`:
@@ -312,8 +345,8 @@ pnpm test --filter=@red-codes/kernel  # Test a single package
 **Test structure:**
 - **Vitest workspace** (`vitest.workspace.ts`): orchestrates tests across all packages
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (`tests/ts/*.test.ts`): 77 files using vitest
-- **Coverage areas**: adapters, analytics (including risk scorer), kernel (AAB, engine, monitor, blast radius, heartbeat, integration, e2e pipeline), CLI commands (args, guard, inspect, init, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate, diff, evidence-pr, traces), decision records, domain models, events, evidence packs, evidence summary, execution log, export-import roundtrip, impact forecast, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, validation), policy evaluation (including composer, pack loader, policy packs, evaluation trace), renderers, replay (engine, comparator, processor), simulation, SQLite storage (analytics, commands, migrations, session, sink, store, factory), Firestore storage, telemetry (including tracepoint), TUI renderer, violation mapper, VS Code event reader, YAML loading
+- **TypeScript tests** (distributed across `packages/*/tests/` and `apps/*/tests/`): 105 files using vitest
+- **Coverage areas**: adapters, analytics (including risk scorer), kernel (AAB, engine, monitor, blast radius, heartbeat, integration, e2e pipeline, conformance), CLI commands (args, guard, inspect, init, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate, policy-verify, diff, evidence-pr, traces, plugin), decision records, domain models, events, evidence packs, evidence summary, execution log, export-import roundtrip, impact forecast, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, sandbox, validation), policy evaluation (including composer, pack loader, policy packs, evaluation trace, suggest), renderers, replay (engine, comparator, processor), simulation, SQLite storage (analytics, commands, migrations, session, sink, store, factory), Firestore storage, webhook sink, swarm (scaffolder), telemetry (including tracepoint), telemetry client (client, identity, queue, sender, signing), telemetry server (enrollment, batch, rate limiter), TUI renderer, violation mapper, VS Code event reader, YAML loading
 
 ## CI/CD & Automation
 
