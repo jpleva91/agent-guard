@@ -84,6 +84,23 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[
     // Sink creation failure is non-fatal
   }
 
+  // Build tracer with webhook trace backend when using webhook storage
+  let tracer: import('../../telemetry/tracer.js').Tracer | undefined;
+  if (storageConfig.backend === 'webhook') {
+    const { createTracer } = await import('../../telemetry/tracer.js');
+    const { createWebhookTraceBackend } = await import('../../storage/webhook-sink.js');
+    tracer = createTracer({
+      backends: [
+        createWebhookTraceBackend({
+          url: storageConfig.webhookUrl ?? process.env.AGENTGUARD_WEBHOOK_URL ?? '',
+          headers: storageConfig.webhookHeaders,
+          batchSize: storageConfig.webhookBatchSize,
+          flushIntervalMs: storageConfig.webhookFlushIntervalMs,
+        }),
+      ],
+    });
+  }
+
   // Build kernel — dryRun: true = evaluate policies/invariants only (no adapter execution).
   // Claude Code handles actual tool execution; the hook only governs (allow/deny).
   // Events and decision records are still emitted and persisted to the configured storage backend.
@@ -95,6 +112,7 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[
     decisionSinks: [decisionSink, telemetrySink].filter(
       Boolean
     ) as import('../../kernel/decisions/types.js').DecisionSink[],
+    tracer,
   });
 
   // Record session in the sessions table (SQLite only).

@@ -24,6 +24,8 @@ import { createStorageBundle } from '../../storage/factory.js';
 import type { StorageBundle } from '../../storage/factory.js';
 import type { StorageConfig } from '../../storage/types.js';
 import type { PolicyTracePayload } from '../../renderers/types.js';
+import { createTracer } from '../../telemetry/tracer.js';
+import { createWebhookTraceBackend } from '../../storage/webhook-sink.js';
 
 export interface GuardOptions {
   /** Single policy path (backwards compatible) */
@@ -80,6 +82,21 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
   const decisionSink = storage.createDecisionSink(runId);
   const telemetrySink = createTelemetryDecisionSink();
 
+  // Build tracer with webhook trace backend when using webhook storage
+  const tracer =
+    storeConfig.backend === 'webhook'
+      ? createTracer({
+          backends: [
+            createWebhookTraceBackend({
+              url: storeConfig.webhookUrl ?? process.env.AGENTGUARD_WEBHOOK_URL ?? '',
+              headers: storeConfig.webhookHeaders,
+              batchSize: storeConfig.webhookBatchSize,
+              flushIntervalMs: storeConfig.webhookFlushIntervalMs,
+            }),
+          ],
+        })
+      : undefined;
+
   // Build kernel config
   const kernelConfig: KernelConfig = {
     runId,
@@ -90,6 +107,7 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     sinks: [eventSink],
     decisionSinks: [decisionSink, telemetrySink],
     simulators: simulators.all().length > 0 ? simulators : undefined,
+    tracer,
   };
 
   const kernel = createKernel(kernelConfig);

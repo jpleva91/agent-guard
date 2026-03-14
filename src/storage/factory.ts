@@ -5,6 +5,8 @@ import { join, dirname } from 'node:path';
 import { existsSync, mkdirSync } from 'node:fs';
 import { createJsonlSink } from '../events/jsonl.js';
 import { createDecisionJsonlSink } from '../events/decision-jsonl.js';
+import { createWebhookEventSink, createWebhookDecisionSink } from './webhook-sink.js';
+import type { WebhookConfig } from './webhook-sink.js';
 import type { EventSink } from '../kernel/kernel.js';
 import type { DecisionSink } from '../kernel/decisions/types.js';
 import type { StorageConfig } from './types.js';
@@ -29,6 +31,9 @@ export async function createStorageBundle(config: StorageConfig): Promise<Storag
   }
   if (config.backend === 'firestore') {
     return createFirestoreBundle(config);
+  }
+  if (config.backend === 'webhook') {
+    return createWebhookBundle(config);
   }
   return createJsonlBundle(config);
 }
@@ -134,6 +139,50 @@ async function createFirestoreBundle(config: StorageConfig): Promise<StorageBund
   };
 }
 
+function createWebhookBundle(config: StorageConfig): StorageBundle {
+  const url = config.webhookUrl ?? process.env.AGENTGUARD_WEBHOOK_URL;
+  if (!url) {
+    throw new Error(
+      'Webhook backend requires a URL. Set --webhook-url <url> or AGENTGUARD_WEBHOOK_URL env var.'
+    );
+  }
+
+  const headers: Record<string, string> = { ...config.webhookHeaders };
+  const envAuth = process.env.AGENTGUARD_WEBHOOK_AUTH;
+  if (envAuth && !headers['Authorization']) {
+    headers['Authorization'] = envAuth;
+  }
+
+  const webhookConfig: WebhookConfig = {
+    url,
+    headers,
+    batchSize: config.webhookBatchSize,
+    flushIntervalMs: config.webhookFlushIntervalMs,
+  };
+
+  // Track sinks so close() can flush them all
+  const sinks: Array<{ close?: () => void; flush?: () => void }> = [];
+
+  return {
+    createEventSink(runId: string): EventSink {
+      const sink = createWebhookEventSink(webhookConfig, runId);
+      sinks.push(sink);
+      return sink;
+    },
+    createDecisionSink(runId: string): DecisionSink {
+      const sink = createWebhookDecisionSink(webhookConfig, runId);
+      sinks.push(sink);
+      return sink;
+    },
+    close(): void {
+      for (const sink of sinks) {
+        sink.close?.();
+        sink.flush?.();
+      }
+    },
+  };
+}
+
 /**
  * Resolve the SQLite database path from config, with home-dir default.
  *
@@ -168,7 +217,14 @@ export function resolveStorageConfig(args: string[]): StorageConfig {
   const envStore = process.env.AGENTGUARD_STORE;
 
   const raw = storeArg !== undefined ? storeArg : envStore;
-  const backend = raw === 'sqlite' ? 'sqlite' : raw === 'firestore' ? 'firestore' : 'jsonl';
+  const backend =
+    raw === 'sqlite'
+      ? 'sqlite'
+      : raw === 'firestore'
+        ? 'firestore'
+        : raw === 'webhook'
+          ? 'webhook'
+          : 'jsonl';
 
   const dirIdx = args.findIndex((a) => a === '--dir' || a === '-d');
   const baseDir = dirIdx !== -1 ? args[dirIdx + 1] : undefined;
@@ -178,5 +234,9 @@ export function resolveStorageConfig(args: string[]): StorageConfig {
   const dbPathArg = dbPathIdx !== -1 ? args[dbPathIdx + 1] : undefined;
   const dbPath = dbPathArg ?? process.env.AGENTGUARD_DB_PATH ?? undefined;
 
-  return { backend, baseDir, dbPath };
+  // --webhook-url flag or AGENTGUARD_WEBHOOK_URL env var for webhook endpoint
+  const webhookUrlIdx = args.findIndex((a) => a === '--webhook-url');
+  const webhookUrl = webhookUrlIdx !== -1 ? args[webhookUrlIdx + 1] : undefined;
+
+  return { backend, baseDir, dbPath, webhookUrl };
 }

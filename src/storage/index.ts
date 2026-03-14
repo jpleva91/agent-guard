@@ -58,5 +58,11 @@ export {
   loadRunEventsFirestore,
 } from './firestore-store.js';
 export { aggregateViolationsFirestore, loadAllEventsFirestore } from './firestore-analytics.js';
+export {
+  createWebhookEventSink,
+  createWebhookDecisionSink,
+  createWebhookTraceBackend,
+} from './webhook-sink.js';
+export type { WebhookConfig } from './webhook-sink.js';
 export type { StorageBundle } from './factory.js';
 export { createStorageBundle, resolveStorageConfig, resolveSqlitePath } from './factory.js';

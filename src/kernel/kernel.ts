@@ -29,6 +29,7 @@ import type { SimulatorRegistry, ImpactForecast } from './simulation/types.js';
 import { buildImpactForecast } from './simulation/forecast.js';
 import type { SeededRng } from '../core/rng.js';
 import { generateSeed, createSeededRng } from '../core/rng.js';
+import type { Tracer } from '../telemetry/tracer.js';
 
 export interface KernelResult {
   allowed: boolean;
@@ -67,6 +68,8 @@ export interface KernelConfig extends MonitorConfig {
   rng?: SeededRng;
   /** Maximum time (ms) for the full propose pipeline. Default: 30000 */
   proposalTimeoutMs?: number;
+  /** Optional tracer for kernel-level tracing. Spans are sent to registered backends. */
+  tracer?: Tracer;
 }
 
 export interface Kernel {
@@ -96,6 +99,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
   const simulators = config.simulators || null;
   const blastRadiusThreshold = config.simulationBlastRadiusThreshold ?? 50;
   const proposalTimeoutMs = config.proposalTimeoutMs ?? 30_000;
+  const tracer = config.tracer ?? null;
   const actionLog: KernelResult[] = [];
   let eventCount = 0;
 
@@ -128,6 +132,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
 
   return {
     propose: async (rawAction, systemContext = {}) => {
+      const span = tracer?.startSpan('kernel.propose', `propose:${rawAction.tool || 'unknown'}`) ?? null;
       const proposalBody = async (): Promise<KernelResult> => {
         const allEvents: DomainEvent[] = [];
 
@@ -548,20 +553,30 @@ export function createKernel(config: KernelConfig = {}): Kernel {
         return result;
       };
 
-      if (proposalTimeoutMs <= 0 || proposalTimeoutMs === Infinity) {
-        return proposalBody();
-      }
-      let timer: ReturnType<typeof setTimeout>;
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        timer = setTimeout(
-          () => reject(new Error(`Proposal timed out after ${proposalTimeoutMs}ms`)),
-          proposalTimeoutMs
-        );
-      });
       try {
-        return await Promise.race([proposalBody(), timeoutPromise]);
-      } finally {
-        clearTimeout(timer!);
+        let result: KernelResult;
+        if (proposalTimeoutMs <= 0 || proposalTimeoutMs === Infinity) {
+          result = await proposalBody();
+        } else {
+          let timer: ReturnType<typeof setTimeout>;
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            timer = setTimeout(
+              () => reject(new Error(`Proposal timed out after ${proposalTimeoutMs}ms`)),
+              proposalTimeoutMs
+            );
+          });
+          try {
+            result = await Promise.race([proposalBody(), timeoutPromise]);
+          } finally {
+            clearTimeout(timer!);
+          }
+        }
+        span?.setAttribute('outcome', result.allowed ? 'allow' : 'deny');
+        span?.end();
+        return result;
+      } catch (err) {
+        span?.endWithError(err instanceof Error ? err.message : String(err));
+        throw err;
       }
     },
 
@@ -588,6 +603,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
       for (const sink of decisionSinks) {
         if (sink.flush) sink.flush();
       }
+      tracer?.shutdown();
     },
   };
 }
