@@ -37,6 +37,10 @@ export interface SystemState {
   currentActionType?: string;
   /** Content diff or new content for the current file action (for content-aware invariants) */
   fileContentDiff?: string;
+  /** Byte size of the content being written (for file.write actions) */
+  writeSizeBytes?: number;
+  /** Maximum allowed single-file write size in bytes (default: 102400 = 100KB) */
+  writeSizeBytesLimit?: number;
 }
 
 /** Patterns matched as substrings (case-insensitive) against file paths. */
@@ -498,6 +502,42 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         actual: holds
           ? 'No recursive destructive operations detected'
           : `Recursive destructive operation detected: ${violations.join(', ')}`,
+      };
+    },
+  },
+
+
+  {
+    id: 'large-file-write',
+    name: 'Large File Write Limit',
+    description:
+      'Single file writes must not exceed a size threshold to prevent data dumps or runaway generation',
+    severity: 3,
+    check(state) {
+      const actionType = state.currentActionType || '';
+
+      // Only applies to file.write actions — other action types are not constrained.
+      // When actionType is unset (''), apply the check conservatively rather than skipping.
+      // This ensures writes from unknown action sources are still size-constrained.
+      if (actionType !== '' && actionType !== 'file.write') {
+        return {
+          holds: true,
+          expected: 'N/A',
+          actual: `Action type ${actionType} is not file.write`,
+        };
+      }
+
+      const sizeBytes = state.writeSizeBytes;
+      if (sizeBytes === undefined || sizeBytes === null) {
+        return { holds: true, expected: 'N/A', actual: 'No write size specified' };
+      }
+
+      const limit = state.writeSizeBytesLimit || 102400; // 100KB default
+
+      return {
+        holds: sizeBytes <= limit,
+        expected: `Write size at most ${limit} bytes`,
+        actual: `Write size: ${sizeBytes} bytes`,
       };
     },
   },

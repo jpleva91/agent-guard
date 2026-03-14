@@ -569,6 +569,8 @@ describe('no-package-script-injection', () => {
       currentTarget: 'src/index.ts',
       currentActionType: 'file.write',
       fileContentDiff: '"scripts": { "test": "vitest" }',
+      writeSizeBytes: 5000,
+      writeSizeBytesLimit: 10000,
     });
     expect(result.holds).toBe(true);
   });
@@ -723,6 +725,119 @@ describe('no-package-script-injection', () => {
       fileContentDiff: '"scripts": { "postinstall": "bad" }',
     });
     expect(result.holds).toBe(false);
+  });
+});
+
+describe('large-file-write', () => {
+  const inv = findInvariant('large-file-write');
+
+  it('has severity 3', () => {
+    expect(inv.severity).toBe(3);
+  });
+
+  it('holds when write size is within default limit (100KB)', () => {
+    const result = inv.check({
+      writeSizeBytes: 50000,
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('fails when write size exceeds default limit (100KB)', () => {
+    const result = inv.check({
+      writeSizeBytes: 200000,
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('200000');
+  });
+
+  it('holds at exactly the default limit', () => {
+    const result = inv.check({
+      writeSizeBytes: 102400,
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('fails at one byte over the default limit', () => {
+    const result = inv.check({
+      writeSizeBytes: 102401,
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('respects custom writeSizeBytesLimit', () => {
+    const result = inv.check({
+      writeSizeBytes: 5000,
+      writeSizeBytesLimit: 4096,
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.expected).toContain('4096');
+  });
+
+  it('holds with custom limit when write is under', () => {
+    const result = inv.check({
+      writeSizeBytes: 3000,
+      writeSizeBytesLimit: 4096,
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('skips check for non-file.write action types', () => {
+    const result = inv.check({
+      writeSizeBytes: 999999,
+      currentActionType: 'file.read',
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('file.read');
+  });
+
+  it('skips check for git actions', () => {
+    const result = inv.check({
+      writeSizeBytes: 999999,
+      currentActionType: 'git.push',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('skips check for shell.exec actions', () => {
+    const result = inv.check({
+      writeSizeBytes: 999999,
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when writeSizeBytes is not set', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('No write size');
+  });
+
+  it('holds with empty state', () => {
+    const result = inv.check({});
+    expect(result.holds).toBe(true);
+  });
+
+  it('checks write size when actionType is not set (conservative)', () => {
+    const result = inv.check({
+      writeSizeBytes: 200000,
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('holds for zero-byte writes', () => {
+    const result = inv.check({
+      writeSizeBytes: 0,
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(true);
   });
 });
 
@@ -1019,6 +1134,8 @@ describe('buildSystemState', () => {
     expect(state.currentCommand).toBe('');
     expect(state.currentActionType).toBe('');
     expect(state.fileContentDiff).toBe('');
+    expect(state.writeSizeBytes).toBeUndefined();
+    expect(state.writeSizeBytesLimit).toBeUndefined();
   });
 
   it('populates from context values', () => {
@@ -1036,6 +1153,8 @@ describe('buildSystemState', () => {
       currentCommand: 'npm test',
       currentActionType: 'file.write',
       fileContentDiff: '"scripts": { "test": "vitest" }',
+      writeSizeBytes: 5000,
+      writeSizeBytesLimit: 10000,
     });
     expect(state.modifiedFiles).toEqual(['a.ts', 'b.ts']);
     expect(state.targetBranch).toBe('main');
@@ -1045,6 +1164,8 @@ describe('buildSystemState', () => {
     expect(state.currentCommand).toBe('npm test');
     expect(state.currentActionType).toBe('file.write');
     expect(state.fileContentDiff).toBe('"scripts": { "test": "vitest" }');
+    expect(state.writeSizeBytes).toBe(5000);
+    expect(state.writeSizeBytesLimit).toBe(10000);
   });
 
   it('computes filesAffected from modifiedFiles when not specified', () => {

@@ -75,5 +75,7 @@ export function buildSystemState(context: Record<string, unknown> = {}): SystemS
     currentCommand: (context.currentCommand as string) || '',
     currentActionType: (context.currentActionType as string) || '',
     fileContentDiff: (context.fileContentDiff as string) || '',
+    writeSizeBytes: context.writeSizeBytes as number | undefined,
+    writeSizeBytesLimit: context.writeSizeBytesLimit as number | undefined,
   };
 }

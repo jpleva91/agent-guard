@@ -120,6 +120,12 @@ export function createEngine(config: EngineConfig = {}): Engine {
         authEvents.push(traceEvent);
       }
 
+      // Compute write size from raw action content (character length ≈ byte size for UTF-8 code)
+      const writeSizeBytes =
+        rawAction?.content !== undefined && rawAction?.content !== null
+          ? rawAction.content.length
+          : (systemContext.writeSizeBytes as number | undefined);
+
       const state = buildSystemState({
         ...systemContext,
         currentTarget: intent.target,
@@ -130,6 +136,7 @@ export function createEngine(config: EngineConfig = {}): Engine {
         forcePush: intent.action === 'git.force-push',
         directPush: intent.action === 'git.push',
         isPush: intent.action === 'git.push' || intent.action === 'git.force-push',
+        writeSizeBytes,
       });
 
       const {
