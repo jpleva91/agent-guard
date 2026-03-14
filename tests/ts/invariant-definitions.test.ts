@@ -6,6 +6,7 @@ import {
   CREDENTIAL_PATH_PATTERNS,
   CREDENTIAL_BASENAME_PATTERNS,
   isCredentialPath,
+  isContainerConfigPath,
 } from '../../src/invariants/definitions.js';
 import type { SystemState } from '../../src/invariants/definitions.js';
 import { checkAllInvariants, buildSystemState } from '../../src/invariants/checker.js';
@@ -772,6 +773,196 @@ describe('lockfile-integrity', () => {
       modifiedFiles: ['packages/core/package.json'],
     });
     expect(result.holds).toBe(false);
+  });
+});
+
+describe('isContainerConfigPath', () => {
+  it('detects Dockerfile', () => {
+    expect(isContainerConfigPath('Dockerfile')).toBe(true);
+  });
+
+  it('detects Dockerfile in nested path', () => {
+    expect(isContainerConfigPath('services/api/Dockerfile')).toBe(true);
+  });
+
+  it('detects Dockerfile case-insensitively', () => {
+    expect(isContainerConfigPath('DOCKERFILE')).toBe(true);
+    expect(isContainerConfigPath('dockerfile')).toBe(true);
+  });
+
+  it('detects *.dockerfile suffix', () => {
+    expect(isContainerConfigPath('app.dockerfile')).toBe(true);
+    expect(isContainerConfigPath('prod.dockerfile')).toBe(true);
+    expect(isContainerConfigPath('services/web/dev.Dockerfile')).toBe(true);
+  });
+
+  it('detects docker-compose.yml', () => {
+    expect(isContainerConfigPath('docker-compose.yml')).toBe(true);
+    expect(isContainerConfigPath('docker-compose.yaml')).toBe(true);
+  });
+
+  it('detects compose.yml', () => {
+    expect(isContainerConfigPath('compose.yml')).toBe(true);
+    expect(isContainerConfigPath('compose.yaml')).toBe(true);
+  });
+
+  it('detects .dockerignore', () => {
+    expect(isContainerConfigPath('.dockerignore')).toBe(true);
+  });
+
+  it('detects Containerfile (Podman)', () => {
+    expect(isContainerConfigPath('Containerfile')).toBe(true);
+    expect(isContainerConfigPath('containerfile')).toBe(true);
+  });
+
+  it('handles Windows backslash paths', () => {
+    expect(isContainerConfigPath('services\\api\\Dockerfile')).toBe(true);
+    expect(isContainerConfigPath('deploy\\docker-compose.yml')).toBe(true);
+  });
+
+  it('returns false for safe paths', () => {
+    expect(isContainerConfigPath('src/index.ts')).toBe(false);
+    expect(isContainerConfigPath('README.md')).toBe(false);
+    expect(isContainerConfigPath('package.json')).toBe(false);
+  });
+
+  it('returns false for paths that partially match but are not container configs', () => {
+    expect(isContainerConfigPath('docs/dockerfile-guide.md')).toBe(false);
+    expect(isContainerConfigPath('src/docker-utils.ts')).toBe(false);
+    expect(isContainerConfigPath('compose-helper.js')).toBe(false);
+  });
+});
+
+describe('no-container-config-modification', () => {
+  const inv = findInvariant('no-container-config-modification');
+
+  it('has severity 3', () => {
+    expect(inv.severity).toBe(3);
+  });
+
+  it('fails when file.write targets Dockerfile', () => {
+    const result = inv.check({
+      currentTarget: 'Dockerfile',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('Dockerfile');
+  });
+
+  it('fails when file.write targets nested Dockerfile', () => {
+    const result = inv.check({
+      currentTarget: 'services/api/Dockerfile',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('services/api/Dockerfile');
+  });
+
+  it('fails when file.write targets docker-compose.yml', () => {
+    const result = inv.check({
+      currentTarget: 'docker-compose.yml',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when file.write targets compose.yaml', () => {
+    const result = inv.check({
+      currentTarget: 'compose.yaml',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when file.write targets .dockerignore', () => {
+    const result = inv.check({
+      currentTarget: '.dockerignore',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when file.write targets Containerfile', () => {
+    const result = inv.check({
+      currentTarget: 'Containerfile',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when file.write targets *.dockerfile suffix', () => {
+    const result = inv.check({
+      currentTarget: 'app.dockerfile',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when file.move targets container config', () => {
+    const result = inv.check({
+      currentTarget: 'docker-compose.yaml',
+      currentActionType: 'file.move',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('holds when file.read targets container config (reads are allowed)', () => {
+    const result = inv.check({
+      currentTarget: 'Dockerfile',
+      currentActionType: 'file.read',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when file.delete targets container config (deletion not blocked)', () => {
+    const result = inv.check({
+      currentTarget: 'Dockerfile',
+      currentActionType: 'file.delete',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when file.write targets a safe path', () => {
+    const result = inv.check({
+      currentTarget: 'src/index.ts',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds with empty state', () => {
+    const result = inv.check({});
+    expect(result.holds).toBe(true);
+  });
+
+  it('still checks container config when actionType is not set (conservative)', () => {
+    const result = inv.check({
+      currentTarget: 'Dockerfile',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('handles Windows backslash paths', () => {
+    const result = inv.check({
+      currentTarget: 'services\\api\\Dockerfile',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when modifiedFiles includes container configs', () => {
+    const result = inv.check({
+      modifiedFiles: ['src/index.ts', 'docker-compose.yml'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('docker-compose.yml');
+  });
+
+  it('holds when modifiedFiles has no container configs', () => {
+    const result = inv.check({
+      modifiedFiles: ['src/index.ts', 'README.md'],
+    });
+    expect(result.holds).toBe(true);
   });
 });
 

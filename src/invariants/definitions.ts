@@ -92,6 +92,36 @@ export const CREDENTIAL_BASENAME_PATTERNS = ['.npmrc', '.pypirc', '.netrc', '.cu
 /** Matches .env files: .env, .env.local, .env.production, etc. */
 const ENV_FILE_REGEX = /(?:^|[\\/])\.env(?:\.\w+)?$/i;
 
+/** Container configuration file basenames (case-insensitive). */
+const CONTAINER_CONFIG_BASENAMES = [
+  'dockerfile',
+  'docker-compose.yml',
+  'docker-compose.yaml',
+  'compose.yml',
+  'compose.yaml',
+  '.dockerignore',
+  'containerfile',
+];
+
+/** Matches *.dockerfile files (e.g., app.dockerfile, prod.dockerfile). */
+const DOCKERFILE_SUFFIX_REGEX = /\.dockerfile$/i;
+
+/** Returns true if the given path targets a container configuration file. */
+export function isContainerConfigPath(filePath: string): boolean {
+  const basename = filePath.split(/[\\/]/).pop() || '';
+  const lowerBase = basename.toLowerCase();
+
+  if (CONTAINER_CONFIG_BASENAMES.includes(lowerBase)) {
+    return true;
+  }
+
+  if (DOCKERFILE_SUFFIX_REGEX.test(basename)) {
+    return true;
+  }
+
+  return false;
+}
+
 /** npm lifecycle scripts that auto-execute during install/publish/pack operations. */
 const LIFECYCLE_SCRIPTS = [
   'preinstall',
@@ -497,6 +527,52 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         holds: lockfileChanged,
         expected: 'Lockfile updated with manifest',
         actual: lockfileChanged ? 'Lockfile updated' : 'Manifest changed without lockfile',
+      };
+    },
+  },
+
+  {
+    id: 'no-container-config-modification',
+    name: 'No Container Config Modification',
+    description:
+      'Container configuration files (Dockerfile, docker-compose, .dockerignore, Containerfile) must not be modified without authorization',
+    severity: 3,
+    check(state) {
+      const actionType = state.currentActionType || '';
+      const writingActions = ['file.write', 'file.move'];
+
+      // Only applies to write/move actions — reading container configs is allowed
+      if (actionType !== '' && !writingActions.includes(actionType)) {
+        return {
+          holds: true,
+          expected: 'N/A',
+          actual: `Action type ${actionType} is not a write operation`,
+        };
+      }
+
+      const target = state.currentTarget || '';
+      if (target !== '' && isContainerConfigPath(target)) {
+        return {
+          holds: false,
+          expected: 'No modifications to container configuration files',
+          actual: `Container config file targeted: ${target}`,
+        };
+      }
+
+      // Also check modifiedFiles for bulk operations
+      const containerFiles = (state.modifiedFiles || []).filter((f) => isContainerConfigPath(f));
+      if (containerFiles.length > 0) {
+        return {
+          holds: false,
+          expected: 'No modifications to container configuration files',
+          actual: `Container config files modified: ${containerFiles.join(', ')}`,
+        };
+      }
+
+      return {
+        holds: true,
+        expected: 'No modifications to container configuration files',
+        actual: 'No container config files affected',
       };
     },
   },
