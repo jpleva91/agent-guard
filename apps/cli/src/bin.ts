@@ -278,6 +278,23 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard traces run_1234567890_abc',
     ],
   },
+  telemetry: {
+    name: 'agentguard telemetry',
+    description: 'Manage telemetry enrollment and settings',
+    usage: 'agentguard telemetry <command> [flags]',
+    flags: [
+      { flag: '--server, -s <url>', description: 'Telemetry server URL (enroll command)' },
+      { flag: '--mode, -m <mode>', description: 'Telemetry mode: anonymous or verified (enable command)' },
+    ],
+    examples: [
+      'agentguard telemetry status',
+      'agentguard telemetry enable',
+      'agentguard telemetry enable --mode verified',
+      'agentguard telemetry enroll --server https://telemetry.agentguard.dev',
+      'agentguard telemetry disable',
+      'agentguard telemetry reset',
+    ],
+  },
   'evidence-pr': {
     name: 'agentguard evidence-pr',
     description: 'Attach governance evidence report to a pull request',
@@ -488,6 +505,18 @@ async function main() {
       break;
     }
 
+    case 'telemetry': {
+      if (wantsHelp) {
+        const { telemetry: telemetryCmd } = await import('./commands/telemetry.js');
+        await telemetryCmd(['help']);
+        break;
+      }
+      const { telemetry: telemetryCmd } = await import('./commands/telemetry.js');
+      const code = await telemetryCmd(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
     case 'claude-init': {
       const { claudeInit } = await import('./commands/claude-init.js');
       await claudeInit(args.slice(1));
@@ -598,6 +627,14 @@ function printHelp(): void {
     agentguard ci-check <session>             Verify governance session in CI
     agentguard ci-check --last                Check most recent run locally
 
+
+  \x1b[1mTelemetry:\x1b[0m
+    agentguard telemetry status               Show telemetry mode and identity
+    agentguard telemetry enable               Enable telemetry (anonymous mode)
+    agentguard telemetry enable --mode verified  Enable verified telemetry
+    agentguard telemetry enroll --server <url>   Enroll for verified telemetry
+    agentguard telemetry disable              Disable telemetry
+    agentguard telemetry reset                Delete identity and queue data
 
   \x1b[1mIntegration:\x1b[0m
     agentguard claude-init                    Set up Claude Code hook integration

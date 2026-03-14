@@ -17,6 +17,7 @@
     "build": "tsc -b",
     "dev": "tsx src/server.ts",
     "start": "node dist/server.js",
+    "test": "vitest run",
     "lint": "eslint src/",
     "ts:check": "tsc --noEmit",
     "clean": "rm -rf dist"
@@ -24,6 +25,7 @@
   "dependencies": {
     "@red-codes/core": "workspace:*",
     "@red-codes/telemetry": "workspace:*",
+    "@red-codes/telemetry-client": "workspace:*",
     "hono": "^4.7.0",
     "@hono/node-server": "^1.14.0"
   }

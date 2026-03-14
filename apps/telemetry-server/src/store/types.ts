@@ -39,3 +39,29 @@ export interface TelemetryStore {
   queryDecisions(filter: DecisionQueryFilter): QueryResult<GovernanceDecisionRecord>;
   queryTraces(filter: TraceQueryFilter): QueryResult<TraceSpan>;
 }
+
+/** Install record for enrolled telemetry clients */
+export interface InstallRecord {
+  readonly install_id: string;
+  readonly public_key: string; // PEM-encoded Ed25519
+  readonly token_hash: string; // SHA-256 hex of the installation token
+  readonly version: string;
+  readonly enrolled_at: string; // ISO 8601
+}
+
+/** Stored telemetry payload event */
+export interface TelemetryPayloadRecord {
+  readonly event_id: string;
+  readonly install_id: string | null; // null for anonymous
+  readonly event_json: string;
+  readonly received_at: string; // ISO 8601
+}
+
+/** Extended store with enrollment and payload telemetry support */
+export interface TelemetryDataStore extends TelemetryStore {
+  createInstall(record: InstallRecord): void;
+  findInstallById(installId: string): InstallRecord | null;
+  findInstallByTokenHash(tokenHash: string): InstallRecord | null;
+  appendTelemetryPayloads(records: TelemetryPayloadRecord[]): void;
+  queryTelemetryPayloads(filter: QueryFilter): QueryResult<TelemetryPayloadRecord>;
+}

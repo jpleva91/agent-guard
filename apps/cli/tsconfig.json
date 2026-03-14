@@ -16,6 +16,7 @@
     { "path": "../../packages/storage" },
     { "path": "../../packages/analytics" },
     { "path": "../../packages/telemetry" },
+    { "path": "../../packages/telemetry-client" },
     { "path": "../../packages/plugins" },
     { "path": "../../packages/renderers" }
   ]

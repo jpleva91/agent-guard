@@ -42,6 +42,7 @@
     "@red-codes/storage": "workspace:*",
     "@red-codes/analytics": "workspace:*",
     "@red-codes/telemetry": "workspace:*",
+    "@red-codes/telemetry-client": "workspace:*",
     "@red-codes/plugins": "workspace:*",
     "@red-codes/renderers": "workspace:*",
     "commander": "^14.0.3",

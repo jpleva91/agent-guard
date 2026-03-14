@@ -1,7 +1,7 @@
 {
   "name": "@red-codes/telemetry-client",
   "version": "0.1.0",
-  "description": "Telemetry client SDK for AgentGuard (placeholder)",
+  "description": "Privacy-first telemetry client SDK for AgentGuard",
   "type": "module",
   "license": "Apache-2.0",
   "main": "./dist/index.js",
@@ -14,7 +14,7 @@
   },
   "scripts": {
     "build": "tsc -b",
-    
+    "test": "vitest run",
     "lint": "eslint src/",
     "ts:check": "tsc --noEmit",
     "clean": "rm -rf dist"

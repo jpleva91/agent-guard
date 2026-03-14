@@ -5,6 +5,11 @@ export interface ServerConfig {
   readonly allowedIps: string[];
   readonly apiKey: string | undefined;
   readonly isDev: boolean;
+  readonly enrollmentEnabled: boolean;
+  readonly maxRequestSizeMb: number;
+  readonly rateLimitPerIp: number;
+  readonly rateLimitPerInstall: number;
+  readonly antiReplayWindowMs: number;
 }
 
 export function loadConfig(): ServerConfig {
@@ -19,5 +24,10 @@ export function loadConfig(): ServerConfig {
       : [],
     apiKey: env.API_KEY || undefined,
     isDev: env.NODE_ENV === 'development',
+    enrollmentEnabled: env.ENROLLMENT_ENABLED !== 'false',
+    maxRequestSizeMb: env.MAX_REQUEST_SIZE_MB ? Number(env.MAX_REQUEST_SIZE_MB) : 1,
+    rateLimitPerIp: env.RATE_LIMIT_PER_IP ? Number(env.RATE_LIMIT_PER_IP) : 100,
+    rateLimitPerInstall: env.RATE_LIMIT_PER_INSTALL ? Number(env.RATE_LIMIT_PER_INSTALL) : 60,
+    antiReplayWindowMs: env.ANTI_REPLAY_WINDOW_MS ? Number(env.ANTI_REPLAY_WINDOW_MS) : 300_000,
   };
 }

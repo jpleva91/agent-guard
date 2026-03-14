@@ -4,11 +4,14 @@
 import type { DomainEvent, GovernanceDecisionRecord } from '@red-codes/core';
 import type { TraceSpan } from '@red-codes/telemetry';
 import type {
-  TelemetryStore,
+  TelemetryDataStore,
   EventQueryFilter,
   DecisionQueryFilter,
   TraceQueryFilter,
+  QueryFilter,
   QueryResult,
+  InstallRecord,
+  TelemetryPayloadRecord,
 } from './types.js';
 
 interface StoredEvent {
@@ -45,10 +48,12 @@ function matchesTimeRange(
   return true;
 }
 
-export function createMemoryStore(maxSize = DEFAULT_MAX_SIZE): TelemetryStore {
+export function createMemoryStore(maxSize = DEFAULT_MAX_SIZE): TelemetryDataStore {
   const events: StoredEvent[] = [];
   const decisions: StoredDecision[] = [];
   const traces: TraceSpan[] = [];
+  const installs: InstallRecord[] = [];
+  const payloads: TelemetryPayloadRecord[] = [];
 
   function evict<T>(arr: T[]): void {
     if (arr.length > maxSize) {
@@ -140,6 +145,51 @@ export function createMemoryStore(maxSize = DEFAULT_MAX_SIZE): TelemetryStore {
       if (filter.since || filter.until) {
         filtered = filtered.filter((s) =>
           matchesTimeRange(s.startTime, filter.since, filter.until)
+        );
+      }
+
+      const total = filtered.length;
+      const limit = clampLimit(filter.limit);
+      const offset = clampOffset(filter.offset);
+      const data = filtered.slice(offset, offset + limit);
+
+      return { data, total, limit, offset };
+    },
+
+    // --- Enrollment & payload telemetry ---
+
+    createInstall(record: InstallRecord): void {
+      // Upsert: replace if install_id already exists
+      const idx = installs.findIndex((i) => i.install_id === record.install_id);
+      if (idx >= 0) {
+        installs[idx] = record;
+      } else {
+        installs.push(record);
+        evict(installs);
+      }
+    },
+
+    findInstallById(installId: string): InstallRecord | null {
+      return installs.find((i) => i.install_id === installId) ?? null;
+    },
+
+    findInstallByTokenHash(tokenHash: string): InstallRecord | null {
+      return installs.find((i) => i.token_hash === tokenHash) ?? null;
+    },
+
+    appendTelemetryPayloads(records: TelemetryPayloadRecord[]): void {
+      for (const record of records) {
+        payloads.push(record);
+      }
+      evict(payloads);
+    },
+
+    queryTelemetryPayloads(filter: QueryFilter): QueryResult<TelemetryPayloadRecord> {
+      let filtered = [...payloads];
+
+      if (filter.since || filter.until) {
+        filtered = filtered.filter((p) =>
+          matchesTimeRange(p.received_at, filter.since, filter.until)
         );
       }
 
