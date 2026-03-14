@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#0F172A"/>
+
+  <!-- Dot grid pattern -->
+  <defs>
+    <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="0.8" fill="#334155" opacity="0.5"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+
+  <!-- Subtle gradient overlay at bottom -->
+  <defs>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0F172A" stop-opacity="0"/>
+      <stop offset="1" stop-color="#22C55E" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#fade)"/>
+
+  <!-- Logo icon (scaled ~3x, centered at 300, 280) -->
+  <g transform="translate(200, 200) scale(3)">
+    <!-- Authorized zone fill -->
+    <polygon
+      points="7.75,32 7.75,46 32,60 56.25,46 56.25,32"
+      fill="#22C55E"
+      fill-opacity="0.1"
+    />
+    <!-- Hexagonal shield -->
+    <polygon
+      points="32,4 56.25,18 56.25,46 32,60 7.75,46 7.75,18"
+      stroke="#22C55E"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+    <!-- Barrier line with pulse -->
+    <polyline
+      points="7.75,32 27,32 29,35 32,24 35,35 37,32 56.25,32"
+      stroke="#22C55E"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+    <!-- Pulse glow -->
+    <polyline
+      points="29,35 32,24 35,35"
+      stroke="#10B981"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+      opacity="0.5"
+    />
+  </g>
+
+  <!-- Wordmark -->
+  <text x="530" y="285" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="56" font-weight="400" fill="#F8FAFC">Agent</text>
+  <text x="815" y="285" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="56" font-weight="700" fill="#22C55E">Guard</text>
+
+  <!-- Tagline -->
+  <text x="530" y="330" font-family="'IBM Plex Sans', 'Segoe UI', sans-serif" font-size="22" font-weight="400" fill="#94A3B8">Governed Action Runtime for AI Coding Agents</text>
+
+  <!-- Pipeline indicators -->
+  <g transform="translate(530, 370)">
+    <!-- propose -->
+    <rect x="0" y="0" width="100" height="28" rx="4" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+    <text x="50" y="18" font-family="'JetBrains Mono', monospace" font-size="11" fill="#94A3B8" text-anchor="middle">propose</text>
+    <!-- arrow -->
+    <text x="112" y="18" font-family="monospace" font-size="14" fill="#334155">&#x2192;</text>
+    <!-- evaluate -->
+    <rect x="130" y="0" width="100" height="28" rx="4" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+    <text x="180" y="18" font-family="'JetBrains Mono', monospace" font-size="11" fill="#94A3B8" text-anchor="middle">evaluate</text>
+    <!-- arrow -->
+    <text x="242" y="18" font-family="monospace" font-size="14" fill="#334155">&#x2192;</text>
+    <!-- execute -->
+    <rect x="260" y="0" width="100" height="28" rx="4" fill="#1E293B" stroke="#22C55E" stroke-width="1"/>
+    <text x="310" y="18" font-family="'JetBrains Mono', monospace" font-size="11" fill="#22C55E" text-anchor="middle">execute</text>
+    <!-- arrow -->
+    <text x="372" y="18" font-family="monospace" font-size="14" fill="#334155">&#x2192;</text>
+    <!-- emit -->
+    <rect x="390" y="0" width="100" height="28" rx="4" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+    <text x="440" y="18" font-family="'JetBrains Mono', monospace" font-size="11" fill="#94A3B8" text-anchor="middle">emit</text>
+  </g>
+
+  <!-- URL -->
+  <text x="600" y="580" font-family="'JetBrains Mono', monospace" font-size="16" fill="#475569" text-anchor="middle">agentguardhq.github.io/agent-guard</text>
+</svg>

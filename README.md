@@ -1,6 +1,8 @@
-# AgentGuard
+<p align="center">
+  <img src="site/assets/logo-wordmark.svg" alt="AgentGuard" width="320">
+</p>
 
-**Governed action runtime for AI coding agents.**
+<p align="center"><strong>Governed action runtime for AI coding agents.</strong></p>
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)

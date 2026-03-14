@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 64" fill="none">
+  <!-- Icon: Authorized zone fill -->
+  <polygon
+    points="7.75,32 7.75,46 32,60 56.25,46 56.25,32"
+    fill="#22C55E"
+    fill-opacity="0.1"
+  />
+  <!-- Icon: Hexagonal shield -->
+  <polygon
+    points="32,4 56.25,18 56.25,46 32,60 7.75,46 7.75,18"
+    stroke="#22C55E"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <!-- Icon: Barrier line with pulse -->
+  <polyline
+    points="7.75,32 27,32 29,35 32,24 35,35 37,32 56.25,32"
+    stroke="#22C55E"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <!-- Icon: Pulse glow -->
+  <polyline
+    points="29,35 32,24 35,35"
+    stroke="#10B981"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+    opacity="0.5"
+  />
+  <!-- Wordmark -->
+  <text x="76" y="40" font-family="'JetBrains Mono', 'SF Mono', 'Fira Code', monospace" font-size="24" font-weight="400" fill="#F8FAFC">Agent</text>
+  <text x="196" y="40" font-family="'JetBrains Mono', 'SF Mono', 'Fira Code', monospace" font-size="24" font-weight="700" fill="#22C55E">Guard</text>
+</svg>
