@@ -1,6 +1,8 @@
 dist/
 node_modules/
 coverage/
+.turbo/
+*.tsbuildinfo
 
 # Database files — never commit (use remote storage for sharing)
 *.db

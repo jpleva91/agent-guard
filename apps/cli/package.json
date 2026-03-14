@@ -1,0 +1,56 @@
+{
+  "name": "@red-codes/agentguard",
+  "version": "1.0.0",
+  "description": "Runtime governance for AI coding agents — CLI",
+  "type": "module",
+  "license": "Apache-2.0",
+  "private": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "agentguard": "./dist/bin.js"
+  },
+  "files": [
+    "dist/",
+    "../../hooks/",
+    "../../templates/",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b && tsx esbuild.config.ts",
+    "dev": "node dist/bin.js",
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "ts:check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@red-codes/core": "workspace:*",
+    "@red-codes/events": "workspace:*",
+    "@red-codes/policy": "workspace:*",
+    "@red-codes/invariants": "workspace:*",
+    "@red-codes/kernel": "workspace:*",
+    "@red-codes/adapters": "workspace:*",
+    "@red-codes/storage": "workspace:*",
+    "@red-codes/analytics": "workspace:*",
+    "@red-codes/telemetry": "workspace:*",
+    "@red-codes/plugins": "workspace:*",
+    "@red-codes/renderers": "workspace:*",
+    "commander": "^14.0.3",
+    "pino": "^10.3.1",
+    "chokidar": "^5.0.0"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^12.6.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0"
+  }
+}

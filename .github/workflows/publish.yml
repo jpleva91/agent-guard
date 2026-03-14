@@ -13,21 +13,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v6
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
-      - run: npm run build:ts
+      - run: pnpm turbo build
 
-      - run: npm test
-
-      - run: npm run ts:test
+      - run: pnpm turbo test
 
       - name: Verify package version matches tag
+        working-directory: apps/cli
         run: |
           TAG="${GITHUB_REF_NAME#v}"
           PKG=$(node -p "require('./package.json').version")
@@ -36,7 +37,8 @@ jobs:
             exit 1
           fi
 
-      - name: Publish to npm
-        run: npm publish --provenance --access public
+      - name: Publish CLI package to npm
+        working-directory: apps/cli
+        run: pnpm publish --provenance --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

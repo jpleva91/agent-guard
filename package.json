@@ -1,77 +1,37 @@
 {
-  "name": "@red-codes/agentguard",
-  "version": "1.0.0",
-  "description": "Runtime governance for AI coding agents — policy enforcement, invariant checking, and audit trails for agent tool calls.",
+  "name": "agentguard",
+  "private": true,
+  "description": "AgentGuard Platform — governed action runtime for AI coding agents",
   "type": "module",
-  "bin": {
-    "agentguard": "./dist/cli/bin.js"
-  },
-  "files": [
-    "dist/",
-    "hooks/",
-    "templates/",
-    "LICENSE",
-    "README.md"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jpleva91/agent-guard.git"
-  },
-  "homepage": "https://github.com/jpleva91/agent-guard#readme",
-  "bugs": {
-    "url": "https://github.com/jpleva91/agent-guard/issues"
-  },
-  "author": "jpleva91",
   "engines": {
     "node": ">=18"
   },
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
-    "dev": "node dist/cli/bin.js",
-    "agentguard": "node dist/cli/bin.js",
-    "build:ts": "tsc && tsx esbuild.config.ts",
-    "ts:check": "tsc --noEmit",
-    "test": "node tests/run.js",
-    "ts:test": "vitest run",
-    "ts:test:watch": "vitest",
-    "test:coverage": "c8 --check-coverage --lines 50 node tests/run.js",
-    "lint": "eslint tests/ src/",
-    "lint:fix": "eslint --fix tests/ src/",
-    "format": "prettier --check src/",
-    "format:fix": "prettier --write src/",
-    "prepublishOnly": "npm run build:ts"
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "format": "prettier --check 'packages/*/src/**' 'apps/*/src/**'",
+    "format:fix": "prettier --write 'packages/*/src/**' 'apps/*/src/**'",
+    "ts:check": "turbo ts:check",
+    "clean": "turbo clean"
   },
-  "keywords": [
-    "agentguard",
-    "ai-governance",
-    "runtime-guardrails",
-    "agent-safety",
-    "policy-enforcement",
-    "invariants",
-    "canonical-events",
-    "audit-trail",
-    "cli",
-    "developer-tools"
-  ],
-  "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^25.4.0",
-    "c8": "^11.0.0",
     "esbuild": "^0.27.3",
     "eslint": "^10.0.3",
     "prettier": "^3.8.1",
-    "terser": "^5.46.0",
     "tsx": "^4.21.0",
+    "turbo": "^2.5.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
-    "vitest": "^4.0.18",
-    "@types/better-sqlite3": "^7.6.0"
+    "vitest": "^4.0.18"
   },
-  "optionalDependencies": {
-    "better-sqlite3": "^12.6.2"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AgentGuardHQ/agent-guard.git"
   },
-  "dependencies": {
-    "chokidar": "^5.0.0",
-    "commander": "^14.0.3",
-    "pino": "^10.3.1"
-  }
+  "author": "jpleva91",
+  "license": "Apache-2.0"
 }

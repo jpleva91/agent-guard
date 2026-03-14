@@ -1,25 +1,23 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
+    "rootDir": ".",
     "outDir": "dist",
-    "rootDir": "src",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "verbatimModuleSyntax": true
+    "noEmit": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "tests"]
+  "include": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/events" },
+    { "path": "packages/policy" },
+    { "path": "packages/invariants" },
+    { "path": "packages/kernel" },
+    { "path": "packages/adapters" },
+    { "path": "packages/storage" },
+    { "path": "packages/analytics" },
+    { "path": "packages/telemetry" },
+    { "path": "packages/plugins" },
+    { "path": "packages/renderers" },
+    { "path": "apps/cli" }
+  ]
 }

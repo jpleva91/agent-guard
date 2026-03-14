@@ -1,0 +1,29 @@
+{
+  "name": "@red-codes/policy",
+  "version": "0.1.0",
+  "description": "Policy evaluation and loading for AgentGuard",
+  "type": "module",
+  "license": "Apache-2.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "ts:check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@red-codes/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@red-codes/events": "workspace:*",
+    "@red-codes/analytics": "workspace:*"
+  }
+}
