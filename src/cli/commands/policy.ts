@@ -2,7 +2,8 @@
 //
 // Subcommands:
 //   validate <file>   Validate a policy file without starting the runtime
-//   suggest            Suggest policy rules based on violation patterns
+//   suggest           Suggest policy rules based on violation patterns
+//   verify <file>     Verify a policy change resolves historical violations
 
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -19,6 +20,8 @@ import {
   toTerminalSuggestions,
   toMarkdownSuggestions,
 } from '../../analytics/suggest.js';
+import type { PolicyVerifyResult } from './policy-verify.js';
+import { verifyPolicyFix } from './policy-verify.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -395,31 +398,63 @@ function formatTerminalResult(result: PolicyValidationResult): string {
 
 async function policyValidate(args: string[]): Promise<number> {
   const parsed = parseArgs(args, {
-    boolean: ['--json', '--strict'],
+    boolean: ['--json', '--strict', '--verify'],
+    string: ['--dir', '-d'],
+    alias: { '-d': '--dir' },
   });
 
   const jsonOutput = !!parsed.flags.json;
   const strict = !!parsed.flags.strict;
+  const verify = !!parsed.flags.verify;
+  const baseDir = (parsed.flags.dir as string) ?? '.agentguard';
   const filePath = parsed.positional[0];
 
   if (!filePath) {
     process.stderr.write('\n  Usage: agentguard policy validate <file> [flags]\n');
     process.stderr.write('\n  Flags:\n');
     process.stderr.write('    --json      Output as JSON\n');
-    process.stderr.write('    --strict    Include best-practice recommendations\n\n');
+    process.stderr.write('    --strict    Include best-practice recommendations\n');
+    process.stderr.write('    --verify    Verify policy resolves historical violations\n');
+    process.stderr.write(
+      '    --dir, -d   Base directory for session data (default: .agentguard)\n\n'
+    );
     return 1;
   }
 
   const result = validatePolicyFileStrict(filePath, strict);
 
-  if (jsonOutput) {
+  if (jsonOutput && !verify) {
     process.stdout.write(JSON.stringify(result, null, 2) + '\n');
-  } else {
+  } else if (!verify) {
     process.stderr.write(formatTerminalResult(result));
   }
 
-  // Exit codes: 0 = valid, 1 = errors, 2 = warnings-only
-  if (!result.valid) return 1;
+  if (!result.valid) {
+    if (verify && jsonOutput) {
+      process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    } else if (verify) {
+      process.stderr.write(formatTerminalResult(result));
+    }
+    return 1;
+  }
+
+  // If --verify, run fix verification after successful validation
+  if (verify) {
+    const verifyResult = verifyPolicyFix(filePath, baseDir);
+
+    if (jsonOutput) {
+      process.stdout.write(
+        JSON.stringify({ validation: result, verification: verifyResult }, null, 2) + '\n'
+      );
+    } else {
+      process.stderr.write(formatTerminalResult(result));
+      process.stderr.write(formatVerifyResult(verifyResult));
+    }
+
+    // Return non-zero if regressions detected
+    if (verifyResult.regressionCount > 0) return 3;
+  }
+
   if (result.warnings.length > 0) return 2;
   return 0;
 }
@@ -494,6 +529,144 @@ async function policySuggest(args: string[]): Promise<number> {
 }
 
 // ---------------------------------------------------------------------------
+// Verify Output Formatting
+// ---------------------------------------------------------------------------
+
+function formatVerifyResult(result: PolicyVerifyResult): string {
+  const lines: string[] = [];
+
+  lines.push('');
+  lines.push(`  ${bold('Policy Fix Verification')}`);
+  lines.push(`  Sessions analyzed: ${result.sessionsAnalyzed}`);
+  lines.push(`  Historical violations: ${result.totalViolations}`);
+  lines.push('');
+
+  if (result.totalViolations === 0) {
+    lines.push(`  ${dim('No historical violations found — nothing to verify.')}`);
+    lines.push('');
+    return lines.join('\n');
+  }
+
+  // Summary
+  const resolvedPct =
+    result.totalViolations > 0
+      ? Math.round((result.resolvedCount / result.totalViolations) * 100)
+      : 0;
+
+  lines.push(
+    `  ${color('\u2713', 'green')} Resolved:   ${result.resolvedCount}/${result.totalViolations} (${resolvedPct}%)`
+  );
+  lines.push(
+    `  ${result.remainingCount > 0 ? color('\u2022', 'yellow') : color('\u2713', 'green')} Remaining:  ${result.remainingCount}`
+  );
+  lines.push(
+    `  ${result.regressionCount > 0 ? color('\u2717', 'red') : color('\u2713', 'green')} Regressions: ${result.regressionCount}`
+  );
+
+  // Resolved details (show first 5)
+  if (result.resolved.length > 0) {
+    lines.push('');
+    lines.push(`  ${color('Resolved violations:', 'green')}`);
+    const show = result.resolved.slice(0, 5);
+    for (const v of show) {
+      lines.push(
+        `    ${color('\u2713', 'green')} ${v.actionType} → ${dim(v.target)} ${dim(`(was: ${v.originalReason})`)}`
+      );
+    }
+    if (result.resolved.length > 5) {
+      lines.push(`    ${dim(`... and ${result.resolved.length - 5} more`)}`);
+    }
+  }
+
+  // Remaining details (show first 5)
+  if (result.remaining.length > 0) {
+    lines.push('');
+    lines.push(`  ${color('Remaining violations:', 'yellow')}`);
+    const show = result.remaining.slice(0, 5);
+    for (const v of show) {
+      lines.push(
+        `    ${color('\u2022', 'yellow')} ${v.actionType} → ${dim(v.target)} ${dim(`(${v.newReason})`)}`
+      );
+    }
+    if (result.remaining.length > 5) {
+      lines.push(`    ${dim(`... and ${result.remaining.length - 5} more`)}`);
+    }
+  }
+
+  // Regressions (show all — these are critical)
+  if (result.regressions.length > 0) {
+    lines.push('');
+    lines.push(`  ${color('Regressions (previously allowed, now denied):', 'red')}`);
+    const show = result.regressions.slice(0, 10);
+    for (const r of show) {
+      lines.push(
+        `    ${color('\u2717', 'red')} ${r.actionType} → ${dim(r.target)} ${dim(`(${r.reason})`)}`
+      );
+    }
+    if (result.regressions.length > 10) {
+      lines.push(`    ${dim(`... and ${result.regressions.length - 10} more`)}`);
+    }
+  }
+
+  lines.push('');
+  return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Subcommand: verify
+// ---------------------------------------------------------------------------
+
+async function policyVerify(args: string[]): Promise<number> {
+  const parsed = parseArgs(args, {
+    boolean: ['--json'],
+    string: ['--dir', '-d'],
+    alias: { '-d': '--dir' },
+  });
+
+  const jsonOutput = !!parsed.flags.json;
+  const baseDir = (parsed.flags.dir as string) ?? '.agentguard';
+  const filePath = parsed.positional[0];
+
+  if (!filePath) {
+    process.stderr.write('\n  Usage: agentguard policy verify <file> [flags]\n');
+    process.stderr.write('\n  Verify whether a policy change resolves historical violations.\n');
+    process.stderr.write('\n  Flags:\n');
+    process.stderr.write('    --json      Output as JSON\n');
+    process.stderr.write(
+      '    --dir, -d   Base directory for session data (default: .agentguard)\n\n'
+    );
+    return 1;
+  }
+
+  // First validate
+  const validation = validatePolicyFile(filePath);
+  if (!validation.valid) {
+    if (jsonOutput) {
+      process.stdout.write(JSON.stringify({ validation, verification: null }, null, 2) + '\n');
+    } else {
+      process.stderr.write(formatTerminalResult(validation));
+      process.stderr.write(
+        `\n  ${color('Cannot verify — policy has validation errors.', 'red')}\n\n`
+      );
+    }
+    return 1;
+  }
+
+  // Run verification
+  const result = verifyPolicyFix(filePath, baseDir);
+
+  if (jsonOutput) {
+    process.stdout.write(JSON.stringify({ validation, verification: result }, null, 2) + '\n');
+  } else {
+    process.stderr.write(formatTerminalResult(validation));
+    process.stderr.write(formatVerifyResult(result));
+  }
+
+  if (result.regressionCount > 0) return 3;
+  return 0;
+}
+
+// ---------------------------------------------------------------------------
 // Main Command Router
 // ---------------------------------------------------------------------------
 
@@ -510,6 +683,9 @@ export async function policy(args: string[]): Promise<number> {
 
     case 'suggest':
       return policySuggest(args.slice(1));
+
+    case 'verify':
+      return policyVerify(args.slice(1));
 
     case undefined:
     case 'help':
@@ -535,10 +711,13 @@ function printPolicyHelp(): void {
   ${bold('Commands:')}
     validate <file>   Validate a policy file (YAML or JSON)
     suggest           Suggest policy rules based on violation patterns
+    verify <file>     Verify a policy change resolves historical violations
 
   ${bold('Flags (validate):')}
     --json            Output validation result as JSON
     --strict          Include best-practice recommendations
+    --verify          Also verify policy resolves historical violations
+    --dir, -d <path>  Base directory for session data (default: .agentguard)
 
   ${bold('Flags (suggest):')}
     --format, -f <fmt>  Output format: terminal (default), json, yaml, markdown
@@ -548,17 +727,26 @@ function printPolicyHelp(): void {
     --dir, -d <path>    Base directory for event data (default: .agentguard)
     --min-cluster <n>   Minimum violations to form a pattern (default: 2)
 
-  ${bold('Exit codes:')}
-    0                 Success
-    1                 Error
+  ${bold('Flags (verify):')}
+    --json            Output result as JSON
+    --dir, -d <path>  Base directory for session data (default: .agentguard)
+
+  ${bold('Exit codes (verify):')}
+    0                 Clean — no regressions, violations resolved or none exist
+    1                 Violations remain unresolved
+    3                 Regressions detected (previously-allowed actions now denied)
 
   ${bold('Examples:')}
     agentguard policy validate agentguard.yaml
     agentguard policy validate my-policy.json --json
     agentguard policy validate agentguard.yaml --strict
+    agentguard policy validate agentguard.yaml --verify
     agentguard policy suggest
     agentguard policy suggest --yaml
     agentguard policy suggest --json
     agentguard policy suggest --dir .agentguard --min-cluster 3
+    agentguard policy verify agentguard.yaml
+    agentguard policy verify my-policy.yaml --json
+    agentguard policy verify my-policy.yaml --dir .agentguard
 `);
 }
