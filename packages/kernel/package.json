@@ -16,7 +16,7 @@
     "build": "tsc -b",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "bench": "vitest bench",
+    "bench": "vitest bench --outputJson bench-results.json",
     "lint": "eslint src/",
     "ts:check": "tsc --noEmit",
     "clean": "rm -rf dist"

@@ -42,20 +42,23 @@ jobs:
 
           let failed = false;
 
-          for (const suite of results.testResults ?? []) {
-            for (const bench of suite.benchmarks ?? []) {
-              const p99Ms = (bench.p99 ?? bench.mean ?? 0) / 1_000_000; // ns → ms
-              const name = bench.name ?? '';
+          for (const file of results.files ?? []) {
+            for (const group of file.groups ?? []) {
+              for (const bench of group.benchmarks ?? []) {
+                const p99Ms = bench.p99 ?? bench.mean ?? 0; // already in ms
+                const name = bench.name ?? '';
+                const suiteName = group.fullName ?? '';
 
-              for (const [key, limitMs] of Object.entries(thresholds)) {
-                if (name.toLowerCase().includes(key) || suite.name?.toLowerCase().includes(key)) {
-                  if (p99Ms > limitMs) {
-                    console.error(`REGRESSION: "${name}" p99=${p99Ms.toFixed(3)}ms exceeds ${limitMs}ms threshold`);
-                    failed = true;
-                  } else {
-                    console.log(`OK: "${name}" p99=${p99Ms.toFixed(3)}ms (limit: ${limitMs}ms)`);
+                for (const [key, limitMs] of Object.entries(thresholds)) {
+                  if (name.toLowerCase().includes(key) || suiteName.toLowerCase().includes(key)) {
+                    if (p99Ms > limitMs) {
+                      console.error(`REGRESSION: "${name}" p99=${p99Ms.toFixed(3)}ms exceeds ${limitMs}ms threshold`);
+                      failed = true;
+                    } else {
+                      console.log(`OK: "${name}" p99=${p99Ms.toFixed(3)}ms (limit: ${limitMs}ms)`);
+                    }
+                    break;
                   }
-                  break;
                 }
               }
             }
