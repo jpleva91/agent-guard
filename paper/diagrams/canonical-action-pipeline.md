@@ -114,8 +114,8 @@ NORMALIZED INTENT ────────────────────�
 
 ## Source References
 
-- `TOOL_ACTION_MAP`: `src/agentguard/core/aab.ts:33-40`
-- `detectGitAction()`: `src/agentguard/core/aab.ts:42-56`
-- `isDestructiveCommand()`: `src/agentguard/core/aab.ts:58-76`
-- `extractBranch()`: `src/agentguard/core/aab.ts:78-82`
-- `normalizeIntent()`: `src/agentguard/core/aab.ts:84-111`
+- `TOOL_ACTION_MAP`: `src/kernel/aab.ts`
+- `detectGitAction()`: `src/kernel/aab.ts`
+- `isDestructiveCommand()`: `src/kernel/aab.ts`
+- `extractBranch()`: `src/kernel/aab.ts`
+- `normalizeIntent()`: `src/kernel/aab.ts`

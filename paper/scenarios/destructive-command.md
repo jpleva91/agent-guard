@@ -137,6 +137,6 @@ maxSeverity = max(5, ...[]) = 5
 
 ## Source References
 
-- `isDestructiveCommand()`: `src/agentguard/core/aab.ts:58-76`
-- Destructive short-circuit: `src/agentguard/core/aab.ts:120-139`
+- `isDestructiveCommand()`: `src/kernel/aab.ts`
+- Destructive short-circuit: `src/kernel/aab.ts`
 - Runnable example: `examples/governance/destructive-command.ts`

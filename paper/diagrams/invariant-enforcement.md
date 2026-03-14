@@ -125,8 +125,8 @@ OUTPUT ────────────────────────�
 
 ## Source References
 
-- `SystemState`: `src/agentguard/invariants/definitions.ts:18-28`
-- `DEFAULT_INVARIANTS`: `src/agentguard/invariants/definitions.ts:30-145`
-- `buildSystemState()`: `src/agentguard/invariants/checker.ts:62-75`
-- `checkAllInvariants()`: `src/agentguard/invariants/checker.ts:23-60`
-- `selectIntervention()`: `src/agentguard/core/engine.ts:57-67`
+- `SystemState`: `src/invariants/definitions.ts`
+- `DEFAULT_INVARIANTS`: `src/invariants/definitions.ts`
+- `buildSystemState()`: `src/invariants/checker.ts`
+- `checkAllInvariants()`: `src/invariants/checker.ts`
+- `selectIntervention()`: `src/kernel/decision.ts`

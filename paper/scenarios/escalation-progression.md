@@ -164,8 +164,8 @@ All counters are cleared. The session returns to NORMAL. The agent can resume op
 
 ## Source References
 
-- `createMonitor()`: `src/agentguard/monitor.ts:55-199`
-- `updateEscalation()`: `src/agentguard/monitor.ts:82-94`
-- Lockdown short-circuit: `src/agentguard/monitor.ts:101-132`
-- `resetEscalation()`: `src/agentguard/monitor.ts:189-197`
+- `createMonitor()`: `src/kernel/monitor.ts`
+- `updateEscalation()`: `src/kernel/monitor.ts`
+- Lockdown short-circuit: `src/kernel/monitor.ts`
+- `resetEscalation()`: `src/kernel/monitor.ts`
 - Runnable example: `examples/governance/escalation-progression.ts`

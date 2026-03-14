@@ -170,7 +170,7 @@ maxSeverity = max(0, 3) = 3
 
 ## Source References
 
-- Blast radius invariant: `src/agentguard/invariants/definitions.ts:70-84`
-- AAB blast radius check: `src/agentguard/core/aab.ts:169-188`
-- Combined decision: `src/agentguard/core/engine.ts:115`
+- Blast radius invariant: `src/invariants/definitions.ts`
+- AAB blast radius check: `src/kernel/aab.ts`
+- Combined decision: `src/kernel/decision.ts`
 - Runnable example: `examples/governance/invariant-failure.ts`

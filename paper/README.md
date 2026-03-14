@@ -20,16 +20,16 @@ The governance runtime lives in the main codebase:
 
 | Component | Source |
 |-----------|--------|
-| Action Authorization Boundary | `src/agentguard/core/aab.ts` |
-| RTA Decision Engine | `src/agentguard/core/engine.ts` |
-| Policy Evaluation | `src/agentguard/policies/evaluator.ts` |
-| System Invariants | `src/agentguard/invariants/definitions.ts` |
-| Evidence Packs | `src/agentguard/evidence/pack.ts` |
-| Escalation Monitor | `src/agentguard/monitor.ts` |
-| Canonical Actions | `src/domain/actions.ts` |
-| Canonical Events | `src/domain/events.ts` |
-| Reference Monitor | `src/domain/reference-monitor.ts` |
-| Multi-Agent Pipeline | `src/orchestration/orchestrator.ts` |
+| Action Authorization Boundary | `src/kernel/aab.ts` |
+| RTA Decision Engine | `src/kernel/decision.ts` |
+| Policy Evaluation | `src/policy/evaluator.ts` |
+| System Invariants | `src/invariants/definitions.ts` |
+| Evidence Packs | `src/kernel/evidence.ts` |
+| Escalation Monitor | `src/kernel/monitor.ts` |
+| Canonical Actions | `src/core/actions.ts` |
+| Canonical Events | `src/events/schema.ts` |
+| Governed Action Kernel | `src/kernel/kernel.ts` |
+| Storage Backends | `src/storage/` |
 
 Runnable examples that demonstrate each scenario: `examples/governance/`
 

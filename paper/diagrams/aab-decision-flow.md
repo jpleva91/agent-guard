@@ -120,11 +120,11 @@ Raw Agent Action
 
 ## Source References
 
-- `normalizeIntent()`: `src/agentguard/core/aab.ts:84-111`
-- `isDestructiveCommand()`: `src/agentguard/core/aab.ts:58-76`
-- `detectGitAction()`: `src/agentguard/core/aab.ts:42-56`
-- `authorize()`: `src/agentguard/core/aab.ts:113-191`
-- `evaluate()`: `src/agentguard/policies/evaluator.ts:95-157`
-- `checkAllInvariants()`: `src/agentguard/invariants/checker.ts:23-60`
-- `selectIntervention()`: `src/agentguard/core/engine.ts:57-67`
-- `createEvidencePack()`: `src/agentguard/evidence/pack.ts:66-103`
+- `normalizeIntent()`: `src/kernel/aab.ts`
+- `isDestructiveCommand()`: `src/kernel/aab.ts`
+- `detectGitAction()`: `src/kernel/aab.ts`
+- `authorize()`: `src/kernel/aab.ts`
+- `evaluate()`: `src/policy/evaluator.ts`
+- `checkAllInvariants()`: `src/invariants/checker.ts`
+- `selectIntervention()`: `src/kernel/decision.ts`
+- `createEvidencePack()`: `src/kernel/evidence.ts`

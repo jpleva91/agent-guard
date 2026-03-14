@@ -116,9 +116,9 @@ flowchart TD
 
 ## Source References
 
-- Intent Compilation: `src/agentguard/core/aab.ts:84-111`
-- AAB Authorization: `src/agentguard/core/aab.ts:113-191`
-- Engine Evaluation: `src/agentguard/core/engine.ts:95-149`
-- Intervention Selection: `src/agentguard/core/engine.ts:57-67`
-- Evidence Packs: `src/agentguard/evidence/pack.ts:66-103`
-- Monitor: `src/agentguard/monitor.ts:55-199`
+- Intent Compilation: `src/kernel/aab.ts`
+- AAB Authorization: `src/kernel/aab.ts`
+- Engine Evaluation: `src/kernel/decision.ts`
+- Intervention Selection: `src/kernel/decision.ts`
+- Evidence Packs: `src/kernel/evidence.ts`
+- Monitor: `src/kernel/monitor.ts`

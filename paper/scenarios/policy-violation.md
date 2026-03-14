@@ -158,8 +158,8 @@ maxSeverity = max(
 
 ## Source References
 
-- `detectGitAction()`: `src/agentguard/core/aab.ts:42-56`
-- Policy evaluation (deny first): `src/agentguard/policies/evaluator.ts:107-127`
-- State construction: `src/agentguard/core/engine.ts:98-105`
-- Invariant checking: `src/agentguard/invariants/checker.ts:23-60`
+- `detectGitAction()`: `src/kernel/aab.ts`
+- Policy evaluation (deny first): `src/policy/evaluator.ts`
+- State construction: `src/kernel/decision.ts`
+- Invariant checking: `src/invariants/checker.ts`
 - Runnable example: `examples/governance/policy-violation.ts`

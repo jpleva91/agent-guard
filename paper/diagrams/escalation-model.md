@@ -137,8 +137,8 @@ Action  Denials  Violations  Level       Notes
 
 ## Source References
 
-- `ESCALATION` levels: `src/agentguard/monitor.ts:12-17`
-- `updateEscalation()`: `src/agentguard/monitor.ts:82-94`
-- `process()` with lockdown check: `src/agentguard/monitor.ts:100-132`
-- `resetEscalation()`: `src/agentguard/monitor.ts:189-197`
-- `getStatus()`: `src/agentguard/monitor.ts:172-187`
+- `ESCALATION` levels: `src/kernel/monitor.ts`
+- `updateEscalation()`: `src/kernel/monitor.ts`
+- `process()` with lockdown check: `src/kernel/monitor.ts`
+- `resetEscalation()`: `src/kernel/monitor.ts`
+- `getStatus()`: `src/kernel/monitor.ts`
