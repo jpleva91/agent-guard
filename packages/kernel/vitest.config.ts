@@ -4,5 +4,14 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
     environment: 'node',
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      reporter: ['text', 'json-summary', 'lcov'],
+      thresholds: {
+        lines: 50,
+        branches: 40,
+      },
+    },
   },
 });

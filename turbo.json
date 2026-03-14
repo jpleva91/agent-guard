@@ -12,6 +12,10 @@
     "test": {
       "dependsOn": ["build"]
     },
+    "test:coverage": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"]
+    },
     "lint": {},
     "format": {},
     "ts:check": {

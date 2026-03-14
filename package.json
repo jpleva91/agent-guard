@@ -11,6 +11,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "test": "turbo test",
+    "test:coverage": "turbo test:coverage",
     "lint": "turbo lint",
     "format": "prettier --check 'packages/*/src/**' 'apps/*/src/**'",
     "format:fix": "prettier --write 'packages/*/src/**' 'apps/*/src/**'",

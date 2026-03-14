@@ -1828,3 +1828,55 @@ describe('recursive-operation-guard', () => {
     expect(result.actual).toContain('find -exec sh -c (shred)');
   });
 });
+
+describe('checkAllInvariants interaction tests', () => {
+  it('reports multiple simultaneous violations', () => {
+    // State that triggers both no-secret-exposure and protected-branch
+    const state = {
+      modifiedFiles: ['.env'],
+      targetBranch: 'main',
+      directPush: true,
+      isPush: true,
+    };
+
+    const result = checkAllInvariants(DEFAULT_INVARIANTS, buildSystemState(state));
+    expect(result.allHold).toBe(false);
+    expect(result.violations.length).toBeGreaterThanOrEqual(2);
+
+    const violatedIds = result.violations.map((v) => v.invariant.id);
+    expect(violatedIds).toContain('no-secret-exposure');
+    expect(violatedIds).toContain('protected-branch');
+  });
+
+  it('emits one event per violation', () => {
+    const state = {
+      modifiedFiles: ['.env'],
+      targetBranch: 'main',
+      directPush: true,
+      isPush: true,
+    };
+
+    const result = checkAllInvariants(DEFAULT_INVARIANTS, buildSystemState(state));
+    expect(result.events.length).toBe(result.violations.length);
+
+    for (const event of result.events) {
+      expect(event.kind).toBe('InvariantViolation');
+    }
+  });
+
+  it('returns allHold: true and empty violations when no invariants fail', () => {
+    const state = { modifiedFiles: ['src/index.ts'] };
+    const result = checkAllInvariants(DEFAULT_INVARIANTS, buildSystemState(state));
+    expect(result.allHold).toBe(true);
+    expect(result.violations).toEqual([]);
+    expect(result.events).toEqual([]);
+  });
+
+  it('handles empty invariant list', () => {
+    const state = { modifiedFiles: ['.env'], directPush: true, targetBranch: 'main' };
+    const result = checkAllInvariants([], buildSystemState(state));
+    expect(result.allHold).toBe(true);
+    expect(result.violations).toEqual([]);
+    expect(result.events).toEqual([]);
+  });
+});

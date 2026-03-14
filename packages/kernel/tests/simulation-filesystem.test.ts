@@ -117,3 +117,74 @@ describe('FilesystemSimulator', () => {
     expect(result.blastRadius).toBe(5);
   });
 });
+
+describe('FilesystemSimulator edge cases', () => {
+  const simulator = createFilesystemSimulator();
+
+  it('handles empty target string', async () => {
+    const result = await simulator.simulate(
+      { action: 'file.write', target: '', agent: 'test', destructive: false },
+      {}
+    );
+    expect(result.riskLevel).toBe('low');
+    expect(result.simulatorId).toBe('filesystem-simulator');
+  });
+
+  it('handles deeply nested paths', async () => {
+    const result = await simulator.simulate(
+      { action: 'file.write', target: 'a/b/c/d/e/f/g/h.ts', agent: 'test', destructive: false },
+      {}
+    );
+    expect(result.riskLevel).toBe('low');
+    expect(result.predictedChanges.some((c) => c.includes('Write'))).toBe(true);
+  });
+
+  it('handles paths with .. components', async () => {
+    const result = await simulator.simulate(
+      { action: 'file.write', target: '../../../etc/passwd', agent: 'test', destructive: false },
+      {}
+    );
+    expect(result.simulatorId).toBe('filesystem-simulator');
+  });
+
+  it('handles files with no extension', async () => {
+    const result = await simulator.simulate(
+      { action: 'file.write', target: 'Makefile', agent: 'test', destructive: false },
+      {}
+    );
+    expect(result.riskLevel).toBe('low');
+  });
+
+  it('handles very long file paths', async () => {
+    const longPath = 'src/' + 'a'.repeat(200) + '/file.ts';
+    const result = await simulator.simulate(
+      { action: 'file.write', target: longPath, agent: 'test', destructive: false },
+      {}
+    );
+    expect(result.riskLevel).toBe('low');
+  });
+
+  it('detects sensitive files in nested paths', async () => {
+    const result = await simulator.simulate(
+      { action: 'file.write', target: 'deploy/config/.env.production', agent: 'test', destructive: false },
+      {}
+    );
+    expect(result.riskLevel).toBe('high');
+  });
+
+  it('defaults blast radius to 1 when filesAffected is not set', async () => {
+    const result = await simulator.simulate(
+      { action: 'file.write', target: 'test.ts', agent: 'test', destructive: false },
+      {}
+    );
+    expect(result.blastRadius).toBe(1);
+  });
+
+  it('returns durationMs as a non-negative number', async () => {
+    const result = await simulator.simulate(
+      { action: 'file.write', target: 'test.ts', agent: 'test', destructive: false },
+      {}
+    );
+    expect(result.durationMs).toBeGreaterThanOrEqual(0);
+  });
+});

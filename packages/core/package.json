@@ -15,6 +15,7 @@
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint src/",
     "ts:check": "tsc --noEmit",
     "clean": "rm -rf dist"

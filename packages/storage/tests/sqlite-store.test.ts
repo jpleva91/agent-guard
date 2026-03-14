@@ -256,6 +256,27 @@ describe('SQLite EventStore', () => {
     });
   });
 
+  describe('edge cases', () => {
+    it('query returns empty array on fresh database with no events', () => {
+      const store = createSqliteEventStore(db, 'run_1');
+      expect(store.query()).toEqual([]);
+      expect(store.query({ kind: 'ActionDenied' })).toEqual([]);
+    });
+
+    it('loadRunEvents returns empty array for unknown run ID', () => {
+      const store = createSqliteEventStore(db, 'run_1');
+      store.append(makeEvent({ id: 'e1' }));
+
+      const events = loadRunEvents(db, 'nonexistent_run');
+      expect(events).toEqual([]);
+    });
+
+    it('listRunIds returns empty array when no events exist', () => {
+      const runs = listRunIds(db);
+      expect(runs).toEqual([]);
+    });
+  });
+
   describe('prepared statement caching', () => {
     it('returns correct results on repeated queries with the same filter shape', () => {
       const store = createSqliteEventStore(db, 'run_1');

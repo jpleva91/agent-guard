@@ -416,3 +416,54 @@ describe('Kernel proposal timeout', () => {
     expect(result.allowed).toBe(true);
   });
 });
+
+describe('Kernel edge cases', () => {
+  it('handles proposal with minimal fields', async () => {
+    const kernel = createKernel({ dryRun: true });
+    const result = await kernel.propose({
+      tool: 'Read',
+      agent: 'test',
+    });
+    // Should still produce a result (file.read with empty target)
+    expect(result).toBeDefined();
+    expect(typeof result.allowed).toBe('boolean');
+  });
+
+  it('handles proposal with very long command string', async () => {
+    const kernel = createKernel({ dryRun: true });
+    const longCommand = 'echo ' + 'x'.repeat(10000);
+    const result = await kernel.propose({
+      tool: 'Bash',
+      command: longCommand,
+      agent: 'test',
+    });
+    expect(result).toBeDefined();
+    expect(typeof result.allowed).toBe('boolean');
+  });
+
+  it('handles proposal with special characters in file path', async () => {
+    const kernel = createKernel({ dryRun: true });
+    const result = await kernel.propose({
+      tool: 'Write',
+      file: "src/file with spaces & 'quotes'.ts",
+      content: 'test',
+      agent: 'test',
+    });
+    expect(result).toBeDefined();
+    expect(typeof result.allowed).toBe('boolean');
+  });
+
+  it('handles rapid sequential proposals', async () => {
+    const kernel = createKernel({ dryRun: true });
+    const results = await Promise.all([
+      kernel.propose({ tool: 'Read', file: 'a.ts', agent: 'test' }),
+      kernel.propose({ tool: 'Read', file: 'b.ts', agent: 'test' }),
+      kernel.propose({ tool: 'Read', file: 'c.ts', agent: 'test' }),
+    ]);
+
+    expect(results).toHaveLength(3);
+    for (const result of results) {
+      expect(result.allowed).toBe(true);
+    }
+  });
+});

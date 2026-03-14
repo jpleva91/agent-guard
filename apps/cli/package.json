@@ -27,6 +27,7 @@
     "build": "tsc -b && tsx esbuild.config.ts",
     "dev": "node dist/bin.js",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint src/",
     "ts:check": "tsc --noEmit",
     "clean": "rm -rf dist"

@@ -35,3 +35,5 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo build
       - run: pnpm turbo test
+      - name: Coverage check
+        run: pnpm test:coverage

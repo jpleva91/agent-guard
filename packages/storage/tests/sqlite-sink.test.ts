@@ -108,6 +108,20 @@ describe('SQLite EventSink', () => {
     const sink = createSqliteEventSink(db, 'run_1');
     expect(() => sink.flush?.()).not.toThrow();
   });
+
+  it('handles events with missing optional fields gracefully', () => {
+    const sink = createSqliteEventSink(db, 'run_1');
+    const minimalEvent = {
+      id: 'e_minimal',
+      kind: 'RunStarted',
+      timestamp: Date.now(),
+      fingerprint: 'fp',
+    } as DomainEvent;
+    expect(() => sink.write(minimalEvent)).not.toThrow();
+
+    const count = (db.prepare('SELECT COUNT(*) as c FROM events').get() as { c: number }).c;
+    expect(count).toBe(1);
+  });
 });
 
 describe('SQLite DecisionSink', () => {
