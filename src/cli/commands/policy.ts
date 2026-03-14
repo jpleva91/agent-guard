@@ -2,6 +2,7 @@
 //
 // Subcommands:
 //   validate <file>   Validate a policy file without starting the runtime
+//   suggest            Suggest policy rules based on violation patterns
 
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -10,6 +11,14 @@ import { bold, color, dim } from '../colors.js';
 import { validatePolicy, VALID_ACTIONS } from '../../policy/loader.js';
 import { parseYamlPolicy } from '../../policy/yaml-loader.js';
 import { ACTION_TYPES } from '../../core/actions.js';
+import { analyze } from '../../analytics/engine.js';
+import {
+  generateSuggestions,
+  toYaml,
+  toJsonSuggestions,
+  toTerminalSuggestions,
+  toMarkdownSuggestions,
+} from '../../analytics/suggest.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -416,6 +425,75 @@ async function policyValidate(args: string[]): Promise<number> {
 }
 
 // ---------------------------------------------------------------------------
+// Subcommand: suggest
+// ---------------------------------------------------------------------------
+
+async function policySuggest(args: string[]): Promise<number> {
+  const parsed = parseArgs(args, {
+    boolean: ['--json', '--yaml', '--markdown', '--md'],
+    string: ['--dir', '-d', '--format', '-f', '--min-cluster'],
+    alias: { '-d': '--dir', '-f': '--format' },
+  });
+
+  const baseDir = (parsed.flags.dir as string) ?? '.agentguard';
+  const minCluster = parsed.flags['min-cluster']
+    ? parseInt(parsed.flags['min-cluster'] as string, 10)
+    : 2;
+
+  // Determine output format
+  let format: 'terminal' | 'json' | 'yaml' | 'markdown' = 'terminal';
+  if (parsed.flags.json) format = 'json';
+  else if (parsed.flags.yaml) format = 'yaml';
+  else if (parsed.flags.markdown || parsed.flags.md) format = 'markdown';
+  else if (parsed.flags.format) {
+    const f = parsed.flags.format as string;
+    if (['json', 'yaml', 'markdown', 'terminal'].includes(f)) {
+      format = f as typeof format;
+    }
+  }
+
+  // Run analytics pipeline
+  const report = analyze({ baseDir, minClusterSize: minCluster });
+
+  if (report.totalViolations === 0) {
+    if (format === 'json') {
+      const empty = {
+        generatedAt: Date.now(),
+        sessionsAnalyzed: report.sessionsAnalyzed,
+        totalViolations: 0,
+        suggestions: [],
+      };
+      process.stdout.write(JSON.stringify(empty, null, 2) + '\n');
+    } else {
+      process.stderr.write('\n  No violations found — no policy suggestions to generate.\n');
+      process.stderr.write(`  Sessions analyzed: ${report.sessionsAnalyzed}\n\n`);
+    }
+    return 0;
+  }
+
+  // Generate suggestions from violation patterns
+  const suggestions = generateSuggestions(report);
+
+  switch (format) {
+    case 'json':
+      process.stdout.write(toJsonSuggestions(suggestions) + '\n');
+      break;
+    case 'yaml':
+      process.stdout.write(toYaml(suggestions));
+      break;
+    case 'markdown':
+      process.stdout.write(toMarkdownSuggestions(suggestions) + '\n');
+      break;
+    case 'terminal':
+    default:
+      process.stderr.write(toTerminalSuggestions(suggestions));
+      break;
+  }
+
+  return 0;
+}
+
+// ---------------------------------------------------------------------------
 // Main Command Router
 // ---------------------------------------------------------------------------
 
@@ -429,6 +507,9 @@ export async function policy(args: string[]): Promise<number> {
   switch (subcommand) {
     case 'validate':
       return policyValidate(args.slice(1));
+
+    case 'suggest':
+      return policySuggest(args.slice(1));
 
     case undefined:
     case 'help':
@@ -453,19 +534,31 @@ function printPolicyHelp(): void {
 
   ${bold('Commands:')}
     validate <file>   Validate a policy file (YAML or JSON)
+    suggest           Suggest policy rules based on violation patterns
 
   ${bold('Flags (validate):')}
     --json            Output validation result as JSON
     --strict          Include best-practice recommendations
 
+  ${bold('Flags (suggest):')}
+    --format, -f <fmt>  Output format: terminal (default), json, yaml, markdown
+    --json              Output as JSON
+    --yaml              Output as YAML policy rules
+    --markdown, --md    Output as Markdown
+    --dir, -d <path>    Base directory for event data (default: .agentguard)
+    --min-cluster <n>   Minimum violations to form a pattern (default: 2)
+
   ${bold('Exit codes:')}
-    0                 Policy is valid
-    1                 Policy has errors
-    2                 Policy is valid but has warnings (--strict mode)
+    0                 Success
+    1                 Error
 
   ${bold('Examples:')}
     agentguard policy validate agentguard.yaml
     agentguard policy validate my-policy.json --json
     agentguard policy validate agentguard.yaml --strict
+    agentguard policy suggest
+    agentguard policy suggest --yaml
+    agentguard policy suggest --json
+    agentguard policy suggest --dir .agentguard --min-cluster 3
 `);
 }

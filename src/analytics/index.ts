@@ -17,6 +17,14 @@ export {
 export { computeRunRiskScore, computeAllRunRiskScores } from './risk-scorer.js';
 export { computeAllTrends, computeTrends, computeFailureRateTrends } from './trends.js';
 export { toMarkdown, toJson, toTerminal } from './reporter.js';
+export {
+  generateSuggestions,
+  toYaml as toYamlSuggestions,
+  toJsonSuggestions,
+  toTerminalSuggestions,
+  toMarkdownSuggestions,
+} from './suggest.js';
+export type { PolicySuggestion, SuggestionEvidence, SuggestionReport } from './suggest.js';
 export type {
   ViolationRecord,
   ViolationCluster,

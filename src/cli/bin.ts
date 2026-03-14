@@ -183,13 +183,16 @@ const COMMANDS: Record<string, CommandHelp> = {
   },
   policy: {
     name: 'agentguard policy',
-    description: 'Policy management tools (validate, etc.)',
+    description: 'Policy management tools (validate, suggest)',
     usage: 'agentguard policy <command> [options]',
     flags: [],
     examples: [
       'agentguard policy validate agentguard.yaml',
       'agentguard policy validate my-policy.json --json',
       'agentguard policy validate agentguard.yaml --strict',
+      'agentguard policy suggest',
+      'agentguard policy suggest --yaml',
+      'agentguard policy suggest --json',
     ],
   },
   simulate: {
@@ -565,6 +568,9 @@ function printHelp(): void {
     agentguard policy validate <file>        Validate a policy file (YAML/JSON)
     agentguard policy validate ... --strict  Include best-practice checks
     agentguard policy validate ... --json    Output as JSON
+    agentguard policy suggest                Suggest rules based on violation patterns
+    agentguard policy suggest --yaml         Output suggestions as YAML rules
+    agentguard policy suggest --json         Output suggestions as JSON
 
   \x1b[1mPlugins:\x1b[0m
     agentguard plugin list                    List installed plugins
