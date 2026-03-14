@@ -684,6 +684,56 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
   },
 
   {
+    id: 'no-governance-self-modification',
+    name: 'No Governance Self-Modification',
+    description:
+      'Agents must not modify governance configuration (policy files, governance data, policy packs)',
+    severity: 5,
+    check(state) {
+      const GOVERNANCE_DIR_PATTERNS = ['.agentguard/', '.agentguard\\', 'policies/', 'policies\\'];
+      const GOVERNANCE_FILE_BASENAMES = ['agentguard.yaml', 'agentguard.yml', '.agentguard.yaml'];
+
+      const matchesGovernancePath = (path: string) => {
+        const lower = path.toLowerCase();
+        if (GOVERNANCE_DIR_PATTERNS.some((p) => lower.includes(p.toLowerCase()))) {
+          return true;
+        }
+        const basename = path.split(/[\\/]/).pop() || '';
+        if (GOVERNANCE_FILE_BASENAMES.some((f) => basename.toLowerCase() === f)) {
+          return true;
+        }
+        return false;
+      };
+
+      const target = state.currentTarget || '';
+      const targetViolation = target !== '' && matchesGovernancePath(target);
+
+      const command = state.currentCommand || '';
+      const commandViolation =
+        command !== '' &&
+        (matchesGovernancePath(command) ||
+          GOVERNANCE_FILE_BASENAMES.some((f) => command.toLowerCase().includes(f)));
+
+      const governanceFiles = (state.modifiedFiles || []).filter((f) => matchesGovernancePath(f));
+
+      const holds = !targetViolation && !commandViolation && governanceFiles.length === 0;
+
+      const violations: string[] = [];
+      if (targetViolation) violations.push(`target: ${target}`);
+      if (commandViolation) violations.push(`command references governance paths`);
+      if (governanceFiles.length > 0) violations.push(`modified: ${governanceFiles.join(', ')}`);
+
+      return {
+        holds,
+        expected: 'No modifications to governance configuration',
+        actual: holds
+          ? 'No governance files affected'
+          : `Governance self-modification detected (${violations.join('; ')})`,
+      };
+    },
+  },
+
+  {
     id: 'lockfile-integrity',
     name: 'Lockfile Integrity',
     description: 'Package lockfiles must stay in sync with manifests',
