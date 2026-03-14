@@ -56,31 +56,31 @@ A comprehensive codebase audit assessed the current system against the strategic
 
 | Component | Status | Key Files |
 |-----------|--------|-----------|
-| Canonical Action Representation (23 types, 8 classes) | Implemented | `src/core/actions.ts` |
-| Action Authorization Boundary (AAB) | Implemented (2 bypass vectors) | `src/kernel/aab.ts` |
-| Policy Evaluator (two-phase deny/allow) | Implemented | `src/policy/evaluator.ts` |
-| 10 Built-in Invariants | Fully Implemented | `src/invariants/definitions.ts`, `src/invariants/checker.ts` |
-| Event Model (49 event kinds) | Comprehensive | `src/events/schema.ts` |
-| JSONL Persistence | Implemented | `src/events/jsonl.ts` |
-| Simulation Engine (3 simulators + impact forecast) | Fully Implemented | `src/kernel/simulation/` |
-| Blast Radius Computation | Implemented | `src/kernel/blast-radius.ts` |
-| Escalation State Machine (NORMAL → LOCKDOWN) | Implemented | `src/kernel/monitor.ts` |
-| Replay Engine + Comparator | Implemented | `src/kernel/replay-engine.ts`, `src/kernel/replay-comparator.ts` |
-| Evidence Pack Generation | Implemented | `src/kernel/evidence.ts` |
-| Decision Record Factory | Implemented | `src/kernel/decisions/factory.ts` |
+| Canonical Action Representation (23 types, 8 classes) | Implemented | `packages/core/src/actions.ts` |
+| Action Authorization Boundary (AAB) | Implemented (2 bypass vectors) | `packages/kernel/src/aab.ts` |
+| Policy Evaluator (two-phase deny/allow) | Implemented | `packages/policy/src/evaluator.ts` |
+| 10 Built-in Invariants | Fully Implemented | `packages/invariants/src/definitions.ts`, `packages/invariants/src/checker.ts` |
+| Event Model (49 event kinds) | Comprehensive | `packages/events/src/schema.ts` |
+| JSONL Persistence | Implemented | `packages/events/src/jsonl.ts` |
+| Simulation Engine (3 simulators + impact forecast) | Fully Implemented | `packages/kernel/src/simulation/` |
+| Blast Radius Computation | Implemented | `packages/kernel/src/blast-radius.ts` |
+| Escalation State Machine (NORMAL → LOCKDOWN) | Implemented | `packages/kernel/src/monitor.ts` |
+| Replay Engine + Comparator | Implemented | `packages/kernel/src/replay-engine.ts`, `packages/kernel/src/replay-comparator.ts` |
+| Evidence Pack Generation | Implemented | `packages/kernel/src/evidence.ts` |
+| Decision Record Factory | Implemented | `packages/kernel/src/decisions/factory.ts` |
 
 ### Supporting Systems — Functional
 
 | Component | Status | Key Files |
 |-----------|--------|-----------|
-| Cross-session Analytics (aggregation, clustering, trends) | Implemented | `src/analytics/` |
-| Plugin Ecosystem (discovery, registry, validation) | Implemented | `src/plugins/` |
-| Renderer Plugin System | Implemented | `src/renderers/` |
-| CLI (guard, inspect, events, replay, export, import, simulate, ci-check, analytics, plugin, policy, claude-hook, claude-init, init, diff, evidence-pr, traces) | Implemented | `src/cli/` |
-| Claude Code Hook Integration | Implemented | `src/adapters/claude-code.ts` |
-| VS Code Extension (sidebar panels, event reader, inline diagnostics) | Implemented | `vscode-extension/` |
-| Policy Pack Loader | Implemented | `src/policy/pack-loader.ts` |
-| YAML Policy Parser | Implemented | `src/policy/yaml-loader.ts` |
+| Cross-session Analytics (aggregation, clustering, trends) | Implemented | `packages/analytics/src/` |
+| Plugin Ecosystem (discovery, registry, validation) | Implemented | `packages/plugins/src/` |
+| Renderer Plugin System | Implemented | `packages/renderers/src/` |
+| CLI (guard, inspect, events, replay, export, import, simulate, ci-check, analytics, plugin, policy, claude-hook, claude-init, init, diff, evidence-pr, traces) | Implemented | `apps/cli/src/` |
+| Claude Code Hook Integration | Implemented | `packages/adapters/src/claude-code.ts` |
+| VS Code Extension (sidebar panels, event reader, inline diagnostics) | Implemented | `apps/vscode-extension/` |
+| Policy Pack Loader | Implemented | `packages/policy/src/pack-loader.ts` |
+| YAML Policy Parser | Implemented | `packages/policy/src/yaml-loader.ts` |
 
 ### Advanced Roadmap Items — Status
 
@@ -115,7 +115,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | P-1b Transactional Protocol | Not Started | Aspirational |
 | Confidence-Based HITL | Partial | Labels only |
 | Multi-Agent Identity | Aspirational | Types exist, no enforcement |
-| Shared State & Heartbeat | Partial | Heartbeat implemented (`src/kernel/heartbeat.ts`) |
+| Shared State & Heartbeat | Partial | Heartbeat implemented (`packages/kernel/src/heartbeat.ts`) |
 | Formal Verification (Z3) | Not Started | Aspirational |
 | Automated Invariant Learning | Not Started | Aspirational |
 
@@ -128,24 +128,24 @@ A comprehensive codebase audit assessed the current system against the strategic
 One bypass path remains in the AAB (one previously identified vector has been resolved):
 
 **1. Unknown actions default-allow.**
-`src/policy/evaluator.ts` returns `allowed: true` when no policy rule matches an action. Unrecognized tool calls pass through governance unchecked. This violates the core principle of reference monitors: default deny.
+`packages/policy/src/evaluator.ts` returns `allowed: true` when no policy rule matches an action. Unrecognized tool calls pass through governance unchecked. This violates the core principle of reference monitors: default deny.
 
 **~~2. Missing adapters silently skip execution.~~ — Resolved.**
-`src/kernel/kernel.ts` now emits `ActionDenied` when no registered adapter exists, closing this bypass vector.
+`packages/kernel/src/kernel.ts` now emits `ActionDenied` when no registered adapter exists, closing this bypass vector.
 
 ### Claims Requiring Correction
 
 - **"Complete Mediation"** — Not achieved due to the remaining default-allow bypass vector above.
 - **"Tamper-proof"** — Event sink errors are silently swallowed. Escalation state can be reset without audit lock.
-- **Intervention types (PAUSE, ROLLBACK, TEST_ONLY)** — Defined in `src/kernel/decision.ts` but only DENY is enforced. Others are metadata labels.
+- **Intervention types (PAUSE, ROLLBACK, TEST_ONLY)** — Defined in `packages/kernel/src/decision.ts` but only DENY is enforced. Others are metadata labels.
 
 ### Destructive Pattern Coverage Gap — Resolved
 
-The AAB now detects 87 destructive shell patterns (`src/kernel/aab.ts`), expanded from the original 10. Coverage includes `sudo`, `pkill`, `killall`, `truncate`, `shred`, `chown`, `docker rm/rmi/system prune`, `systemctl stop/disable`, database-specific DROP commands, `npm uninstall -g`, and many more.
+The AAB now detects 87 destructive shell patterns (`packages/kernel/src/aab.ts`), expanded from the original 10. Coverage includes `sudo`, `pkill`, `killall`, `truncate`, `shred`, `chown`, `docker rm/rmi/system prune`, `systemctl stop/disable`, database-specific DROP commands, `npm uninstall -g`, and many more.
 
 ### Escalation Audit Gap — Resolved
 
-Monitor escalation state transitions are now persisted as `StateChanged` DomainEvents in the event store (`src/kernel/monitor.ts`). State changes include trigger action, denial/violation counts, and threshold values.
+Monitor escalation state transitions are now persisted as `StateChanged` DomainEvents in the event store (`packages/kernel/src/monitor.ts`). State changes include trigger action, denial/violation counts, and threshold values.
 
 ---
 
@@ -179,21 +179,21 @@ Monitor escalation state transitions are now persisted as `StateChanged` DomainE
 
 > **Theme:** Deterministic agent governance
 
-- [x] Action Authorization Boundary (AAB) implementation (`src/kernel/aab.ts`)
+- [x] Action Authorization Boundary (AAB) implementation (`packages/kernel/src/aab.ts`)
 - [x] Policy definition format (JSON + YAML) (`policy/action_rules.json`)
-- [x] Policy loader and parser (`src/policy/loader.ts`)
-- [x] Deterministic policy evaluator (`src/policy/evaluator.ts`)
-- [x] Invariant monitoring engine (`src/invariants/checker.ts`)
-- [x] Built-in invariants (`src/invariants/definitions.ts`)
-- [x] Blast radius computation (`src/kernel/blast-radius.ts`)
-- [x] Evidence pack generation and persistence (`src/kernel/evidence.ts`)
+- [x] Policy loader and parser (`packages/policy/src/loader.ts`)
+- [x] Deterministic policy evaluator (`packages/policy/src/evaluator.ts`)
+- [x] Invariant monitoring engine (`packages/invariants/src/checker.ts`)
+- [x] Built-in invariants (`packages/invariants/src/definitions.ts`)
+- [x] Blast radius computation (`packages/kernel/src/blast-radius.ts`)
+- [x] Evidence pack generation and persistence (`packages/kernel/src/evidence.ts`)
 - [x] CLI governance commands (`agentguard guard`, `agentguard inspect`)
 - [x] Governance event emission into canonical event model
-- [x] Integration with Claude Code hook (`src/adapters/claude-code.ts`, `src/cli/commands/claude-hook.ts`)
-- [x] Pre-execution simulation engine (`src/kernel/simulation/`)
-- [x] Filesystem simulator — risk assessment by path pattern (`src/kernel/simulation/filesystem-simulator.ts`)
-- [x] Git simulator — push/merge/branch impact analysis (`src/kernel/simulation/git-simulator.ts`)
-- [x] Package simulator — dependency change detection via dry-run (`src/kernel/simulation/package-simulator.ts`)
+- [x] Integration with Claude Code hook (`packages/adapters/src/claude-code.ts`, `apps/cli/src/commands/claude-hook.ts`)
+- [x] Pre-execution simulation engine (`packages/kernel/src/simulation/`)
+- [x] Filesystem simulator — risk assessment by path pattern (`packages/kernel/src/simulation/filesystem-simulator.ts`)
+- [x] Git simulator — push/merge/branch impact analysis (`packages/kernel/src/simulation/git-simulator.ts`)
+- [x] Package simulator — dependency change detection via dry-run (`packages/kernel/src/simulation/package-simulator.ts`)
 - [x] Simulation-triggered invariant re-evaluation (high-risk simulation flips ALLOW → DENY)
 - [x] `SIMULATION_COMPLETED` event kind with blast radius and risk level
 
@@ -201,33 +201,33 @@ Monitor escalation state transitions are now persisted as `StateChanged` DomainE
 
 > **Theme:** Every session is replayable
 
-- [x] File-based event store (`src/cli/file-event-store.ts`)
+- [x] File-based event store (`apps/cli/src/file-event-store.ts`)
 - [x] Event stream serialization (NDJSON/JSONL)
 - [x] Session metadata (run ID, timestamps)
-- [x] Execution event log (`src/core/execution-log/`)
+- [x] Execution event log (`packages/core/src/execution-log/`)
 - [x] CLI replay command (`agentguard replay`)
-- [x] Deterministic replay with seeded RNG (`src/core/rng.ts`, `src/kernel/replay-engine.ts`)
-- [x] Replay comparator (verify original vs replayed outcomes) (`src/kernel/replay-comparator.ts`)
-- [x] Event export/import for sharing sessions (`src/cli/commands/export.ts`, `src/cli/commands/import.ts`)
-- [x] SQLite storage backend (opt-in alternative to JSONL with indexed queries) (`src/storage/`)
+- [x] Deterministic replay with seeded RNG (`packages/core/src/rng.ts`, `packages/kernel/src/replay-engine.ts`)
+- [x] Replay comparator (verify original vs replayed outcomes) (`packages/kernel/src/replay-comparator.ts`)
+- [x] Event export/import for sharing sessions (`apps/cli/src/commands/export.ts`, `apps/cli/src/commands/import.ts`)
+- [x] SQLite storage backend (opt-in alternative to JSONL with indexed queries) (`packages/storage/src/`)
 
 ### Phase 4 — Plugin Ecosystem `STABLE`
 
 > **Theme:** Extensible by design
 
-- [x] Policy pack loading system (community policy sets) (`src/policy/pack-loader.ts`)
-- [x] Renderer plugin interface (`src/renderers/`)
-- [x] Replay processor interface (`src/kernel/replay-processor.ts`)
-- [x] Plugin validation and sandboxing (`src/plugins/validator.ts`, `src/plugins/sandbox.ts`)
-- [x] Plugin registry / discovery mechanism (`src/plugins/registry.ts`, `src/plugins/discovery.ts`)
+- [x] Policy pack loading system (community policy sets) (`packages/policy/src/pack-loader.ts`)
+- [x] Renderer plugin interface (`packages/renderers/src/`)
+- [x] Replay processor interface (`packages/kernel/src/replay-processor.ts`)
+- [x] Plugin validation and sandboxing (`packages/plugins/src/validator.ts`, `packages/plugins/src/sandbox.ts`)
+- [x] Plugin registry / discovery mechanism (`packages/plugins/src/registry.ts`, `packages/plugins/src/discovery.ts`)
 
 ### Phase 5 — Editor Integrations `IN PROGRESS`
 
 > **Theme:** Governance moves into the editor
 
-- [x] VS Code extension: sidebar panel with run status (`vscode-extension/src/providers/run-status-provider.ts`)
-- [x] VS Code: governance notifications for policy violations (`vscode-extension/src/services/notification-service.ts`)
-- [x] VS Code: inline invariant violation indicators (`vscode-extension/src/services/diagnostics-service.ts`, `vscode-extension/src/services/violation-mapper.ts`)
+- [x] VS Code extension: sidebar panel with run status (`apps/vscode-extension/src/providers/run-status-provider.ts`)
+- [x] VS Code: governance notifications for policy violations (`apps/vscode-extension/src/services/notification-service.ts`)
+- [x] VS Code: inline invariant violation indicators (`apps/vscode-extension/src/services/diagnostics-service.ts`, `apps/vscode-extension/src/services/violation-mapper.ts`)
 - [ ] JetBrains plugin (IntelliJ/WebStorm)
 - [ ] Claude Code deep integration (full governance kernel in hook pipeline)
 
@@ -243,10 +243,10 @@ Phases are ordered to prioritize **effect-path closure and mandatory mediation**
 
 This is the architectural hinge. These changes transform the AAB from advisory interception to mandatory execution control.
 
-- [ ] Default-deny unknown actions in `src/policy/evaluator.ts` (change fallback from `allowed: true` to `allowed: false`)
-- [x] Deny actions with no registered adapter in `src/kernel/kernel.ts` (emit `ActionDenied` instead of silently skipping)
-- [x] Persist escalation state changes as `StateChanged` DomainEvents in `src/kernel/monitor.ts`
-- [x] Expand destructive command patterns in `src/kernel/aab.ts` (expanded from 10 to 87 patterns covering sudo, pkill, docker, systemctl, database commands, and more)
+- [ ] Default-deny unknown actions in `packages/policy/src/evaluator.ts` (change fallback from `allowed: true` to `allowed: false`)
+- [x] Deny actions with no registered adapter in `packages/kernel/src/kernel.ts` (emit `ActionDenied` instead of silently skipping)
+- [x] Persist escalation state changes as `StateChanged` DomainEvents in `packages/kernel/src/monitor.ts`
+- [x] Expand destructive command patterns in `packages/kernel/src/aab.ts` (expanded from 10 to 87 patterns covering sudo, pkill, docker, systemctl, database commands, and more)
 - [ ] Enforce intervention types beyond DENY (implement PAUSE and ROLLBACK behaviors in kernel execution)
 - [ ] Governance self-modification invariant — agents must not modify `agentguard.yaml`, `.agentguard/`, or `policies/` (prerequisite for tamper-resistance claim)
 - [ ] Performance benchmark suite — formal latency measurement (p50/p95/p99) per action type for policy evaluation, invariant checking, and simulation overhead. Publish results as a marketing asset and regression gate in CI
@@ -255,12 +255,12 @@ This is the architectural hinge. These changes transform the AAB from advisory i
 
 > **Theme:** Close invariant coverage gaps. The current 10 invariants leave large classes of agent behavior ungoverned.
 
-The `SystemState` interface in `src/invariants/definitions.ts` is the bottleneck for invariant expansion — it needs to become a richer context object with action-specific fields.
+The `SystemState` interface in `packages/invariants/src/definitions.ts` is the bottleneck for invariant expansion — it needs to become a richer context object with action-specific fields.
 
 - [ ] CI/CD config modification invariant (severity 5) — block writes to `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `.circleci/config.yml`
 - [ ] Network egress governance invariant (severity 4) — deny HTTP requests to non-allowlisted domains (extend `SystemState` with `isNetworkRequest`, `requestUrl`, `requestDomain`)
 - [x] Credential file creation invariant (severity 5) — inspect `currentTarget` for SSH keys, `.netrc`, `~/.aws/credentials`, Docker config (closes gap where `no-secret-exposure` misses new file creation)
-- [x] Package.json script injection invariant (severity 4) — flag `package.json` modifications that alter lifecycle script entries (`src/invariants/definitions.ts`)
+- [x] Package.json script injection invariant (severity 4) — flag `package.json` modifications that alter lifecycle script entries (`packages/invariants/src/definitions.ts`)
 - [ ] Large single-file write invariant (severity 3) — enforce per-file size limit (extend `SystemState` with `writeSizeBytes`)
 - [ ] Docker/container config modification invariant (severity 3) — protect `Dockerfile`, `docker-compose.yml`, `.dockerignore`
 - [ ] Database migration safety invariant (severity 3) — flag writes to migration directories containing destructive DDL
@@ -277,11 +277,11 @@ The `RunManifest` defines the session's authority boundary. The `IntentSpec` (a 
 
 Prior art: Kubernetes Capability Primitives (KCP), OS capability-based security models.
 
-- [ ] `RunManifest` type with role and capability grants (extend existing `Capability` type in `src/core/types.ts`)
+- [ ] `RunManifest` type with role and capability grants (extend existing `Capability` type in `packages/core/src/types.ts`)
 - [ ] `IntentSpec` format — machine-readable contract of expected agent behavior (planned action types, target files/branches, expected scope). Declared independently of the agent, loaded at session start
 - [ ] Intent-vs-execution comparison in audit trail — flag actions that fall outside declared intent even if policy allows them (advisory initially, enforceable later)
-- [ ] Validate every adapter call against session capabilities in `src/kernel/kernel.ts`
-- [ ] Shell adapter privilege profiles (allowlist/denylist patterns per profile) in `src/adapters/shell.ts`
+- [ ] Validate every adapter call against session capabilities in `packages/kernel/src/kernel.ts`
+- [ ] Shell adapter privilege profiles (allowlist/denylist patterns per profile) in `packages/adapters/src/shell.ts`
 - [ ] Wire existing `AgentRole` and `RoleDefinition` types to enforcement layer
 - [ ] Emit capability usage in audit trail (which grant authorized each action)
 - [ ] `RunManifest` YAML format for declarative session configuration
@@ -291,7 +291,7 @@ Prior art: Kubernetes Capability Primitives (KCP), OS capability-based security 
 > **Theme:** Shareable, composable, discoverable policies
 
 - [x] Policy templates for common scenarios (`policies/strict`, `policies/ci-safe`, `policies/enterprise`, `policies/open-source`)
-- [x] Policy composition (multiple policy files merged with precedence) (`src/policy/composer.ts`, `guard --policy a --policy b`)
+- [x] Policy composition (multiple policy files merged with precedence) (`packages/policy/src/composer.ts`, `guard --policy a --policy b`)
 - [x] Policy validation CLI (`agentguard policy validate <file>`)
 - [ ] Community policy packs (SOC2, HIPAA, internal engineering standards)
 - [ ] Policy pack versioning and compatibility
@@ -314,7 +314,7 @@ Prior art: Kubernetes Capability Primitives (KCP), OS capability-based security 
 The JSONL persistence layer was the right starting point — append-only, human-readable, zero dependencies. But it doesn't scale: every query requires filesystem enumeration + full file parsing, and hundreds of `.jsonl` files accumulate in `.agentguard/`.
 
 - [x] SQLite storage adapter implementing existing `EventStore` interface
-- [x] Firestore storage adapter (analytics, sink, store) for cloud-native deployments (`src/storage/firestore-*.ts`)
+- [x] Firestore storage adapter (analytics, sink, store) for cloud-native deployments (`packages/storage/src/firestore-*.ts`)
 - [x] `agentguard init firestore` scaffolding (security rules + credentials guide)
 - [x] Schema design: `events`, `decisions`, `sessions` tables with JSON payload columns
 - [x] Indexed columns: `kind`, `timestamp`, `runId`, `actionType`, `fingerprint`
@@ -324,15 +324,15 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [x] JSONL export compatibility — `agentguard export` still produces portable JSONL
 - [x] Storage location: `~/.agentguard/agentguard.db` (home directory, out of repo tree)
 - [x] Retain JSONL as optional fallback/streaming sink for real-time tailing
-- [x] Firestore NoSQL storage backend for cross-session governance data sharing (`src/storage/firestore-store.ts`, `firestore-sink.ts`, `firestore-analytics.ts`)
+- [x] Firestore NoSQL storage backend for cross-session governance data sharing (`packages/storage/src/firestore-store.ts`, `firestore-sink.ts`, `firestore-analytics.ts`)
 - [x] `agentguard init firestore` scaffold command for secure Firestore backend setup
-- [x] Wire up `sessions` table — insert on `RunStarted`, update on `RunEnded` (`src/storage/sqlite-session.ts`)
+- [x] Wire up `sessions` table — insert on `RunStarted`, update on `RunEnded` (`packages/storage/src/sqlite-session.ts`)
 - [ ] Migration v2: add `action_type` column to `events` table, `severity` column to `decisions` table
 - [ ] Add composite index `(kind, timestamp)` on events for covering index scans
 - [ ] Add standalone index on `decisions.action_type` for filtered queries
 - [ ] Built-in SQL analytics queries: top denied actions, violation rate over time, session duration/action count
 - [ ] Replace `loadAllEventsSqlite` full table scan with SQL-native aggregation (`GROUP BY`, pagination)
-- [x] Prepared statement caching for `EventStore.query()` hot paths (`src/storage/sqlite-store.ts`)
+- [x] Prepared statement caching for `EventStore.query()` hot paths (`packages/storage/src/sqlite-store.ts`)
 
 ### Phase 11 — Runtime Tracing & Observability `PLANNED`
 
@@ -340,9 +340,9 @@ The JSONL persistence layer was the right starting point — append-only, human-
 
 - [ ] Adaptive governance depth — tiered evaluation pipeline where known-safe patterns get cached fast-path allow (sub-ms), normal actions get full policy evaluation (~1ms), and high-risk actions get simulation + deep invariant checks (~10-50ms). Reduces throughput impact for typical workflows while maintaining deep analysis where it matters
 - [ ] Enhanced telemetry beyond current flat event logging
-- [x] Run comparison and diff (`agentguard diff <run1> <run2>`) (`src/cli/commands/diff.ts`)
+- [x] Run comparison and diff (`agentguard diff <run1> <run2>`) (`apps/cli/src/commands/diff.ts`)
 - [x] Risk scoring per agent run
-- [x] Failure clustering and trend detection (`src/analytics/cluster.ts`, `src/analytics/trends.ts`)
+- [x] Failure clustering and trend detection (`packages/analytics/src/cluster.ts`, `packages/analytics/src/trends.ts`)
 - [ ] Timeline viewer for governance sessions (`agentguard replay --ui`)
 - [x] Policy evaluation traces CLI (`agentguard traces`)
 - [ ] Metrics export (Prometheus / OpenTelemetry)
@@ -356,7 +356,7 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [x] GitHub Actions integration (reusable workflow)
 - [ ] Pre-merge policy validation (block PRs that violate policy)
 - [ ] CI replay verification (replay governance session in CI)
-- [x] Evidence packs attached to pull requests (`src/cli/commands/evidence-pr.ts`, `src/cli/evidence-summary.ts`)
+- [x] Evidence packs attached to pull requests (`apps/cli/src/commands/evidence-pr.ts`, `apps/cli/src/evidence-summary.ts`)
 - [ ] Policy violation gating (fail CI on unresolved violations)
 
 ### Phase 13 — Environmental Enforcement `PLANNED`
@@ -378,7 +378,7 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [ ] PID-bound capability tokens for privilege separation
 - [ ] Cross-agent policy definitions
 - [ ] Shared state contracts with provenance tracking
-- [x] Heartbeat mechanism for agent liveness (`src/kernel/heartbeat.ts`)
+- [x] Heartbeat mechanism for agent liveness (`packages/kernel/src/heartbeat.ts`)
 - [ ] Multi-agent pipeline orchestration (implement `docs/multi-agent-pipeline.md`)
 - [ ] Multi-agent escalation coordination
 
@@ -470,10 +470,10 @@ The agent governance space is emerging. Several projects address overlapping pro
 
 AgentGuard is built for contributors. Here are the best places to start:
 
-- **Write an invariant pack** — Define domain-specific invariants in `src/invariants/community/`. See `src/invariants/definitions.ts` for the 10 built-in invariants as a reference.
-- **Create a policy pack** — Ship a reusable policy YAML in `policies/`. See `agentguard.yaml` for the format and `src/policy/pack-loader.ts` for the pack loading contract.
-- **Build an adapter** — Add support for a new agent framework in `src/adapters/`. Follow the pattern in `src/adapters/claude-code.ts`.
-- **Add a renderer** — Create a custom governance output renderer implementing the `GovernanceRenderer` interface in `src/renderers/types.ts`.
-- **Write a replay processor** — Build session analysis tools using the `ReplayProcessor` interface in `src/kernel/replay-processor.ts`.
+- **Write an invariant pack** — Define domain-specific invariants in `packages/invariants/src/community/`. See `packages/invariants/src/definitions.ts` for the 10 built-in invariants as a reference.
+- **Create a policy pack** — Ship a reusable policy YAML in `policies/`. See `agentguard.yaml` for the format and `packages/policy/src/pack-loader.ts` for the pack loading contract.
+- **Build an adapter** — Add support for a new agent framework in `packages/adapters/src/`. Follow the pattern in `packages/adapters/src/claude-code.ts`.
+- **Add a renderer** — Create a custom governance output renderer implementing the `GovernanceRenderer` interface in `packages/renderers/src/types.ts`.
+- **Write a replay processor** — Build session analysis tools using the `ReplayProcessor` interface in `packages/kernel/src/replay-processor.ts`.
 
 See the [Plugin API specification](docs/plugin-api.md) for detailed contracts.

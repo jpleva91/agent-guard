@@ -26,7 +26,7 @@ The system has one architectural spine: the **canonical event model**. All syste
          │              Claude Code Adapter                     │
          │                                                     │
          │  Normalize tool calls → RawAgentAction              │
-         │  Implementation: agentguard/adapters/claude-code.ts │
+         │  Implementation: packages/adapters/src/claude-code.ts │
          └──────────────────────┬──────────────────────────────┘
                                 │
                                 ▼
@@ -42,7 +42,7 @@ The system has one architectural spine: the **canonical event model**. All syste
          │  7. ACTION_ALLOWED/DENIED + ACTION_EXECUTED/FAILED  │
          │  8. Escalation tracking (monitor)                   │
          │                                                     │
-         │  Implementation: agentguard/kernel.ts               │
+         │  Implementation: packages/kernel/src/kernel.ts               │
          └──────────────────────┬──────────────────────────────┘
                                 │
                ┌────────────────┼────────────────┐
@@ -107,21 +107,21 @@ The kernel is the **governance producer and action executor**. It is the core of
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
-| Kernel loop | `agentguard/kernel.ts` | Orchestrate propose → evaluate → execute → emit |
-| AAB | `agentguard/core/aab.ts` | Normalize tool calls, detect destructive commands |
-| Engine | `agentguard/core/engine.ts` | Policy + invariant evaluation, intervention selection |
-| Monitor | `agentguard/monitor.ts` | Escalation tracking, lockdown enforcement |
-| Policy evaluator | `agentguard/policies/evaluator.ts` | Rule matching with wildcards and scopes |
-| Policy loader | `agentguard/policies/loader.ts` | JSON policy validation |
-| YAML loader | `agentguard/policies/yaml-loader.ts` | YAML policy parsing |
-| Invariant checker | `agentguard/invariants/checker.ts` | System state invariant verification |
-| Evidence packs | `agentguard/evidence/pack.ts` | Audit trail generation |
-| File adapter | `agentguard/adapters/file.ts` | Read/write/delete/move files |
-| Shell adapter | `agentguard/adapters/shell.ts` | Execute shell commands with timeout |
-| Git adapter | `agentguard/adapters/git.ts` | Git operations with validation |
-| Claude Code adapter | `agentguard/adapters/claude-code.ts` | Hook payload normalization |
-| TUI renderer | `agentguard/renderers/tui.ts` | Terminal action stream display |
-| JSONL sink | `agentguard/sinks/jsonl.ts` | Event persistence |
+| Kernel loop | `packages/kernel/src/kernel.ts` | Orchestrate propose → evaluate → execute → emit |
+| AAB | `packages/kernel/src/aab.ts` | Normalize tool calls, detect destructive commands |
+| Engine | `packages/kernel/src/decision.ts` | Policy + invariant evaluation, intervention selection |
+| Monitor | `packages/kernel/src/monitor.ts` | Escalation tracking, lockdown enforcement |
+| Policy evaluator | `packages/policy/src/evaluator.ts` | Rule matching with wildcards and scopes |
+| Policy loader | `packages/policy/src/loader.ts` | JSON policy validation |
+| YAML loader | `packages/policy/src/yaml-loader.ts` | YAML policy parsing |
+| Invariant checker | `packages/invariants/src/checker.ts` | System state invariant verification |
+| Evidence packs | `packages/kernel/src/evidence.ts` | Audit trail generation |
+| File adapter | `packages/adapters/src/file.ts` | Read/write/delete/move files |
+| Shell adapter | `packages/adapters/src/shell.ts` | Execute shell commands with timeout |
+| Git adapter | `packages/adapters/src/git.ts` | Git operations with validation |
+| Claude Code adapter | `packages/adapters/src/claude-code.ts` | Hook payload normalization |
+| TUI renderer | `packages/renderers/src/tui-renderer.ts` | Terminal action stream display |
+| JSONL sink | `packages/events/src/jsonl.ts` | Event persistence |
 
 ### Domain Layer (Shared)
 
@@ -129,19 +129,19 @@ Pure domain logic with no environment dependencies.
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
-| Canonical actions | `domain/actions.ts` | 23 action types, 8 classes |
-| Canonical events | `domain/events.ts` | 50+ event kinds, factory, validation |
-| Reference monitor | `domain/reference-monitor.ts` | Action authorization with decision trail |
-| Adapter registry | `domain/execution/adapters.ts` | Action class → handler mapping |
-| Event store | `domain/event-store.ts` | In-memory event persistence |
+| Canonical actions | `packages/core/src/actions.ts` | 23 action types, 8 classes |
+| Canonical events | `packages/events/src/schema.ts` | 50+ event kinds, factory, validation |
+| Reference monitor | `packages/kernel/src/decision.ts` | Action authorization with decision trail |
+| Adapter registry | `packages/adapters/src/registry.ts` | Action class → handler mapping |
+| Event store | `packages/events/src/store.ts` | In-memory event persistence |
 
 ### CLI Layer
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
-| `agentguard guard` | `cli/commands/guard.ts` | Start governed action runtime |
-| `agentguard inspect` | `cli/commands/inspect.ts` | Show action graph for a run |
-| `agentguard events` | `cli/commands/inspect.ts` | Show raw event stream for a run |
+| `agentguard guard` | `apps/cli/src/commands/guard.ts` | Start governed action runtime |
+| `agentguard inspect` | `apps/cli/src/commands/inspect.ts` | Show action graph for a run |
+| `agentguard events` | `apps/cli/src/commands/inspect.ts` | Show raw event stream for a run |
 
 ## Integration Guarantees
 

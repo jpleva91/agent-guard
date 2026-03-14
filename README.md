@@ -24,7 +24,7 @@ agent proposes action  →  policy evaluated  →  invariants checked  →  allo
 ```bash
 git clone https://github.com/AgentGuardHQ/agent-guard.git
 cd agent-guard
-npm install && npm run build:ts
+pnpm install && pnpm build
 
 # Evaluate a sample action against the default policy
 echo '{"tool":"Bash","command":"git push origin main"}' | npx agentguard guard --dry-run
@@ -238,77 +238,38 @@ Full kernel loop detail: [docs/unified-architecture.md](docs/unified-architectur
 
 ### Repository Structure
 
+This is a **pnpm monorepo** orchestrated by **Turbo**. Workspace packages live in `packages/`, applications in `apps/`.
+
 ```
-src/
-├── kernel/                 # Governed action kernel
-│   ├── kernel.ts           # Orchestrator (propose → evaluate → execute → emit)
-│   ├── aab.ts              # Action Authorization Boundary (normalization)
-│   ├── blast-radius.ts     # Weighted blast radius computation engine
-│   ├── decision.ts         # Runtime assurance engine
-│   ├── monitor.ts          # Escalation state machine
-│   ├── evidence.ts         # Evidence pack generation
-│   ├── replay-comparator.ts # Replay outcome comparison
-│   ├── replay-engine.ts    # Deterministic replay engine
-│   ├── replay-processor.ts # Replay event processor
-│   ├── heartbeat.ts        # Agent heartbeat monitor
-│   ├── decisions/          # Typed decision records
-│   └── simulation/         # Pre-execution impact simulation
-├── events/                 # Canonical event model
-│   ├── schema.ts           # Event kinds, factory, validation
-│   ├── bus.ts              # Generic typed EventBus
-│   ├── store.ts            # In-memory event store
-│   ├── jsonl.ts            # JSONL event persistence (audit trail)
-│   └── decision-jsonl.ts   # Decision record persistence
-├── policy/                 # Policy system
-│   ├── composer.ts         # Policy composition (multi-file merging)
-│   ├── evaluator.ts        # Rule matching engine
-│   ├── loader.ts           # Policy validation + loading
-│   ├── pack-loader.ts      # Policy pack loader (community policy sets)
-│   └── yaml-loader.ts      # YAML policy parser
-├── invariants/             # Invariant system
-│   ├── definitions.ts      # 10 built-in invariants
-│   └── checker.ts          # Invariant evaluation engine
-├── analytics/              # Cross-session violation analytics
-│   ├── aggregator.ts       # Violation aggregation across sessions
-│   ├── cluster.ts          # Violation clustering by dimension
-│   ├── engine.ts           # Analytics engine orchestrator
-│   ├── index.ts            # Module re-exports
-│   ├── reporter.ts         # Output formatters (terminal, JSON, markdown)
-│   ├── risk-scorer.ts      # Per-run risk scoring engine
-│   ├── trends.ts           # Violation trend computation
-│   └── types.ts            # Analytics type definitions
-├── adapters/               # Execution adapters
-│   ├── file.ts, shell.ts, git.ts  # Action handlers
-│   ├── claude-code.ts      # Claude Code hook adapter
-│   └── registry.ts         # Adapter registry
-├── plugins/                # Plugin ecosystem
-│   ├── discovery.ts        # Plugin discovery mechanism
-│   ├── registry.ts         # Plugin registry
-│   ├── sandbox.ts          # Plugin sandboxing
-│   ├── validator.ts        # Plugin validation
-│   ├── types.ts            # Plugin type definitions
-│   └── index.ts            # Module re-exports
-├── renderers/              # Renderer plugin system
-│   ├── registry.ts         # Renderer registry
-│   ├── tui-renderer.ts     # TUI renderer implementation
-│   ├── types.ts            # Renderer type definitions
-│   └── index.ts            # Module re-exports
-├── cli/                    # CLI entry point + commands
-│   ├── bin.ts              # Main entry
+packages/
+├── core/src/               # @red-codes/core — Shared types, actions, hash, rng, execution-log
+├── events/src/             # @red-codes/events — Canonical event model (schema, bus, store, JSONL)
+├── policy/src/             # @red-codes/policy — Policy evaluation, YAML/JSON loaders, composition
+├── invariants/src/         # @red-codes/invariants — 10 built-in invariant definitions + checker
+├── kernel/src/             # @red-codes/kernel — Governed action kernel (orchestrator, AAB, decisions, simulation)
+├── adapters/src/           # @red-codes/adapters — Execution adapters (file, shell, git, claude-code)
+├── analytics/src/          # @red-codes/analytics — Cross-session violation analytics
+├── storage/src/            # @red-codes/storage — SQLite + Firestore backends (opt-in)
+├── telemetry/src/          # @red-codes/telemetry — Runtime telemetry and logging
+├── plugins/src/            # @red-codes/plugins — Plugin ecosystem (discovery, registry, sandboxing)
+├── renderers/src/          # @red-codes/renderers — Renderer plugin system (TUI renderer)
+├── runtime/src/            # @red-codes/runtime — Agent runtime (placeholder)
+├── sentinel01/src/         # @red-codes/sentinel01 — Robotics/edge module (placeholder)
+├── adapter-openclaw/src/   # @red-codes/adapter-openclaw — OpenClaw adapter (placeholder)
+└── telemetry-client/src/   # @red-codes/telemetry-client — Telemetry client (placeholder)
+
+apps/
+├── cli/src/                # @red-codes/agentguard — CLI (published npm package)
+│   ├── bin.ts              # CLI entry point
 │   ├── evidence-summary.ts # Evidence summary generator for PR reports
-│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, claude-hook, claude-init, init, diff, evidence-pr, traces
-├── storage/                # Storage backends: SQLite and Firestore (opt-in alternatives to JSONL)
-├── telemetry/              # Runtime telemetry and logging
-└── core/                   # Shared utilities (types, actions, hash, rng, execution-log)
+│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, etc.
+├── vscode-extension/src/   # agentguard-vscode — VS Code extension
+│   ├── extension.ts        # Sidebar panels, file watcher, notifications
+│   ├── providers/          # Tree data providers (run status, run history, recent events)
+│   └── services/           # Event reader, notification formatter, diagnostics, violation mapper
+└── telemetry-server/src/   # Telemetry server (placeholder)
 
-vscode-extension/              # VS Code extension
-├── src/
-│   ├── extension.ts           # Sidebar panels, file watcher, notifications
-│   ├── providers/             # Tree data providers (run status, run history, recent events)
-│   └── services/              # Event reader, notification formatter + service, diagnostics, violation mapper
-└── package.json               # Extension manifest
-
-policies/                      # Policy packs (YAML: ci-safe, enterprise, open-source, strict)
+policies/                   # Policy packs (YAML: ci-safe, enterprise, open-source, strict)
 ```
 
 ## Run Locally
@@ -316,10 +277,9 @@ policies/                      # Policy packs (YAML: ci-safe, enterprise, open-s
 ```bash
 git clone https://github.com/AgentGuardHQ/agent-guard.git
 cd agent-guard
-npm install
-npm run build:ts        # Compile TypeScript → dist/
-npm run ts:test         # Run TypeScript tests (vitest)
-npm test                # Run JavaScript tests
+pnpm install            # Install dependencies
+pnpm build              # Build all packages (turbo build)
+pnpm test               # Run all tests (turbo test)
 ```
 
 ## Documentation

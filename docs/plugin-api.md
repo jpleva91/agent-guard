@@ -10,16 +10,14 @@ Event sources feed raw signals into the normalization pipeline. Any system that 
 
 **Contract:** An event source must implement `{ name, start(onRawSignal), stop() }`. The `onRawSignal(rawText)` callback feeds raw text into the ingestion pipeline.
 
-**Implementation:** `domain/source-registry.js` — the `SourceRegistry` class manages source lifecycle.
+**Implementation:** `packages/plugins/src/registry.ts` — the plugin registry manages source lifecycle.
 
 **Quick Start:**
 
-```javascript
-import { SourceRegistry } from '../domain/source-registry.js';
-import { EventBus } from '../domain/event-bus.js';
-import { ingest } from '../domain/ingestion/pipeline.js';
+```typescript
+import { EventBus } from '@red-codes/events';
 
-const registry = new SourceRegistry({ eventBus: new EventBus(), ingest });
+const bus = new EventBus();
 
 registry.register({
   name: 'my-custom-source',
@@ -35,9 +33,9 @@ registry.start();
 **Built-in sources:**
 | Source | Adapter | Path |
 |--------|---------|------|
-| stderr (watch mode) | Watch source | `core/sources/watch-source.js` |
-| Claude Code errors | Claude hook source | `core/sources/claude-hook-source.js` |
-| Project scan | Scan source | `core/sources/scan-source.js` |
+| stderr (watch mode) | Watch source | `packages/adapters/src/` |
+| Claude Code errors | Claude hook source | `packages/adapters/src/claude-code.ts` |
+| Project scan | Scan source | `packages/plugins/src/discovery.ts` |
 
 **SourceRegistry API:**
 
@@ -92,13 +90,13 @@ Renderers subscribe to governance events and present them to the developer in re
 
 **Contract:** A renderer subscribes to EventBus events and presents the appropriate output for each event type.
 
-**Integration point:** Subscribe to events via `domain/event-bus.js`.
+**Integration point:** Subscribe to events via `@red-codes/events` (`EventBus`).
 
 **Built-in renderers:**
 | Renderer | Platform | Path |
 |----------|----------|------|
-| TUI renderer | CLI / terminal | `agentguard/renderers/tui.ts` |
-| JSONL sink | Persistence | `agentguard/sinks/jsonl.ts` |
+| TUI renderer | CLI / terminal | `packages/renderers/src/tui-renderer.ts` |
+| JSONL sink | Persistence | `packages/events/src/jsonl.ts` |
 
 **Planned renderers:**
 | Renderer | Platform |
@@ -109,22 +107,22 @@ Renderers subscribe to governance events and present them to the developer in re
 
 **Implementing a custom renderer:**
 
-```javascript
-import { EventBus } from '../domain/event-bus.js';
-import { Events } from '../domain/events.js';
+```typescript
+import { EventBus } from '@red-codes/events';
+import { EventKind } from '@red-codes/events';
 
 const bus = new EventBus();
 
 // Subscribe to governance events
-bus.on(Events.ACTION_REQUESTED, (event) => {
+bus.on(EventKind.ACTION_REQUESTED, (event) => {
   // Display action proposal
 });
 
-bus.on(Events.ACTION_DENIED, (event) => {
+bus.on(EventKind.ACTION_DENIED, (event) => {
   // Display denial with reason
 });
 
-bus.on(Events.ACTION_EXECUTED, (event) => {
+bus.on(EventKind.ACTION_EXECUTED, (event) => {
   // Display execution result
 });
 ```

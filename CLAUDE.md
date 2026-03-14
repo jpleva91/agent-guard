@@ -13,14 +13,17 @@ The system has one architectural spine: the **canonical event model**. All syste
 - Escalation tracking: NORMAL → ELEVATED → HIGH → LOCKDOWN
 - JSONL event persistence for audit trail and replay
 - Claude Code adapter for PreToolUse/PostToolUse hooks
-- TypeScript source (`src/`), compiled to `dist/` via tsc + esbuild
+- **pnpm monorepo** with Turbo orchestration: 15 packages under `packages/`, 3 apps under `apps/`
+- Each package compiles independently via `tsc`; CLI bundle via `esbuild` in `apps/cli`
+- Scoped npm packages: `@red-codes/*` for workspace modules, `@red-codes/agentguard` for published CLI
 - CLI has runtime dependencies (`chokidar`, `commander`, `pino`); optional `better-sqlite3` for SQLite storage backend; optional Firestore for cloud-based governance data sharing
-- Build tooling: tsc + esbuild + vitest (dev dependencies only)
+- Build tooling: Turbo + tsc + esbuild + vitest (dev dependencies only)
 
 ## Quick Start
 
 ```bash
-npm run build:ts     # Compile TypeScript → dist/
+pnpm install         # Install dependencies
+pnpm build           # Build all packages (turbo build)
 
 # Governance runtime
 echo '{"tool":"Bash","command":"git push origin main"}' | npx agentguard guard --dry-run
@@ -31,123 +34,126 @@ npx agentguard events --last                    # Show raw event stream
 
 ## Project Structure
 
-TypeScript in `src/` is the **single source of truth**. It compiles to `dist/` via `tsc` (individual modules) + `esbuild` (CLI bundle).
+This is a **pnpm monorepo** orchestrated by **Turbo**. Workspace packages live in `packages/`, applications in `apps/`. Each package has its own `src/`, `dist/`, `package.json`, and `tsconfig.json`.
 
 **Top-level documentation**: `README.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `agentguard.yaml` (default policy)
 
 ```
-src/
-├── kernel/                 # Governed action kernel
-│   ├── kernel.ts           # Orchestrator (propose → evaluate → execute → emit)
-│   ├── aab.ts              # Action Authorization Boundary (normalization)
-│   ├── blast-radius.ts     # Weighted blast radius computation engine
-│   ├── decision.ts         # Runtime assurance engine
-│   ├── monitor.ts          # Escalation state machine
-│   ├── evidence.ts         # Evidence pack generation
-│   ├── replay-comparator.ts # Replay outcome comparison
-│   ├── replay-engine.ts    # Deterministic replay engine
-│   ├── replay-processor.ts # Replay event processor
-│   ├── heartbeat.ts        # Agent heartbeat monitor
-│   ├── decisions/          # Typed decision records
-│   │   ├── factory.ts      # Decision record factory
-│   │   └── types.ts        # Decision record type definitions
-│   └── simulation/         # Pre-execution impact simulation
+packages/
+├── core/src/                   # @red-codes/core — Shared utilities
+│   ├── types.ts                # Shared TypeScript type definitions
+│   ├── actions.ts              # 23 canonical action types across 8 classes
+│   ├── hash.ts                 # Content hashing utilities
+│   ├── adapters.ts             # Adapter registry interface
+│   ├── rng.ts                  # Seeded random number generator
+│   └── execution-log/          # Execution audit log
+│       ├── bridge.ts           # Bridge between event systems
+│       ├── event-log.ts        # Event logging
+│       ├── event-projections.ts # Event projections
+│       ├── event-schema.ts     # Event schema definitions
+│       └── index.ts            # Module re-exports
+├── events/src/                 # @red-codes/events — Canonical event model
+│   ├── schema.ts               # Event kinds, factory, validation
+│   ├── bus.ts                  # Generic typed EventBus
+│   ├── store.ts                # In-memory event store
+│   ├── jsonl.ts                # JSONL event persistence (audit trail)
+│   └── decision-jsonl.ts       # Decision record persistence
+├── policy/src/                 # @red-codes/policy — Policy system
+│   ├── composer.ts             # Policy composition (multi-file merging)
+│   ├── evaluator.ts            # Rule matching engine
+│   ├── loader.ts               # Policy validation + loading
+│   ├── pack-loader.ts          # Policy pack loader (community policy sets)
+│   └── yaml-loader.ts          # YAML policy parser
+├── invariants/src/             # @red-codes/invariants — Invariant system
+│   ├── definitions.ts          # 10 built-in invariant definitions
+│   └── checker.ts              # Invariant evaluation engine
+├── kernel/src/                 # @red-codes/kernel — Governed action kernel
+│   ├── kernel.ts               # Orchestrator (propose → evaluate → execute → emit)
+│   ├── aab.ts                  # Action Authorization Boundary (normalization)
+│   ├── blast-radius.ts         # Weighted blast radius computation engine
+│   ├── decision.ts             # Runtime assurance engine
+│   ├── monitor.ts              # Escalation state machine
+│   ├── evidence.ts             # Evidence pack generation
+│   ├── replay-comparator.ts    # Replay outcome comparison
+│   ├── replay-engine.ts        # Deterministic replay engine
+│   ├── replay-processor.ts     # Replay event processor
+│   ├── heartbeat.ts            # Agent heartbeat monitor
+│   ├── decisions/              # Typed decision records
+│   │   ├── factory.ts          # Decision record factory
+│   │   └── types.ts            # Decision record type definitions
+│   └── simulation/             # Pre-execution impact simulation
 │       ├── filesystem-simulator.ts  # File system impact simulation
 │       ├── git-simulator.ts         # Git operation simulation
 │       ├── package-simulator.ts     # Package change simulation
 │       ├── forecast.ts              # Impact forecast builder
 │       ├── registry.ts              # Simulator registry
 │       └── types.ts                 # Simulation type definitions
-├── events/                 # Canonical event model
-│   ├── schema.ts           # Event kinds, factory, validation
-│   ├── bus.ts              # Generic typed EventBus
-│   ├── store.ts            # In-memory event store
-│   ├── jsonl.ts            # JSONL event persistence (audit trail)
-│   └── decision-jsonl.ts   # Decision record persistence
-├── policy/                 # Policy system
-│   ├── composer.ts         # Policy composition (multi-file merging)
-│   ├── evaluator.ts        # Rule matching engine
-│   ├── loader.ts           # Policy validation + loading
-│   ├── pack-loader.ts      # Policy pack loader (community policy sets)
-│   └── yaml-loader.ts      # YAML policy parser
-├── invariants/             # Invariant system
-│   ├── definitions.ts      # 10 built-in invariant definitions
-│   └── checker.ts          # Invariant evaluation engine
-├── analytics/              # Cross-session violation analytics
-│   ├── aggregator.ts       # Violation aggregation across sessions
-│   ├── cluster.ts          # Violation clustering by dimension
-│   ├── engine.ts           # Analytics engine orchestrator
-│   ├── index.ts            # Module re-exports
-│   ├── reporter.ts         # Output formatters (terminal, JSON, markdown)
-│   ├── risk-scorer.ts      # Per-run risk scoring engine
-│   ├── trends.ts           # Violation trend computation
-│   └── types.ts            # Analytics type definitions
-├── adapters/               # Execution adapters
-│   ├── registry.ts         # Adapter registry (action class → handler)
+├── adapters/src/               # @red-codes/adapters — Execution adapters
+│   ├── registry.ts             # Adapter registry (action class → handler)
 │   ├── file.ts, shell.ts, git.ts  # Action handlers
-│   └── claude-code.ts      # Claude Code hook adapter
-├── cli/                    # CLI entry point + commands
-│   ├── bin.ts              # CLI entry point
-│   ├── args.ts             # Argument parsing utilities
-│   ├── colors.ts           # Terminal color helpers
-│   ├── tui.ts              # TUI renderer (terminal action stream)
-│   ├── policy-resolver.ts  # Policy file discovery and resolution
-│   ├── recorder.ts         # Event recording
-│   ├── replay.ts           # Session replay logic
-│   ├── session-store.ts    # Session management
-│   ├── file-event-store.ts # File-based event persistence
-│   ├── evidence-summary.ts # Evidence summary generator for PR reports
-│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, claude-hook, claude-init, init, diff, evidence-pr, traces
-├── plugins/                # Plugin ecosystem
-│   ├── discovery.ts        # Plugin discovery mechanism
-│   ├── registry.ts         # Plugin registry
-│   ├── sandbox.ts          # Plugin sandboxing
-│   ├── validator.ts        # Plugin validation
-│   ├── types.ts            # Plugin type definitions
-│   └── index.ts            # Module re-exports
-├── renderers/              # Renderer plugin system
-│   ├── registry.ts         # Renderer registry
-│   ├── tui-renderer.ts     # TUI renderer implementation
-│   ├── types.ts            # Renderer type definitions
-│   └── index.ts            # Module re-exports
-├── storage/                # Storage backends (SQLite + Firestore, opt-in)
-│   ├── factory.ts          # Storage bundle factory
-│   ├── index.ts            # Module re-exports
-│   ├── migrations.ts       # Schema migrations (version-based)
-│   ├── sqlite-analytics.ts # SQLite-backed analytics queries
-│   ├── sqlite-session.ts   # SQLite session lifecycle (insert on start, update on end)
-│   ├── sqlite-sink.ts      # SQLite event/decision sink
-│   ├── sqlite-store.ts     # SQLite event store implementation
-│   ├── firestore-analytics.ts # Firestore-backed analytics queries
-│   ├── firestore-sink.ts     # Firestore event/decision sink
-│   ├── firestore-store.ts    # Firestore event store implementation
-│   └── types.ts            # Storage type definitions
-├── telemetry/              # Runtime telemetry
-│   ├── index.ts            # Module re-exports
-│   ├── runtimeLogger.ts    # Runtime logging implementation
-│   ├── tracepoint.ts       # Kernel-level tracepoint interface
-│   ├── tracer.ts           # Tracepoint execution engine
-│   └── types.ts            # Telemetry type definitions
-└── core/                   # Shared utilities
-    ├── types.ts            # Shared TypeScript type definitions
-    ├── actions.ts          # 23 canonical action types across 8 classes
-    ├── hash.ts             # Content hashing utilities
-    ├── adapters.ts         # Adapter registry interface
-    ├── rng.ts              # Seeded random number generator
-    └── execution-log/      # Execution audit log
-        ├── bridge.ts       # Bridge between event systems
-        ├── event-log.ts    # Event logging
-        ├── event-projections.ts # Event projections
-        ├── event-schema.ts # Event schema definitions
-        └── index.ts        # Module re-exports
+│   └── claude-code.ts          # Claude Code hook adapter
+├── analytics/src/              # @red-codes/analytics — Cross-session violation analytics
+│   ├── aggregator.ts           # Violation aggregation across sessions
+│   ├── cluster.ts              # Violation clustering by dimension
+│   ├── engine.ts               # Analytics engine orchestrator
+│   ├── index.ts                # Module re-exports
+│   ├── reporter.ts             # Output formatters (terminal, JSON, markdown)
+│   ├── risk-scorer.ts          # Per-run risk scoring engine
+│   ├── trends.ts               # Violation trend computation
+│   └── types.ts                # Analytics type definitions
+├── plugins/src/                # @red-codes/plugins — Plugin ecosystem
+│   ├── discovery.ts            # Plugin discovery mechanism
+│   ├── registry.ts             # Plugin registry
+│   ├── sandbox.ts              # Plugin sandboxing
+│   ├── validator.ts            # Plugin validation
+│   ├── types.ts                # Plugin type definitions
+│   └── index.ts                # Module re-exports
+├── renderers/src/              # @red-codes/renderers — Renderer plugin system
+│   ├── registry.ts             # Renderer registry
+│   ├── tui-renderer.ts         # TUI renderer implementation
+│   ├── types.ts                # Renderer type definitions
+│   └── index.ts                # Module re-exports
+├── storage/src/                # @red-codes/storage — Storage backends (SQLite + Firestore, opt-in)
+│   ├── factory.ts              # Storage bundle factory
+│   ├── index.ts                # Module re-exports
+│   ├── migrations.ts           # Schema migrations (version-based)
+│   ├── sqlite-analytics.ts     # SQLite-backed analytics queries
+│   ├── sqlite-session.ts       # SQLite session lifecycle (insert on start, update on end)
+│   ├── sqlite-sink.ts          # SQLite event/decision sink
+│   ├── sqlite-store.ts         # SQLite event store implementation
+│   ├── firestore-analytics.ts  # Firestore-backed analytics queries
+│   ├── firestore-sink.ts       # Firestore event/decision sink
+│   ├── firestore-store.ts      # Firestore event store implementation
+│   └── types.ts                # Storage type definitions
+├── telemetry/src/              # @red-codes/telemetry — Runtime telemetry
+│   ├── index.ts                # Module re-exports
+│   ├── runtimeLogger.ts        # Runtime logging implementation
+│   ├── tracepoint.ts           # Kernel-level tracepoint interface
+│   ├── tracer.ts               # Tracepoint execution engine
+│   └── types.ts                # Telemetry type definitions
+├── runtime/src/                # @red-codes/runtime — Agent runtime (placeholder)
+├── sentinel01/src/             # @red-codes/sentinel01 — Robotics/edge module (placeholder)
+├── adapter-openclaw/src/       # @red-codes/adapter-openclaw — OpenClaw adapter (placeholder)
+└── telemetry-client/src/       # @red-codes/telemetry-client — Telemetry client (placeholder)
 
-vscode-extension/              # VS Code extension
-├── src/
-│   ├── extension.ts           # Extension entry point (sidebar panels, file watcher)
-│   ├── providers/             # Tree data providers (run status, run history, recent events)
-│   └── services/              # Event reader, notification formatter, notification service, diagnostics service, violation mapper
-├── package.json               # Extension manifest (activation, views, configuration)
-└── tsconfig.json              # Extension TypeScript config
+apps/
+├── cli/src/                    # @red-codes/agentguard — CLI (published npm package)
+│   ├── bin.ts                  # CLI entry point
+│   ├── args.ts                 # Argument parsing utilities
+│   ├── colors.ts               # Terminal color helpers
+│   ├── tui.ts                  # TUI renderer (terminal action stream)
+│   ├── policy-resolver.ts      # Policy file discovery and resolution
+│   ├── recorder.ts             # Event recording
+│   ├── replay.ts               # Session replay logic
+│   ├── session-store.ts        # Session management
+│   ├── file-event-store.ts     # File-based event persistence
+│   ├── evidence-summary.ts     # Evidence summary generator for PR reports
+│   └── commands/               # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, claude-hook, claude-init, init, diff, evidence-pr, traces
+├── vscode-extension/src/       # agentguard-vscode — VS Code extension
+│   ├── extension.ts            # Extension entry point (sidebar panels, file watcher)
+│   ├── providers/              # Tree data providers (run status, run history, recent events)
+│   └── services/               # Event reader, notification formatter, notification service, diagnostics service, violation mapper
+└── telemetry-server/src/       # @red-codes/telemetry-server — Telemetry server (placeholder)
 
 tests/
 ├── *.test.js               # 14 JS test files (custom zero-dependency harness)
@@ -168,24 +174,24 @@ templates/                  # Policy templates (ci-only, development, permissive
 ## Development Commands
 
 ```bash
-# TypeScript build (required before running tests or CLI)
-npm run build:ts           # Build TypeScript (tsc + esbuild → dist/)
-npm run ts:check           # Type-check TypeScript (tsc --noEmit)
+# Build all packages (Turbo orchestrates per-package tsc + esbuild for CLI)
+pnpm build                 # Build all packages (turbo build)
+pnpm ts:check              # Type-check all packages (turbo ts:check)
 
 # Run tests
-npm test                   # Run JS tests
-npm run ts:test            # Run TypeScript tests (vitest)
-npm run ts:test:watch      # Run TypeScript tests in watch mode
-npm run test:coverage      # Run with coverage (c8, 50% line threshold)
+pnpm test                  # Run all tests across workspace (turbo test)
 
 # Code quality
-npm run lint               # Run ESLint
-npm run lint:fix           # Run ESLint with auto-fix
-npm run format             # Check formatting (Prettier)
-npm run format:fix         # Fix formatting (Prettier)
+pnpm lint                  # Run ESLint across all packages (turbo lint)
+pnpm format                # Check formatting (Prettier)
+pnpm format:fix            # Fix formatting (Prettier)
+
+# Per-package filtering
+pnpm build --filter=@red-codes/kernel     # Build a single package
+pnpm test --filter=@red-codes/kernel      # Test a single package
 
 # Run AgentGuard CLI
-npm run dev
+pnpm dev
 ```
 
 ## Architecture & Key Patterns
@@ -200,23 +206,23 @@ The kernel loop is the core of AgentGuard. Every agent action passes through it:
 6. Emit lifecycle events: `ACTION_REQUESTED` → `ACTION_ALLOWED/DENIED` → `ACTION_EXECUTED/FAILED`
 7. Sink all events to JSONL for audit trail
 
-Key files: `kernel/kernel.ts`, `kernel/aab.ts`, `kernel/decision.ts`, `kernel/monitor.ts`
+Key files: `packages/kernel/src/kernel.ts`, `packages/kernel/src/aab.ts`, `packages/kernel/src/decision.ts`, `packages/kernel/src/monitor.ts`
 See `docs/unified-architecture.md` for the full model.
 
-### Directory Layout
-Each top-level directory maps to a single architectural concept:
-- **src/analytics/** — Cross-session violation analytics (aggregation, clustering, trends, risk scoring, reporting)
-- **src/kernel/** — Governed action kernel, escalation, evidence, decisions, simulation
-- **src/events/** — Canonical event model (schema, bus, store, persistence)
-- **src/policy/** — Policy evaluator + loaders (YAML/JSON, pack loader)
-- **src/invariants/** — Invariant definitions + checker
-- **src/adapters/** — Execution adapters (file, shell, git, claude-code)
-- **src/plugins/** — Plugin ecosystem (discovery, registry, validation, sandboxing)
-- **src/renderers/** — Renderer plugin system (registry, TUI renderer)
-- **src/cli/** — CLI entry point and commands
-- **src/core/** — Shared utilities (types, actions, hash, execution-log)
-- **src/storage/** — Storage backends: SQLite and Firestore (opt-in alternatives to JSONL, indexed queries)
-- **src/telemetry/** — Runtime telemetry and logging
+### Package Layout
+Each workspace package maps to a single architectural concept:
+- **packages/analytics/** — Cross-session violation analytics (aggregation, clustering, trends, risk scoring, reporting)
+- **packages/kernel/** — Governed action kernel, escalation, evidence, decisions, simulation
+- **packages/events/** — Canonical event model (schema, bus, store, persistence)
+- **packages/policy/** — Policy evaluator + loaders (YAML/JSON, pack loader)
+- **packages/invariants/** — Invariant definitions + checker
+- **packages/adapters/** — Execution adapters (file, shell, git, claude-code)
+- **packages/plugins/** — Plugin ecosystem (discovery, registry, validation, sandboxing)
+- **packages/renderers/** — Renderer plugin system (registry, TUI renderer)
+- **apps/cli/** — CLI entry point and commands (published as `@red-codes/agentguard`)
+- **packages/core/** — Shared utilities (types, actions, hash, execution-log)
+- **packages/storage/** — Storage backends: SQLite and Firestore (opt-in alternatives to JSONL, indexed queries)
+- **packages/telemetry/** — Runtime telemetry and logging
 
 ### CLI Commands
 - `agentguard analytics` — Analyze violation patterns across governance sessions
@@ -240,7 +246,7 @@ Each top-level directory maps to a single architectural concept:
 - `agentguard init <type>` — Scaffold governance extensions (invariant, policy-pack, adapter, renderer, replay-processor, firestore)
 
 ### Event Model
-The canonical event model is the architectural spine. Event kinds defined in `src/events/schema.ts`:
+The canonical event model is the architectural spine. Event kinds defined in `packages/events/src/schema.ts`:
 - **Governance**: `PolicyDenied`, `UnauthorizedAction`, `InvariantViolation`
 - **Lifecycle**: `RunStarted`, `RunEnded`, `CheckpointReached`, `StateChanged`
 - **Safety**: `BlastRadiusExceeded`, `MergeGuardFailure`, `EvidencePackGenerated`
@@ -255,7 +261,7 @@ The canonical event model is the architectural spine. Event kinds defined in `sr
 - **Ingestion**: `ErrorObserved`, `BugClassified`, `ActivityRecorded`, `EvolutionTriggered`
 
 ### Action Classes & Types
-23 canonical action types across 8 classes, defined in `src/core/actions.ts`:
+23 canonical action types across 8 classes, defined in `packages/core/src/actions.ts`:
 - **file**: `file.read`, `file.write`, `file.delete`, `file.move`
 - **test**: `test.run`, `test.run.unit`, `test.run.integration`
 - **git**: `git.diff`, `git.commit`, `git.push`, `git.branch.create`, `git.branch.delete`, `git.checkout`, `git.reset`, `git.merge`
@@ -266,7 +272,7 @@ The canonical event model is the architectural spine. Event kinds defined in `sr
 - **infra**: `infra.apply`, `infra.destroy`
 
 ### Build & Module System
-TypeScript source compiles via `tsc` (individual modules for tests/imports) + `esbuild` (CLI bundle).
+Turbo orchestrates per-package `tsc` builds (incremental via TypeScript project references). The CLI app (`apps/cli`) is additionally bundled via `esbuild`. Workspace imports use `@red-codes/*` scoped package names.
 
 ## Coding Conventions
 
@@ -276,16 +282,18 @@ TypeScript source compiles via `tsc` (individual modules for tests/imports) + `e
 - Arrow functions preferred
 - **ESLint** enforced via `eslint.config.js` (flat config): `no-var`, `prefer-const`, `eqeqeq`, `no-undef`
 - **Prettier** enforced via `.prettierrc` for consistent formatting
-- Run `npm run lint` and `npm run format` before committing
+- Run `pnpm lint` and `pnpm format` before committing
 - Node.js ≥18 required
 
 ### Configuration
 
-**TypeScript** (`tsconfig.json`):
+**TypeScript** (`tsconfig.base.json` + per-package `tsconfig.json`):
+- Root `tsconfig.base.json` defines shared compiler options; each package extends it
+- Root `tsconfig.json` declares project references for all packages and apps
 - Target: ES2022, Module: ESNext, ModuleResolution: bundler
 - Strict mode enabled, plus `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`
 - `verbatimModuleSyntax: true` — use `import type` for type-only imports
-- Source: `src/`, Output: `dist/`, with declarations and source maps
+- Each package has its own `src/` → `dist/` with declarations and source maps
 
 **Prettier** (`.prettierrc`):
 - Single quotes, trailing commas (es5), printWidth 100, tabWidth 2, semicolons
@@ -297,13 +305,12 @@ TypeScript source compiles via `tsc` (individual modules for tests/imports) + `e
 ## Testing
 
 ```bash
-npm test                   # Run JS tests
-npm run ts:test            # Run TypeScript tests (vitest)
-npm run ts:test:watch      # Run TypeScript tests in watch mode
-npm run test:coverage      # Run with coverage (c8, 50% line threshold)
+pnpm test                  # Run all tests across workspace (turbo test)
+pnpm test --filter=@red-codes/kernel  # Test a single package
 ```
 
 **Test structure:**
+- **Vitest workspace** (`vitest.workspace.ts`): orchestrates tests across all packages
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
 - **TypeScript tests** (`tests/ts/*.test.ts`): 77 files using vitest
 - **Coverage areas**: adapters, analytics (including risk scorer), kernel (AAB, engine, monitor, blast radius, heartbeat, integration, e2e pipeline), CLI commands (args, guard, inspect, init, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate, diff, evidence-pr, traces), decision records, domain models, events, evidence packs, evidence summary, execution log, export-import roundtrip, impact forecast, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, validation), policy evaluation (including composer, pack loader, policy packs, evaluation trace), renderers, replay (engine, comparator, processor), simulation, SQLite storage (analytics, commands, migrations, session, sink, store, factory), Firestore storage, telemetry (including tracepoint), TUI renderer, violation mapper, VS Code event reader, YAML loading

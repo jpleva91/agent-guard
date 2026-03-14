@@ -41,7 +41,7 @@ The surface area of agent execution is substantial. A typical development agent 
 | `deploy` | trigger | Critical |
 | `infra` | apply, destroy | Critical |
 
-> *Source: `src/core/actions.ts` --- 23 action types across 8 classes defined in the reference implementation.*
+> *Source: `packages/core/src/actions.ts` --- 23 action types across 8 classes defined in the reference implementation.*
 
 The core thesis of this paper is:
 
@@ -135,7 +135,7 @@ Runtime Telemetry
 ```
 
 > *See diagram: `paper/diagrams/system-architecture.md`*
-> *Implementation: `src/kernel/decision.ts` --- the `evaluate()` method is the central entry point where all layers converge.*
+> *Implementation: `packages/kernel/src/decision.ts` --- the `evaluate()` method is the central entry point where all layers converge.*
 
 ### 3.2 Design Principles
 
@@ -160,7 +160,7 @@ When an agent requests an action, the engine executes the following pipeline:
 6. **Evidence pack generation** --- If the action was denied or any events were produced, generate an `EvidencePack` containing the full decision context: intent, evaluation result, violation details, event IDs, summary, and severity.
 7. **Event emission** --- Emit all canonical events (policy denials, invariant violations, evidence packs) to the event bus and event store.
 
-> *Implementation: `src/kernel/decision.ts` (evaluate method), `src/kernel/aab.ts` (authorize function)*
+> *Implementation: `packages/kernel/src/decision.ts` (evaluate method), `packages/kernel/src/aab.ts` (authorize function)*
 > *See diagram: `paper/diagrams/aab-decision-flow.md`*
 
 ---
@@ -204,7 +204,7 @@ ACTION_CLASS: { FILE, TEST, GIT, SHELL, NPM, HTTP, DEPLOY, INFRA }
 'infra.destroy'  // Destroy infrastructure
 ```
 
-> *Full definition: `src/core/actions.ts` --- `ACTION_TYPES` object with 23 entries.*
+> *Full definition: `packages/core/src/actions.ts` --- `ACTION_TYPES` object with 23 entries.*
 
 ### 4.3 Intent Normalization
 
@@ -229,7 +229,7 @@ The normalization pipeline:
 3. **Destructive detection**: `isDestructiveCommand()` matches against 11 destructive patterns (rm -rf, DROP DATABASE, dd if=, chmod 777, etc.).
 4. **Branch extraction**: `extractBranch()` parses the target branch from git push commands.
 
-> *Implementation: `src/kernel/aab.ts` --- `normalizeIntent()` function.*
+> *Implementation: `packages/kernel/src/aab.ts` --- `normalizeIntent()` function.*
 > *See diagram: `paper/diagrams/canonical-action-pipeline.md`*
 
 ### 4.4 Key Insight: Actions as Data
@@ -238,7 +238,7 @@ The fundamental insight of CAR is that **actions are data, not commands**. Once 
 
 - **Evaluated** against policies without execution
 - **Validated** for required fields and known types
-- **Fingerprinted** for deduplication (`fingerprintAction()` in `src/core/actions.ts`)
+- **Fingerprinted** for deduplication (`fingerprintAction()` in `packages/core/src/actions.ts`)
 - **Recorded** as canonical events for audit and replay
 - **Compared** across agents, sessions, and time
 
@@ -256,9 +256,9 @@ The AAB implements the classical reference monitor concept (Anderson, 1972) with
 
 **Tamper-proof.** The AAB operates as a deterministic runtime *outside* the AI reasoning layer. The agent cannot modify its own constraints because the policy evaluation logic is not part of the LLM's context or tool set. The agent can only submit raw actions; it cannot access or alter the governance engine.
 
-**Verifiable.** The policy evaluation logic (`src/policy/evaluator.ts`) is pure functions operating on data. There is no inference, no heuristics, no neural network in the evaluation path. The entire authorization codebase is under 500 lines of TypeScript and can be fully analyzed and tested.
+**Verifiable.** The policy evaluation logic (`packages/policy/src/evaluator.ts`) is pure functions operating on data. There is no inference, no heuristics, no neural network in the evaluation path. The entire authorization codebase is under 500 lines of TypeScript and can be fully analyzed and tested.
 
-> *Implementation: `src/kernel/aab.ts`, `src/policy/evaluator.ts`*
+> *Implementation: `packages/kernel/src/aab.ts`, `packages/policy/src/evaluator.ts`*
 
 ### 5.2 Policy Model
 
@@ -288,7 +288,7 @@ Pattern matching supports wildcards: `*` matches all actions, `file.*` matches a
 
 Scope matching supports glob-like patterns: `src/**` matches all files under `src/`, `*.ts` matches all TypeScript files.
 
-> *Implementation: `src/policy/evaluator.ts` --- `evaluate()` function.*
+> *Implementation: `packages/policy/src/evaluator.ts` --- `evaluate()` function.*
 
 ### 5.3 Capability-Based Permissions
 
@@ -348,7 +348,7 @@ The reference implementation ships with six default invariants:
 | `no-force-push` | No Force Push | 4 (high) | Force push is forbidden |
 | `lockfile-integrity` | Lockfile Integrity | 2 (low) | Lockfile must update when manifest changes |
 
-> *Implementation: `src/invariants/definitions.ts` --- `DEFAULT_INVARIANTS` array (10 invariants).*
+> *Implementation: `packages/invariants/src/definitions.ts` --- `DEFAULT_INVARIANTS` array (10 invariants).*
 
 ### 6.3 Severity-Based Intervention
 
@@ -361,7 +361,7 @@ Each invariant has a severity level (1-5). When invariants are violated, the max
 | >= 3 | `ROLLBACK` | Action is blocked; system suggests reversal |
 | < 3 | `TEST_ONLY` | Action is allowed but flagged for testing |
 
-> *Implementation: `src/kernel/decision.ts` --- `selectIntervention()` function.*
+> *Implementation: `packages/kernel/src/decision.ts` --- `selectIntervention()` function.*
 
 ### 6.4 Invariant Checking Pipeline
 
@@ -371,7 +371,7 @@ The `checkAllInvariants()` function iterates through all registered invariants a
 2. Emits an `INVARIANT_VIOLATION` canonical event with full metadata (invariant name, severity, description)
 3. Adds the violation to the evidence pack
 
-> *Implementation: `src/invariants/checker.ts` --- `checkAllInvariants()` function.*
+> *Implementation: `packages/invariants/src/checker.ts` --- `checkAllInvariants()` function.*
 > *See diagram: `paper/diagrams/invariant-enforcement.md`*
 
 ---
@@ -407,7 +407,7 @@ Evidence packs serve three purposes:
 2. **Debugging**: Developers can inspect the evidence pack to understand what policy or invariant was triggered.
 3. **Compliance**: Evidence packs provide the structured documentation needed for governance auditing.
 
-> *Implementation: `src/kernel/evidence.ts` --- `createEvidencePack()` function.*
+> *Implementation: `packages/kernel/src/evidence.ts` --- `createEvidencePack()` function.*
 
 ### 7.2 Escalation Monitor
 
@@ -424,7 +424,7 @@ The escalation model prevents persistent agents from gradually overwhelming the 
 
 The monitor tracks statistics per-agent and per-invariant, enabling targeted analysis of which agents are most frequently denied and which invariants are most frequently violated.
 
-> *Implementation: `src/kernel/monitor.ts` --- `createMonitor()` function with 4-level escalation.*
+> *Implementation: `packages/kernel/src/monitor.ts` --- `createMonitor()` function with 4-level escalation.*
 > *See diagram: `paper/diagrams/escalation-model.md`*
 
 ### 7.3 Canonical Event Model
@@ -440,7 +440,7 @@ All system activity is captured as immutable canonical events. The event model d
 
 Events are immutable, fingerprinted for deduplication, and stored in an append-only event store that supports query, replay, and filtering.
 
-> *Implementation: `src/events/schema.ts` --- event kind definitions and `createEvent()` factory.*
+> *Implementation: `packages/events/src/schema.ts` --- event kind definitions and `createEvent()` factory.*
 
 ---
 
@@ -454,27 +454,27 @@ AgentGuard is a TypeScript implementation of the execution governance architectu
 
 | Paper Concept | Source File | Key Export |
 |---|---|---|
-| Canonical Action Representation | `src/core/actions.ts` | `ACTION_TYPES` (23 types), `createAction()`, `validateAction()` |
-| Intent Normalization | `src/kernel/aab.ts` | `normalizeIntent()`, `detectGitAction()`, `isDestructiveCommand()` |
-| Action Authorization Boundary | `src/kernel/aab.ts` | `authorize()`, `DESTRUCTIVE_PATTERNS` |
-| RTA Decision Engine | `src/kernel/decision.ts` | `createEngine()`, `evaluate()`, `INTERVENTION` |
-| Policy Evaluation | `src/policy/evaluator.ts` | `evaluate()`, `matchAction()`, `matchScope()` |
-| Policy Loading & Validation | `src/policy/loader.ts` | `loadPolicies()`, `validatePolicy()` |
-| System Invariants | `src/invariants/definitions.ts` | `DEFAULT_INVARIANTS` (10 invariants) |
-| Invariant Checking | `src/invariants/checker.ts` | `checkAllInvariants()`, `buildSystemState()` |
-| Evidence Packs | `src/kernel/evidence.ts` | `createEvidencePack()`, `ExplainableEvidencePack` |
-| Escalation Monitor | `src/kernel/monitor.ts` | `createMonitor()`, `ESCALATION` (4 levels) |
-| Canonical Events | `src/events/schema.ts` | 49 event kinds, `createEvent()`, `validateEvent()` |
-| Blast Radius Engine | `src/kernel/blast-radius.ts` | Weighted blast radius computation |
-| Governed Action Kernel | `src/kernel/kernel.ts` | `propose()`, lifecycle orchestration |
-| Impact Simulation | `src/kernel/simulation/` | Pre-execution impact simulation (filesystem, git, package) |
-| Storage Backend | `src/storage/` | SQLite + Firestore event/decision persistence |
+| Canonical Action Representation | `packages/core/src/actions.ts` | `ACTION_TYPES` (23 types), `createAction()`, `validateAction()` |
+| Intent Normalization | `packages/kernel/src/aab.ts` | `normalizeIntent()`, `detectGitAction()`, `isDestructiveCommand()` |
+| Action Authorization Boundary | `packages/kernel/src/aab.ts` | `authorize()`, `DESTRUCTIVE_PATTERNS` |
+| RTA Decision Engine | `packages/kernel/src/decision.ts` | `createEngine()`, `evaluate()`, `INTERVENTION` |
+| Policy Evaluation | `packages/policy/src/evaluator.ts` | `evaluate()`, `matchAction()`, `matchScope()` |
+| Policy Loading & Validation | `packages/policy/src/loader.ts` | `loadPolicies()`, `validatePolicy()` |
+| System Invariants | `packages/invariants/src/definitions.ts` | `DEFAULT_INVARIANTS` (10 invariants) |
+| Invariant Checking | `packages/invariants/src/checker.ts` | `checkAllInvariants()`, `buildSystemState()` |
+| Evidence Packs | `packages/kernel/src/evidence.ts` | `createEvidencePack()`, `ExplainableEvidencePack` |
+| Escalation Monitor | `packages/kernel/src/monitor.ts` | `createMonitor()`, `ESCALATION` (4 levels) |
+| Canonical Events | `packages/events/src/schema.ts` | 49 event kinds, `createEvent()`, `validateEvent()` |
+| Blast Radius Engine | `packages/kernel/src/blast-radius.ts` | Weighted blast radius computation |
+| Governed Action Kernel | `packages/kernel/src/kernel.ts` | `propose()`, lifecycle orchestration |
+| Impact Simulation | `packages/kernel/src/simulation/` | Pre-execution impact simulation (filesystem, git, package) |
+| Storage Backend | `packages/storage/src/` | SQLite + Firestore event/decision persistence |
 
 ### 8.3 Code Characteristics
 
 - **Pure domain logic**: Core governance components (kernel, policy evaluator, invariant checker) have zero DOM dependencies and minimal Node.js-specific API usage.
 - **Deterministic**: All evaluation functions are pure --- same input always produces same output.
-- **Modular architecture**: The governance runtime spans kernel, policy, invariants, events, and adapters across `src/`, with optional storage backends (SQLite, Firestore).
+- **Modular architecture**: The governance runtime spans kernel, policy, invariants, events, and adapters across `packages/` and `apps/`, with optional storage backends (SQLite, Firestore).
 - **Fully tested**: 77 TypeScript test files (vitest) and 14 JavaScript test files cover policy evaluation, invariant checking, evidence generation, escalation logic, storage backends, and CLI commands.
 
 ### 8.4 Multi-Agent Pipeline
@@ -485,15 +485,15 @@ The governance kernel enforces authorization at each stage:
 
 | Governance Layer | Enforcement Mechanism | Key Component |
 |-------|----------------|-----------------|
-| Action Authorization | AAB normalization + policy rules | `src/kernel/aab.ts` |
-| File Scope | `FileScopeViolation` events + invariant checks | `src/invariants/checker.ts` |
-| Blast Radius | Weighted impact computation | `src/kernel/blast-radius.ts` |
-| Escalation | State machine (NORMAL → LOCKDOWN) | `src/kernel/monitor.ts` |
-| Impact Simulation | Pre-execution prediction | `src/kernel/simulation/` |
+| Action Authorization | AAB normalization + policy rules | `packages/kernel/src/aab.ts` |
+| File Scope | `FileScopeViolation` events + invariant checks | `packages/invariants/src/checker.ts` |
+| Blast Radius | Weighted impact computation | `packages/kernel/src/blast-radius.ts` |
+| Escalation | State machine (NORMAL → LOCKDOWN) | `packages/kernel/src/monitor.ts` |
+| Impact Simulation | Pre-execution prediction | `packages/kernel/src/simulation/` |
 
 The file scope enforcement prevents agents from modifying files outside their declared scope --- a common vector for unintended changes in multi-agent systems.
 
-> *Implementation: `src/kernel/kernel.ts` --- `propose()` with policy evaluation, invariant checks, and simulation.*
+> *Implementation: `packages/kernel/src/kernel.ts` --- `propose()` with policy evaluation, invariant checks, and simulation.*
 
 ---
 
@@ -586,36 +586,41 @@ Key references:
 
 ```
 agent-guard/
-  src/
-    kernel/               # Governed action kernel
-      kernel.ts           # Orchestrator (propose → evaluate → execute → emit)
-      aab.ts              # Action Authorization Boundary (normalization)
-      decision.ts         # Runtime assurance engine (RTA)
-      monitor.ts          # Escalation state machine
-      evidence.ts         # Evidence pack generation
-      blast-radius.ts     # Weighted blast radius computation
-      simulation/         # Pre-execution impact simulation
-    events/               # Canonical event model
-      schema.ts           # Event kinds, factory, validation
-      bus.ts              # Typed EventBus
-      store.ts            # In-memory event store
-      jsonl.ts            # JSONL event persistence
-    policy/               # Policy system
-      evaluator.ts        # Rule matching engine
-      loader.ts           # Policy validation + loading
-      composer.ts         # Policy composition (multi-file merging)
-    invariants/           # Invariant system
-      definitions.ts      # 10 built-in invariant definitions
-      checker.ts          # Invariant evaluation engine
-    core/                 # Shared utilities
-      actions.ts          # 23 canonical action types across 8 classes
-      types.ts            # Shared TypeScript type definitions
-    adapters/             # Execution adapters (file, shell, git)
-    storage/              # SQLite + Firestore backends (opt-in)
-    analytics/            # Cross-session violation analytics
-    cli/                  # CLI entry point + commands
-  policy/                 # Policy configuration (JSON)
-  policies/               # Policy packs (YAML)
-  paper/                  # This research artifact
-  examples/               # Example governance scenarios
+  packages/
+    core/src/               # @red-codes/core — Shared utilities
+      actions.ts            # 23 canonical action types across 8 classes
+      types.ts              # Shared TypeScript type definitions
+    events/src/             # @red-codes/events — Canonical event model
+      schema.ts             # Event kinds, factory, validation
+      bus.ts                # Typed EventBus
+      store.ts              # In-memory event store
+      jsonl.ts              # JSONL event persistence
+    policy/src/             # @red-codes/policy — Policy system
+      evaluator.ts          # Rule matching engine
+      loader.ts             # Policy validation + loading
+      composer.ts           # Policy composition (multi-file merging)
+    invariants/src/         # @red-codes/invariants — Invariant system
+      definitions.ts        # 10 built-in invariant definitions
+      checker.ts            # Invariant evaluation engine
+    kernel/src/             # @red-codes/kernel — Governed action kernel
+      kernel.ts             # Orchestrator (propose → evaluate → execute → emit)
+      aab.ts                # Action Authorization Boundary (normalization)
+      decision.ts           # Runtime assurance engine (RTA)
+      monitor.ts            # Escalation state machine
+      evidence.ts           # Evidence pack generation
+      blast-radius.ts       # Weighted blast radius computation
+      simulation/           # Pre-execution impact simulation
+    adapters/src/           # @red-codes/adapters — Execution adapters (file, shell, git)
+    analytics/src/          # @red-codes/analytics — Cross-session violation analytics
+    storage/src/            # @red-codes/storage — SQLite + Firestore backends (opt-in)
+    telemetry/src/          # @red-codes/telemetry — Runtime telemetry
+    plugins/src/            # @red-codes/plugins — Plugin ecosystem
+    renderers/src/          # @red-codes/renderers — Renderer plugin system
+  apps/
+    cli/src/                # @red-codes/agentguard — CLI (published npm package)
+    vscode-extension/src/   # agentguard-vscode — VS Code extension
+  policy/                   # Policy configuration (JSON)
+  policies/                 # Policy packs (YAML)
+  paper/                    # This research artifact
+  examples/                 # Example governance scenarios
 ```

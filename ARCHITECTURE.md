@@ -37,44 +37,48 @@ All system activity — agent tool calls, governance decisions, invariant violat
 └──────────────────────────────────────────────┘
 ```
 
-## Directory Layout
+## Package Layout
 
-Each top-level directory under `src/` maps to a single architectural concept:
+This is a **pnpm monorepo** orchestrated by **Turbo**. Each workspace package maps to a single architectural concept:
 
 ```
-src/
-├── analytics/     Cross-session violation analytics (aggregation, clustering, trends, risk scoring)
-├── kernel/        Governed action kernel (orchestrate, normalize, decide, escalate)
-├── events/        Canonical event model (schema, bus, store, JSONL persistence)
-├── policy/        Policy system (composer, evaluator, loaders, pack loader)
-├── invariants/    Invariant system (10 built-in definitions, checker)
-├── adapters/      Execution adapters (file, shell, git, claude-code)
-├── plugins/       Plugin ecosystem (discovery, registry, validation, sandboxing)
-├── renderers/     Renderer plugin system (registry, TUI renderer)
-├── cli/           CLI entry point and commands
-├── storage/       Storage backends: SQLite and Firestore (opt-in alternatives to JSONL)
-├── telemetry/     Runtime telemetry and logging
-└── core/          Shared utilities (types, actions, hash, execution-log)
+packages/
+├── core/          @red-codes/core — Shared utilities (types, actions, hash, execution-log)
+├── events/        @red-codes/events — Canonical event model (schema, bus, store, JSONL persistence)
+├── policy/        @red-codes/policy — Policy system (composer, evaluator, loaders, pack loader)
+├── invariants/    @red-codes/invariants — Invariant system (10 built-in definitions, checker)
+├── kernel/        @red-codes/kernel — Governed action kernel (orchestrate, normalize, decide, escalate)
+├── adapters/      @red-codes/adapters — Execution adapters (file, shell, git, claude-code)
+├── analytics/     @red-codes/analytics — Cross-session violation analytics
+├── storage/       @red-codes/storage — SQLite and Firestore backends (opt-in)
+├── telemetry/     @red-codes/telemetry — Runtime telemetry and logging
+├── plugins/       @red-codes/plugins — Plugin ecosystem (discovery, registry, validation, sandboxing)
+└── renderers/     @red-codes/renderers — Renderer plugin system (registry, TUI renderer)
 
-vscode-extension/  VS Code extension (sidebar panels, notifications, event reader, inline diagnostics)
+apps/
+├── cli/           @red-codes/agentguard — CLI entry point and commands (published npm package)
+├── vscode-extension/  agentguard-vscode — VS Code extension (sidebar panels, notifications, diagnostics)
+└── telemetry-server/  Telemetry server (placeholder)
 
 policies/          Policy packs (YAML: ci-safe, enterprise, open-source, strict)
 ```
 
 ## Layer Rules
 
-- **kernel/** may import from events/, policy/, invariants/, adapters/, core/
-- **events/** may import from core/ only
-- **policy/** may import from core/ only
-- **invariants/** may import from core/, events/ only
-- **adapters/** may import from core/, kernel/ only
-- **plugins/** may import from core/, events/, kernel/ only
-- **renderers/** may import from core/, events/ only
-- **analytics/** may import from events/, core/ only
-- **storage/** may import from events/, core/ only
-- **cli/** may import from analytics/, kernel/, events/, policy/, plugins/, renderers/, storage/, core/
-- **telemetry/** may import from core/ only
-- **core/** has no project imports (leaf layer)
+Package boundaries enforce these dependency rules via `package.json` workspace dependencies:
+
+- **@red-codes/kernel** may import from events, policy, invariants, telemetry, core
+- **@red-codes/events** may import from core only
+- **@red-codes/policy** may import from core only
+- **@red-codes/invariants** may import from core, events only
+- **@red-codes/adapters** may import from core, kernel only
+- **@red-codes/plugins** may import from core only
+- **@red-codes/renderers** may import from core, kernel, plugins only
+- **@red-codes/analytics** may import from core only
+- **@red-codes/storage** may import from core, events, kernel, analytics, telemetry only
+- **@red-codes/agentguard** (cli) may import from all workspace packages
+- **@red-codes/telemetry** may import from core only
+- **@red-codes/core** has no project imports (leaf layer)
 
 ## Key Design Decisions
 

@@ -5,28 +5,30 @@ Thanks for your interest in contributing to AgentGuard -- a governed action runt
 ## Getting Started
 
 ```bash
-git clone https://github.com/jpleva91/agent-guard.git
+git clone https://github.com/AgentGuardHQ/agent-guard.git
 cd agent-guard
-npm install
-npm run build:ts
+pnpm install
+pnpm build
 ```
 
-The TypeScript source in `src/` is the single source of truth. It compiles to `dist/` via `tsc` (individual modules) and `esbuild` (CLI bundle). All tests import from `dist/`, so you must build before running them.
+This is a **pnpm monorepo** orchestrated by **Turbo**. Workspace packages live in `packages/`, applications in `apps/`. Each package has its own `src/`, `dist/`, `package.json`, and `tsconfig.json`. All tests import from `dist/`, so you must build before running them.
 
 ## Development
 
 ```bash
-npm run build:ts       # Compile TypeScript to dist/
-npm test               # Run JS test suite
-npm run ts:test        # Run TypeScript tests (vitest)
-npm run lint           # Check code with ESLint
-npm run lint:fix       # Auto-fix lint issues
-npm run format         # Check formatting with Prettier
-npm run format:fix     # Auto-fix formatting
-npm run ts:check       # Type-check without emitting (tsc --noEmit)
+pnpm build             # Build all packages (turbo build)
+pnpm test              # Run all tests (turbo test)
+pnpm lint              # Check code with ESLint (turbo lint)
+pnpm format            # Check formatting with Prettier
+pnpm format:fix        # Auto-fix formatting
+pnpm ts:check          # Type-check all packages (turbo ts:check)
+
+# Per-package filtering
+pnpm build --filter=@red-codes/kernel   # Build a single package
+pnpm test --filter=@red-codes/kernel    # Test a single package
 ```
 
-Run `npm run build:ts` after making changes, then run both test suites before submitting a PR.
+Run `pnpm build` after making changes, then run tests before submitting a PR.
 
 ## How to Contribute
 
@@ -57,9 +59,9 @@ Invariants are runtime checks that verify system state before an action executes
 
 To add a new invariant:
 
-1. Open `src/invariants/` (or `src/agentguard/invariants/definitions.ts` on main)
+1. Open `packages/invariants/src/definitions.ts`
 2. Add a check function that returns a violation result with a severity level
-3. Register the invariant in the checker
+3. Register the invariant in the checker (`packages/invariants/src/checker.ts`)
 4. Add tests covering the new check
 
 ### Bug Fixes and Improvements
@@ -71,30 +73,36 @@ To add a new invariant:
 ## Project Structure
 
 ```
-src/
-├── kernel/          # Governed action kernel (orchestrator)
-├── events/          # Canonical event model and lifecycle events
-├── policy/          # Policy evaluator, YAML/JSON loaders
-├── invariants/      # Invariant checker and built-in definitions
-├── adapters/        # Execution adapters (file, shell, git, claude-code)
-├── core/            # Shared logic (EventBus, types, hashing)
-├── cli/             # CLI entry point and commands (guard, inspect, replay)
-│   └── commands/    # Individual CLI subcommands
-├── domain/          # Pure domain logic (actions, events, reference monitor)
-└── agentguard/      # Legacy kernel location (being consolidated)
+packages/
+├── core/            # @red-codes/core — Shared types, actions, hash, utilities
+├── events/          # @red-codes/events — Canonical event model (schema, bus, store, JSONL)
+├── policy/          # @red-codes/policy — Policy evaluator, YAML/JSON loaders, composition
+├── invariants/      # @red-codes/invariants — Invariant checker and built-in definitions
+├── kernel/          # @red-codes/kernel — Governed action kernel (orchestrator, AAB, decisions)
+├── adapters/        # @red-codes/adapters — Execution adapters (file, shell, git, claude-code)
+├── analytics/       # @red-codes/analytics — Cross-session violation analytics
+├── storage/         # @red-codes/storage — SQLite + Firestore backends (opt-in)
+├── telemetry/       # @red-codes/telemetry — Runtime telemetry and logging
+├── plugins/         # @red-codes/plugins — Plugin ecosystem (discovery, registry, sandboxing)
+└── renderers/       # @red-codes/renderers — Renderer plugin system (TUI renderer)
+
+apps/
+├── cli/             # @red-codes/agentguard — CLI (published npm package)
+│   └── src/commands/  # Individual CLI subcommands
+└── vscode-extension/  # agentguard-vscode — VS Code extension
 
 policy/              # Policy configuration files (JSON)
-tests/               # Test suite (JS + TypeScript)
-dist/                # Compiled output (generated, do not edit)
+policies/            # Policy packs (YAML: ci-safe, enterprise, open-source, strict)
+tests/               # Root-level test suite (JS + TypeScript)
 ```
 
 ## Pull Request Process
 
 1. Fork the repository and create a branch from `main`
-2. Make your changes in `src/` (never edit `dist/` directly)
-3. Run `npm run build:ts` to compile
-4. Run `npm test` and `npm run ts:test` to verify all tests pass
-5. Run `npm run lint` and `npm run format` to check code style
+2. Make your changes in the relevant `packages/*/src/` or `apps/*/src/` directory (never edit `dist/` directly)
+3. Run `pnpm build` to compile
+4. Run `pnpm test` to verify all tests pass
+5. Run `pnpm lint` and `pnpm format` to check code style
 6. Open a PR against `main` with a clear description of what changed and why
 
 ## Code Style
