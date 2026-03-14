@@ -841,9 +841,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         // Only inspect shell.exec commands (or unset actionType for conservative checking)
         if (actionType === '' || actionType === 'shell.exec') {
           // Detect export of sensitive env vars
-          const exportMatches = command.matchAll(
-            /\bexport\s+([A-Za-z_][A-Za-z0-9_]*)=/gi
-          );
+          const exportMatches = command.matchAll(/\bexport\s+([A-Za-z_][A-Za-z0-9_]*)=/gi);
           for (const match of exportMatches) {
             const varName = match[1].toLowerCase();
             if (SENSITIVE_ENV_VAR_PATTERNS.some((p) => varName.includes(p))) {
@@ -852,9 +850,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
           }
 
           // Detect setenv (csh/tcsh style)
-          const setenvMatches = command.matchAll(
-            /\bsetenv\s+([A-Za-z_][A-Za-z0-9_]*)\s/gi
-          );
+          const setenvMatches = command.matchAll(/\bsetenv\s+([A-Za-z_][A-Za-z0-9_]*)\s/gi);
           for (const match of setenvMatches) {
             const varName = match[1].toLowerCase();
             if (SENSITIVE_ENV_VAR_PATTERNS.some((p) => varName.includes(p))) {
