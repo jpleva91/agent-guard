@@ -731,8 +731,14 @@ describe('agentguard/core/aab', () => {
   });
 
   describe('authorize', () => {
-    it('allows actions with no policies (open model)', () => {
+    it('denies actions with no policies (default deny)', () => {
       const result = authorize({ tool: 'Read', file: 'src/a.ts' }, []);
+      expect(result.result.allowed).toBe(false);
+      expect(result.result.reason).toContain('default deny');
+    });
+
+    it('allows actions with no policies in fail-open mode', () => {
+      const result = authorize({ tool: 'Read', file: 'src/a.ts' }, [], { defaultDeny: false });
       expect(result.result.allowed).toBe(true);
       expect(result.events).toHaveLength(0);
     });

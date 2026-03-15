@@ -43,7 +43,7 @@ beforeEach(() => {
 describe('Conformance: Allow decisions', () => {
   for (const fixture of allowFixtures as AllowFixture[]) {
     it(fixture.name, async () => {
-      const kernel = createKernel({ dryRun: true });
+      const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
       const result = await kernel.propose(fixture.input);
 
       expect(result.allowed).toBe(fixture.expected.allowed);
@@ -94,7 +94,7 @@ describe('Conformance: Escalation progression', () => {
 
 describe('Conformance: KernelResult shape', () => {
   it('produces all required fields on allow', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
     const result = await kernel.propose({
       tool: 'Read',
       file: 'src/index.ts',
@@ -143,6 +143,7 @@ describe('Conformance: Decision records', () => {
     const records: GovernanceDecisionRecord[] = [];
     const kernel = createKernel({
       dryRun: true,
+      evaluateOptions: { defaultDeny: false },
       decisionSinks: [{ write: (r) => records.push(r) }],
     });
 
@@ -168,6 +169,7 @@ describe('Conformance: Event emission ordering', () => {
     const events: DomainEvent[] = [];
     const kernel = createKernel({
       dryRun: true,
+      evaluateOptions: { defaultDeny: false },
       sinks: [{ write: (e) => events.push(e) }],
     });
 
@@ -211,7 +213,7 @@ describe('Conformance: Event emission ordering', () => {
 
 describe('Conformance: Dry-run mode', () => {
   it('never executes in dry-run mode', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
 
     const allowed = await kernel.propose({
       tool: 'Read',

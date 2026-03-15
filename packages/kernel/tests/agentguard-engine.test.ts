@@ -39,8 +39,30 @@ describe('agentguard/core/engine', () => {
       expect(engine.getPolicyErrors().length).toBeGreaterThan(0);
     });
 
-    it('evaluates allowed actions', () => {
+    it('evaluates actions as denied by default (no policies, default deny)', () => {
       const engine = createEngine();
+      const result = engine.evaluate({ tool: 'Read', file: 'src/index.ts' });
+      expect(result.allowed).toBe(false);
+      expect(result.decision.reason).toContain('default deny');
+    });
+
+    it('evaluates allowed actions with explicit allow policy', () => {
+      const engine = createEngine({
+        policyDefs: [
+          {
+            id: 'allow-reads',
+            name: 'Allow Reads',
+            rules: [{ action: 'file.read', effect: 'allow', reason: 'Reads are safe' }],
+          },
+        ],
+      });
+      const result = engine.evaluate({ tool: 'Read', file: 'src/index.ts' });
+      expect(result.allowed).toBe(true);
+      expect(result.intervention).toBeNull();
+    });
+
+    it('evaluates allowed actions in fail-open mode', () => {
+      const engine = createEngine({ evaluateOptions: { defaultDeny: false } });
       const result = engine.evaluate({ tool: 'Read', file: 'src/index.ts' });
       expect(result.allowed).toBe(true);
       expect(result.intervention).toBeNull();

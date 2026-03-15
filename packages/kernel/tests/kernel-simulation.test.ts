@@ -73,6 +73,7 @@ describe('Kernel Simulation Integration', () => {
 
     const kernel = createKernel({
       dryRun: true,
+      evaluateOptions: { defaultDeny: false },
       simulators: registry,
       decisionSinks: [decisionSink],
       // Default blast radius limit is 20; simulation returns 100
@@ -104,6 +105,7 @@ describe('Kernel Simulation Integration', () => {
 
     const kernel = createKernel({
       dryRun: true,
+      evaluateOptions: { defaultDeny: false },
       simulators: registry,
     });
 
@@ -127,6 +129,7 @@ describe('Kernel Simulation Integration', () => {
 
     const kernel = createKernel({
       dryRun: true,
+      evaluateOptions: { defaultDeny: false },
       simulators: registry,
     });
 
@@ -150,7 +153,7 @@ describe('Kernel Simulation Integration', () => {
   });
 
   it('kernel without simulators works as before', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
 
     const result = await kernel.propose({
       tool: 'Read',
@@ -169,6 +172,7 @@ describe('Kernel Simulation Integration', () => {
 
     const kernel = createKernel({
       dryRun: true,
+      evaluateOptions: { defaultDeny: false },
       simulators: registry,
     });
 
@@ -188,6 +192,7 @@ describe('Kernel Simulation Integration', () => {
 
     const kernel = createKernel({
       dryRun: true,
+      evaluateOptions: { defaultDeny: false },
       simulators: registry,
       simulationBlastRadiusThreshold: 10,
     });

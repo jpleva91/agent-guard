@@ -114,6 +114,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
     denialThreshold: config.denialThreshold,
     violationThreshold: config.violationThreshold,
     windowSize: config.windowSize,
+    evaluateOptions: config.evaluateOptions,
   });
 
   function sinkEvent(event: DomainEvent): void {

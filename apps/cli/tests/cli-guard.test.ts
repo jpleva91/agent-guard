@@ -63,7 +63,7 @@ describe('guard command kernel integration', () => {
     resetActionCounter();
     resetEventCounter();
 
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
     const result = await kernel.propose({
       tool: 'Read',
       file: 'test.ts',

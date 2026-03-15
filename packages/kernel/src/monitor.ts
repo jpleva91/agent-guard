@@ -66,6 +66,7 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
   const engine = createEngine({
     policyDefs: config.policyDefs || [],
     invariants: config.invariants,
+    evaluateOptions: config.evaluateOptions,
     onEvent(event: DomainEvent) {
       store.append(event);
       bus.emit(event.kind, event as unknown as Record<string, unknown>);

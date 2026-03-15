@@ -190,7 +190,7 @@ describe('Decision Record Factory', () => {
 
 describe('Kernel Decision Record Integration', () => {
   it('includes decisionRecord in KernelResult for allowed actions', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
     const result = await kernel.propose({
       tool: 'Read',
       file: 'src/index.ts',
@@ -226,6 +226,7 @@ describe('Kernel Decision Record Integration', () => {
 
     const kernel = createKernel({
       dryRun: true,
+      evaluateOptions: { defaultDeny: false },
       decisionSinks: [testDecisionSink],
     });
 

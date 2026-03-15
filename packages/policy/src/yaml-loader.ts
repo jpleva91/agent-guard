@@ -105,11 +105,7 @@ function applyPersonaField(persona: PersonaCondition, key: string, val: string):
   }
 }
 
-function applyTopLevelPersonaField(
-  persona: YamlPersonaDef,
-  key: string,
-  val: string,
-): void {
+function applyTopLevelPersonaField(persona: YamlPersonaDef, key: string, val: string): void {
   switch (key) {
     case 'model':
       persona.model = trimQuotes(val);
@@ -407,8 +403,9 @@ export function loadYamlPolicy(yaml: string, defaultId?: string): LoadedPolicy {
   };
 
   if (def.persona) {
-    (policy as LoadedPolicy & { persona?: AgentPersona }).persona =
-      yamlPersonaToAgentPersona(def.persona);
+    (policy as LoadedPolicy & { persona?: AgentPersona }).persona = yamlPersonaToAgentPersona(
+      def.persona
+    );
   }
 
   return policy;

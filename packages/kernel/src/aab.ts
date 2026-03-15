@@ -10,7 +10,12 @@ import {
 } from '@red-codes/core';
 import type { CompiledDestructivePattern } from '@red-codes/core';
 import { evaluate } from '@red-codes/policy';
-import type { NormalizedIntent, EvalResult, LoadedPolicy } from '@red-codes/policy';
+import type {
+  NormalizedIntent,
+  EvalResult,
+  LoadedPolicy,
+  EvaluateOptions,
+} from '@red-codes/policy';
 import {
   createEvent,
   POLICY_DENIED,
@@ -114,7 +119,8 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
 
 export function authorize(
   rawAction: RawAgentAction | null,
-  policies: LoadedPolicy[]
+  policies: LoadedPolicy[],
+  evaluateOptions?: EvaluateOptions
 ): AuthorizationResult {
   const intent = normalizeIntent(rawAction);
   const events: DomainEvent[] = [];
@@ -141,7 +147,7 @@ export function authorize(
     return { intent, result, events };
   }
 
-  const result = evaluate(intent, policies);
+  const result = evaluate(intent, policies, evaluateOptions);
 
   if (!result.allowed) {
     if (result.matchedPolicy) {

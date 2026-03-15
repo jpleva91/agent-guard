@@ -25,7 +25,7 @@ describe('Kernel', () => {
   });
 
   it('allows benign file read', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
     const result = await kernel.propose({
       tool: 'Read',
       file: 'src/index.ts',
@@ -76,7 +76,7 @@ describe('Kernel', () => {
 
   it('executes allowed actions via adapters', async () => {
     const { registry, dryRun } = createDryRunRegistry();
-    const kernel = createKernel({ adapters: registry });
+    const kernel = createKernel({ adapters: registry, evaluateOptions: { defaultDeny: false } });
 
     const result = await kernel.propose({
       tool: 'Read',
@@ -113,7 +113,7 @@ describe('Kernel', () => {
   });
 
   it('emits ACTION_ALLOWED event for allowed actions', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
     const result = await kernel.propose({
       tool: 'Read',
       file: 'test.ts',
@@ -220,10 +220,11 @@ describe('Kernel denies actions with no registered adapter', () => {
 
     const kernel = createKernel({
       adapters: emptyRegistry,
+      evaluateOptions: { defaultDeny: false },
       sinks: [testSink],
     });
 
-    // file.read is allowed by default policy, but 'file' class has no adapter
+    // file.read is allowed by policy (fail-open), but 'file' class has no adapter
     const result = await kernel.propose({
       tool: 'Read',
       file: 'src/index.ts',
@@ -253,6 +254,7 @@ describe('Kernel denies actions with no registered adapter', () => {
 
     const kernel = createKernel({
       adapters: emptyRegistry,
+      evaluateOptions: { defaultDeny: false },
       sinks: [testSink],
     });
 
@@ -315,6 +317,7 @@ describe('Kernel denies actions with no registered adapter', () => {
 describe('Kernel with policies', () => {
   const strictPolicy: KernelConfig = {
     dryRun: true,
+    evaluateOptions: { defaultDeny: false },
     policyDefs: [
       {
         id: 'no-push',
@@ -395,6 +398,7 @@ describe('Kernel proposal timeout', () => {
     const kernel = createKernel({
       adapters: slowRegistry,
       proposalTimeoutMs: 50,
+      evaluateOptions: { defaultDeny: false },
     });
 
     await expect(
@@ -406,6 +410,7 @@ describe('Kernel proposal timeout', () => {
     const kernel = createKernel({
       dryRun: true,
       proposalTimeoutMs: 5000,
+      evaluateOptions: { defaultDeny: false },
     });
 
     const result = await kernel.propose({
@@ -454,7 +459,7 @@ describe('Kernel edge cases', () => {
   });
 
   it('handles rapid sequential proposals', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
     const results = await Promise.all([
       kernel.propose({ tool: 'Read', file: 'a.ts', agent: 'test' }),
       kernel.propose({ tool: 'Read', file: 'b.ts', agent: 'test' }),

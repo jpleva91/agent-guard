@@ -3,15 +3,9 @@
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  verifyChainedJsonl,
-  getChainedEventFilePath,
-} from '@red-codes/events';
+import { verifyChainedJsonl, getChainedEventFilePath } from '@red-codes/events';
 import { getDecisionFilePath } from '@red-codes/events';
-import {
-  generateEnforcementAudit,
-  formatEnforcementAudit,
-} from '@red-codes/kernel';
+import { generateEnforcementAudit, formatEnforcementAudit } from '@red-codes/kernel';
 import type { GovernanceDecisionRecord } from '@red-codes/core';
 
 const BASE_DIR = '.agentguard';
@@ -112,7 +106,9 @@ export async function auditVerify(args: string[]): Promise<number> {
     } else {
       console.log(`  Status:   \x1b[31mINTEGRITY FAILURE\x1b[0m`);
       if (verification.brokenAt) {
-        console.log(`  Broken at seq ${verification.brokenAt.seq}: ${verification.brokenAt.reason}`);
+        console.log(
+          `  Broken at seq ${verification.brokenAt.seq}: ${verification.brokenAt.reason}`
+        );
       }
     }
 

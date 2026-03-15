@@ -4,7 +4,7 @@
 import type { DomainEvent } from '@red-codes/core';
 import { authorize } from './aab.js';
 import type { RawAgentAction } from './aab.js';
-import type { NormalizedIntent, EvalResult } from '@red-codes/policy';
+import type { NormalizedIntent, EvalResult, EvaluateOptions } from '@red-codes/policy';
 import { checkAllInvariants, buildSystemState } from '@red-codes/invariants';
 import type { InvariantCheck } from '@red-codes/invariants';
 import { createEvidencePack } from './evidence.js';
@@ -43,6 +43,8 @@ export interface EngineConfig {
   policyDefs?: unknown[];
   invariants?: AgentGuardInvariant[];
   onEvent?: (event: DomainEvent) => void;
+  /** Policy evaluation options (e.g., defaultDeny). Passed through to the evaluator. */
+  evaluateOptions?: EvaluateOptions;
 }
 
 export interface Engine {
@@ -71,6 +73,7 @@ export function createEngine(config: EngineConfig = {}): Engine {
   const { policies, errors: policyErrors } = loadPolicies(config.policyDefs || []);
   const invariants = config.invariants || DEFAULT_INVARIANTS;
   const onEvent = config.onEvent || null;
+  const evaluateOptions = config.evaluateOptions;
 
   function emitEvents(events: DomainEvent[]): void {
     if (onEvent) {
@@ -94,7 +97,11 @@ export function createEngine(config: EngineConfig = {}): Engine {
     },
 
     evaluate(rawAction, systemContext = {}) {
-      const { intent, result: authResult, events: authEvents } = authorize(rawAction, policies);
+      const {
+        intent,
+        result: authResult,
+        events: authEvents,
+      } = authorize(rawAction, policies, evaluateOptions);
 
       // Emit policy evaluation trace if available
       if (authResult.trace) {

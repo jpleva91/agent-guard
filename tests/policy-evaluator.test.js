@@ -54,7 +54,7 @@ suite('AgentGuard — Policy Evaluator', () => {
     assert.strictEqual(result.reason, 'No deletes');
   });
 
-  test('evaluate allows when no deny matches', () => {
+  test('evaluate denies when no deny matches (default deny)', () => {
     const policies = [
       {
         id: 'p1',
@@ -64,6 +64,22 @@ suite('AgentGuard — Policy Evaluator', () => {
       },
     ];
     const result = evaluate({ action: 'file.write', target: 'src/x.js' }, policies);
+    assert.strictEqual(result.allowed, false);
+    assert.ok(result.reason.includes('default deny'));
+  });
+
+  test('evaluate allows when no deny matches (fail-open)', () => {
+    const policies = [
+      {
+        id: 'p1',
+        name: 'P1',
+        severity: 3,
+        rules: [{ action: 'file.delete', effect: 'deny' }],
+      },
+    ];
+    const result = evaluate({ action: 'file.write', target: 'src/x.js' }, policies, {
+      defaultDeny: false,
+    });
     assert.strictEqual(result.allowed, true);
   });
 
@@ -117,13 +133,25 @@ suite('AgentGuard — Policy Evaluator', () => {
     ];
     assert.strictEqual(evaluate({ action: 'file.write' }, policies).allowed, false);
     assert.strictEqual(evaluate({ action: 'file.delete' }, policies).allowed, false);
-    assert.strictEqual(evaluate({ action: 'shell.exec' }, policies).allowed, true);
+    // shell.exec is not in deny list but default-deny blocks it
+    assert.strictEqual(evaluate({ action: 'shell.exec' }, policies).allowed, false);
+    // With fail-open, unmatched actions are allowed
+    assert.strictEqual(
+      evaluate({ action: 'shell.exec' }, policies, { defaultDeny: false }).allowed,
+      true
+    );
   });
 
-  test('evaluate default allow when no policies', () => {
+  test('evaluate default deny when no policies', () => {
     const result = evaluate({ action: 'file.write' }, []);
+    assert.strictEqual(result.allowed, false);
+    assert.ok(result.reason.includes('default deny'));
+  });
+
+  test('evaluate default allow when no policies (fail-open)', () => {
+    const result = evaluate({ action: 'file.write' }, [], { defaultDeny: false });
     assert.strictEqual(result.allowed, true);
-    assert.ok(result.reason.includes('default'));
+    assert.ok(result.reason.includes('default allow'));
   });
 
   test('evaluate with scope conditions', () => {

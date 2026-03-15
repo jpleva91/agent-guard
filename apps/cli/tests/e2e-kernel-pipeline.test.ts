@@ -88,6 +88,7 @@ describe('E2E: PreToolUse hook → kernel → decision record', () => {
     const { events, decisions, eventSink, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       sinks: [eventSink],
       decisionSinks: [decisionSink],
@@ -136,6 +137,7 @@ describe('E2E: PreToolUse hook → kernel → decision record', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
     });
@@ -156,6 +158,7 @@ describe('E2E: PreToolUse hook → kernel → decision record', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
     });
@@ -176,6 +179,7 @@ describe('E2E: PreToolUse hook → kernel → decision record', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
     });
@@ -198,6 +202,7 @@ describe('E2E: PostToolUse hook completes action lifecycle', () => {
     const { events, decisions, eventSink, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       sinks: [eventSink],
       decisionSinks: [decisionSink],
@@ -242,6 +247,7 @@ describe('E2E: Policy denial → decision record', () => {
     const { events, decisions, eventSink, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       sinks: [eventSink],
       decisionSinks: [decisionSink],
@@ -299,6 +305,7 @@ describe('E2E: Policy denial → decision record', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
       policyDefs: [
@@ -340,6 +347,7 @@ describe('E2E: Invariant violation → decision record', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
     });
@@ -361,6 +369,7 @@ describe('E2E: Invariant violation → decision record', () => {
     const { events, decisions, eventSink, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       sinks: [eventSink],
       decisionSinks: [decisionSink],
@@ -396,6 +405,7 @@ describe('E2E: Invariant violation → decision record', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
     });
@@ -432,6 +442,7 @@ describe('E2E: Simulation → decision record', () => {
     const { events, decisions, eventSink, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       sinks: [eventSink],
       decisionSinks: [decisionSink],
@@ -479,6 +490,7 @@ describe('E2E: Simulation → decision record', () => {
     const { events, decisions, eventSink, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       sinks: [eventSink],
       decisionSinks: [decisionSink],
@@ -528,6 +540,7 @@ describe('E2E: Simulation → decision record', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
       simulators: registry,
@@ -551,6 +564,7 @@ describe('E2E: Full governance session — mixed actions', () => {
     const { events, decisions, eventSink, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       sinks: [eventSink],
       decisionSinks: [decisionSink],
@@ -637,6 +651,7 @@ describe('E2E: Full governance session — mixed actions', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
       denialThreshold: 3,
@@ -680,6 +695,7 @@ describe('E2E: Decision record completeness', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
     });
@@ -731,6 +747,7 @@ describe('E2E: Decision record completeness', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
     });
@@ -754,6 +771,7 @@ describe('E2E: Adapter normalization fidelity', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
     });
@@ -769,6 +787,7 @@ describe('E2E: Adapter normalization fidelity', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
     });
@@ -784,6 +803,7 @@ describe('E2E: Adapter normalization fidelity', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
     });
@@ -800,6 +820,7 @@ describe('E2E: Adapter normalization fidelity', () => {
     const { decisions, decisionSink } = createTestSinks();
 
     const kernel = createKernel({
+      evaluateOptions: { defaultDeny: false },
       dryRun: true,
       decisionSinks: [decisionSink],
     });

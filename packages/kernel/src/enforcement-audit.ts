@@ -230,9 +230,7 @@ export function formatEnforcementAudit(report: EnforcementAuditReport): string {
   lines.push(`  Violations:             ${s.totalViolations} (${s.uniqueViolationTypes} types)`);
   lines.push(`  Destructive blocked:    ${s.destructiveActionsBlocked}`);
   lines.push(`  Peak escalation:        ${s.peakEscalationLevel}`);
-  lines.push(
-    `  Chain integrity:        ${s.chainIntegrityVerified ? 'VERIFIED' : 'NOT VERIFIED'}`
-  );
+  lines.push(`  Chain integrity:        ${s.chainIntegrityVerified ? 'VERIFIED' : 'NOT VERIFIED'}`);
   lines.push('');
 
   // Action breakdown

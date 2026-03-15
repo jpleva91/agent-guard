@@ -156,7 +156,7 @@ describe('buildGuardRequest', () => {
 
 describe('Integration: OpenClaw → Kernel', () => {
   it('allows safe file read', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, policyDefs: [OPENCLAW_DEFAULT_POLICY] });
     const guard = createOpenClawGuard(kernel);
 
     const result = await guard.evaluateToolCall({
@@ -198,7 +198,7 @@ describe('Integration: OpenClaw → Kernel', () => {
   });
 
   it('allows safe shell command', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, policyDefs: [OPENCLAW_DEFAULT_POLICY] });
     const guard = createOpenClawGuard(kernel);
 
     const result = await guard.evaluateToolCall({
@@ -210,7 +210,7 @@ describe('Integration: OpenClaw → Kernel', () => {
   });
 
   it('events contain openclaw source metadata', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, policyDefs: [OPENCLAW_DEFAULT_POLICY] });
     const guard = createOpenClawGuard(kernel);
 
     const result = await guard.evaluateToolCall(
@@ -224,7 +224,7 @@ describe('Integration: OpenClaw → Kernel', () => {
   });
 
   it('agent identity propagates through kernel', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, policyDefs: [OPENCLAW_DEFAULT_POLICY] });
     const guard = createOpenClawGuard(kernel);
 
     const result = await guard.evaluateToolCall(
@@ -290,7 +290,7 @@ describe('Integration: OpenClaw → Kernel with default policy', () => {
 
 describe('evaluate()', () => {
   it('accepts a pre-built GuardRequest', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, policyDefs: [OPENCLAW_DEFAULT_POLICY] });
     const guard = createOpenClawGuard(kernel);
 
     const request: GuardRequest = {
@@ -310,7 +310,7 @@ describe('evaluate()', () => {
 
 describe('formatGuardDecision', () => {
   it('formats allowed decision', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, policyDefs: [OPENCLAW_DEFAULT_POLICY] });
     const result = await kernel.propose({ tool: 'Read', file: 'test.ts', agent: 'test' });
     const decision = formatGuardDecision(result);
     expect(decision.allowed).toBe(true);
@@ -318,7 +318,7 @@ describe('formatGuardDecision', () => {
   });
 
   it('formats denied decision with violations', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, policyDefs: [OPENCLAW_DEFAULT_POLICY] });
     const result = await kernel.propose({
       tool: 'Bash',
       command: 'rm -rf /',

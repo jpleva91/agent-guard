@@ -23,6 +23,7 @@ describe('Kernel integration — full pipeline', () => {
 
     const kernel = createKernel({
       dryRun: true,
+      evaluateOptions: { defaultDeny: false },
       sinks: [eventSink],
       policyDefs: [
         {
@@ -77,6 +78,7 @@ describe('Kernel integration — full pipeline', () => {
 
     const kernel = createKernel({
       dryRun: true,
+      evaluateOptions: { defaultDeny: false },
       decisionSinks: [decisionSink],
     });
 
@@ -163,7 +165,7 @@ describe('Kernel integration — policy and invariant interaction', () => {
   });
 
   it('allows benign commands through', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
 
     const result = await kernel.propose({
       tool: 'Bash',
@@ -183,6 +185,7 @@ describe('Kernel integration — multiple policies', () => {
   it('evaluates actions against all loaded policies', async () => {
     const kernel = createKernel({
       dryRun: true,
+      evaluateOptions: { defaultDeny: false },
       policyDefs: [
         {
           id: 'no-push',
@@ -228,7 +231,7 @@ describe('Kernel integration — event ordering', () => {
     const events: DomainEvent[] = [];
     const sink: EventSink = { write: (e) => events.push(e) };
 
-    const kernel = createKernel({ dryRun: true, sinks: [sink] });
+    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false }, sinks: [sink] });
 
     await kernel.propose({ tool: 'Read', file: 'test.ts', agent: 'test' });
 

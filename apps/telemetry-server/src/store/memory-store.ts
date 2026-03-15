@@ -46,7 +46,9 @@ function matchesTimeRange(timestamp: number | string, since?: string, until?: st
   return true;
 }
 
-export function createMemoryStore(maxSize = DEFAULT_MAX_SIZE): TelemetryDataStore & SessionViewerStore {
+export function createMemoryStore(
+  maxSize = DEFAULT_MAX_SIZE
+): TelemetryDataStore & SessionViewerStore {
   const events: StoredEvent[] = [];
   const decisions: StoredDecision[] = [];
   const traces: TraceSpan[] = [];

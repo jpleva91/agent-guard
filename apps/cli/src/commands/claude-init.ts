@@ -235,9 +235,7 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
     sessionStart,
     BUILD_MARKER
   );
-  if (
-    ((settings.hooks as Record<string, unknown>).SessionStart as HookEntry[]).length === 0
-  ) {
+  if (((settings.hooks as Record<string, unknown>).SessionStart as HookEntry[]).length === 0) {
     delete (settings.hooks as Record<string, unknown>).SessionStart;
   }
 

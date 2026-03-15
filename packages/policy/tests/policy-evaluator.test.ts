@@ -100,11 +100,20 @@ describe('evaluate', () => {
     expect(result.allowed).toBe(false);
   });
 
-  it('returns default allow when no policies match', () => {
+  it('returns default deny when no policies match (fail-closed)', () => {
     const result = evaluate(makeIntent(), []);
+    expect(result.allowed).toBe(false);
+    expect(result.decision).toBe('deny');
+    expect(result.reason).toContain('default deny');
+    expect(result.severity).toBe(3);
+  });
+
+  it('returns default allow when no policies match with defaultDeny: false (fail-open)', () => {
+    const result = evaluate(makeIntent(), [], { defaultDeny: false });
     expect(result.allowed).toBe(true);
     expect(result.decision).toBe('allow');
     expect(result.reason).toContain('default allow');
+    expect(result.severity).toBe(0);
   });
 
   it('denies when a deny rule matches', () => {
@@ -153,7 +162,12 @@ describe('evaluate', () => {
     });
     expect(evaluate(makeIntent({ action: 'git.push' }), [policy]).allowed).toBe(false);
     expect(evaluate(makeIntent({ action: 'git.merge' }), [policy]).allowed).toBe(false);
-    expect(evaluate(makeIntent({ action: 'git.commit' }), [policy]).allowed).toBe(true);
+    // git.commit is not in the deny list, but default-deny means it's still denied
+    expect(evaluate(makeIntent({ action: 'git.commit' }), [policy]).allowed).toBe(false);
+    // With fail-open, unmatched actions are allowed
+    expect(
+      evaluate(makeIntent({ action: 'git.commit' }), [policy], { defaultDeny: false }).allowed
+    ).toBe(true);
   });
 
   describe('conditions', () => {
@@ -172,7 +186,7 @@ describe('evaluate', () => {
       expect(result.allowed).toBe(false);
     });
 
-    it('deny rule with scope condition — does not match scope', () => {
+    it('deny rule with scope condition — does not match scope (default deny)', () => {
       const policy = makePolicy({
         rules: [
           {
@@ -183,7 +197,28 @@ describe('evaluate', () => {
           },
         ],
       });
+      // Scope doesn't match so the deny rule doesn't fire,
+      // but default-deny still blocks the action
       const result = evaluate(makeIntent({ target: 'test/helper.ts' }), [policy]);
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('default deny');
+    });
+
+    it('deny rule with scope condition — does not match scope (fail-open)', () => {
+      const policy = makePolicy({
+        rules: [
+          {
+            action: 'file.write',
+            effect: 'deny',
+            conditions: { scope: ['src/'] },
+            reason: 'No writes to src',
+          },
+        ],
+      });
+      // With fail-open, unmatched scope falls through to allow
+      const result = evaluate(makeIntent({ target: 'test/helper.ts' }), [policy], {
+        defaultDeny: false,
+      });
       expect(result.allowed).toBe(true);
     });
 
@@ -290,8 +325,21 @@ describe('evaluate', () => {
     expect(result.severity).toBe(4);
   });
 
-  it('returns severity 0 for allowed actions', () => {
+  it('returns severity 3 for default-denied actions', () => {
     const result = evaluate(makeIntent(), []);
+    expect(result.severity).toBe(3);
+  });
+
+  it('returns severity 0 for allowed actions (fail-open)', () => {
+    const result = evaluate(makeIntent(), [], { defaultDeny: false });
+    expect(result.severity).toBe(0);
+  });
+
+  it('returns severity 0 for explicitly allowed actions', () => {
+    const policy = makePolicy({
+      rules: [{ action: 'file.write', effect: 'allow', reason: 'Allowed' }],
+    });
+    const result = evaluate(makeIntent(), [policy]);
     expect(result.severity).toBe(0);
   });
 });

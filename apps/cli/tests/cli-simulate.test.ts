@@ -4,6 +4,11 @@ import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+// Mock child_process to avoid real npm dry-run calls in package simulator
+vi.mock('node:child_process', () => ({
+  execFileSync: vi.fn(() => 'added 1 package in 0.5s\n+ express@4.21.0\n'),
+}));
+
 // Mock process.exit, stderr, stdout to capture output
 const _mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
 const stderrChunks: string[] = [];

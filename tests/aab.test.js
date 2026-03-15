@@ -72,9 +72,18 @@ suite('AgentGuard — Action Authorization Boundary', () => {
     assert.strictEqual(intent.destructive, true);
   });
 
-  test('authorize allows safe file write with no policies', () => {
+  test('authorize denies file write with no policies (default deny)', () => {
     resetEventCounter();
-    const { result, events } = authorize({ tool: 'Write', file: 'src/index.js' }, []);
+    const { result } = authorize({ tool: 'Write', file: 'src/index.js' }, []);
+    assert.strictEqual(result.allowed, false);
+    assert.ok(result.reason.includes('default deny'));
+  });
+
+  test('authorize allows file write with no policies (fail-open)', () => {
+    resetEventCounter();
+    const { result, events } = authorize({ tool: 'Write', file: 'src/index.js' }, [], {
+      defaultDeny: false,
+    });
     assert.strictEqual(result.allowed, true);
     assert.strictEqual(events.length, 0);
   });

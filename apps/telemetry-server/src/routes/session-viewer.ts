@@ -71,7 +71,7 @@ export function sessionViewerPublicRoutes(store: SessionViewerStore): Hono {
         '<html><body style="background:#0F172A;color:#F8FAFC;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">' +
           '<div style="text-align:center"><h1>Session not found</h1><p>This session viewer may have expired or does not exist.</p></div>' +
           '</body></html>',
-        404,
+        404
       );
     }
 

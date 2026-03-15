@@ -22,8 +22,32 @@ describe('agentguard/monitor', () => {
       expect(status.totalDenials).toBe(0);
     });
 
-    it('processes allowed actions', () => {
+    it('denies actions by default with no policies (default deny)', () => {
       const monitor = createMonitor();
+      const result = monitor.process({ tool: 'Read', file: 'src/index.ts' });
+      expect(result.allowed).toBe(false);
+      expect(result.monitor.totalEvaluations).toBe(1);
+      expect(result.monitor.totalDenials).toBe(1);
+    });
+
+    it('allows actions with explicit allow policy', () => {
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'allow-reads',
+            name: 'Allow Reads',
+            rules: [{ action: 'file.read', effect: 'allow', reason: 'Reads OK' }],
+          },
+        ],
+      });
+      const result = monitor.process({ tool: 'Read', file: 'src/index.ts' });
+      expect(result.allowed).toBe(true);
+      expect(result.monitor.totalEvaluations).toBe(1);
+      expect(result.monitor.totalDenials).toBe(0);
+    });
+
+    it('allows actions in fail-open mode', () => {
+      const monitor = createMonitor({ evaluateOptions: { defaultDeny: false } });
       const result = monitor.process({ tool: 'Read', file: 'src/index.ts' });
       expect(result.allowed).toBe(true);
       expect(result.monitor.totalEvaluations).toBe(1);

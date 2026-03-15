@@ -237,7 +237,7 @@ describe('normalizeClaudeCodeAction — session_id propagation', () => {
 
 describe('Integration: session_id through kernel pipeline', () => {
   it('decision record shows session-derived agent identity', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
     const payload: ClaudeCodeHookPayload = {
       hook: 'PreToolUse',
       tool_name: 'Read',
@@ -273,7 +273,7 @@ describe('Integration: session_id through kernel pipeline', () => {
 
 describe('Integration: Claude Code → Kernel', () => {
   it('allows benign file read through kernel', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
     const payload: ClaudeCodeHookPayload = {
       hook: 'PreToolUse',
       tool_name: 'Read',
@@ -321,7 +321,7 @@ describe('Integration: Claude Code → Kernel', () => {
 
 describe('formatHookResponse', () => {
   it('returns empty string for allowed actions', async () => {
-    const kernel = createKernel({ dryRun: true });
+    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
     const result = await kernel.propose({
       tool: 'Read',
       file: 'test.ts',

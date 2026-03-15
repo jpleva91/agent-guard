@@ -4,9 +4,17 @@ import { resetEventCounter } from '../dist/events/schema.js';
 import { createMonitor, ESCALATION } from '../dist/kernel/monitor.js';
 
 suite('AgentGuard — Runtime Monitor', () => {
-  test('monitor allows safe actions', () => {
+  test('monitor denies actions with no policies (default deny)', () => {
     resetEventCounter();
     const monitor = createMonitor();
+    const result = monitor.process({ tool: 'Write', file: 'src/x.js' });
+    assert.strictEqual(result.allowed, false);
+    assert.strictEqual(result.monitor.totalEvaluations, 1);
+  });
+
+  test('monitor allows actions in fail-open mode', () => {
+    resetEventCounter();
+    const monitor = createMonitor({ evaluateOptions: { defaultDeny: false } });
     const result = monitor.process({ tool: 'Write', file: 'src/x.js' });
     assert.strictEqual(result.allowed, true);
     assert.strictEqual(result.monitor.escalationLevel, ESCALATION.NORMAL);

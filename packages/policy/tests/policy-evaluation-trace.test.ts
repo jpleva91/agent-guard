@@ -25,12 +25,22 @@ function makePolicy(overrides: Partial<LoadedPolicy> = {}): LoadedPolicy {
 
 describe('PolicyEvaluationTrace', () => {
   describe('trace presence', () => {
-    it('includes trace on default allow (no policies)', () => {
+    it('includes trace on default deny (no policies)', () => {
       const result = evaluate(makeIntent(), []);
       expect(result.trace).toBeDefined();
       expect(result.trace!.phaseThatMatched).toBe('default');
       expect(result.trace!.totalRulesChecked).toBe(0);
       expect(result.trace!.rulesEvaluated).toEqual([]);
+      expect(result.allowed).toBe(false);
+    });
+
+    it('includes trace on default allow (fail-open mode)', () => {
+      const result = evaluate(makeIntent(), [], { defaultDeny: false });
+      expect(result.trace).toBeDefined();
+      expect(result.trace!.phaseThatMatched).toBe('default');
+      expect(result.trace!.totalRulesChecked).toBe(0);
+      expect(result.trace!.rulesEvaluated).toEqual([]);
+      expect(result.allowed).toBe(true);
     });
 
     it('includes trace on invalid intent', () => {
@@ -306,7 +316,7 @@ describe('PolicyEvaluationTrace', () => {
     it('preserves backward compatibility — trace is optional', () => {
       // The trace field is defined as optional in EvalResult,
       // so existing code that doesn't use it won't break
-      const result = evaluate(makeIntent(), []);
+      const result = evaluate(makeIntent(), [], { defaultDeny: false });
       const { trace: _trace, ...resultWithoutTrace } = result;
       expect(resultWithoutTrace.allowed).toBe(true);
       expect(resultWithoutTrace.decision).toBe('allow');

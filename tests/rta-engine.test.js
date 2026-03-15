@@ -4,9 +4,17 @@ import { resetEventCounter } from '../dist/events/schema.js';
 import { createEngine, INTERVENTION } from '../dist/kernel/decision.js';
 
 suite('AgentGuard — Runtime Assurance Engine', () => {
-  test('engine allows safe action with no policies', () => {
+  test('engine denies action with no policies (default deny)', () => {
     resetEventCounter();
     const engine = createEngine();
+    const result = engine.evaluate({ tool: 'Write', file: 'src/x.js' });
+    assert.strictEqual(result.allowed, false);
+    assert.ok(result.decision.reason.includes('default deny'));
+  });
+
+  test('engine allows safe action in fail-open mode', () => {
+    resetEventCounter();
+    const engine = createEngine({ evaluateOptions: { defaultDeny: false } });
     const result = engine.evaluate({ tool: 'Write', file: 'src/x.js' });
     assert.strictEqual(result.allowed, true);
     assert.strictEqual(result.intervention, null);
@@ -26,8 +34,9 @@ suite('AgentGuard — Runtime Assurance Engine', () => {
       ],
     });
     const result = engine.evaluate({ tool: 'Bash', command: 'rm src/x.js', file: 'src/x.js' });
-    // Bash maps to shell.exec, not file.delete, so this should be allowed
-    assert.strictEqual(result.allowed, true);
+    // Bash maps to shell.exec, not file.delete — deny rule doesn't match,
+    // but default-deny still blocks it
+    assert.strictEqual(result.allowed, false);
   });
 
   test('engine denies destructive shell commands', () => {
@@ -118,9 +127,20 @@ suite('AgentGuard — Runtime Assurance Engine', () => {
     assert.ok(result.violations.some((v) => v.invariantId === 'no-secret-exposure'));
   });
 
-  test('engine allows safe git push to feature branch', () => {
+  test('engine denies git push to feature branch without allow rule (default deny)', () => {
     resetEventCounter();
     const engine = createEngine();
+    const result = engine.evaluate(
+      { tool: 'Bash', command: 'git push origin feature/x' },
+      { modifiedFiles: ['src/app.js'], testsPass: true }
+    );
+    // No allow rule for git.push, so default-deny blocks it
+    assert.strictEqual(result.allowed, false);
+  });
+
+  test('engine allows safe git push in fail-open mode', () => {
+    resetEventCounter();
+    const engine = createEngine({ evaluateOptions: { defaultDeny: false } });
     const result = engine.evaluate(
       { tool: 'Bash', command: 'git push origin feature/x' },
       { modifiedFiles: ['src/app.js'], testsPass: true }
