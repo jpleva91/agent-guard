@@ -192,6 +192,5 @@ src/telemetry/backends/
 
 ## References
 
-- [Strategic Roadmap — Phase 1.2](strategic-roadmap.md)
 - [Event Model](event-model.md)
 - [Unified Architecture](unified-architecture.md)

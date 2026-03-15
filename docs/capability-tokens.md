@@ -170,6 +170,5 @@ Agent writes dist/bundle.js            → DENY (policy denies, capability irrel
 
 ## References
 
-- [Strategic Roadmap — Phase 2.2](strategic-roadmap.md)
 - [Agent Identity & Delegation](agent-identity-delegation.md)
 - [Unified Architecture](unified-architecture.md)

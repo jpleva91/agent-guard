@@ -227,6 +227,5 @@ src/identity/
 
 ## References
 
-- [Strategic Roadmap — Phase 3.1](strategic-roadmap.md)
 - [Capability Tokens](capability-tokens.md)
 - [Unified Architecture](unified-architecture.md)

@@ -159,7 +159,7 @@ Monitor escalation state transitions are now persisted as `StateChanged` DomainE
 - [x] AgentGuard governance runtime specification (`docs/agentguard.md`)
 - [x] Unified architecture document (`docs/unified-architecture.md`)
 - [x] Plugin API specification (`docs/plugin-api.md`)
-- [x] Product positioning (`docs/product-positioning.md`)
+- [x] Product positioning
 - [x] Rewritten README, ARCHITECTURE, ROADMAP
 
 ### Phase 1 — Canonical Event Model `STABLE`

@@ -211,6 +211,5 @@ A hardware push-button that immediately triggers the escalation state machine to
 
 ## References
 
-- [Strategic Roadmap — Phase 2.7](strategic-roadmap.md)
 - [Unified Architecture](unified-architecture.md)
 - [Rust Kernel Migration](rust-kernel-migration.md)

@@ -255,7 +255,6 @@ docs/protocol/
 
 ## References
 
-- [Strategic Roadmap — Phase 3.3](strategic-roadmap.md)
 - [Cryptographic Non-Repudiation](cryptographic-non-repudiation.md)
 - [Event Model](event-model.md)
 - [Unified Architecture](unified-architecture.md)

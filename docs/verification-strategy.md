@@ -214,6 +214,5 @@ agentguard benchmark --signing          # Measure signing overhead
 
 ## References
 
-- [Strategic Roadmap](strategic-roadmap.md)
 - [Threat Model](threat-model.md)
 - [Unified Architecture](unified-architecture.md)

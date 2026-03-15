@@ -256,7 +256,7 @@ Update/create the file with:
 - `updatedBy`: "planning-agent"
 - `currentPhase`: derived from ROADMAP.md (the first phase not marked COMPLETE)
 - `priorities`: array of top 5 prioritized issue objects with `issueNumber` and `priority` fields
-- `documentHashes`: object with keys for ROADMAP.md, docs/strategic-roadmap.md, docs/current-priorities.md — use the first 8 chars of `sha256sum` output for each
+- `documentHashes`: object with keys for ROADMAP.md — use the first 8 chars of `sha256sum` output for each
 
 Preserve any fields written by other agents (e.g., `openAgentPRs`, `prQueueHealthy` from Observability Agent). Only overwrite the fields listed above.
 

@@ -165,6 +165,4 @@ Each `init` command:
 
 ## References
 
-- [Strategic Roadmap — Phase 0.1](strategic-roadmap.md)
 - [Unified Architecture](unified-architecture.md)
-- [Product Positioning](product-positioning.md)

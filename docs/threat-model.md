@@ -220,5 +220,4 @@ Automated tests that validate each threat vector is mitigated by the invariant s
 
 - [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
 - [NIST AI Risk Management Framework](https://www.nist.gov/artificial-intelligence/ai-risk-management-framework)
-- [Strategic Roadmap](strategic-roadmap.md)
 - [Unified Architecture](unified-architecture.md)

@@ -138,6 +138,5 @@ policies/
 
 ## References
 
-- [Strategic Roadmap — Phase 2.4](strategic-roadmap.md)
 - [Cryptographic Non-Repudiation](cryptographic-non-repudiation.md)
 - [Unified Architecture](unified-architecture.md)

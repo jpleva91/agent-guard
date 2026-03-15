@@ -330,6 +330,5 @@ The `EvaluationPlan` is a serializable, optimized representation that:
 
 ## References
 
-- [Strategic Roadmap — Phase 3.2](strategic-roadmap.md)
 - [Open Policy Agent (OPA)](https://www.openpolicyagent.org/) — design inspiration
 - [Unified Architecture](unified-architecture.md)

@@ -34,16 +34,7 @@ Parse the roadmap to extract:
 - **Current active phase**: The first phase that is NOT `STABLE` / `COMPLETE`
 - **Next phase**: The phase after the current active one
 
-### 3. Read Strategy Documents
-
-```bash
-cat docs/current-priorities.md 2>/dev/null
-cat docs/strategic-roadmap.md 2>/dev/null | head -50
-```
-
-Cross-reference the "Active Phase" stated in `docs/current-priorities.md` with the actual phase derived from ROADMAP.md checkboxes. Note any discrepancy.
-
-### 4. Map Issues to Phases
+### 3. Map Issues to Phases
 
 Fetch all open issues:
 
@@ -112,7 +103,6 @@ Phase <N+1> — <theme>
 
 ### Recommendation
 - [ ] Mark Phase N as STABLE in ROADMAP.md
-- [ ] Update docs/current-priorities.md active phase
 - [ ] Begin Phase <N+1> work
 
 ---
@@ -255,7 +245,7 @@ Report:
 - Create a maximum of **1 progress report per run**
 - Create a maximum of **1 milestone/transition issue per run**
 - **NEVER modify ROADMAP.md** — only report findings and create milestone issues
-- **NEVER modify docs/current-priorities.md** — that is the Documentation Maintainer's job
+- **NEVER modify CLAUDE.md** — that is the Documentation Maintainer's job
 - **NEVER close issues** — only close previous progress report issues labeled `source:progress-controller`
 - **NEVER create work issues** — that is the Backlog Steward's job
 - If `gh` CLI is not authenticated, report the error and STOP

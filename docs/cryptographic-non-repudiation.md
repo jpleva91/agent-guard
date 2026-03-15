@@ -137,6 +137,5 @@ src/compliance/attestation.ts   # Signed attestation artifact generation
 
 ## References
 
-- [Strategic Roadmap — Phase 2.5](strategic-roadmap.md)
 - [Compliance Framework](compliance-framework.md)
 - [Unified Architecture](unified-architecture.md)

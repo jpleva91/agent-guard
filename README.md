@@ -321,8 +321,7 @@ pnpm test               # Run all tests (turbo test)
 | [AgentGuard Spec](docs/agentguard.md) | Governance runtime specification |
 | [Architecture](docs/unified-architecture.md) | Governed action kernel model |
 | [Hook Architecture](docs/hook-architecture.md) | Claude Code hook integration design |
-| [Priorities](docs/current-priorities.md) | Current roadmap and next steps |
-| [Product Positioning](docs/product-positioning.md) | What this is and isn't |
+| [Roadmap](ROADMAP.md) | Technical roadmap and next steps |
 | [Event Model](docs/event-model.md) | Canonical event schema |
 | [Plugin API](docs/plugin-api.md) | Event sources and extension points |
 | [Contributing](CONTRIBUTING.md) | How to contribute |

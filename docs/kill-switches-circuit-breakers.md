@@ -167,6 +167,5 @@ LOCKDOWN ◄──────────────────── OPEN tr
 
 ## References
 
-- [Strategic Roadmap — Phase 2.3](strategic-roadmap.md)
 - [Sentinel Architecture — Physical Kill Switch](sentinel-architecture.md)
 - [Unified Architecture](unified-architecture.md)

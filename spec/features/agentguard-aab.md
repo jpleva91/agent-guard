@@ -76,7 +76,7 @@ export function computeBlastRadius(files, limit) {}
 - Must remain zero-dependency
 - Must be deterministic — no Date.now() in evaluation logic (timestamps injected)
 - Must not import from `core/` or `game/`
-- Policy format: JSON (decided per open question in current-priorities.md)
+- Policy format: JSON/YAML
 
 ## Verification
 

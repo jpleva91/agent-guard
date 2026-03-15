@@ -193,6 +193,5 @@ Pre-built binaries are distributed via npm. The `optionalDependencies` pattern e
 
 ## References
 
-- [Strategic Roadmap — Phase 4–5](strategic-roadmap.md)
 - [Sentinel Architecture](sentinel-architecture.md) — performance requirements driven by physical systems
 - [Unified Architecture](unified-architecture.md)

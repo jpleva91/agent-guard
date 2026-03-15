@@ -179,6 +179,5 @@ src/core/
 
 ## References
 
-- [Strategic Roadmap — Phase 1.3](strategic-roadmap.md)
 - [Threat Model — T2: Data Exfiltration](threat-model.md)
 - [Unified Architecture](unified-architecture.md)
