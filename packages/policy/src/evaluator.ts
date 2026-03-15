@@ -129,7 +129,7 @@ interface ConditionMatchResult {
 
 function matchPersonaCondition(
   personaCond: PersonaCondition,
-  persona: AgentPersona | undefined,
+  persona: AgentPersona | undefined
 ): boolean {
   if (!persona) return false;
 

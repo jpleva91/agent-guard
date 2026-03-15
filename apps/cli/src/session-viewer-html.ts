@@ -36,7 +36,7 @@ export function generateSessionHtml(
   session: ReplaySession,
   summary: EvidenceSummary,
   decisions: GovernanceDecisionRecord[],
-  events: readonly DomainEvent[],
+  events: readonly DomainEvent[]
 ): string {
   const runId = escapeHtml(session.runId);
   const startTime = session.startEvent ? formatTs(session.startEvent.timestamp) : 'N/A';

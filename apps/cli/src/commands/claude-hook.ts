@@ -189,12 +189,12 @@ function generateSessionViewerQuietly(cliArgs: string[]): void {
     const storeFlag = storeFlagIdx !== -1 ? ` --store ${cliArgs[storeFlagIdx + 1]}` : '';
     const dbPathIdx = cliArgs.indexOf('--db-path');
     const dbPathFlag = dbPathIdx !== -1 ? ` --db-path "${cliArgs[dbPathIdx + 1]}"` : '';
-    execSync(
-      `agentguard session-viewer --last --no-open${storeFlag}${dbPathFlag}`,
-      { stdio: 'ignore', timeout: 10000 },
-    );
+    execSync(`agentguard session-viewer --last --no-open${storeFlag}${dbPathFlag}`, {
+      stdio: 'ignore',
+      timeout: 10000,
+    });
     process.stderr.write(
-      '\n  \x1b[36m\u2139\x1b[0m  PR detected — session viewer generated. Run \x1b[1magentguard session-viewer --last\x1b[0m to open.\n\n',
+      '\n  \x1b[36m\u2139\x1b[0m  PR detected — session viewer generated. Run \x1b[1magentguard session-viewer --last\x1b[0m to open.\n\n'
     );
   } catch {
     // Non-fatal — viewer generation is best-effort
@@ -209,7 +209,7 @@ async function handleStop(cliArgs: string[]): Promise<void> {
     const storageConfig = resolveStorageConfig(cliArgs);
     await sessionViewer(['--last', '--no-open', ...cliArgs], storageConfig);
     process.stderr.write(
-      '  \x1b[36m\u2139\x1b[0m  Session viewer ready. Run \x1b[1magentguard session-viewer --last\x1b[0m to open in browser.\n\n',
+      '  \x1b[36m\u2139\x1b[0m  Session viewer ready. Run \x1b[1magentguard session-viewer --last\x1b[0m to open in browser.\n\n'
     );
   } catch {
     // Non-fatal — viewer generation is best-effort

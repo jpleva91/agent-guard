@@ -388,7 +388,7 @@ export function createPostgresStore(): TelemetryDataStore & SessionViewerStore {
 
       const dataResult = await sql.query(
         `SELECT session_id, uploaded_at FROM session_viewers ORDER BY uploaded_at DESC LIMIT $1 OFFSET $2`,
-        [limit, offset],
+        [limit, offset]
       );
       // Omit html from list results for performance
       const data = dataResult.rows.map((r: Record<string, unknown>) => ({

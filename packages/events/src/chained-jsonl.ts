@@ -148,7 +148,10 @@ export function verifyChainedJsonl(filePath: string): ChainVerificationResult {
   }
 
   const content = readFileSync(filePath, 'utf8');
-  const lines = content.trim().split('\n').filter((l) => l.length > 0);
+  const lines = content
+    .trim()
+    .split('\n')
+    .filter((l) => l.length > 0);
 
   if (lines.length === 0) {
     return { valid: true, totalRecords: 0, verifiedRecords: 0 };
@@ -259,7 +262,10 @@ export function readChainedJsonl(filePath: string): DomainEvent[] {
   }
 
   const content = readFileSync(filePath, 'utf8');
-  const lines = content.trim().split('\n').filter((l) => l.length > 0);
+  const lines = content
+    .trim()
+    .split('\n')
+    .filter((l) => l.length > 0);
 
   return lines.map((line) => {
     const record = JSON.parse(line) as ChainedRecord;

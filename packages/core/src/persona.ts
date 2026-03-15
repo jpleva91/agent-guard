@@ -31,9 +31,7 @@ function isValidRole(v: string): v is PersonaRole {
   return PERSONA_ROLES.includes(v);
 }
 
-function mergeTags(
-  ...sources: (readonly string[] | undefined)[]
-): readonly string[] | undefined {
+function mergeTags(...sources: (readonly string[] | undefined)[]): readonly string[] | undefined {
   const merged = new Set<string>();
   for (const tags of sources) {
     if (tags) {
@@ -43,9 +41,7 @@ function mergeTags(
   return merged.size > 0 ? [...merged] : undefined;
 }
 
-function mergeModelMeta(
-  ...sources: (AgentModelMeta | undefined)[]
-): AgentModelMeta | undefined {
+function mergeModelMeta(...sources: (AgentModelMeta | undefined)[]): AgentModelMeta | undefined {
   const result: Record<string, string> = {};
   for (const meta of sources) {
     if (!meta) continue;
@@ -64,18 +60,16 @@ function mergeModelMeta(
 export function resolvePersona(
   policyPersona?: Partial<AgentPersona>,
   envPersona?: Partial<AgentPersona>,
-  actionPersona?: Partial<AgentPersona>,
+  actionPersona?: Partial<AgentPersona>
 ): AgentPersona {
   const result: AgentPersona = {
     modelMeta: mergeModelMeta(
       policyPersona?.modelMeta,
       envPersona?.modelMeta,
-      actionPersona?.modelMeta,
+      actionPersona?.modelMeta
     ),
-    trustTier:
-      actionPersona?.trustTier ?? envPersona?.trustTier ?? policyPersona?.trustTier,
-    autonomy:
-      actionPersona?.autonomy ?? envPersona?.autonomy ?? policyPersona?.autonomy,
+    trustTier: actionPersona?.trustTier ?? envPersona?.trustTier ?? policyPersona?.trustTier,
+    autonomy: actionPersona?.autonomy ?? envPersona?.autonomy ?? policyPersona?.autonomy,
     riskTolerance:
       actionPersona?.riskTolerance ?? envPersona?.riskTolerance ?? policyPersona?.riskTolerance,
     role: actionPersona?.role ?? envPersona?.role ?? policyPersona?.role,
@@ -101,7 +95,7 @@ export function resolvePersona(
  * - AGENTGUARD_PERSONA_TAGS (comma-separated)
  */
 export function personaFromEnv(
-  env: Record<string, string | undefined> = process.env,
+  env: Record<string, string | undefined> = process.env
 ): Partial<AgentPersona> | undefined {
   const model = env.AGENTGUARD_PERSONA_MODEL;
   const provider = env.AGENTGUARD_PERSONA_PROVIDER;
@@ -118,10 +112,22 @@ export function personaFromEnv(
 
   // Model metadata
   const modelMeta: Record<string, string> = {};
-  if (model) { modelMeta.model = model; hasAny = true; }
-  if (provider) { modelMeta.provider = provider; hasAny = true; }
-  if (runtime) { modelMeta.runtime = runtime; hasAny = true; }
-  if (version) { modelMeta.version = version; hasAny = true; }
+  if (model) {
+    modelMeta.model = model;
+    hasAny = true;
+  }
+  if (provider) {
+    modelMeta.provider = provider;
+    hasAny = true;
+  }
+  if (runtime) {
+    modelMeta.runtime = runtime;
+    hasAny = true;
+  }
+  if (version) {
+    modelMeta.version = version;
+    hasAny = true;
+  }
   if (Object.keys(modelMeta).length > 0) {
     result.modelMeta = modelMeta;
   }
@@ -144,7 +150,10 @@ export function personaFromEnv(
     hasAny = true;
   }
   if (tagsRaw) {
-    const tags = tagsRaw.split(',').map((t) => t.trim()).filter((t) => t.length > 0);
+    const tags = tagsRaw
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
     if (tags.length > 0) {
       result.tags = tags;
       hasAny = true;

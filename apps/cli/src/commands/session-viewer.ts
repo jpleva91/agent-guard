@@ -97,7 +97,7 @@ function uploadToServer(
   serverUrl: string,
   sessionId: string,
   html: string,
-  apiKey?: string,
+  apiKey?: string
 ): Promise<{ viewerUrl: string }> {
   return new Promise((resolve, reject) => {
     const url = new URL(`/api/v1/sessions/${encodeURIComponent(sessionId)}/viewer`, serverUrl);
@@ -135,7 +135,7 @@ function uploadToServer(
             reject(new Error(`Server responded with ${res.statusCode}: ${data}`));
           }
         });
-      },
+      }
     );
     req.on('error', reject);
     req.write(body);
@@ -149,11 +149,7 @@ function uploadToServer(
 
 function openInBrowser(filePath: string): void {
   const cmd =
-    process.platform === 'darwin'
-      ? 'open'
-      : process.platform === 'win32'
-        ? 'start'
-        : 'xdg-open';
+    process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
   try {
     execSync(`${cmd} "${filePath}"`, { stdio: 'ignore' });
   } catch {
@@ -167,7 +163,7 @@ function openInBrowser(filePath: string): void {
 
 export async function sessionViewer(
   args: string[],
-  storageConfig?: StorageConfig,
+  storageConfig?: StorageConfig
 ): Promise<number> {
   const noOpen = args.includes('--no-open');
   const share = args.includes('--share');
@@ -203,7 +199,7 @@ export async function sessionViewer(
       a !== '--server' &&
       a !== '--api-key' &&
       a !== 'sqlite' &&
-      a !== 'jsonl',
+      a !== 'jsonl'
   );
 
   // Remove the merge count value from filteredArgs
@@ -223,9 +219,7 @@ export async function sessionViewer(
   }
 
   // Filter out --db-path value from the original args
-  const cleanArgs = filteredArgs.filter(
-    (a) => a !== '--output' && a !== '-o',
-  );
+  const cleanArgs = filteredArgs.filter((a) => a !== '--output' && a !== '-o');
   const targetArg = cleanArgs[0];
 
   const useSqlite = storageConfig?.backend === 'sqlite';
@@ -258,9 +252,7 @@ export async function sessionViewer(
     if (runs.length > 20) {
       process.stderr.write(`  \x1b[2m... and ${runs.length - 20} more\x1b[0m\n`);
     }
-    process.stderr.write(
-      '\n  Usage: agentguard session-viewer <runId>\n\n',
-    );
+    process.stderr.write('\n  Usage: agentguard session-viewer <runId>\n\n');
     return 0;
   }
 
@@ -274,7 +266,8 @@ export async function sessionViewer(
 
   // --last with hook-based runs: auto-merge recent runs for a useful view
   const isLastMode = !targetArg || targetArg === '--last';
-  const shouldMerge = mergeCount > 0 || (isLastMode && !useSqlite && listRunsJsonl()[0]?.startsWith('hook_'));
+  const shouldMerge =
+    mergeCount > 0 || (isLastMode && !useSqlite && listRunsJsonl()[0]?.startsWith('hook_'));
 
   if (shouldMerge && !useSqlite) {
     const runs = listRunsJsonl();
@@ -378,7 +371,6 @@ export async function sessionViewer(
       process.stderr.write(`  \x1b[2mFalling back to local file.\x1b[0m\n\n`);
     }
   }
-
 
   if (!noOpen) {
     process.stderr.write('  Opening in browser...\n\n');

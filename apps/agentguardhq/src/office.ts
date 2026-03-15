@@ -22,7 +22,7 @@ export function createWorker(
   agentId: string,
   persona: AgentPersona,
   officeWidth: number,
-  officeHeight: number,
+  officeHeight: number
 ): AgentWorker {
   const style = resolveDefaultStyle(agentId, persona);
   return {
@@ -61,7 +61,10 @@ function formatAgentName(agentId: string, persona: AgentPersona): string {
   if (model) {
     // "Claude Sonnet" from "claude-sonnet-4-6"
     const parts = model.split('-');
-    const name = parts.slice(0, 2).map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+    const name = parts
+      .slice(0, 2)
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(' ');
     return name;
   }
   // Fallback: use agent ID prefix
@@ -108,7 +111,7 @@ export function telemetryToAction(event: TelemetryEvent): AgentAction {
 export function createOffice(
   width = 800,
   height = 600,
-  theme: DigitalOffice['theme'] = 'day',
+  theme: DigitalOffice['theme'] = 'day'
 ): DigitalOffice {
   return { workers: [], width, height, theme };
 }

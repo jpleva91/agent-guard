@@ -358,8 +358,14 @@ const COMMANDS: Record<string, CommandHelp> = {
         description: 'Merge N most recent runs into one view (auto-detected for hook runs)',
       },
       { flag: '--share', description: 'Upload to server and get a shareable URL' },
-      { flag: '--server <url>', description: 'Server URL (default: AGENTGUARD_SERVER_URL or localhost:3001)' },
-      { flag: '--api-key <key>', description: 'API key for server auth (default: AGENTGUARD_API_KEY env)' },
+      {
+        flag: '--server <url>',
+        description: 'Server URL (default: AGENTGUARD_SERVER_URL or localhost:3001)',
+      },
+      {
+        flag: '--api-key <key>',
+        description: 'API key for server auth (default: AGENTGUARD_API_KEY env)',
+      },
       { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
       { flag: '--db-path <path>', description: 'SQLite database path' },
     ],

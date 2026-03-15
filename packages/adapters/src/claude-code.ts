@@ -35,7 +35,7 @@ export function resolveAgentIdentity(sessionId?: string): string {
 
 export function normalizeClaudeCodeAction(
   payload: ClaudeCodeHookPayload,
-  persona?: AgentPersona,
+  persona?: AgentPersona
 ): RawAgentAction {
   const input = payload.tool_input || {};
   const agent = resolveAgentIdentity(payload.session_id);
@@ -190,7 +190,7 @@ export async function processClaudeCodeHook(
   kernel: Kernel,
   payload: ClaudeCodeHookPayload,
   systemContext: Record<string, unknown> = {},
-  persona?: AgentPersona,
+  persona?: AgentPersona
 ): Promise<KernelResult> {
   const rawAction = normalizeClaudeCodeAction(payload, persona);
   return kernel.propose(rawAction, systemContext);
