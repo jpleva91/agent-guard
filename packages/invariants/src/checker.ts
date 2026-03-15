@@ -77,5 +77,9 @@ export function buildSystemState(context: Record<string, unknown> = {}): SystemS
     fileContentDiff: (context.fileContentDiff as string) || '',
     writeSizeBytes: context.writeSizeBytes as number | undefined,
     writeSizeBytesLimit: context.writeSizeBytesLimit as number | undefined,
+    isNetworkRequest: context.isNetworkRequest as boolean | undefined,
+    requestUrl: context.requestUrl as string | undefined,
+    requestDomain: context.requestDomain as string | undefined,
+    networkEgressAllowlist: context.networkEgressAllowlist as string[] | undefined,
   };
 }

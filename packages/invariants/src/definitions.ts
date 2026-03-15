@@ -52,6 +52,14 @@ export interface SystemState {
   writeSizeBytes?: number;
   /** Maximum allowed single-file write size in bytes (default: 102400 = 100KB) */
   writeSizeBytesLimit?: number;
+  /** Whether the current action is a network request (http.request or shell with network tools) */
+  isNetworkRequest?: boolean;
+  /** Full URL of the network request (if available) */
+  requestUrl?: string;
+  /** Domain/hostname of the network request (extracted from URL) */
+  requestDomain?: string;
+  /** Allowlisted domains for network egress (default: empty = deny all) */
+  networkEgressAllowlist?: string[];
 }
 
 /** Patterns matched as substrings (case-insensitive) against file paths. */
@@ -254,6 +262,51 @@ export function isCredentialPath(filePath: string): boolean {
   }
 
   return false;
+}
+
+/** Shell command patterns that indicate network egress (case-insensitive). */
+const NETWORK_COMMAND_PATTERNS: RegExp[] = [
+  /\bcurl\b/,
+  /\bwget\b/,
+  /\b(?:nc|netcat|ncat)\b/,
+  /\bfetch\b/,
+  /\bhttpie\b/,
+  /\bhttp\s/,
+];
+
+/** Extracts a domain from a URL string. Returns null if parsing fails. */
+export function extractDomainFromUrl(url: string): string | null {
+  if (!url || typeof url !== 'string') return null;
+
+  const trimmed = url.trim();
+
+  // Try URL constructor for well-formed URLs
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.hostname || null;
+  } catch {
+    // Fall through to regex extraction
+  }
+
+  // Regex fallback: match protocol://hostname or bare hostname:port patterns
+  const match = trimmed.match(/^(?:https?:\/\/)?([^/:?\s#]+)/i);
+  return match ? match[1].toLowerCase() : null;
+}
+
+/** Extracts a URL from a shell command containing curl/wget/etc. */
+export function extractUrlFromCommand(command: string): string | null {
+  if (!command) return null;
+
+  // Match URLs in the command (http:// or https://)
+  const urlMatch = command.match(/\bhttps?:\/\/[^\s"'<>|;)]+/i);
+  return urlMatch ? urlMatch[0] : null;
+}
+
+/** Returns true if the command contains a network tool (curl, wget, nc, etc.) */
+export function isNetworkCommand(command: string): boolean {
+  if (!command || typeof command !== 'string') return false;
+  const lower = command.toLowerCase();
+  return NETWORK_COMMAND_PATTERNS.some((p) => p.test(lower));
 }
 
 export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
@@ -1006,9 +1059,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         'sequelize/migrations/',
       ];
 
-      const isMigrationFile = MIGRATION_DIR_PATTERNS.some((p) =>
-        normalizedTarget.includes(p)
-      );
+      const isMigrationFile = MIGRATION_DIR_PATTERNS.some((p) => normalizedTarget.includes(p));
 
       if (!isMigrationFile) {
         return { holds: true, expected: 'N/A', actual: 'Target is not in a migration directory' };
@@ -1132,6 +1183,89 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         actual: holds
           ? 'No transitive effects detected'
           : `Transitive policy violations detected: ${violations.join('; ')}`,
+      };
+    },
+  },
+
+  {
+    id: 'no-network-egress',
+    name: 'No Network Egress',
+    description:
+      'Denies HTTP requests to non-allowlisted domains — closes data exfiltration vectors via network access',
+    severity: 4,
+    check(state) {
+      const actionType = state.currentActionType || '';
+      const command = state.currentCommand || '';
+
+      // Determine if this is a network action
+      const isHttpAction = actionType === 'http.request';
+      const isNetworkShell =
+        (actionType === '' || actionType === 'shell.exec') && isNetworkCommand(command);
+      const explicitFlag = state.isNetworkRequest === true;
+
+      if (!isHttpAction && !isNetworkShell && !explicitFlag) {
+        return { holds: true, expected: 'N/A', actual: 'Not a network request' };
+      }
+
+      // If no allowlist is configured (undefined), skip enforcement (fail-open).
+      // This makes the invariant opt-in: users must explicitly set networkEgressAllowlist
+      // to activate network egress governance. An empty array means "deny all".
+      const allowlist = state.networkEgressAllowlist;
+      if (allowlist === undefined) {
+        return {
+          holds: true,
+          expected: 'N/A',
+          actual: 'Network egress allowlist not configured (fail-open)',
+        };
+      }
+
+      // Extract domain from state or from command
+      let domain = state.requestDomain || '';
+      if (domain === '' && state.requestUrl) {
+        domain = extractDomainFromUrl(state.requestUrl) || '';
+      }
+      if (domain === '' && isNetworkShell) {
+        const url = extractUrlFromCommand(command);
+        if (url) {
+          domain = extractDomainFromUrl(url) || '';
+        }
+      }
+      if (domain === '' && isHttpAction && state.currentTarget) {
+        domain = extractDomainFromUrl(state.currentTarget) || '';
+      }
+
+      // If no domain could be extracted, deny conservatively
+      if (domain === '') {
+        return {
+          holds: false,
+          expected: 'Network requests must target allowlisted domains',
+          actual: 'Network request detected but domain could not be determined',
+        };
+      }
+
+      // Empty allowlist = deny all network egress
+      if (allowlist.length === 0) {
+        return {
+          holds: false,
+          expected: 'Network requests must target allowlisted domains',
+          actual: `Network egress to ${domain} denied (no allowlist configured)`,
+        };
+      }
+
+      // Check domain against allowlist (case-insensitive, supports subdomain matching)
+      const lowerDomain = domain.toLowerCase();
+      const allowed = allowlist.some((entry) => {
+        const lowerEntry = entry.toLowerCase();
+        // Exact match or subdomain match (e.g., "api.github.com" matches "github.com")
+        return lowerDomain === lowerEntry || lowerDomain.endsWith('.' + lowerEntry);
+      });
+
+      return {
+        holds: allowed,
+        expected: 'Network requests must target allowlisted domains',
+        actual: allowed
+          ? `Network egress to ${domain} allowed (matches allowlist)`
+          : `Network egress to ${domain} denied (not in allowlist: ${allowlist.join(', ')})`,
       };
     },
   },

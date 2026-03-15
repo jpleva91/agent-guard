@@ -5,7 +5,13 @@ import type { DomainEvent } from '@red-codes/core';
 import { authorize } from './aab.js';
 import type { RawAgentAction } from './aab.js';
 import type { NormalizedIntent, EvalResult, EvaluateOptions } from '@red-codes/policy';
-import { checkAllInvariants, buildSystemState } from '@red-codes/invariants';
+import {
+  checkAllInvariants,
+  buildSystemState,
+  isNetworkCommand,
+  extractUrlFromCommand,
+  extractDomainFromUrl,
+} from '@red-codes/invariants';
 import type { InvariantCheck } from '@red-codes/invariants';
 import { createEvidencePack } from './evidence.js';
 import type { EvidencePack } from './evidence.js';
@@ -133,6 +139,30 @@ export function createEngine(config: EngineConfig = {}): Engine {
           ? rawAction.content.length
           : (systemContext.writeSizeBytes as number | undefined);
 
+      // Detect network requests for the network egress invariant
+      const isHttpAction = intent.action === 'http.request';
+      const isNetworkShellCmd =
+        intent.action === 'shell.exec' && isNetworkCommand(intent.command || '');
+      const isNetworkRequest =
+        isHttpAction ||
+        isNetworkShellCmd ||
+        (systemContext.isNetworkRequest as boolean | undefined) === true;
+
+      let requestUrl = systemContext.requestUrl as string | undefined;
+      let requestDomain = systemContext.requestDomain as string | undefined;
+
+      if (isNetworkRequest && !requestUrl) {
+        if (isHttpAction && intent.target) {
+          requestUrl = intent.target;
+        } else if (isNetworkShellCmd && intent.command) {
+          requestUrl = extractUrlFromCommand(intent.command) || undefined;
+        }
+      }
+
+      if (isNetworkRequest && !requestDomain && requestUrl) {
+        requestDomain = extractDomainFromUrl(requestUrl) || undefined;
+      }
+
       const state = buildSystemState({
         ...systemContext,
         currentTarget: intent.target,
@@ -144,6 +174,9 @@ export function createEngine(config: EngineConfig = {}): Engine {
         directPush: intent.action === 'git.push',
         isPush: intent.action === 'git.push' || intent.action === 'git.force-push',
         writeSizeBytes,
+        isNetworkRequest,
+        requestUrl,
+        requestDomain,
       });
 
       const {
