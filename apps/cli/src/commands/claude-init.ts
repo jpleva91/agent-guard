@@ -122,6 +122,19 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     ],
   });
 
+  // Stop — generate session viewer on session end
+  if (!settings.hooks.Stop) (settings.hooks as Record<string, unknown>).Stop = [];
+  ((settings.hooks as Record<string, unknown>).Stop as SessionStartHookEntry[]).push({
+    hooks: [
+      {
+        type: 'command',
+        command: `agentguard claude-hook stop${storeSuffix}${dbPathSuffix}`,
+        timeout: 15000,
+        blocking: false,
+      },
+    ],
+  });
+
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
 
   process.stderr.write(
@@ -130,6 +143,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   process.stderr.write(`  ${DIM}SessionStart: auto-build + status check${RESET}\n`);
   process.stderr.write(`  ${DIM}PreToolUse:   governance enforcement (all tools)${RESET}\n`);
   process.stderr.write(`  ${DIM}PostToolUse:  error monitoring (Bash)${RESET}\n`);
+  process.stderr.write(`  ${DIM}Stop:         session viewer generation${RESET}\n`);
   if (storeBackend) {
     process.stderr.write(`  ${DIM}Storage:     ${storeBackend}${RESET}\n`);
   }
@@ -227,6 +241,13 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
     delete (settings.hooks as Record<string, unknown>).SessionStart;
   }
 
+  // Remove Stop hook
+  const stopHooks = ((settings.hooks as Record<string, unknown>)?.Stop as HookEntry[]) || [];
+  (settings.hooks as Record<string, unknown>).Stop = filterByCommand(stopHooks, HOOK_MARKER);
+  if (((settings.hooks as Record<string, unknown>).Stop as HookEntry[]).length === 0) {
+    delete (settings.hooks as Record<string, unknown>).Stop;
+  }
+
   if (Object.keys(settings.hooks!).length === 0) {
     delete settings.hooks;
   }
@@ -244,7 +265,8 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
 function hasAgentGuardHook(settings: Settings): boolean {
   const preToolUse = settings?.hooks?.PreToolUse || [];
   const postToolUse = settings?.hooks?.PostToolUse || [];
-  const allEntries = [...preToolUse, ...postToolUse] as HookEntry[];
+  const stopHooks = ((settings?.hooks as Record<string, unknown>)?.Stop || []) as HookEntry[];
+  const allEntries = [...preToolUse, ...postToolUse, ...stopHooks] as HookEntry[];
   return allEntries.some((entry) => {
     const hooks = entry.hooks || [];
     return hooks.some((h) => h.command && h.command.includes(HOOK_MARKER));

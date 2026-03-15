@@ -326,6 +326,25 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard evidence-pr --run run_1234567890_abc',
     ],
   },
+  'session-viewer': {
+    name: 'agentguard session-viewer',
+    description: 'Generate an interactive HTML visualization of a governance session',
+    usage: 'agentguard session-viewer [runId] [flags]',
+    flags: [
+      { flag: '--last', description: 'Visualize the most recent run' },
+      { flag: '--list', description: 'List available runs' },
+      { flag: '--output, -o <file>', description: 'Output HTML file path' },
+      { flag: '--no-open', description: 'Do not open in browser automatically' },
+      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--db-path <path>', description: 'SQLite database path' },
+    ],
+    examples: [
+      'agentguard session-viewer --last',
+      'agentguard session-viewer run_1234567890_abc',
+      'agentguard session-viewer --last --output report.html',
+      'agentguard session-viewer --last --no-open',
+    ],
+  },
 };
 
 async function main() {
@@ -548,6 +567,17 @@ async function main() {
       break;
     }
 
+    case 'session-viewer': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS['session-viewer']));
+        break;
+      }
+      const { sessionViewer } = await import('./commands/session-viewer.js');
+      const code = await sessionViewer(args.slice(1), resolveStorageConfig(args.slice(1)));
+      process.exit(code);
+      break;
+    }
+
     case 'claude-init': {
       const { claudeInit } = await import('./commands/claude-init.js');
       await claudeInit(args.slice(1));
@@ -644,6 +674,11 @@ function printHelp(): void {
     agentguard plugin install <path>          Install a plugin from a local path
     agentguard plugin remove <id>             Remove a plugin by ID
     agentguard plugin search [query]          Search for plugins on npm
+
+  \x1b[1mVisualization:\x1b[0m
+    agentguard session-viewer --last          Open session viewer in browser
+    agentguard session-viewer <runId>         Visualize a specific run
+    agentguard session-viewer --last -o f.html  Save to file without opening
 
   \x1b[1mEvidence:\x1b[0m
     agentguard evidence-pr                    Attach governance evidence to a PR

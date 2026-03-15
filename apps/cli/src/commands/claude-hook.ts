@@ -5,11 +5,19 @@
 // Supports both JSONL (default) and SQLite storage backends via --store flag or AGENTGUARD_STORE env var.
 
 import { randomUUID } from 'node:crypto';
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
 
 export async function claudeHook(hookType?: string, extraArgs: string[] = []): Promise<void> {
   try {
+    // Stop hook has no stdin payload — it fires when the session ends
+    if (hookType === 'stop') {
+      await handleStop(extraArgs);
+      process.exit(0);
+      return;
+    }
+
     const input = await readStdin();
     if (!input) process.exit(0);
 
@@ -32,7 +40,7 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
       const payload = { ...data, session_id: sessionId } as unknown as ClaudeCodeHookPayload;
       await handlePreToolUse(payload, extraArgs);
     } else {
-      handlePostToolUse(data);
+      handlePostToolUse(data, extraArgs);
     }
   } catch {
     // Swallow all errors — hooks must never fail
@@ -150,12 +158,13 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[
   }
 }
 
-function handlePostToolUse(data: Record<string, unknown>): void {
+function handlePostToolUse(data: Record<string, unknown>, cliArgs: string[] = []): void {
   if (data.tool_name !== 'Bash') return;
 
   const output = (data.tool_output || {}) as Record<string, unknown>;
   const exitCode = (output.exit_code ?? output.exitCode ?? 0) as number;
   const stderr = (output.stderr || '') as string;
+  const stdout = (output.stdout || '') as string;
 
   if (exitCode !== 0 && stderr.trim()) {
     process.stdout.write('\n');
@@ -163,6 +172,46 @@ function handlePostToolUse(data: Record<string, unknown>): void {
       `  \x1b[1m\x1b[31mError detected:\x1b[0m ${stderr.trim().split('\n')[0].slice(0, 80)}\n`
     );
     process.stdout.write('\n');
+  }
+
+  // Detect PR creation — suggest opening the session viewer
+  const toolInput = (data.tool_input || data.command || '') as string;
+  const isPrCreate = toolInput.includes('gh pr create') || toolInput.includes('gh pr merge');
+  if (isPrCreate && exitCode === 0 && stdout.trim()) {
+    generateSessionViewerQuietly(cliArgs);
+  }
+}
+
+function generateSessionViewerQuietly(cliArgs: string[]): void {
+  try {
+    const storeFlagIdx = cliArgs.indexOf('--store');
+    const storeFlag = storeFlagIdx !== -1 ? ` --store ${cliArgs[storeFlagIdx + 1]}` : '';
+    const dbPathIdx = cliArgs.indexOf('--db-path');
+    const dbPathFlag = dbPathIdx !== -1 ? ` --db-path "${cliArgs[dbPathIdx + 1]}"` : '';
+    execSync(
+      `agentguard session-viewer --last --no-open${storeFlag}${dbPathFlag}`,
+      { stdio: 'ignore', timeout: 10000 },
+    );
+    process.stderr.write(
+      '\n  \x1b[36m\u2139\x1b[0m  PR detected — session viewer generated. Run \x1b[1magentguard session-viewer --last\x1b[0m to open.\n\n',
+    );
+  } catch {
+    // Non-fatal — viewer generation is best-effort
+  }
+}
+
+async function handleStop(cliArgs: string[]): Promise<void> {
+  // On session end, generate the session viewer HTML and suggest opening it
+  try {
+    const { sessionViewer } = await import('./session-viewer.js');
+    const { resolveStorageConfig } = await import('@red-codes/storage');
+    const storageConfig = resolveStorageConfig(cliArgs);
+    await sessionViewer(['--last', '--no-open', ...cliArgs], storageConfig);
+    process.stderr.write(
+      '  \x1b[36m\u2139\x1b[0m  Session viewer ready. Run \x1b[1magentguard session-viewer --last\x1b[0m to open in browser.\n\n',
+    );
+  } catch {
+    // Non-fatal — viewer generation is best-effort
   }
 }
 
