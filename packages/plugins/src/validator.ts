@@ -20,6 +20,7 @@ const VALID_PLUGIN_TYPES: readonly PluginType[] = [
   'policy-pack',
   'invariant',
   'adapter',
+  'simulator',
 ];
 
 /** Semver pattern: major.minor.patch with optional pre-release */

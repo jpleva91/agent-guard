@@ -15,6 +15,7 @@ import { createPackageSimulator } from '@red-codes/kernel';
 import type { RawAgentAction } from '@red-codes/kernel';
 import { generateSeed, createSeededRng } from '@red-codes/core';
 import { simpleHash } from '@red-codes/core';
+import { createPluginRegistry, loadSimulatorPlugins } from '@red-codes/plugins';
 import { createRendererRegistry } from '@red-codes/renderers';
 import type { RendererRegistry } from '@red-codes/renderers';
 import { createTuiRenderer } from '@red-codes/renderers';
@@ -68,6 +69,14 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     simulators.register(createGitSimulator());
     simulators.register(createFilesystemSimulator());
     simulators.register(createPackageSimulator());
+
+    // Load community simulator plugins from the plugin registry
+    try {
+      const pluginRegistry = createPluginRegistry();
+      await loadSimulatorPlugins(pluginRegistry, (sim) => simulators.register(sim));
+    } catch {
+      // Plugin loading failures are non-fatal — built-in simulators still work
+    }
   }
 
   // Create seeded RNG — seed is stored in session metadata for deterministic replay

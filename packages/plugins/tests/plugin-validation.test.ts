@@ -145,6 +145,7 @@ describe('validateManifest', () => {
       expect(validateManifest(validManifest({ type: 'policy-pack' })).valid).toBe(true);
       expect(validateManifest(validManifest({ type: 'invariant' })).valid).toBe(true);
       expect(validateManifest(validManifest({ type: 'adapter' })).valid).toBe(true);
+      expect(validateManifest(validManifest({ type: 'simulator' })).valid).toBe(true);
     });
 
     it('rejects unknown plugin types', () => {

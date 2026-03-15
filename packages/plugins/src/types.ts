@@ -6,7 +6,13 @@
 // enforce security boundaries at load time and runtime.
 
 /** Supported plugin types in the AgentGuard ecosystem */
-export type PluginType = 'renderer' | 'replay-processor' | 'policy-pack' | 'invariant' | 'adapter';
+export type PluginType =
+  | 'renderer'
+  | 'replay-processor'
+  | 'policy-pack'
+  | 'invariant'
+  | 'adapter'
+  | 'simulator';
 
 /**
  * Capabilities a plugin may request.

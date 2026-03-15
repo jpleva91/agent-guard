@@ -25,6 +25,7 @@ const EXTENSION_TYPES = [
   'adapter',
   'renderer',
   'replay-processor',
+  'simulator',
 ] as const;
 
 type ExtensionType = (typeof EXTENSION_TYPES)[number];
@@ -209,6 +210,8 @@ function generateScaffold(type: ExtensionType, name: string): ScaffoldFile[] {
       return scaffoldRenderer(id, name);
     case 'replay-processor':
       return scaffoldReplayProcessor(id, name);
+    case 'simulator':
+      return scaffoldSimulator(id, name);
   }
 }
 
@@ -949,6 +952,233 @@ agentguard plugin install .
   ];
 }
 
+function scaffoldSimulator(id: string, name: string): ScaffoldFile[] {
+  return [
+    {
+      path: 'package.json',
+      content:
+        JSON.stringify(
+          {
+            name: id,
+            version: '0.1.0',
+            description: `Custom action simulator for AgentGuard`,
+            type: 'module',
+            main: 'src/index.js',
+            scripts: {
+              build: 'tsc',
+              test: 'node --test tests/',
+            },
+            agentguard: {
+              id,
+              name,
+              version: '0.1.0',
+              type: 'simulator',
+              apiVersion: '^1.0.0',
+              description: `Custom simulator: ${name}`,
+              capabilities: ['filesystem:read'],
+            },
+          },
+          null,
+          2
+        ) + '\n',
+    },
+    {
+      path: 'tsconfig.json',
+      content:
+        JSON.stringify(
+          {
+            compilerOptions: {
+              target: 'ES2022',
+              module: 'ESNext',
+              moduleResolution: 'bundler',
+              outDir: 'dist',
+              declaration: true,
+              strict: true,
+              verbatimModuleSyntax: true,
+            },
+            include: ['src'],
+          },
+          null,
+          2
+        ) + '\n',
+    },
+    {
+      path: 'src/index.ts',
+      content: `// Custom action simulator for AgentGuard
+//
+// Simulators predict the impact of an action BEFORE it executes. They are
+// invoked by the governance kernel during the evaluate phase to produce
+// structured impact forecasts used by predictive policy rules.
+//
+// Each simulator:
+// 1. Declares which action types it supports via \`supports()\`
+// 2. Returns a \`SimulationResult\` with predicted changes, blast radius, and risk
+// 3. Is registered with the SimulatorRegistry at startup
+//
+// See: https://github.com/AgentGuardHQ/agent-guard#simulators
+
+/** Normalized action intent passed to the simulator */
+export interface NormalizedIntent {
+  action: string;
+  target?: string;
+  agent?: string;
+  destructive?: boolean;
+  command?: string;
+  filesAffected?: number;
+  metadata?: Record<string, unknown>;
+}
+
+/** Result of simulating an action before execution */
+export interface SimulationResult {
+  /** Human-readable list of predicted changes */
+  predictedChanges: string[];
+  /** Estimated number of files/entities affected */
+  blastRadius: number;
+  /** Overall risk assessment */
+  riskLevel: 'low' | 'medium' | 'high';
+  /** Simulator-specific details */
+  details: Record<string, unknown>;
+  /** Which simulator produced this result */
+  simulatorId: string;
+  /** How long the simulation took (ms) */
+  durationMs: number;
+}
+
+/** An action simulator predicts the impact of an action before execution */
+export interface ActionSimulator {
+  /** Unique simulator identifier */
+  readonly id: string;
+  /** Check if this simulator can handle the given intent */
+  supports(intent: NormalizedIntent): boolean;
+  /** Simulate the action and predict its impact */
+  simulate(intent: NormalizedIntent, context: Record<string, unknown>): Promise<SimulationResult>;
+}
+
+// --- Supported action types for this simulator ---
+
+const SUPPORTED_ACTIONS = new Set([
+  // Add the action types this simulator handles, e.g.:
+  // 'shell.exec',
+  // 'deploy.trigger',
+]);
+
+/**
+ * Factory function — the plugin entry point.
+ *
+ * AgentGuard calls \`createSimulator()\` when loading your plugin.
+ * Return an object that implements the ActionSimulator interface.
+ */
+export function createSimulator(): ActionSimulator {
+  return {
+    id: '${id}',
+
+    supports(intent: NormalizedIntent): boolean {
+      return SUPPORTED_ACTIONS.has(intent.action);
+    },
+
+    async simulate(intent: NormalizedIntent): Promise<SimulationResult> {
+      const start = Date.now();
+      const target = intent.target ?? '';
+
+      // TODO: Implement your simulation logic here.
+      // Analyze the intent and predict what would happen if this action executes.
+
+      return {
+        predictedChanges: [\`Simulated: \${intent.action} on \${target}\`],
+        blastRadius: 1,
+        riskLevel: 'low',
+        details: {
+          target,
+          action: intent.action,
+        },
+        simulatorId: '${id}',
+        durationMs: Date.now() - start,
+      };
+    },
+  };
+}
+`,
+    },
+    {
+      path: 'tests/simulator.test.ts',
+      content: `import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { createSimulator } from '../src/index.js';
+
+describe('${name} simulator', () => {
+  const simulator = createSimulator();
+
+  it('should have a valid id', () => {
+    assert.strictEqual(simulator.id, '${id}');
+  });
+
+  it('should report supported actions', () => {
+    // Update this test when you add supported actions
+    const result = simulator.supports({ action: 'file.read' });
+    assert.strictEqual(typeof result, 'boolean');
+  });
+
+  it('should return a valid SimulationResult', async () => {
+    const result = await simulator.simulate(
+      { action: 'test.action', target: '/tmp/test' },
+      {}
+    );
+    assert.strictEqual(typeof result.blastRadius, 'number');
+    assert.ok(Array.isArray(result.predictedChanges));
+    assert.ok(['low', 'medium', 'high'].includes(result.riskLevel));
+    assert.strictEqual(result.simulatorId, '${id}');
+    assert.strictEqual(typeof result.durationMs, 'number');
+  });
+});
+`,
+    },
+    {
+      path: 'README.md',
+      content: `# ${name}
+
+Custom action simulator for AgentGuard.
+
+## Overview
+
+This simulator predicts the impact of actions before they execute,
+enabling predictive governance decisions based on estimated blast radius
+and risk level.
+
+## Usage
+
+\`\`\`bash
+# Install as an AgentGuard plugin
+agentguard plugin install .
+
+# The simulator is automatically loaded when running the guard
+agentguard guard --policy agentguard.yaml
+\`\`\`
+
+## How It Works
+
+1. The governance kernel calls \`supports(intent)\` to check if this simulator handles the action
+2. If supported, \`simulate(intent, context)\` predicts the impact
+3. The result feeds into the impact forecast and predictive policy rules
+
+## Simulator Interface
+
+| Method | Description |
+|--------|-------------|
+| \`supports(intent)\` | Returns true if this simulator handles the action type |
+| \`simulate(intent, context)\` | Returns predicted changes, blast radius, and risk level |
+
+## Development
+
+\`\`\`bash
+npm install
+npm run build
+npm test
+\`\`\`
+`,
+    },
+  ];
+}
+
 /**
  * Scaffold Firestore backend configuration: security rules, env example, and setup guide.
  */
@@ -1171,6 +1401,7 @@ function printInitHelp(): void {
     adapter            Custom execution adapter
     renderer           Custom governance renderer
     replay-processor   Custom replay processor
+    simulator          Custom action simulator
 
   ${bold('Agent swarm:')}
     swarm              Scaffold the full agent swarm (skills, config, task definitions)
@@ -1198,6 +1429,7 @@ function printInitHelp(): void {
     agentguard init --extension renderer --name json-renderer
     agentguard init invariant --name vendor-guard
     agentguard init policy-pack --name strict-policy
+    agentguard init simulator --name docker-build
     agentguard init firestore
     agentguard init swarm
     agentguard init swarm --tiers core,governance

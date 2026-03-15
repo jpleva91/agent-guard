@@ -69,6 +69,7 @@ describe('init command', () => {
       'adapter',
       'renderer',
       'replay-processor',
+      'simulator',
     ] as const;
 
     for (const type of extensionTypes) {
@@ -131,7 +132,7 @@ describe('init command', () => {
     });
 
     it('should generate test files for non-policy-pack types', async () => {
-      const typesWithTests = ['invariant', 'adapter', 'renderer', 'replay-processor'] as const;
+      const typesWithTests = ['invariant', 'adapter', 'renderer', 'replay-processor', 'simulator'] as const;
 
       for (const type of typesWithTests) {
         vi.clearAllMocks();
@@ -146,6 +147,23 @@ describe('init command', () => {
           (call) => typeof call[0] === 'string' && (call[0] as string).includes(`tests${sep}`)
         );
         expect(testCall, `Test file should be generated for ${type}`).toBeDefined();
+      }
+    });
+
+    it('should generate createSimulator export for simulator type', async () => {
+      await init(['--extension', 'simulator', '--name', 'test-simulator']);
+
+      const writeCalls = vi.mocked(writeFileSync).mock.calls;
+      const srcCall = writeCalls.find(
+        (call) => typeof call[0] === 'string' && (call[0] as string).endsWith(`src${sep}index.ts`)
+      );
+      expect(srcCall).toBeDefined();
+      if (srcCall) {
+        const content = srcCall[1] as string;
+        expect(content).toContain('createSimulator');
+        expect(content).toContain('ActionSimulator');
+        expect(content).toContain('SimulationResult');
+        expect(content).toContain('NormalizedIntent');
       }
     });
 
@@ -167,7 +185,7 @@ describe('init command', () => {
     });
 
     it('should generate TypeScript source for non-policy-pack types', async () => {
-      const typesWithTs = ['invariant', 'adapter', 'renderer', 'replay-processor'] as const;
+      const typesWithTs = ['invariant', 'adapter', 'renderer', 'replay-processor', 'simulator'] as const;
 
       for (const type of typesWithTs) {
         vi.clearAllMocks();
@@ -256,8 +274,8 @@ describe('init command', () => {
   });
 
   describe('valid extension types', () => {
-    it('should accept all five extension types', async () => {
-      const types = ['invariant', 'policy-pack', 'adapter', 'renderer', 'replay-processor'];
+    it('should accept all six extension types', async () => {
+      const types = ['invariant', 'policy-pack', 'adapter', 'renderer', 'replay-processor', 'simulator'];
       for (const type of types) {
         vi.clearAllMocks();
         vi.mocked(existsSync).mockReturnValue(false);
