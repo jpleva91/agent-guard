@@ -126,9 +126,7 @@ export function registerGovernanceTools(server: McpServer, config: McpConfig): v
     'evaluate_policy',
     'Evaluate an action against policy rules (standalone, no kernel overhead)',
     {
-      action: z
-        .string()
-        .describe('Canonical action type (e.g. git.push, file.write, shell.exec)'),
+      action: z.string().describe('Canonical action type (e.g. git.push, file.write, shell.exec)'),
       target: z.string().optional().default('').describe('Target path or branch'),
       command: z.string().optional().describe('Shell command'),
       branch: z.string().optional().describe('Git branch'),

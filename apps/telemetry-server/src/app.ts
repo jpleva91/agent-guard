@@ -14,21 +14,10 @@ import { enrollRoutes } from './routes/enroll.js';
 import { telemetryBatchRoutes } from './routes/telemetry-batch.js';
 import { sessionViewerRoutes, sessionViewerPublicRoutes } from './routes/session-viewer.js';
 import { createMemoryStore } from './store/memory-store.js';
-import type { TelemetryDataStore, SessionViewerStore } from './store/types.js';
-import type { ServerConfig } from './config.js';
-
-async function createStore(config: ServerConfig): Promise<TelemetryDataStore & SessionViewerStore> {
-  if (config.storageBackend === 'postgres') {
-    const { createPostgresStore, migratePostgresStore } = await import('./store/postgres-store.js');
-    await migratePostgresStore();
-    return createPostgresStore();
-  }
-  return createMemoryStore();
-}
 
 export async function createApp() {
   const config = loadConfig();
-  const store = await createStore(config);
+  const store = createMemoryStore();
 
   const app = new Hono();
 

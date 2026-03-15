@@ -1,7 +1,7 @@
 {
   "name": "@red-codes/telemetry-server",
   "version": "0.1.0",
-  "description": "Telemetry API server for AgentGuard — deployable to Vercel, AWS Lambda, or standalone Node.js",
+  "description": "Telemetry API server for AgentGuard — deployable to AWS Lambda or standalone Node.js",
   "type": "module",
   "license": "Apache-2.0",
   "private": true,
@@ -27,7 +27,6 @@
     "@red-codes/core": "workspace:*",
     "@red-codes/telemetry": "workspace:*",
     "@red-codes/telemetry-client": "workspace:*",
-    "@vercel/postgres": "^0.10.0",
     "hono": "^4.7.0"
   }
 }

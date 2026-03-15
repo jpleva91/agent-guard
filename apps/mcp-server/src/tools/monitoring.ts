@@ -81,7 +81,10 @@ export function registerMonitoringTools(server: McpServer, dataSource: DataSourc
     'Search governance events by run ID, event kind, and limit',
     {
       runId: z.string().optional().describe('Filter by run ID'),
-      kind: z.string().optional().describe('Filter by event kind (e.g. PolicyDenied, ActionExecuted)'),
+      kind: z
+        .string()
+        .optional()
+        .describe('Filter by event kind (e.g. PolicyDenied, ActionExecuted)'),
       limit: z.number().optional().default(50).describe('Maximum events to return (default: 50)'),
     },
     async (args) => {
@@ -162,10 +165,7 @@ export function registerMonitoringTools(server: McpServer, dataSource: DataSourc
     {
       runId: z.string().describe('Run ID'),
       actionFilter: z.string().optional().describe('Filter by action type'),
-      decisionFilter: z
-        .string()
-        .optional()
-        .describe('Filter by decision (allow or deny)'),
+      decisionFilter: z.string().optional().describe('Filter by decision (allow or deny)'),
     },
     async (args) => {
       try {

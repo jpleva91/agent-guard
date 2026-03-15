@@ -369,7 +369,9 @@ function showProtectionSummary(policyGenerated: boolean): void {
   process.stderr.write(`  ${BOLD}Active protections:${RESET}\n`);
   process.stderr.write(`  ${FG.red}■${RESET} ${DIM}Block${RESET} push to main/master\n`);
   process.stderr.write(`  ${FG.red}■${RESET} ${DIM}Block${RESET} force push\n`);
-  process.stderr.write(`  ${FG.red}■${RESET} ${DIM}Block${RESET} writes to .env, .npmrc, SSH keys\n`);
+  process.stderr.write(
+    `  ${FG.red}■${RESET} ${DIM}Block${RESET} writes to .env, .npmrc, SSH keys\n`
+  );
   process.stderr.write(`  ${FG.red}■${RESET} ${DIM}Block${RESET} rm -rf, deploy, infra destroy\n`);
   process.stderr.write(`  ${FG.red}■${RESET} ${DIM}Block${RESET} agent skill self-modification\n`);
   process.stderr.write(

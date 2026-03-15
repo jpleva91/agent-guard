@@ -1006,9 +1006,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         'sequelize/migrations/',
       ];
 
-      const isMigrationFile = MIGRATION_DIR_PATTERNS.some((p) =>
-        normalizedTarget.includes(p)
-      );
+      const isMigrationFile = MIGRATION_DIR_PATTERNS.some((p) => normalizedTarget.includes(p));
 
       if (!isMigrationFile) {
         return { holds: true, expected: 'N/A', actual: 'Target is not in a migration directory' };

@@ -62,11 +62,7 @@ export function registerPolicyTools(server: McpServer): void {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(
-                { valid: false, error: String(err) },
-                null,
-                2
-              ),
+              text: JSON.stringify({ valid: false, error: String(err) }, null, 2),
             },
           ],
         };

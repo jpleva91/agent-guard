@@ -85,12 +85,15 @@ export async function demo(): Promise<number> {
 
     // Show the tool call
     const toolColor = action.expected === 'DENY' ? FG.red : FG.green;
-    write(`  ${DIM}${num}.${RESET} ${BOLD}${action.tool}${RESET} ${DIM}→${RESET} ${action.description}\n`);
+    write(
+      `  ${DIM}${num}.${RESET} ${BOLD}${action.tool}${RESET} ${DIM}→${RESET} ${action.description}\n`
+    );
 
     // Show the input
-    const inputStr = action.tool === 'Bash'
-      ? `     ${DIM}$ ${action.input.command}${RESET}\n`
-      : `     ${DIM}${(action.input.file_path as string) || ''}${RESET}\n`;
+    const inputStr =
+      action.tool === 'Bash'
+        ? `     ${DIM}$ ${action.input.command}${RESET}\n`
+        : `     ${DIM}${(action.input.file_path as string) || ''}${RESET}\n`;
     write(inputStr);
 
     // Show the decision
@@ -106,14 +109,24 @@ export async function demo(): Promise<number> {
 
   // Summary
   write(`  ${BOLD}Summary${RESET}\n`);
-  write(`  ${FG.green}${allowed} allowed${RESET}  ${FG.red}${denied} blocked${RESET}  ${DIM}${DEMO_ACTIONS.length} total actions evaluated${RESET}\n\n`);
+  write(
+    `  ${FG.green}${allowed} allowed${RESET}  ${FG.red}${denied} blocked${RESET}  ${DIM}${DEMO_ACTIONS.length} total actions evaluated${RESET}\n\n`
+  );
 
-  write(`  ${DIM}Every decision is recorded to ${FG.cyan}.agentguard/${RESET}${DIM} for audit.${RESET}\n`);
-  write(`  ${DIM}Customize rules in ${FG.cyan}agentguard.yaml${RESET}${DIM} to match your project.${RESET}\n\n`);
+  write(
+    `  ${DIM}Every decision is recorded to ${FG.cyan}.agentguard/${RESET}${DIM} for audit.${RESET}\n`
+  );
+  write(
+    `  ${DIM}Customize rules in ${FG.cyan}agentguard.yaml${RESET}${DIM} to match your project.${RESET}\n\n`
+  );
 
   write(`  ${BOLD}Get started:${RESET}\n`);
-  write(`  ${DIM}$ ${FG.cyan}npx agentguard claude-init${RESET}  ${DIM}— install Claude Code hooks${RESET}\n`);
-  write(`  ${DIM}$ ${FG.cyan}agentguard simulate --action git.push --branch main${RESET}  ${DIM}— try a simulation${RESET}\n\n`);
+  write(
+    `  ${DIM}$ ${FG.cyan}npx agentguard claude-init${RESET}  ${DIM}— install Claude Code hooks${RESET}\n`
+  );
+  write(
+    `  ${DIM}$ ${FG.cyan}agentguard simulate --action git.push --branch main${RESET}  ${DIM}— try a simulation${RESET}\n\n`
+  );
 
   return 0;
 }
