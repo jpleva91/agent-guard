@@ -2,14 +2,9 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
-import { join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
+import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { RESET, BOLD, DIM, FG } from '../colors.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const HOOK_MARKER = 'claude-hook';
 
@@ -40,12 +35,6 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   const dbPathIdx = args.findIndex((a) => a === '--db-path');
   const dbPathValue = dbPathIdx !== -1 ? args[dbPathIdx + 1] : undefined;
   const dbPathSuffix = dbPathValue ? ` --db-path "${dbPathValue}"` : '';
-
-  // Resolve hook script path — handles both tsc output (commands/) and esbuild bundle (cli/)
-  let hookScript = resolve(__dirname, 'claude-hook.js');
-  if (!existsSync(hookScript)) {
-    hookScript = resolve(__dirname, 'commands', 'claude-hook.js');
-  }
 
   const settingsDir = isGlobal ? join(homedir(), '.claude') : join(process.cwd(), '.claude');
   const settingsPath = join(settingsDir, 'settings.json');
@@ -91,7 +80,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `node ${hookScript} pre${storeSuffix}${dbPathSuffix}`,
+        command: `agentguard claude-hook pre${storeSuffix}${dbPathSuffix}`,
       },
     ],
   });
@@ -103,7 +92,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `node ${hookScript} post${storeSuffix}${dbPathSuffix}`,
+        command: `agentguard claude-hook post${storeSuffix}${dbPathSuffix}`,
       },
     ],
   });
