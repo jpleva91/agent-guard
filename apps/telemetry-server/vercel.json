@@ -1,6 +1,5 @@
 {
   "buildCommand": "cd ../.. && pnpm install --frozen-lockfile && pnpm build --filter=@red-codes/telemetry-server...",
-  "outputDirectory": "dist",
   "builds": [
     {
       "src": "dist/entry-vercel.js",
