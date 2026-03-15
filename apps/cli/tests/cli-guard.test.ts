@@ -88,7 +88,7 @@ describe('guard command kernel integration', () => {
           id: 'deny-all-writes',
           name: 'Deny All Writes',
           rules: [{ action: 'file.write', effect: 'deny', reason: 'Read-only mode' }],
-          severity: 3,
+          severity: 5,
         },
       ],
     });
