@@ -103,7 +103,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     ],
   });
 
-  // SessionStart — ensure CLI is built so hook commands resolve
+  // SessionStart — ensure CLI is built, then show governance status
   if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
   settings.hooks.SessionStart.push({
     hooks: [
@@ -113,6 +113,12 @@ export async function claudeInit(args: string[] = []): Promise<void> {
         timeout: 120000,
         blocking: true,
       },
+      {
+        type: 'command',
+        command: `agentguard status`,
+        timeout: 10000,
+        blocking: false,
+      },
     ],
   });
 
@@ -121,7 +127,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   process.stderr.write(
     `  ${FG.green}✓${RESET}  Hooks installed in ${FG.cyan}${settingsLabel}${RESET}\n`
   );
-  process.stderr.write(`  ${DIM}SessionStart: auto-build if CLI not compiled${RESET}\n`);
+  process.stderr.write(`  ${DIM}SessionStart: auto-build + status check${RESET}\n`);
   process.stderr.write(`  ${DIM}PreToolUse:   governance enforcement (all tools)${RESET}\n`);
   process.stderr.write(`  ${DIM}PostToolUse:  error monitoring (Bash)${RESET}\n`);
   if (storeBackend) {

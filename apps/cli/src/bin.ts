@@ -280,6 +280,15 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard traces run_1234567890_abc',
     ],
   },
+  status: {
+    name: 'agentguard status',
+    description: 'Check AgentGuard governance readiness (hooks, policy, directories)',
+    usage: 'agentguard status [flags]',
+    flags: [
+      { flag: '--quiet, -q', description: 'Machine-readable output (exit 0 if ready, 1 if not)' },
+    ],
+    examples: ['agentguard status', 'agentguard status --quiet'],
+  },
   telemetry: {
     name: 'agentguard telemetry',
     description: 'Manage telemetry enrollment and settings',
@@ -528,6 +537,17 @@ async function main() {
       break;
     }
 
+    case 'status': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.status));
+        break;
+      }
+      const { status: statusCmd } = await import('./commands/status.js');
+      const code = await statusCmd(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
     case 'claude-init': {
       const { claudeInit } = await import('./commands/claude-init.js');
       await claudeInit(args.slice(1));
@@ -651,6 +671,8 @@ function printHelp(): void {
   \x1b[1mIntegration:\x1b[0m
     agentguard claude-init                    Set up Claude Code hook integration
     agentguard claude-hook                    PreToolUse/PostToolUse hook handler (internal)
+    agentguard status                         Check governance readiness (hooks, policy, dirs)
+    agentguard status --quiet                 Machine-readable check (exit code only)
 
   \x1b[1mMeta:\x1b[0m
     agentguard --version                      Show version
