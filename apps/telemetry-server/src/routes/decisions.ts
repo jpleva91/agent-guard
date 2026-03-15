@@ -6,9 +6,9 @@ import type { TelemetryStore } from '../store/types.js';
 export function decisionRoutes(store: TelemetryStore): Hono {
   const routes = new Hono();
 
-  routes.get('/decisions', (c) => {
+  routes.get('/decisions', async (c) => {
     const outcome = c.req.query('outcome');
-    const result = store.queryDecisions({
+    const result = await store.queryDecisions({
       runId: c.req.query('run_id'),
       outcome: outcome === 'allow' || outcome === 'deny' ? outcome : undefined,
       since: c.req.query('since'),

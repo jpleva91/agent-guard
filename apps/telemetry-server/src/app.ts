@@ -13,41 +13,58 @@ import { traceRoutes } from './routes/traces.js';
 import { enrollRoutes } from './routes/enroll.js';
 import { telemetryBatchRoutes } from './routes/telemetry-batch.js';
 import { createMemoryStore } from './store/memory-store.js';
+import type { TelemetryDataStore } from './store/types.js';
+import type { ServerConfig } from './config.js';
 
-const config = loadConfig();
-const store = createMemoryStore();
+async function createStore(config: ServerConfig): Promise<TelemetryDataStore> {
+  if (config.storageBackend === 'postgres') {
+    const { createPostgresStore, migratePostgresStore } = await import(
+      './store/postgres-store.js'
+    );
+    await migratePostgresStore();
+    return createPostgresStore();
+  }
+  return createMemoryStore();
+}
 
-const app = new Hono();
+export async function createApp() {
+  const config = loadConfig();
+  const store = await createStore(config);
 
-// Health check — no auth required
-app.route('/api', healthRoutes);
+  const app = new Hono();
 
-// Rate limiting on telemetry endpoints (before auth)
-const ipLimiter = createRateLimiter(
-  { windowMs: 60_000, maxRequests: config.rateLimitPerIp },
-  (c) =>
-    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? c.req.header('x-real-ip') ?? 'unknown'
-);
-const installLimiter = createRateLimiter(
-  { windowMs: 60_000, maxRequests: config.rateLimitPerInstall },
-  (c) => c.req.header('x-agentguard-install-id') ?? null
-);
+  // Health check — no auth required
+  app.route('/api', healthRoutes);
 
-app.use('/api/v1/telemetry/*', ipLimiter);
-app.use('/api/v1/telemetry/*', installLimiter);
+  // Rate limiting on telemetry endpoints (before auth)
+  const ipLimiter = createRateLimiter(
+    { windowMs: 60_000, maxRequests: config.rateLimitPerIp },
+    (c) =>
+      c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ??
+      c.req.header('x-real-ip') ??
+      'unknown'
+  );
+  const installLimiter = createRateLimiter(
+    { windowMs: 60_000, maxRequests: config.rateLimitPerInstall },
+    (c) => c.req.header('x-agentguard-install-id') ?? null
+  );
 
-// Telemetry routes — use enrollment tokens, not API key auth
-app.route('/api', enrollRoutes(store, config));
-app.route('/api', telemetryBatchRoutes(store, config));
+  app.use('/api/v1/telemetry/*', ipLimiter);
+  app.use('/api/v1/telemetry/*', installLimiter);
 
-// Auth middleware on all other /api routes (excluding health and telemetry)
-app.use('/api/*', ipWhitelist(config));
-app.use('/api/*', apiKeyAuth(config));
+  // Telemetry routes — use enrollment tokens, not API key auth
+  app.route('/api', enrollRoutes(store, config));
+  app.route('/api', telemetryBatchRoutes(store, config));
 
-// Data routes
-app.route('/api', ingestRoutes(store));
-app.route('/api', eventRoutes(store));
-app.route('/api', decisionRoutes(store));
-app.route('/api', traceRoutes(store));
+  // Auth middleware on all other /api routes (excluding health and telemetry)
+  app.use('/api/*', ipWhitelist(config));
+  app.use('/api/*', apiKeyAuth(config));
 
-export { app, config };
+  // Data routes
+  app.route('/api', ingestRoutes(store));
+  app.route('/api', eventRoutes(store));
+  app.route('/api', decisionRoutes(store));
+  app.route('/api', traceRoutes(store));
+
+  return { app, config };
+}

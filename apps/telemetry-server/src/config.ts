@@ -10,6 +10,7 @@ export interface ServerConfig {
   readonly rateLimitPerIp: number;
   readonly rateLimitPerInstall: number;
   readonly antiReplayWindowMs: number;
+  readonly storageBackend: 'memory' | 'postgres';
 }
 
 export function loadConfig(): ServerConfig {
@@ -29,5 +30,6 @@ export function loadConfig(): ServerConfig {
     rateLimitPerIp: env.RATE_LIMIT_PER_IP ? Number(env.RATE_LIMIT_PER_IP) : 100,
     rateLimitPerInstall: env.RATE_LIMIT_PER_INSTALL ? Number(env.RATE_LIMIT_PER_INSTALL) : 60,
     antiReplayWindowMs: env.ANTI_REPLAY_WINDOW_MS ? Number(env.ANTI_REPLAY_WINDOW_MS) : 300_000,
+    storageBackend: env.POSTGRES_URL ? 'postgres' : 'memory',
   };
 }

@@ -23,10 +23,11 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@hono/node-server": "^1.14.0",
     "@red-codes/core": "workspace:*",
     "@red-codes/telemetry": "workspace:*",
     "@red-codes/telemetry-client": "workspace:*",
-    "hono": "^4.7.0",
-    "@hono/node-server": "^1.14.0"
+    "@vercel/postgres": "^0.10.0",
+    "hono": "^4.7.0"
   }
 }

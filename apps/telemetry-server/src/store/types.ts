@@ -31,13 +31,13 @@ export interface QueryResult<T> {
 }
 
 export interface TelemetryStore {
-  appendEvents(runId: string, events: DomainEvent[]): void;
-  appendDecisions(runId: string, decisions: GovernanceDecisionRecord[]): void;
-  appendTraces(traces: TraceSpan[]): void;
+  appendEvents(runId: string, events: DomainEvent[]): Promise<void>;
+  appendDecisions(runId: string, decisions: GovernanceDecisionRecord[]): Promise<void>;
+  appendTraces(traces: TraceSpan[]): Promise<void>;
 
-  queryEvents(filter: EventQueryFilter): QueryResult<DomainEvent>;
-  queryDecisions(filter: DecisionQueryFilter): QueryResult<GovernanceDecisionRecord>;
-  queryTraces(filter: TraceQueryFilter): QueryResult<TraceSpan>;
+  queryEvents(filter: EventQueryFilter): Promise<QueryResult<DomainEvent>>;
+  queryDecisions(filter: DecisionQueryFilter): Promise<QueryResult<GovernanceDecisionRecord>>;
+  queryTraces(filter: TraceQueryFilter): Promise<QueryResult<TraceSpan>>;
 }
 
 /** Install record for enrolled telemetry clients */
@@ -59,9 +59,9 @@ export interface TelemetryPayloadRecord {
 
 /** Extended store with enrollment and payload telemetry support */
 export interface TelemetryDataStore extends TelemetryStore {
-  createInstall(record: InstallRecord): void;
-  findInstallById(installId: string): InstallRecord | null;
-  findInstallByTokenHash(tokenHash: string): InstallRecord | null;
-  appendTelemetryPayloads(records: TelemetryPayloadRecord[]): void;
-  queryTelemetryPayloads(filter: QueryFilter): QueryResult<TelemetryPayloadRecord>;
+  createInstall(record: InstallRecord): Promise<void>;
+  findInstallById(installId: string): Promise<InstallRecord | null>;
+  findInstallByTokenHash(tokenHash: string): Promise<InstallRecord | null>;
+  appendTelemetryPayloads(records: TelemetryPayloadRecord[]): Promise<void>;
+  queryTelemetryPayloads(filter: QueryFilter): Promise<QueryResult<TelemetryPayloadRecord>>;
 }

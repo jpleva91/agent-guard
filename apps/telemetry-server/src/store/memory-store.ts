@@ -58,28 +58,28 @@ export function createMemoryStore(maxSize = DEFAULT_MAX_SIZE): TelemetryDataStor
   }
 
   return {
-    appendEvents(runId: string, batch: DomainEvent[]): void {
+    async appendEvents(runId: string, batch: DomainEvent[]): Promise<void> {
       for (const event of batch) {
         events.push({ runId, event });
       }
       evict(events);
     },
 
-    appendDecisions(runId: string, batch: GovernanceDecisionRecord[]): void {
+    async appendDecisions(runId: string, batch: GovernanceDecisionRecord[]): Promise<void> {
       for (const decision of batch) {
         decisions.push({ runId, decision });
       }
       evict(decisions);
     },
 
-    appendTraces(batch: TraceSpan[]): void {
+    async appendTraces(batch: TraceSpan[]): Promise<void> {
       for (const span of batch) {
         traces.push(span);
       }
       evict(traces);
     },
 
-    queryEvents(filter: EventQueryFilter): QueryResult<DomainEvent> {
+    async queryEvents(filter: EventQueryFilter): Promise<QueryResult<DomainEvent>> {
       let filtered = events;
 
       if (filter.runId) {
@@ -102,7 +102,9 @@ export function createMemoryStore(maxSize = DEFAULT_MAX_SIZE): TelemetryDataStor
       return { data, total, limit, offset };
     },
 
-    queryDecisions(filter: DecisionQueryFilter): QueryResult<GovernanceDecisionRecord> {
+    async queryDecisions(
+      filter: DecisionQueryFilter
+    ): Promise<QueryResult<GovernanceDecisionRecord>> {
       let filtered = decisions;
 
       if (filter.runId) {
@@ -125,7 +127,7 @@ export function createMemoryStore(maxSize = DEFAULT_MAX_SIZE): TelemetryDataStor
       return { data, total, limit, offset };
     },
 
-    queryTraces(filter: TraceQueryFilter): QueryResult<TraceSpan> {
+    async queryTraces(filter: TraceQueryFilter): Promise<QueryResult<TraceSpan>> {
       let filtered = [...traces];
 
       if (filter.runId) {
@@ -154,7 +156,7 @@ export function createMemoryStore(maxSize = DEFAULT_MAX_SIZE): TelemetryDataStor
 
     // --- Enrollment & payload telemetry ---
 
-    createInstall(record: InstallRecord): void {
+    async createInstall(record: InstallRecord): Promise<void> {
       // Upsert: replace if install_id already exists
       const idx = installs.findIndex((i) => i.install_id === record.install_id);
       if (idx >= 0) {
@@ -165,22 +167,22 @@ export function createMemoryStore(maxSize = DEFAULT_MAX_SIZE): TelemetryDataStor
       }
     },
 
-    findInstallById(installId: string): InstallRecord | null {
+    async findInstallById(installId: string): Promise<InstallRecord | null> {
       return installs.find((i) => i.install_id === installId) ?? null;
     },
 
-    findInstallByTokenHash(tokenHash: string): InstallRecord | null {
+    async findInstallByTokenHash(tokenHash: string): Promise<InstallRecord | null> {
       return installs.find((i) => i.token_hash === tokenHash) ?? null;
     },
 
-    appendTelemetryPayloads(records: TelemetryPayloadRecord[]): void {
+    async appendTelemetryPayloads(records: TelemetryPayloadRecord[]): Promise<void> {
       for (const record of records) {
         payloads.push(record);
       }
       evict(payloads);
     },
 
-    queryTelemetryPayloads(filter: QueryFilter): QueryResult<TelemetryPayloadRecord> {
+    async queryTelemetryPayloads(filter: QueryFilter): Promise<QueryResult<TelemetryPayloadRecord>> {
       let filtered = [...payloads];
 
       if (filter.since || filter.until) {

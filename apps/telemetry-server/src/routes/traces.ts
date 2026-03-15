@@ -6,8 +6,8 @@ import type { TelemetryStore } from '../store/types.js';
 export function traceRoutes(store: TelemetryStore): Hono {
   const routes = new Hono();
 
-  routes.get('/traces', (c) => {
-    const result = store.queryTraces({
+  routes.get('/traces', async (c) => {
+    const result = await store.queryTraces({
       runId: c.req.query('run_id'),
       kind: c.req.query('kind'),
       since: c.req.query('since'),

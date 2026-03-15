@@ -33,18 +33,21 @@ export function ingestRoutes(store: TelemetryStore): Hono {
         if (!runId) {
           return c.json({ error: 'run_id is required for events' }, 400);
         }
-        store.appendEvents(runId, batch as Parameters<TelemetryStore['appendEvents']>[1]);
+        await store.appendEvents(runId, batch as Parameters<TelemetryStore['appendEvents']>[1]);
         break;
       }
       case 'decisions': {
         if (!runId) {
           return c.json({ error: 'run_id is required for decisions' }, 400);
         }
-        store.appendDecisions(runId, batch as Parameters<TelemetryStore['appendDecisions']>[1]);
+        await store.appendDecisions(
+          runId,
+          batch as Parameters<TelemetryStore['appendDecisions']>[1]
+        );
         break;
       }
       case 'traces': {
-        store.appendTraces(batch as Parameters<TelemetryStore['appendTraces']>[0]);
+        await store.appendTraces(batch as Parameters<TelemetryStore['appendTraces']>[0]);
         break;
       }
       default:

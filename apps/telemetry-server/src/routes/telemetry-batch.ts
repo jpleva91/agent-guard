@@ -124,7 +124,7 @@ export function telemetryBatchRoutes(store: TelemetryDataStore, config: ServerCo
 
       const token = authHeader.slice(7);
       const tokenHash = createHash('sha256').update(token).digest('hex');
-      const install = store.findInstallByTokenHash(tokenHash);
+      const install = await store.findInstallByTokenHash(tokenHash);
 
       if (!install) {
         return c.json({ error: 'Invalid or unknown installation token' }, 401);
@@ -152,7 +152,7 @@ export function telemetryBatchRoutes(store: TelemetryDataStore, config: ServerCo
       received_at: receivedAt,
     }));
 
-    store.appendTelemetryPayloads(records);
+    await store.appendTelemetryPayloads(records);
 
     return c.json({ ok: true, accepted: events.length });
   });

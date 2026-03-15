@@ -46,12 +46,12 @@ export function enrollRoutes(store: TelemetryDataStore, config: ServerConfig) {
     }
 
     // Check for existing install (idempotent)
-    const existing = store.findInstallById(install_id);
+    const existing = await store.findInstallById(install_id);
     if (existing) {
       // Re-generate token for existing install
       const newToken = randomBytes(32).toString('hex');
       const newTokenHash = createHash('sha256').update(newToken).digest('hex');
-      store.createInstall({
+      await store.createInstall({
         ...existing,
         token_hash: newTokenHash,
         version,
@@ -63,7 +63,7 @@ export function enrollRoutes(store: TelemetryDataStore, config: ServerConfig) {
     const token = randomBytes(32).toString('hex');
     const tokenHash = createHash('sha256').update(token).digest('hex');
 
-    store.createInstall({
+    await store.createInstall({
       install_id,
       public_key,
       token_hash: tokenHash,

@@ -6,8 +6,8 @@ import type { TelemetryStore } from '../store/types.js';
 export function eventRoutes(store: TelemetryStore): Hono {
   const routes = new Hono();
 
-  routes.get('/events', (c) => {
-    const result = store.queryEvents({
+  routes.get('/events', async (c) => {
+    const result = await store.queryEvents({
       runId: c.req.query('run_id'),
       kind: c.req.query('kind'),
       since: c.req.query('since'),
