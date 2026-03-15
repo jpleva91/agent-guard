@@ -202,13 +202,31 @@ Install globally: `npm i -g @red-codes/agentguard`
 
 ## Claude Code Integration
 
-AgentGuard hooks into [Claude Code](https://docs.anthropic.com/en/docs/claude-code) sessions via PreToolUse/PostToolUse hooks. Every tool call is normalized into a canonical action and evaluated by the kernel.
+AgentGuard integrates with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) via **inline hooks** — not a separate daemon or background process. When a Claude Code session starts, AgentGuard's hooks fire on every tool call, routing each one through the governance kernel for policy and invariant evaluation before Claude Code executes it.
+
+This design is intentional: no daemon to crash, no ports to manage, no IPC. Each hook invocation is self-contained — load policy, evaluate, respond, exit. If anything fails, the hook exits cleanly and Claude Code continues (fail-open).
 
 ```bash
 npx @red-codes/agentguard claude-init    # Set up Claude Code hooks
 ```
 
-Tool call mapping:
+**Three hooks are installed:**
+
+| Hook | Purpose |
+|------|---------|
+| `PreToolUse` | Governance enforcement — evaluates every tool call against policies and invariants, blocks denied actions |
+| `PostToolUse` | Error monitoring — reports Bash stderr errors (informational only) |
+| `SessionStart` | Build check + governance status display on session start |
+
+**How PreToolUse works:**
+
+```
+Claude Code tool call → stdin (JSON) → AgentGuard kernel → stdout (deny) or silent (allow)
+```
+
+The kernel runs in evaluation-only mode (`dryRun: true`) — it checks policies and invariants but doesn't execute actions. Claude Code handles execution; AgentGuard only governs.
+
+**Tool call mapping:**
 
 | Claude Code Tool | AgentGuard Action |
 |-----------------|-------------------|
@@ -218,6 +236,8 @@ Tool call mapping:
 | Bash | shell.exec (or git.push, git.commit if git command detected) |
 | Glob | file.read |
 | Grep | file.read |
+
+See [Hook Architecture](docs/hook-architecture.md) for the full design, configuration options, and debugging guide.
 
 ## Event Trail
 
@@ -300,6 +320,7 @@ pnpm test               # Run all tests (turbo test)
 |----------|-------------|
 | [AgentGuard Spec](docs/agentguard.md) | Governance runtime specification |
 | [Architecture](docs/unified-architecture.md) | Governed action kernel model |
+| [Hook Architecture](docs/hook-architecture.md) | Claude Code hook integration design |
 | [Priorities](docs/current-priorities.md) | Current roadmap and next steps |
 | [Product Positioning](docs/product-positioning.md) | What this is and isn't |
 | [Event Model](docs/event-model.md) | Canonical event schema |
