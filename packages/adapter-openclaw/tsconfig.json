@@ -6,5 +6,11 @@
     "composite": true
   },
   "include": ["src/**/*.ts"],
-  "references": [{ "path": "../core" }, { "path": "../kernel" }]
+  "references": [
+    { "path": "../core" },
+    { "path": "../events" },
+    { "path": "../invariants" },
+    { "path": "../kernel" },
+    { "path": "../policy" }
+  ]
 }

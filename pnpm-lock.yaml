@@ -133,9 +133,18 @@ importers:
       '@red-codes/core':
         specifier: workspace:*
         version: link:../core
+      '@red-codes/events':
+        specifier: workspace:*
+        version: link:../events
+      '@red-codes/invariants':
+        specifier: workspace:*
+        version: link:../invariants
       '@red-codes/kernel':
         specifier: workspace:*
         version: link:../kernel
+      '@red-codes/policy':
+        specifier: workspace:*
+        version: link:../policy
 
   packages/adapters:
     dependencies:
