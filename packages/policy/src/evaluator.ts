@@ -104,7 +104,7 @@ function matchAction(pattern: string, action: string): boolean {
 
 function matchScope(scopePatterns: string[], target: string): boolean {
   if (!scopePatterns || scopePatterns.length === 0) return true;
-  if (!target) return true;
+  if (!target) return false;
 
   for (const pattern of scopePatterns) {
     if (pattern === '*') return true;

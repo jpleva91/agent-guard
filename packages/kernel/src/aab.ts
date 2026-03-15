@@ -101,6 +101,10 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
     if (gitAction) {
       action = gitAction;
       target = extractBranch(rawAction.command) || target;
+    } else if (!target) {
+      // Use command as target for non-git shell actions so scope-based
+      // policy rules can match against the command text.
+      target = rawAction.command;
     }
   }
 

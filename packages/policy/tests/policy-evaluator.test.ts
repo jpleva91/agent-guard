@@ -79,8 +79,8 @@ describe('matchScope', () => {
     expect(matchScope([], 'anything.ts')).toBe(true);
   });
 
-  it('returns true when target is empty', () => {
-    expect(matchScope(['src/'], '')).toBe(true);
+  it('returns false when target is empty (fail-closed)', () => {
+    expect(matchScope(['src/'], '')).toBe(false);
   });
 
   it('matches any pattern in array', () => {
