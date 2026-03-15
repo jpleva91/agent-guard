@@ -258,16 +258,16 @@ This is the architectural hinge. These changes transform the AAB from advisory i
 The `SystemState` interface in `packages/invariants/src/definitions.ts` is the bottleneck for invariant expansion — it needs to become a richer context object with action-specific fields.
 
 - [x] CI/CD config modification invariant (severity 5) — block writes to `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `.circleci/config.yml` (`no-cicd-config-modification` invariant)
-- [ ] Network egress governance invariant (severity 4) — deny HTTP requests to non-allowlisted domains (extend `SystemState` with `isNetworkRequest`, `requestUrl`, `requestDomain`)
+- [x] Network egress governance invariant (severity 4) — deny HTTP requests to non-allowlisted domains (extend `SystemState` with `isNetworkRequest`, `requestUrl`, `requestDomain`)
 - [x] Credential file creation invariant (severity 5) — inspect `currentTarget` for SSH keys, `.netrc`, `~/.aws/credentials`, Docker config (closes gap where `no-secret-exposure` misses new file creation)
 - [x] Package.json script injection invariant (severity 4) — flag `package.json` modifications that alter lifecycle script entries (`packages/invariants/src/definitions.ts`)
 - [x] Large single-file write invariant (severity 3) — enforce per-file size limit (`large-file-write` invariant)
 - [x] Docker/container config modification invariant (severity 3) — protect `Dockerfile`, `docker-compose.yml`, `.dockerignore` (`no-container-config-modification` invariant)
-- [ ] Database migration safety invariant (severity 3) — flag writes to migration directories containing destructive DDL
+- [x] Database migration safety invariant (severity 3) — flag writes to migration directories containing destructive DDL
 - [x] Permission escalation invariant (severity 4) — catch `chmod` to world-writable, `setuid`, ownership changes at invariant level (`no-permission-escalation` invariant)
 - [x] Environment variable modification invariant (severity 3) — scan for `export`, `setenv`, writes to shell profile files (`no-env-var-modification` invariant)
 - [x] Recursive operation guard (severity 2) — flag `find -exec`, `xargs` combined with write/delete operations (`recursive-operation-guard` invariant)
-- [ ] Transitive effect analysis (severity 4) — when an agent writes a script or config file, analyze content for downstream effects that would violate policy (e.g., a Python script containing `open('.env').read()` or a shell script with `curl` exfiltration). Closes the creative circumvention gap where agents bypass direct restrictions via indirect file creation
+- [x] Transitive effect analysis (severity 4) — when an agent writes a script or config file, analyze content for downstream effects that would violate policy (e.g., a Python script containing `open('.env').read()` or a shell script with `curl` exfiltration). Closes the creative circumvention gap where agents bypass direct restrictions via indirect file creation
 
 ### Phase 7 — Capability-Scoped Sessions & Intent Contracts `PLANNED`
 
