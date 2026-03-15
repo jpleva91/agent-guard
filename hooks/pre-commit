@@ -15,14 +15,14 @@ if [ -f "$REPO_ROOT/.events.json" ]; then
   git add "$REPO_ROOT/.events.json" 2>/dev/null
 fi
 
-# Stage governance event JSONL files
-for f in "$REPO_ROOT"/.agentguard/events/*.jsonl; do
-  [ -f "$f" ] && git add "$f" 2>/dev/null
-done
+# Stage governance event JSONL files (bulk add for performance)
+if [ -d "$REPO_ROOT/.agentguard/events" ]; then
+  git add "$REPO_ROOT/.agentguard/events/" 2>/dev/null
+fi
 
-# Stage governance decision records
-for f in "$REPO_ROOT"/.agentguard/decisions/*.jsonl; do
-  [ -f "$f" ] && git add "$f" 2>/dev/null
-done
+# Stage governance decision records (bulk add for performance)
+if [ -d "$REPO_ROOT/.agentguard/decisions" ]; then
+  git add "$REPO_ROOT/.agentguard/decisions/" 2>/dev/null
+fi
 
 exit 0
