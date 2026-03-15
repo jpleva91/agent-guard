@@ -8,7 +8,7 @@
 
   <!-- OpenGraph -->
   <meta property="og:title" content="AgentGuard — Governed Action Runtime for AI Coding Agents">
-  <meta property="og:description" content="Deterministic governance layer between AI agent proposals and execution. Policy enforcement, 10 safety invariants, 87 destructive patterns, full audit trail.">
+  <meta property="og:description" content="Deterministic governance layer between AI agent proposals and execution. Policy enforcement, 20 safety invariants, 87 destructive patterns, full audit trail.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://jpleva91.github.io/agent-guard/">
   <meta property="og:image" content="https://jpleva91.github.io/agent-guard/og-image.png">
@@ -308,7 +308,7 @@
             Governed Action Runtime for <span class="text-cta">AI Coding Agents</span>
           </h1>
           <p class="text-muted text-lg leading-relaxed mb-8 max-w-xl">
-            Every tool call your AI agent makes &mdash; file writes, shell commands, git operations &mdash; passes through a deterministic governance kernel. 10 safety invariants. 87 destructive patterns. Full audit trail.
+            Every tool call your AI agent makes &mdash; file writes, shell commands, git operations &mdash; passes through a deterministic governance kernel. 20 safety invariants. 87 destructive patterns. Full audit trail.
           </p>
           <div class="flex flex-wrap gap-4">
             <a href="#quickstart" class="bg-cta hover:bg-cta-dark text-bg font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2 cursor-pointer">
@@ -365,11 +365,11 @@
             <div class="text-muted text-sm mt-1">Action Types</div>
           </div>
           <div class="reveal">
-            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="17">0</div>
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="20">0</div>
             <div class="text-muted text-sm mt-1">Invariants</div>
           </div>
           <div class="reveal">
-            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="18">0</div>
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="21">0</div>
             <div class="text-muted text-sm mt-1">CLI Commands</div>
           </div>
         </div>
@@ -514,7 +514,7 @@
             </li>
             <li class="flex items-start gap-3">
               <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>10 built-in invariants + 87 destructive patterns detected <strong class="text-text">automatically</strong></span>
+              <span>20 built-in invariants + 87 destructive patterns detected <strong class="text-text">automatically</strong></span>
             </li>
             <li class="flex items-start gap-3">
               <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
@@ -541,8 +541,8 @@
             <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
               <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
-            <h3 class="font-mono font-semibold text-text mb-2">10 Safety Invariants</h3>
-            <p class="text-muted text-sm leading-relaxed">Secret detection, credential file protection, branch protection, blast radius limits, lockfile integrity, package script injection, skill and task protection. Always on.</p>
+            <h3 class="font-mono font-semibold text-text mb-2">20 Safety Invariants</h3>
+            <p class="text-muted text-sm leading-relaxed">Secret detection, credential protection, branch guards, blast radius limits, lockfile integrity, script injection, CI/CD protection, network egress control, governance self-modification prevention. Always on.</p>
           </div>
 
           <!-- Card 2: 87 Destructive Patterns -->
@@ -652,7 +652,7 @@
             <div class="pipeline-arrow flex-shrink-0">
               <div class="bg-surface border-2 border-warning rounded-lg px-4 py-4 text-center w-[110px]">
                 <div class="font-mono font-bold text-warning text-sm">Invariants</div>
-                <div class="text-muted text-xs mt-1">10 safety checks</div>
+                <div class="text-muted text-xs mt-1">20 safety checks</div>
               </div>
             </div>
 
@@ -710,7 +710,7 @@
     <section id="invariants" class="py-24" aria-labelledby="inv-heading">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-16 reveal">
-          <h2 id="inv-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">10 Built-in Invariants</h2>
+          <h2 id="inv-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">20 Built-in Invariants</h2>
           <p class="text-muted text-lg max-w-2xl mx-auto">Safety checks that run on every action. Zero configuration. Always on.</p>
         </div>
 
@@ -773,6 +773,56 @@
                 <td class="py-3 px-4 font-mono text-text">lockfile-integrity</td>
                 <td class="py-3 px-4"><span class="sev-low text-xs font-mono font-semibold px-2 py-0.5 rounded">LOW</span></td>
                 <td class="py-3 px-4 text-muted">Ensures package.json changes sync with lockfiles</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text">no-cicd-config-modification</td>
+                <td class="py-3 px-4"><span class="sev-critical text-xs font-mono font-semibold px-2 py-0.5 rounded">CRITICAL</span></td>
+                <td class="py-3 px-4 text-muted">Prevents modification of CI/CD pipeline configurations</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text">no-governance-self-modification</td>
+                <td class="py-3 px-4"><span class="sev-critical text-xs font-mono font-semibold px-2 py-0.5 rounded">CRITICAL</span></td>
+                <td class="py-3 px-4 text-muted">Prevents agents from modifying governance config and policy files</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text">no-permission-escalation</td>
+                <td class="py-3 px-4"><span class="sev-high text-xs font-mono font-semibold px-2 py-0.5 rounded">HIGH</span></td>
+                <td class="py-3 px-4 text-muted">Blocks filesystem permission escalation (setuid, sudoers, ownership)</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text">transitive-effect-analysis</td>
+                <td class="py-3 px-4"><span class="sev-high text-xs font-mono font-semibold px-2 py-0.5 rounded">HIGH</span></td>
+                <td class="py-3 px-4 text-muted">Detects scripts whose contents would be denied if executed directly</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text">no-network-egress</td>
+                <td class="py-3 px-4"><span class="sev-high text-xs font-mono font-semibold px-2 py-0.5 rounded">HIGH</span></td>
+                <td class="py-3 px-4 text-muted">Denies HTTP requests to non-allowlisted domains</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text">no-destructive-migration</td>
+                <td class="py-3 px-4"><span class="sev-medium text-xs font-mono font-semibold px-2 py-0.5 rounded">MEDIUM</span></td>
+                <td class="py-3 px-4 text-muted">Flags migration files containing DROP, TRUNCATE, or destructive DDL</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text">large-file-write</td>
+                <td class="py-3 px-4"><span class="sev-medium text-xs font-mono font-semibold px-2 py-0.5 rounded">MEDIUM</span></td>
+                <td class="py-3 px-4 text-muted">Enforces file write size limits to prevent data dumps</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text">no-container-config-modification</td>
+                <td class="py-3 px-4"><span class="sev-medium text-xs font-mono font-semibold px-2 py-0.5 rounded">MEDIUM</span></td>
+                <td class="py-3 px-4 text-muted">Blocks modification of Dockerfile and container config files</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text">no-env-var-modification</td>
+                <td class="py-3 px-4"><span class="sev-medium text-xs font-mono font-semibold px-2 py-0.5 rounded">MEDIUM</span></td>
+                <td class="py-3 px-4 text-muted">Prevents modification of environment variables and shell profiles</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text">recursive-operation-guard</td>
+                <td class="py-3 px-4"><span class="sev-low text-xs font-mono font-semibold px-2 py-0.5 rounded">LOW</span></td>
+                <td class="py-3 px-4 text-muted">Flags recursive operations combined with write/delete actions</td>
               </tr>
             </tbody>
           </table>
@@ -1005,7 +1055,7 @@ rules:
     <section id="cli" class="py-24" aria-labelledby="cli-heading">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-16 reveal">
-          <h2 id="cli-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">16 CLI Commands</h2>
+          <h2 id="cli-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">21 CLI Commands</h2>
           <p class="text-muted text-lg max-w-2xl mx-auto">Full lifecycle governance from your terminal.</p>
         </div>
 
@@ -1040,6 +1090,7 @@ rules:
               <li class="text-muted"><span class="text-text">ci-check</span> &mdash; CI verification</li>
               <li class="text-muted"><span class="text-text">evidence-pr</span> &mdash; PR evidence reports</li>
               <li class="text-muted"><span class="text-text">policy validate</span> &mdash; Policy linting</li>
+              <li class="text-muted"><span class="text-text">policy-verify</span> &mdash; Structure verification</li>
             </ul>
           </div>
 
@@ -1049,6 +1100,7 @@ rules:
             <ul class="space-y-2 text-sm font-mono">
               <li class="text-muted"><span class="text-text">plugin list</span> &mdash; Installed plugins</li>
               <li class="text-muted"><span class="text-text">plugin install</span> &mdash; Add a plugin</li>
+              <li class="text-muted"><span class="text-text">plugin remove</span> &mdash; Remove a plugin</li>
               <li class="text-muted"><span class="text-text">plugin search</span> &mdash; Search npm</li>
             </ul>
           </div>
@@ -1060,6 +1112,7 @@ rules:
               <li class="text-muted"><span class="text-text">claude-init</span> &mdash; Claude Code hooks</li>
               <li class="text-muted"><span class="text-text">claude-hook</span> &mdash; Hook handler</li>
               <li class="text-muted"><span class="text-text">init</span> &mdash; Scaffold extensions</li>
+              <li class="text-muted"><span class="text-text">telemetry</span> &mdash; Enrollment &amp; settings</li>
             </ul>
           </div>
 
@@ -1497,7 +1550,7 @@ rules:
       // ---- Terminal Typing Animation ----
       var terminalLines = [
         { text: '  AgentGuard Runtime Active', cls: 'text-cta', delay: 0 },
-        { text: '  policy: agentguard.yaml | invariants: 10 | patterns: 87', cls: 'text-muted', delay: 0 },
+        { text: '  policy: agentguard.yaml | invariants: 20 | patterns: 87', cls: 'text-muted', delay: 0 },
         { text: '', cls: '', delay: 300 },
         { text: '  \u2713 file.write  src/auth/service.ts', cls: 'text-cta', delay: 0 },
         { text: '  \u2713 shell.exec  npm test', cls: 'text-cta', delay: 0 },
