@@ -61,6 +61,12 @@ rules:
     effect: deny
     reason: Infrastructure destruction requires explicit authorization
 
+  # Code quality — require formatting before commit
+  - action: git.commit
+    effect: deny
+    requireTests: true
+    reason: Run pnpm format:fix before committing — all files must pass Prettier
+
   # Defaults
   - action: file.read
     effect: allow
