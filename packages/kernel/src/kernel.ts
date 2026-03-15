@@ -149,7 +149,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
           justification: (rawAction.metadata?.justification as string) || 'agent action',
           actionId: undefined,
           agentId: rawAction.agent || 'unknown',
-          metadata: { runId, command: rawAction.command },
+          metadata: { runId, command: rawAction.command, persona: rawAction.persona },
         });
         allEvents.push(requestedEvent);
 

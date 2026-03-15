@@ -2,7 +2,20 @@
 // Supports the subset of YAML needed for AgentGuard policy definitions.
 // No external dependencies — minimal line-based parser for constrained format.
 
-import type { PolicyRule, LoadedPolicy } from './evaluator.js';
+import type { PolicyRule, LoadedPolicy, PersonaCondition } from './evaluator.js';
+import type { AgentPersona } from '@red-codes/core';
+
+export interface YamlPersonaDef {
+  model?: string;
+  provider?: string;
+  runtime?: string;
+  version?: string;
+  trustTier?: string;
+  autonomy?: string;
+  riskTolerance?: string;
+  role?: string;
+  tags?: string[];
+}
 
 export interface YamlPolicyDef {
   id?: string;
@@ -10,6 +23,7 @@ export interface YamlPolicyDef {
   description?: string;
   severity?: number;
   extends?: string[];
+  persona?: YamlPersonaDef;
   rules?: YamlRule[];
 }
 
@@ -21,6 +35,7 @@ interface YamlRule {
   reason?: string;
   limit?: number;
   requireTests?: boolean;
+  persona?: PersonaCondition;
 }
 
 function trimQuotes(s: string): string {
@@ -55,6 +70,80 @@ function indentLevel(line: string): number {
   return match ? match[1].length : 0;
 }
 
+function applyPersonaField(persona: PersonaCondition, key: string, val: string): void {
+  switch (key) {
+    case 'trustTier': {
+      const arr = parseInlineArray(val);
+      if (arr.length > 0) persona.trustTier = arr;
+      else if (val) persona.trustTier = [trimQuotes(val)];
+      break;
+    }
+    case 'role': {
+      const arr = parseInlineArray(val);
+      if (arr.length > 0) persona.role = arr;
+      else if (val) persona.role = [trimQuotes(val)];
+      break;
+    }
+    case 'autonomy': {
+      const arr = parseInlineArray(val);
+      if (arr.length > 0) persona.autonomy = arr;
+      else if (val) persona.autonomy = [trimQuotes(val)];
+      break;
+    }
+    case 'riskTolerance': {
+      const arr = parseInlineArray(val);
+      if (arr.length > 0) persona.riskTolerance = arr;
+      else if (val) persona.riskTolerance = [trimQuotes(val)];
+      break;
+    }
+    case 'tags': {
+      const arr = parseInlineArray(val);
+      if (arr.length > 0) persona.tags = arr;
+      else if (val) persona.tags = [trimQuotes(val)];
+      break;
+    }
+  }
+}
+
+function applyTopLevelPersonaField(
+  persona: YamlPersonaDef,
+  key: string,
+  val: string,
+): void {
+  switch (key) {
+    case 'model':
+      persona.model = trimQuotes(val);
+      break;
+    case 'provider':
+      persona.provider = trimQuotes(val);
+      break;
+    case 'runtime':
+      persona.runtime = trimQuotes(val);
+      break;
+    case 'version':
+      persona.version = trimQuotes(val);
+      break;
+    case 'trustTier':
+      persona.trustTier = trimQuotes(val);
+      break;
+    case 'autonomy':
+      persona.autonomy = trimQuotes(val);
+      break;
+    case 'riskTolerance':
+      persona.riskTolerance = trimQuotes(val);
+      break;
+    case 'role':
+      persona.role = trimQuotes(val);
+      break;
+    case 'tags': {
+      const arr = parseInlineArray(val);
+      if (arr.length > 0) persona.tags = arr;
+      else if (val) persona.tags = [trimQuotes(val)];
+      break;
+    }
+  }
+}
+
 export function parseYamlPolicy(yaml: string): YamlPolicyDef {
   const lines = yaml.split('\n');
   const result: YamlPolicyDef = {};
@@ -63,6 +152,8 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
   let inRules = false;
   let inBranches = false;
   let inExtends = false;
+  let inTopLevelPersona = false;
+  let inRulePersona = false;
 
   for (const rawLine of lines) {
     const line = rawLine.replace(/\r$/, '');
@@ -78,6 +169,8 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
       inRules = false;
       inBranches = false;
       inExtends = false;
+      inTopLevelPersona = false;
+      inRulePersona = false;
       if (currentRule) {
         rules.push(currentRule);
         currentRule = null;
@@ -115,9 +208,25 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
             result.extends = [];
           }
           break;
+        case 'persona':
+          inTopLevelPersona = true;
+          result.persona = result.persona || {};
+          break;
         case 'rules':
           inRules = true;
           break;
+      }
+      continue;
+    }
+
+    // Inside top-level persona block
+    if (inTopLevelPersona && !inRules) {
+      const colonIdx = trimmed.indexOf(':');
+      if (colonIdx !== -1) {
+        const key = trimmed.slice(0, colonIdx).trim();
+        const val = trimmed.slice(colonIdx + 1).trim();
+        result.persona = result.persona || {};
+        applyTopLevelPersonaField(result.persona, key, val);
       }
       continue;
     }
@@ -136,6 +245,7 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
         if (currentRule) rules.push(currentRule);
         currentRule = {};
         inBranches = false;
+        inRulePersona = false;
 
         const rest = trimmed.slice(2).trim();
         const colonIdx = rest.indexOf(':');
@@ -143,6 +253,18 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
           const key = rest.slice(0, colonIdx).trim();
           const val = rest.slice(colonIdx + 1).trim();
           applyRuleField(currentRule, key, val);
+        }
+        continue;
+      }
+
+      // Inside rule-level persona block
+      if (inRulePersona && currentRule) {
+        const colonIdx = trimmed.indexOf(':');
+        if (colonIdx !== -1) {
+          const key = trimmed.slice(0, colonIdx).trim();
+          const val = trimmed.slice(colonIdx + 1).trim();
+          currentRule.persona = currentRule.persona || {};
+          applyPersonaField(currentRule.persona, key, val);
         }
         continue;
       }
@@ -165,6 +287,12 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
           if (key === 'branches' && !val) {
             inBranches = true;
             currentRule.branches = [];
+            continue;
+          }
+
+          if (key === 'persona' && !val) {
+            inRulePersona = true;
+            currentRule.persona = {};
             continue;
           }
 
@@ -234,6 +362,11 @@ function convertRule(yamlRule: YamlRule): PolicyRule {
     hasConditions = true;
   }
 
+  if (yamlRule.persona) {
+    conditions.persona = yamlRule.persona;
+    hasConditions = true;
+  }
+
   return {
     action: yamlRule.action || '*',
     effect: (yamlRule.effect as 'allow' | 'deny') || 'deny',
@@ -242,16 +375,43 @@ function convertRule(yamlRule: YamlRule): PolicyRule {
   };
 }
 
+/** Convert a YamlPersonaDef to an AgentPersona (for policy defaults). */
+export function yamlPersonaToAgentPersona(def: YamlPersonaDef): AgentPersona {
+  const persona: Record<string, unknown> = {};
+  const modelMeta: Record<string, string> = {};
+
+  if (def.model) modelMeta.model = def.model;
+  if (def.provider) modelMeta.provider = def.provider;
+  if (def.runtime) modelMeta.runtime = def.runtime;
+  if (def.version) modelMeta.version = def.version;
+  if (Object.keys(modelMeta).length > 0) persona.modelMeta = modelMeta;
+
+  if (def.trustTier) persona.trustTier = def.trustTier;
+  if (def.autonomy) persona.autonomy = def.autonomy;
+  if (def.riskTolerance) persona.riskTolerance = def.riskTolerance;
+  if (def.role) persona.role = def.role;
+  if (def.tags) persona.tags = def.tags;
+
+  return persona as AgentPersona;
+}
+
 export function loadYamlPolicy(yaml: string, defaultId?: string): LoadedPolicy {
   const def = parseYamlPolicy(yaml);
 
-  return {
+  const policy: LoadedPolicy = {
     id: def.id || defaultId || 'yaml-policy',
     name: def.name || 'YAML Policy',
     description: def.description,
     rules: (def.rules || []).map(convertRule),
     severity: def.severity ?? 3,
   };
+
+  if (def.persona) {
+    (policy as LoadedPolicy & { persona?: AgentPersona }).persona =
+      yamlPersonaToAgentPersona(def.persona);
+  }
+
+  return policy;
 }
 
 export function loadYamlPolicies(yaml: string): LoadedPolicy[] {

@@ -4,7 +4,8 @@
 
 import type { RawAgentAction } from '@red-codes/kernel';
 import type { Kernel, KernelResult } from '@red-codes/kernel';
-import { simpleHash } from '@red-codes/core';
+import type { AgentPersona } from '@red-codes/core';
+import { simpleHash, personaFromEnv } from '@red-codes/core';
 
 export interface ClaudeCodeToolUse {
   tool_name: string;
@@ -32,22 +33,30 @@ export function resolveAgentIdentity(sessionId?: string): string {
   return `claude-code:${simpleHash(sessionId.trim())}`;
 }
 
-export function normalizeClaudeCodeAction(payload: ClaudeCodeHookPayload): RawAgentAction {
+export function normalizeClaudeCodeAction(
+  payload: ClaudeCodeHookPayload,
+  persona?: AgentPersona,
+): RawAgentAction {
   const input = payload.tool_input || {};
   const agent = resolveAgentIdentity(payload.session_id);
+  const envPersona = personaFromEnv();
+  const resolvedPersona = persona || (envPersona as AgentPersona | undefined);
+
+  let baseAction: RawAgentAction;
 
   switch (payload.tool_name) {
     case 'Write':
-      return {
+      baseAction = {
         tool: 'Write',
         file: input.file_path as string | undefined,
         content: input.content as string | undefined,
         agent,
         metadata: { hook: payload.hook, sessionId: payload.session_id },
       };
+      break;
 
     case 'Edit':
-      return {
+      baseAction = {
         tool: 'Edit',
         file: input.file_path as string | undefined,
         content: input.new_string as string | undefined,
@@ -58,18 +67,20 @@ export function normalizeClaudeCodeAction(payload: ClaudeCodeHookPayload): RawAg
           sessionId: payload.session_id,
         },
       };
+      break;
 
     case 'Read':
-      return {
+      baseAction = {
         tool: 'Read',
         file: input.file_path as string | undefined,
         agent,
         metadata: { hook: payload.hook, sessionId: payload.session_id },
       };
+      break;
 
     case 'Bash': {
       const command = input.command as string | undefined;
-      return {
+      baseAction = {
         tool: 'Bash',
         command,
         target: command?.slice(0, 100),
@@ -81,65 +92,73 @@ export function normalizeClaudeCodeAction(payload: ClaudeCodeHookPayload): RawAg
           sessionId: payload.session_id,
         },
       };
+      break;
     }
 
     case 'Glob':
-      return {
+      baseAction = {
         tool: 'Glob',
         target: input.pattern as string | undefined,
         agent,
         metadata: { hook: payload.hook, path: input.path, sessionId: payload.session_id },
       };
+      break;
 
     case 'Grep':
-      return {
+      baseAction = {
         tool: 'Grep',
         target: input.pattern as string | undefined,
         agent,
         metadata: { hook: payload.hook, path: input.path, sessionId: payload.session_id },
       };
+      break;
 
     case 'NotebookEdit':
-      return {
+      baseAction = {
         tool: 'NotebookEdit',
         file: input.notebook_path as string | undefined,
         agent,
         metadata: { hook: payload.hook, cell_id: input.cell_id, sessionId: payload.session_id },
       };
+      break;
 
     case 'TodoWrite':
-      return {
+      baseAction = {
         tool: 'TodoWrite',
         agent,
         metadata: { hook: payload.hook, todos: input.todos, sessionId: payload.session_id },
       };
+      break;
 
     case 'WebFetch':
-      return {
+      baseAction = {
         tool: 'WebFetch',
         target: input.url as string | undefined,
         agent,
         metadata: { hook: payload.hook, prompt: input.prompt, sessionId: payload.session_id },
       };
+      break;
 
     case 'WebSearch':
-      return {
+      baseAction = {
         tool: 'WebSearch',
         target: input.query as string | undefined,
         agent,
         metadata: { hook: payload.hook, query: input.query, sessionId: payload.session_id },
       };
+      break;
 
     case 'Agent':
-      return {
+      baseAction = {
         tool: 'Agent',
         target: (input.prompt as string | undefined)?.slice(0, 100),
         agent,
         metadata: { hook: payload.hook, prompt: input.prompt, sessionId: payload.session_id },
       };
+      break;
 
     case 'Skill':
-      return {
+      baseAction = {
         tool: 'Skill',
         target: input.skill as string | undefined,
         agent,
@@ -150,22 +169,30 @@ export function normalizeClaudeCodeAction(payload: ClaudeCodeHookPayload): RawAg
           sessionId: payload.session_id,
         },
       };
+      break;
 
     default:
-      return {
+      baseAction = {
         tool: payload.tool_name,
         agent,
         metadata: { hook: payload.hook, input, sessionId: payload.session_id },
       };
+      break;
   }
+
+  if (resolvedPersona) {
+    return { ...baseAction, persona: resolvedPersona };
+  }
+  return baseAction;
 }
 
 export async function processClaudeCodeHook(
   kernel: Kernel,
   payload: ClaudeCodeHookPayload,
-  systemContext: Record<string, unknown> = {}
+  systemContext: Record<string, unknown> = {},
+  persona?: AgentPersona,
 ): Promise<KernelResult> {
-  const rawAction = normalizeClaudeCodeAction(payload);
+  const rawAction = normalizeClaudeCodeAction(payload, persona);
   return kernel.propose(rawAction, systemContext);
 }
 

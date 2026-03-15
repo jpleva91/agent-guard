@@ -20,6 +20,7 @@
     { "path": "packages/renderers" },
     { "path": "packages/swarm" },
     { "path": "apps/cli" },
-    { "path": "apps/telemetry-server" }
+    { "path": "apps/telemetry-server" },
+    { "path": "apps/agentguardhq" }
   ]
 }

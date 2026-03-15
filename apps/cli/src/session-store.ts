@@ -4,6 +4,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
+import type { AgentPersona } from '@red-codes/core';
 
 const AGENTGUARD_DIR = join(homedir(), '.agentguard');
 const SESSIONS_DIR = join(AGENTGUARD_DIR, 'sessions');
@@ -25,6 +26,8 @@ interface SessionMeta {
   repo?: string;
   /** Seed used by the kernel RNG — stored for deterministic replay */
   seed?: number;
+  /** Agent persona active during this session */
+  persona?: AgentPersona;
 }
 
 interface SessionEvent {
@@ -40,6 +43,8 @@ interface SessionData {
   repo: string | null;
   /** Seed used by the kernel RNG — enables deterministic replay */
   seed: number | null;
+  /** Agent persona active during this session */
+  persona: AgentPersona | null;
   events: SessionEvent[];
   summary: Record<string, unknown> | null;
   endedAt: string | null;
@@ -63,6 +68,7 @@ export function createSession(meta: SessionMeta = {}): SessionWriter {
     command: meta.command || null,
     repo: meta.repo || null,
     seed: meta.seed ?? null,
+    persona: meta.persona ?? null,
     events: [],
     summary: null,
     endedAt: null,

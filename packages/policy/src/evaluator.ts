@@ -1,6 +1,16 @@
 // Policy evaluator — matches actions against loaded policies.
 // Pure domain logic. No DOM, no Node.js-specific APIs.
 
+import type { AgentPersona } from '@red-codes/core';
+
+export interface PersonaCondition {
+  trustTier?: string[];
+  role?: string[];
+  autonomy?: string[];
+  riskTolerance?: string[];
+  tags?: string[];
+}
+
 export interface PolicyRule {
   action: string | string[];
   effect: 'allow' | 'deny';
@@ -9,6 +19,7 @@ export interface PolicyRule {
     limit?: number;
     branches?: string[];
     requireTests?: boolean;
+    persona?: PersonaCondition;
   };
   reason?: string;
 }
@@ -19,6 +30,7 @@ export interface LoadedPolicy {
   description?: string;
   rules: PolicyRule[];
   severity: number;
+  persona?: AgentPersona;
 }
 
 export interface NormalizedIntent {
@@ -29,6 +41,7 @@ export interface NormalizedIntent {
   command?: string;
   filesAffected?: number;
   metadata?: Record<string, unknown>;
+  persona?: AgentPersona;
   destructive: boolean;
 }
 
@@ -44,6 +57,7 @@ export interface RuleEvaluation {
     scopeMatched?: boolean;
     limitExceeded?: boolean;
     branchMatched?: boolean;
+    personaMatched?: boolean;
   };
   outcome: 'match' | 'no-match' | 'skipped';
 }
@@ -101,6 +115,34 @@ interface ConditionMatchResult {
   scopeMatched?: boolean;
   limitExceeded?: boolean;
   branchMatched?: boolean;
+  personaMatched?: boolean;
+}
+
+function matchPersonaCondition(
+  personaCond: PersonaCondition,
+  persona: AgentPersona | undefined,
+): boolean {
+  if (!persona) return false;
+
+  if (personaCond.trustTier && personaCond.trustTier.length > 0) {
+    if (!persona.trustTier || !personaCond.trustTier.includes(persona.trustTier)) return false;
+  }
+  if (personaCond.role && personaCond.role.length > 0) {
+    if (!persona.role || !personaCond.role.includes(persona.role)) return false;
+  }
+  if (personaCond.autonomy && personaCond.autonomy.length > 0) {
+    if (!persona.autonomy || !personaCond.autonomy.includes(persona.autonomy)) return false;
+  }
+  if (personaCond.riskTolerance && personaCond.riskTolerance.length > 0) {
+    if (!persona.riskTolerance || !personaCond.riskTolerance.includes(persona.riskTolerance)) {
+      return false;
+    }
+  }
+  if (personaCond.tags && personaCond.tags.length > 0) {
+    if (!persona.tags || !personaCond.tags.some((t) => persona.tags!.includes(t))) return false;
+  }
+
+  return true;
 }
 
 function matchConditions(
@@ -116,6 +158,7 @@ function matchConditions(
   const scopeMatched = conditions.scope ? true : undefined;
   let limitExceeded: boolean | undefined;
   let branchMatched: boolean | undefined;
+  let personaMatched: boolean | undefined;
 
   if (conditions.limit !== undefined && intent.filesAffected !== undefined) {
     limitExceeded = intent.filesAffected > conditions.limit;
@@ -131,7 +174,14 @@ function matchConditions(
     }
   }
 
-  return { matched: true, scopeMatched, limitExceeded, branchMatched };
+  if (conditions.persona) {
+    personaMatched = matchPersonaCondition(conditions.persona, intent.persona);
+    if (!personaMatched) {
+      return { matched: false, scopeMatched, limitExceeded, branchMatched, personaMatched };
+    }
+  }
+
+  return { matched: true, scopeMatched, limitExceeded, branchMatched, personaMatched };
 }
 
 function ruleKey(policyId: string, ruleIndex: number): string {
@@ -158,6 +208,7 @@ function createRuleEval(
           scopeMatched: conditionResult.scopeMatched,
           limitExceeded: conditionResult.limitExceeded,
           branchMatched: conditionResult.branchMatched,
+          personaMatched: conditionResult.personaMatched,
         }
       : {},
     outcome,
@@ -311,4 +362,4 @@ export function evaluate(intent: NormalizedIntent, policies: LoadedPolicy[]): Ev
   };
 }
 
-export { matchAction, matchScope };
+export { matchAction, matchScope, matchPersonaCondition };

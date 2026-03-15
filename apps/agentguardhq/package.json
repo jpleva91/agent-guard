@@ -1,0 +1,17 @@
+{
+  "name": "@red-codes/agentguardhq",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AgentGuardHQ — Digital office visualization for AI agents",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "ts:check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@red-codes/core": "workspace:*",
+    "@red-codes/telemetry": "workspace:*"
+  }
+}

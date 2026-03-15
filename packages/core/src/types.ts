@@ -739,6 +739,36 @@ export interface AdapterRegistry {
 // AgentGuard Types
 // ---------------------------------------------------------------------------
 
+/** Model metadata — structured info about the AI agent's underlying model */
+export interface AgentModelMeta {
+  readonly model?: string;
+  readonly provider?: string;
+  readonly runtime?: string;
+  readonly version?: string;
+}
+
+/** Trust tier — governs what actions an agent is allowed to take */
+export type TrustTier = 'untrusted' | 'limited' | 'standard' | 'elevated' | 'admin';
+
+/** Autonomy level — how independently the agent operates */
+export type AutonomyLevel = 'supervised' | 'semi-autonomous' | 'autonomous';
+
+/** Risk tolerance — how the agent approaches risky operations */
+export type RiskTolerance = 'conservative' | 'moderate' | 'aggressive';
+
+/** Agent persona role */
+export type PersonaRole = 'developer' | 'reviewer' | 'ops' | 'security' | 'ci';
+
+/** Agent persona — model metadata + behavioral traits for governance and visualization */
+export interface AgentPersona {
+  readonly modelMeta?: AgentModelMeta;
+  readonly trustTier?: TrustTier;
+  readonly autonomy?: AutonomyLevel;
+  readonly riskTolerance?: RiskTolerance;
+  readonly role?: PersonaRole;
+  readonly tags?: readonly string[];
+}
+
 /** Raw agent action before normalization */
 export interface RawAgentAction {
   readonly tool?: string;
@@ -747,6 +777,7 @@ export interface RawAgentAction {
   readonly content?: string;
   readonly branch?: string;
   readonly agent?: string;
+  readonly persona?: AgentPersona;
   [key: string]: unknown;
 }
 
@@ -758,6 +789,7 @@ export interface NormalizedIntent {
   readonly branch?: string;
   readonly command?: string;
   readonly filesAffected?: number;
+  readonly persona?: AgentPersona;
   readonly destructive: boolean;
 }
 
@@ -999,6 +1031,7 @@ export interface GovernanceDecisionRecord {
     agent: string;
     destructive: boolean;
     command?: string;
+    persona?: AgentPersona;
   };
   /** Final governance outcome */
   outcome: 'allow' | 'deny';

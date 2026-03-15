@@ -34,6 +34,7 @@ export function buildDecisionRecord(input: DecisionFactoryInput): GovernanceDeci
       agent: intent.agent,
       destructive: intent.destructive,
       command: intent.command,
+      persona: intent.persona,
     },
     outcome: decision.allowed ? 'allow' : 'deny',
     reason: decision.decision.reason,

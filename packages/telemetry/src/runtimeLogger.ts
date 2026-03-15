@@ -12,7 +12,7 @@ const DEFAULT_LOG_FILE = 'runtime-events.jsonl';
 
 /** Map a GovernanceDecisionRecord to a flattened TelemetryEvent. */
 export function buildTelemetryEvent(record: GovernanceDecisionRecord): TelemetryEvent {
-  return {
+  const event: TelemetryEvent = {
     timestamp: new Date(record.timestamp).toISOString(),
     agent: record.action.agent,
     run_id: record.runId,
@@ -22,6 +22,16 @@ export function buildTelemetryEvent(record: GovernanceDecisionRecord): Telemetry
     policy_result: record.outcome,
     invariant_result: record.invariants.allHold ? 'pass' : 'fail',
   };
+
+  const persona = record.action.persona;
+  if (persona) {
+    if (persona.modelMeta?.model) event.model = persona.modelMeta.model;
+    if (persona.modelMeta?.provider) event.provider = persona.modelMeta.provider;
+    if (persona.trustTier) event.trust_tier = persona.trustTier;
+    if (persona.role) event.role = persona.role;
+  }
+
+  return event;
 }
 
 /** Create a TelemetrySink that appends JSON lines to a single shared log file. */

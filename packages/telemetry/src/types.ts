@@ -12,6 +12,10 @@ export interface TelemetryEvent {
   invariant_result: 'pass' | 'fail';
   issue_id?: number;
   diff_size?: number;
+  model?: string;
+  provider?: string;
+  trust_tier?: string;
+  role?: string;
   metadata?: Record<string, unknown>;
 }
 

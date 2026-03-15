@@ -2,7 +2,7 @@
 // The central gatekeeper in the Runtime Assurance Architecture.
 // Pure domain logic. No DOM, no Node.js-specific APIs.
 
-import type { DomainEvent } from '@red-codes/core';
+import type { DomainEvent, AgentPersona } from '@red-codes/core';
 import {
   TOOL_ACTION_MAP_DATA,
   getDestructivePatterns,
@@ -28,6 +28,7 @@ export interface RawAgentAction {
   content?: string;
   branch?: string;
   agent?: string;
+  persona?: AgentPersona;
   filesAffected?: number;
   metadata?: Record<string, unknown>;
 }
@@ -106,6 +107,7 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
     command: rawAction.command || undefined,
     filesAffected: rawAction.filesAffected || undefined,
     metadata: rawAction.metadata || undefined,
+    persona: rawAction.persona || undefined,
     destructive: action === 'shell.exec' && isDestructiveCommand(rawAction.command || ''),
   };
 }

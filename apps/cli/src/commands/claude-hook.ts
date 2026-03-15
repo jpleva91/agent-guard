@@ -123,7 +123,13 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[
     });
   }
 
-  const result = await processClaudeCodeHook(kernel, normalizedPayload);
+  // Resolve agent persona from environment variables.
+  // Persona enriches telemetry and enables persona-based policy conditions.
+  const { personaFromEnv: readPersonaFromEnv, resolvePersona } = await import('@red-codes/core');
+  const envPersona = readPersonaFromEnv();
+  const resolvedPersona = envPersona ? resolvePersona(undefined, envPersona) : undefined;
+
+  const result = await processClaudeCodeHook(kernel, normalizedPayload, {}, resolvedPersona);
   kernel.shutdown();
 
   // Close storage (important for SQLite to flush WAL)
