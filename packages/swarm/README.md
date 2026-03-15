@@ -26,10 +26,16 @@ ROADMAP.md (you write strategy)
 ## Quick Start
 
 ```bash
-# Install AgentGuard
-npm install -g @red-codes/agentguard
+# Clone and build AgentGuard
+git clone https://github.com/AgentGuardHQ/agent-guard.git
+cd agent-guard
+pnpm install && pnpm build
+
+# Link the CLI globally
+cd apps/cli && npm link && cd ../..
 
 # Scaffold the swarm into your project
+cd /path/to/your-project
 agentguard init swarm
 
 # This creates:
@@ -118,7 +124,7 @@ swarm:
     roadmap: ROADMAP.md             # Your project roadmap
     swarmState: .agentguard/swarm-state.json
     logs: logs/runtime-events.jsonl
-    cli: npx agentguard             # How to invoke the CLI
+    cli: agentguard                  # How to invoke the CLI
 
   # Behavioral thresholds
   thresholds:
