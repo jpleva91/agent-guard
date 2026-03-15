@@ -1,9 +1,6 @@
 // Tests for Git Simulator
 import { describe, it, expect } from 'vitest';
-import {
-  createGitSimulator,
-  isValidBranchName,
-} from '@red-codes/kernel';
+import { createGitSimulator, isValidBranchName } from '@red-codes/kernel';
 
 describe('GitSimulator', () => {
   const simulator = createGitSimulator();

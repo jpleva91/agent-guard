@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  computeBlastRadius,
-  DEFAULT_WEIGHTS,
-} from '@red-codes/kernel';
+import { computeBlastRadius, DEFAULT_WEIGHTS } from '@red-codes/kernel';
 import type { NormalizedIntent } from '@red-codes/policy';
 
 function makeIntent(overrides: Partial<NormalizedIntent> = {}): NormalizedIntent {
@@ -60,16 +57,14 @@ describe('blast-radius computation engine', () => {
         100
       );
       // 1 * write(1.5) * sensitive(5.0) * config(2.0) = 15
-      const expected = DEFAULT_WEIGHTS.write * DEFAULT_WEIGHTS.sensitivePath * DEFAULT_WEIGHTS.configPath;
+      const expected =
+        DEFAULT_WEIGHTS.write * DEFAULT_WEIGHTS.sensitivePath * DEFAULT_WEIGHTS.configPath;
       expect(result.weightedScore).toBe(expected);
       expect(result.factors).toHaveLength(3); // write + sensitive + config
     });
 
     it('detects threshold exceeded', () => {
-      const result = computeBlastRadius(
-        makeIntent({ filesAffected: 10 }),
-        10
-      );
+      const result = computeBlastRadius(makeIntent({ filesAffected: 10 }), 10);
       // 10 * write(1.5) = 15, threshold 10
       expect(result.exceeded).toBe(true);
       expect(result.weightedScore).toBe(15);
@@ -104,19 +99,13 @@ describe('blast-radius computation engine', () => {
     });
 
     it('returns medium risk for scores between 15 and 50', () => {
-      const result = computeBlastRadius(
-        makeIntent({ filesAffected: 10 }),
-        100
-      );
+      const result = computeBlastRadius(makeIntent({ filesAffected: 10 }), 100);
       // 10 * write(1.5) = 15
       expect(result.riskLevel).toBe('medium');
     });
 
     it('returns high risk for scores >= 50', () => {
-      const result = computeBlastRadius(
-        makeIntent({ filesAffected: 50 }),
-        1000
-      );
+      const result = computeBlastRadius(makeIntent({ filesAffected: 50 }), 1000);
       // 50 * write(1.5) = 75
       expect(result.riskLevel).toBe('high');
     });

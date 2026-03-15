@@ -23,8 +23,7 @@ import {
 } from '@red-codes/events';
 import type { ChainedRecord } from '@red-codes/events';
 
-const GENESIS_PREV_HASH =
-  '0000000000000000000000000000000000000000000000000000000000000000';
+const GENESIS_PREV_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
 
 function makeFakeEvent(overrides: Partial<DomainEvent> = {}): DomainEvent {
   return {
@@ -65,10 +64,7 @@ describe('createChainedJsonlSink', () => {
     const sink = createChainedJsonlSink({ runId: 'run_chain_1' });
     sink.write(makeFakeEvent());
 
-    expect(mkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining('events'),
-      { recursive: true }
-    );
+    expect(mkdirSync).toHaveBeenCalledWith(expect.stringContaining('events'), { recursive: true });
   });
 
   it('writes chained records with seq, chainHash, prevHash', () => {
@@ -196,10 +192,7 @@ describe('verifyChainedJsonl', () => {
   });
 
   it('detects tampered event data', () => {
-    const events = [
-      makeFakeEvent({ id: 'evt_1' }),
-      makeFakeEvent({ id: 'evt_2' }),
-    ];
+    const events = [makeFakeEvent({ id: 'evt_1' }), makeFakeEvent({ id: 'evt_2' })];
     const content = buildChainedLines(events);
     const lines = content.split('\n');
 
@@ -240,10 +233,7 @@ describe('verifyChainedJsonl', () => {
   });
 
   it('detects inserted record (prev hash mismatch)', () => {
-    const events = [
-      makeFakeEvent({ id: 'evt_1' }),
-      makeFakeEvent({ id: 'evt_2' }),
-    ];
+    const events = [makeFakeEvent({ id: 'evt_1' }), makeFakeEvent({ id: 'evt_2' })];
     const content = buildChainedLines(events);
     const lines = content.split('\n');
 

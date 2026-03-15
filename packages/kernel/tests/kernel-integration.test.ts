@@ -231,7 +231,11 @@ describe('Kernel integration — event ordering', () => {
     const events: DomainEvent[] = [];
     const sink: EventSink = { write: (e) => events.push(e) };
 
-    const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false }, sinks: [sink] });
+    const kernel = createKernel({
+      dryRun: true,
+      evaluateOptions: { defaultDeny: false },
+      sinks: [sink],
+    });
 
     await kernel.propose({ tool: 'Read', file: 'test.ts', agent: 'test' });
 

@@ -12,7 +12,9 @@ import { fileAdapter } from '@red-codes/adapters';
 import { readFile, writeFile, unlink, rename } from 'node:fs/promises';
 import type { CanonicalAction } from '@red-codes/core';
 
-function makeAction(overrides: Partial<CanonicalAction> & { type: string; target: string }): CanonicalAction {
+function makeAction(
+  overrides: Partial<CanonicalAction> & { type: string; target: string }
+): CanonicalAction {
   return {
     id: 'act_1',
     class: 'file',
@@ -47,7 +49,11 @@ describe('fileAdapter', () => {
   describe('file.write', () => {
     it('writes content and returns bytes written', async () => {
       vi.mocked(writeFile).mockResolvedValue();
-      const action = makeAction({ type: 'file.write', target: 'out.txt', content: 'data' } as never);
+      const action = makeAction({
+        type: 'file.write',
+        target: 'out.txt',
+        content: 'data',
+      } as never);
       const result = await fileAdapter(action);
       expect(result).toEqual({ path: 'out.txt', written: 4 });
       expect(writeFile).toHaveBeenCalledWith('out.txt', 'data', 'utf8');
@@ -98,9 +104,9 @@ describe('fileAdapter', () => {
 
   describe('unsupported action', () => {
     it('throws for unknown file action type', async () => {
-      await expect(
-        fileAdapter(makeAction({ type: 'file.unknown', target: 'x' }))
-      ).rejects.toThrow('Unsupported file action: file.unknown');
+      await expect(fileAdapter(makeAction({ type: 'file.unknown', target: 'x' }))).rejects.toThrow(
+        'Unsupported file action: file.unknown'
+      );
     });
   });
 });

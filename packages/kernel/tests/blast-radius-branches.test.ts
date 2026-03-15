@@ -65,10 +65,7 @@ describe('blast-radius branch coverage', () => {
   describe('sensitive path patterns', () => {
     for (const pattern of SENSITIVE_PATTERNS) {
       it(`detects sensitive pattern: ${pattern}`, () => {
-        const result = computeBlastRadius(
-          makeIntent({ target: `some/path/${pattern}.file` }),
-          100
-        );
+        const result = computeBlastRadius(makeIntent({ target: `some/path/${pattern}.file` }), 100);
         expect(result.factors.some((f) => f.name === 'sensitive-path')).toBe(true);
       });
     }
@@ -86,7 +83,12 @@ describe('blast-radius branch coverage', () => {
     // Note: CONFIG_PATTERNS are matched via lowercase .includes(), so patterns
     // with mixed case (like 'Dockerfile', 'Jenkinsfile') may not match lowercase
     // targets. Use patterns that survive lowercasing.
-    const sampleConfigs = ['webpack.config.js', 'vite.config.ts', '.circleci/config.yml', 'docker-compose.yml'];
+    const sampleConfigs = [
+      'webpack.config.js',
+      'vite.config.ts',
+      '.circleci/config.yml',
+      'docker-compose.yml',
+    ];
 
     for (const config of sampleConfigs) {
       it(`detects config pattern: ${config}`, () => {

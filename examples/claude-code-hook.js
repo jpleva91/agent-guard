@@ -16,9 +16,7 @@ import { readFileSync, existsSync } from 'node:fs';
 
 // Load policy from repo root (auto-discovered by the guard command too)
 const policyPath = 'agentguard.yaml';
-const policyDefs = existsSync(policyPath)
-  ? [loadYamlPolicy(readFileSync(policyPath, 'utf8'))]
-  : [];
+const policyDefs = existsSync(policyPath) ? [loadYamlPolicy(readFileSync(policyPath, 'utf8'))] : [];
 
 const kernel = createKernel({ dryRun: true, policyDefs });
 

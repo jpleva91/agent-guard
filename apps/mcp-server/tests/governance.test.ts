@@ -30,9 +30,7 @@ describe('check_invariants via kernel', () => {
     });
     const result = checkAllInvariants(DEFAULT_INVARIANTS, state);
     expect(result.allHold).toBe(false);
-    const forcePushViolation = result.violations.find(
-      (v) => v.invariant.id === 'no-force-push'
-    );
+    const forcePushViolation = result.violations.find((v) => v.invariant.id === 'no-force-push');
     expect(forcePushViolation).toBeDefined();
   });
 

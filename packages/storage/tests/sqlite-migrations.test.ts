@@ -91,9 +91,7 @@ describe('SQLite migrations', () => {
 
   it('applies v2 composite index incrementally on existing v1 database', () => {
     // Simulate a v1 database by manually creating the schema
-    db.exec(
-      'CREATE TABLE migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)'
-    );
+    db.exec('CREATE TABLE migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)');
     db.exec("INSERT INTO migrations (version, applied_at) VALUES (1, '2026-01-01T00:00:00Z')");
     db.exec(`
       CREATE TABLE events (

@@ -750,30 +750,31 @@ describe('agentguard/core/aab', () => {
     });
 
     it('generates POLICY_DENIED events for policy violations', () => {
-      const policies = [{
-        id: 'no-write',
-        name: 'No Write',
-        rules: [{ action: 'file.write', effect: 'deny' as const, reason: 'Read-only' }],
-        severity: 3,
-      }];
+      const policies = [
+        {
+          id: 'no-write',
+          name: 'No Write',
+          rules: [{ action: 'file.write', effect: 'deny' as const, reason: 'Read-only' }],
+          severity: 3,
+        },
+      ];
       const result = authorize({ tool: 'Write', file: 'src/a.ts' }, policies);
       expect(result.result.allowed).toBe(false);
       expect(result.events.length).toBeGreaterThan(0);
     });
 
     it('checks blast radius limits', () => {
-      const policies = [{
-        id: 'limit-blast',
-        name: 'Blast Limit',
-        rules: [{ action: '*', effect: 'allow' as const, conditions: { limit: 5 } }],
-        severity: 3,
-      }];
-      const result = authorize(
-        { tool: 'Write', file: 'src/a.ts', filesAffected: 10 },
-        policies,
-      );
+      const policies = [
+        {
+          id: 'limit-blast',
+          name: 'Blast Limit',
+          rules: [{ action: '*', effect: 'allow' as const, conditions: { limit: 5 } }],
+          severity: 3,
+        },
+      ];
+      const result = authorize({ tool: 'Write', file: 'src/a.ts', filesAffected: 10 }, policies);
       // Should generate blast radius event (10 files * 1.5 write multiplier = 15 > limit 5)
-      const blastEvent = result.events.find(e => e.kind === 'BlastRadiusExceeded');
+      const blastEvent = result.events.find((e) => e.kind === 'BlastRadiusExceeded');
       expect(blastEvent).toBeTruthy();
       // Should include blast radius computation result
       expect(result.blastRadius).toBeDefined();
@@ -782,16 +783,15 @@ describe('agentguard/core/aab', () => {
     });
 
     it('returns blastRadius result when policy has limits', () => {
-      const policies = [{
-        id: 'limit-blast',
-        name: 'Blast Limit',
-        rules: [{ action: '*', effect: 'allow' as const, conditions: { limit: 100 } }],
-        severity: 3,
-      }];
-      const result = authorize(
-        { tool: 'Read', file: 'src/a.ts', filesAffected: 1 },
-        policies,
-      );
+      const policies = [
+        {
+          id: 'limit-blast',
+          name: 'Blast Limit',
+          rules: [{ action: '*', effect: 'allow' as const, conditions: { limit: 100 } }],
+          severity: 3,
+        },
+      ];
+      const result = authorize({ tool: 'Read', file: 'src/a.ts', filesAffected: 1 }, policies);
       // Read action with 1 file: score = 1 * 0.1 = 0.1, should not exceed limit 100
       expect(result.blastRadius).toBeDefined();
       expect(result.blastRadius!.exceeded).toBe(false);

@@ -22,7 +22,9 @@ function listSessionIds(baseDir: string): string[] {
   const eventsDir = join(baseDir, 'events');
   if (!existsSync(eventsDir)) return [];
   try {
-    return readdirSync(eventsDir).filter((name) => name.endsWith('.jsonl')).map((name) => name.replace(/\.jsonl$/, ''));
+    return readdirSync(eventsDir)
+      .filter((name) => name.endsWith('.jsonl'))
+      .map((name) => name.replace(/\.jsonl$/, ''));
   } catch {
     return [];
   }

@@ -6,7 +6,9 @@ suite('Domain EventBus (domain/event-bus.js)', () => {
   test('on registers listener and emit calls it', () => {
     const bus = new EventBus();
     let called = false;
-    bus.on('test', () => { called = true; });
+    bus.on('test', () => {
+      called = true;
+    });
     bus.emit('test');
     assert.strictEqual(called, true);
   });
@@ -14,7 +16,9 @@ suite('Domain EventBus (domain/event-bus.js)', () => {
   test('emit passes data to listener', () => {
     const bus = new EventBus();
     let received = null;
-    bus.on('test', (data) => { received = data; });
+    bus.on('test', (data) => {
+      received = data;
+    });
     bus.emit('test', { value: 42 });
     assert.deepStrictEqual(received, { value: 42 });
   });
@@ -28,8 +32,12 @@ suite('Domain EventBus (domain/event-bus.js)', () => {
   test('multiple listeners on same event', () => {
     const bus = new EventBus();
     let count = 0;
-    bus.on('test', () => { count++; });
-    bus.on('test', () => { count++; });
+    bus.on('test', () => {
+      count++;
+    });
+    bus.on('test', () => {
+      count++;
+    });
     bus.emit('test');
     assert.strictEqual(count, 2);
   });
@@ -37,7 +45,9 @@ suite('Domain EventBus (domain/event-bus.js)', () => {
   test('off removes specific listener', () => {
     const bus = new EventBus();
     let count = 0;
-    const fn = () => { count++; };
+    const fn = () => {
+      count++;
+    };
     bus.on('test', fn);
     bus.emit('test');
     assert.strictEqual(count, 1);
@@ -55,7 +65,9 @@ suite('Domain EventBus (domain/event-bus.js)', () => {
   test('on returns unsubscribe function', () => {
     const bus = new EventBus();
     let count = 0;
-    const unsub = bus.on('test', () => { count++; });
+    const unsub = bus.on('test', () => {
+      count++;
+    });
     bus.emit('test');
     assert.strictEqual(count, 1);
     unsub();
@@ -66,8 +78,12 @@ suite('Domain EventBus (domain/event-bus.js)', () => {
   test('clear removes all listeners', () => {
     const bus = new EventBus();
     let count = 0;
-    bus.on('a', () => { count++; });
-    bus.on('b', () => { count++; });
+    bus.on('a', () => {
+      count++;
+    });
+    bus.on('b', () => {
+      count++;
+    });
     bus.clear();
     bus.emit('a');
     bus.emit('b');

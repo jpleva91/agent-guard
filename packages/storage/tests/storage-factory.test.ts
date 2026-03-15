@@ -2,11 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import {
-  createStorageBundle,
-  resolveStorageConfig,
-  resolveSqlitePath,
-} from '@red-codes/storage';
+import { createStorageBundle, resolveStorageConfig, resolveSqlitePath } from '@red-codes/storage';
 import { DEFAULT_DB_FILENAME, DEFAULT_SQLITE_DB_PATH } from '@red-codes/storage';
 import type { DomainEvent } from '@red-codes/core';
 
@@ -188,9 +184,9 @@ describe('createStorageBundle', () => {
     // Verify tables exist by querying them
     const Database = (await import('better-sqlite3')).default;
     const db = new Database(dbPath);
-    const tables = db
-      .prepare("SELECT name FROM sqlite_master WHERE type='table'")
-      .all() as { name: string }[];
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {
+      name: string;
+    }[];
     const names = tables.map((t) => t.name);
 
     expect(names).toContain('events');

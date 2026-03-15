@@ -59,7 +59,9 @@ function makeDeniedResult(overrides: Partial<KernelResult> = {}): KernelResult {
   });
 }
 
-function makeDecisionRecord(overrides: Partial<GovernanceDecisionRecord> = {}): GovernanceDecisionRecord {
+function makeDecisionRecord(
+  overrides: Partial<GovernanceDecisionRecord> = {}
+): GovernanceDecisionRecord {
   return {
     recordId: 'dec_123',
     runId: 'run_123',
@@ -159,7 +161,13 @@ describe('renderViolations', () => {
       decision: {
         ...makeKernelResult().decision,
         violations: [
-          { name: 'no-secret-exposure', holds: false, severity: 5, expected: 'no secrets', actual: 'found API key' },
+          {
+            name: 'no-secret-exposure',
+            holds: false,
+            severity: 5,
+            expected: 'no secrets',
+            actual: 'found API key',
+          },
           { name: 'blast-radius-limit', holds: false, severity: 3, expected: '<=10', actual: '25' },
         ],
       } as unknown as MonitorDecision,
@@ -302,7 +310,13 @@ describe('renderDecisionRecord', () => {
         invariants: {
           allHold: false,
           violations: [
-            { invariantId: 'inv_1', name: 'no-force-push', severity: 5, expected: 'no force push', actual: 'force push detected' },
+            {
+              invariantId: 'inv_1',
+              name: 'no-force-push',
+              severity: 5,
+              expected: 'no force push',
+              actual: 'force push detected',
+            },
           ],
         },
       })
@@ -368,7 +382,13 @@ describe('renderDecisionTable', () => {
         invariants: {
           allHold: false,
           violations: [
-            { invariantId: 'inv_1', name: 'protected-branch', severity: 4, expected: '', actual: '' },
+            {
+              invariantId: 'inv_1',
+              name: 'protected-branch',
+              severity: 4,
+              expected: '',
+              actual: '',
+            },
           ],
         },
       }),

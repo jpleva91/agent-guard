@@ -3,10 +3,7 @@
 // Issue #22: https://github.com/jpleva91/agent-guard/issues/22
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  normalizeClaudeCodeAction,
-  processClaudeCodeHook,
-} from '@red-codes/adapters';
+import { normalizeClaudeCodeAction, processClaudeCodeHook } from '@red-codes/adapters';
 import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
 import { createKernel } from '@red-codes/kernel';
 import type { EventSink, KernelResult } from '@red-codes/kernel';
@@ -602,10 +599,7 @@ describe('E2E: Full governance session — mixed actions', () => {
     expect(r2.allowed).toBe(true);
 
     // Step 3: Agent runs tests (allowed)
-    const r3 = await processClaudeCodeHook(
-      kernel,
-      preToolUse('Bash', { command: 'npm test' })
-    );
+    const r3 = await processClaudeCodeHook(kernel, preToolUse('Bash', { command: 'npm test' }));
     expect(r3.allowed).toBe(true);
 
     // Step 4: Agent tries to push (denied by policy)

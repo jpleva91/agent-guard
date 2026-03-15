@@ -11,10 +11,7 @@
  * Requires: npm run build:ts
  */
 
-import {
-  runPipeline,
-  getPipelineSummary,
-} from '../../dist/orchestration/orchestrator.js';
+import { runPipeline, getPipelineSummary } from '../../dist/orchestration/orchestrator.js';
 
 console.log('=== Scenario: Multi-Agent Pipeline ===\n');
 
@@ -61,7 +58,9 @@ console.log(`Pipeline: ${successSummary.task}`);
 console.log(`Status: ${successSummary.status}`);
 console.log(`Stages:`);
 for (const stage of successSummary.stages) {
-  console.log(`  ${stage.stage}: ${stage.status}${stage.errors.length > 0 ? ' — ' + stage.errors.join(', ') : ''}`);
+  console.log(
+    `  ${stage.stage}: ${stage.status}${stage.errors.length > 0 ? ' — ' + stage.errors.join(', ') : ''}`
+  );
 }
 
 // --- Run 2: File scope violation ---
@@ -94,7 +93,9 @@ console.log(`Pipeline: ${violationSummary.task}`);
 console.log(`Status: ${violationSummary.status}`);
 console.log(`Stages:`);
 for (const stage of violationSummary.stages) {
-  console.log(`  ${stage.stage}: ${stage.status}${stage.errors.length > 0 ? ' — ' + stage.errors.join(', ') : ''}`);
+  console.log(
+    `  ${stage.stage}: ${stage.status}${stage.errors.length > 0 ? ' — ' + stage.errors.join(', ') : ''}`
+  );
 }
 
 // --- Run 3: Role authorization failure ---
@@ -123,11 +124,11 @@ for (const stage of skipSummary.stages) {
 
 // Verify
 console.log('\n--- Verification ---');
-console.log(`Successful pipeline completed: ${successRun.status === 'completed' ? 'PASS' : 'FAIL'}`);
+console.log(
+  `Successful pipeline completed: ${successRun.status === 'completed' ? 'PASS' : 'FAIL'}`
+);
 console.log(`File scope violation caught: ${violationRun.status === 'failed' ? 'PASS' : 'FAIL'}`);
 console.log(
   `Build stage failed on scope: ${violationRun.results.find((r) => r.stageId === 'build')?.errors.some((e) => e.includes('scope')) ? 'PASS' : 'FAIL'}`
 );
-console.log(
-  `Skipped stages handled: ${skipRun.status === 'completed' ? 'PASS' : 'FAIL'}`
-);
+console.log(`Skipped stages handled: ${skipRun.status === 'completed' ? 'PASS' : 'FAIL'}`);

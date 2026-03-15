@@ -50,10 +50,9 @@ describe('createDecisionJsonlSink', () => {
     const sink = createDecisionJsonlSink({ runId: 'run-1' });
     sink.write(makeRecord());
 
-    expect(mockedMkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining('decisions'),
-      { recursive: true }
-    );
+    expect(mockedMkdirSync).toHaveBeenCalledWith(expect.stringContaining('decisions'), {
+      recursive: true,
+    });
   });
 
   it('creates directory only once', () => {
@@ -115,10 +114,9 @@ describe('createDecisionJsonlSink', () => {
     const sink = createDecisionJsonlSink({ runId: 'run-1', baseDir: '/custom' });
     sink.write(makeRecord());
 
-    expect(mockedMkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining('custom'),
-      { recursive: true }
-    );
+    expect(mockedMkdirSync).toHaveBeenCalledWith(expect.stringContaining('custom'), {
+      recursive: true,
+    });
   });
 });
 

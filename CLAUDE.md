@@ -13,10 +13,11 @@ The system has one architectural spine: the **canonical event model**. All syste
 - Escalation tracking: NORMAL → ELEVATED → HIGH → LOCKDOWN
 - JSONL event persistence for audit trail and replay
 - Claude Code adapter for PreToolUse/PostToolUse hooks
-- **pnpm monorepo** with Turbo orchestration: 16 packages under `packages/`, 3 apps under `apps/`
+- **pnpm monorepo** with Turbo orchestration: 11 packages under `packages/`, 3 apps under `apps/`
 - Each package compiles independently via `tsc`; CLI bundle via `esbuild` in `apps/cli`
 - Scoped npm packages: `@red-codes/*` for workspace modules, `@red-codes/agentguard` for published CLI
-- CLI has runtime dependencies (`chokidar`, `commander`, `pino`); optional `better-sqlite3` for SQLite storage backend; optional Firestore for cloud-based governance data sharing
+- CLI has runtime dependencies (`chokidar`, `commander`, `pino`); optional `better-sqlite3` for SQLite storage backend
+- Cloud-native features (analytics, telemetry, Firestore) have migrated to the private `agentguard-cloud` repository
 - Build tooling: Turbo + tsc + esbuild + vitest (dev dependencies only)
 
 ## Quick Start
@@ -95,16 +96,6 @@ packages/
 │   ├── registry.ts             # Adapter registry (action class → handler)
 │   ├── file.ts, shell.ts, git.ts  # Action handlers
 │   └── claude-code.ts          # Claude Code hook adapter
-├── analytics/src/              # @red-codes/analytics — Cross-session violation analytics
-│   ├── aggregator.ts           # Violation aggregation across sessions
-│   ├── cluster.ts              # Violation clustering by dimension
-│   ├── engine.ts               # Analytics engine orchestrator
-│   ├── index.ts                # Module re-exports
-│   ├── reporter.ts             # Output formatters (terminal, JSON, markdown)
-│   ├── risk-scorer.ts          # Per-run risk scoring engine
-│   ├── suggest.ts              # Analytics-based suggestions
-│   ├── trends.ts               # Violation trend computation
-│   └── types.ts                # Analytics type definitions
 ├── plugins/src/                # @red-codes/plugins — Plugin ecosystem
 │   ├── discovery.ts            # Plugin discovery mechanism
 │   ├── registry.ts             # Plugin registry
@@ -118,43 +109,20 @@ packages/
 │   ├── tui-renderer.ts         # TUI renderer implementation
 │   ├── types.ts                # Renderer type definitions
 │   └── index.ts                # Module re-exports
-├── storage/src/                # @red-codes/storage — Storage backends (SQLite + Firestore, opt-in)
+├── storage/src/                # @red-codes/storage — Storage backends (SQLite, opt-in)
 │   ├── factory.ts              # Storage bundle factory
 │   ├── index.ts                # Module re-exports
 │   ├── migrations.ts           # Schema migrations (version-based)
-│   ├── sqlite-analytics.ts     # SQLite-backed analytics queries
 │   ├── sqlite-session.ts       # SQLite session lifecycle (insert on start, update on end)
 │   ├── sqlite-sink.ts          # SQLite event/decision sink
 │   ├── sqlite-store.ts         # SQLite event store implementation
-│   ├── firestore-analytics.ts  # Firestore-backed analytics queries
-│   ├── firestore-sink.ts       # Firestore event/decision sink
-│   ├── firestore-store.ts      # Firestore event store implementation
-│   ├── webhook-sink.ts         # Webhook event sink
 │   └── types.ts                # Storage type definitions
-├── telemetry/src/              # @red-codes/telemetry — Runtime telemetry
-│   ├── index.ts                # Module re-exports
-│   ├── runtimeLogger.ts        # Runtime logging implementation
-│   ├── tracepoint.ts           # Kernel-level tracepoint interface
-│   ├── tracer.ts               # Tracepoint execution engine
-│   └── types.ts                # Telemetry type definitions
 ├── runtime/src/                # @red-codes/runtime — Agent runtime (placeholder)
-├── sentinel01/src/             # @red-codes/sentinel01 — Robotics/edge module (placeholder)
-├── swarm/src/                  # @red-codes/swarm — Shareable agent swarm templates
-│   ├── config.ts               # Swarm configuration
-│   ├── manifest.ts             # Swarm manifest parsing
-│   ├── scaffolder.ts           # Swarm scaffolding
-│   ├── types.ts                # Swarm type definitions
-│   └── index.ts                # Module re-exports
-├── adapter-openclaw/src/       # @red-codes/adapter-openclaw — OpenClaw adapter (placeholder)
-└── telemetry-client/src/       # @red-codes/telemetry-client — Telemetry client
-    ├── client.ts               # Telemetry client
-    ├── identity.ts             # Client identity management
-    ├── queue.ts                # Event queue interface
-    ├── queue-jsonl.ts          # JSONL-backed queue
-    ├── queue-sqlite.ts         # SQLite-backed queue
-    ├── sender.ts               # Event sender
-    ├── signing.ts              # Event signing
-    ├── types.ts                # Type definitions
+└── swarm/src/                  # @red-codes/swarm — Shareable agent swarm templates
+    ├── config.ts               # Swarm configuration
+    ├── manifest.ts             # Swarm manifest parsing
+    ├── scaffolder.ts           # Swarm scaffolding
+    ├── types.ts                # Swarm type definitions
     └── index.ts                # Module re-exports
 
 apps/
@@ -169,20 +137,17 @@ apps/
 │   ├── session-store.ts        # Session management
 │   ├── file-event-store.ts     # File-based event persistence
 │   ├── evidence-summary.ts     # Evidence summary generator for PR reports
-│   └── commands/               # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, policy-verify, claude-hook, claude-init, init, diff, evidence-pr, traces, telemetry
-├── vscode-extension/src/       # agentguard-vscode — VS Code extension
-│   ├── extension.ts            # Extension entry point (sidebar panels, file watcher)
-│   ├── providers/              # Tree data providers (run status, run history, recent events)
-│   └── services/               # Event reader, notification formatter, notification service, diagnostics service, violation mapper
-└── telemetry-server/src/       # @red-codes/telemetry-server — Telemetry ingestion server
-    ├── app.ts                  # Express application setup
-    ├── config.ts               # Server configuration
-    ├── entry-lambda.ts         # AWS Lambda entry point
-    ├── entry-vercel.ts         # Vercel serverless entry point
-    ├── server.ts               # HTTP server
-    ├── middleware/              # API key auth, IP whitelist, rate limiter
-    ├── routes/                  # enrollment, batch ingest, events, decisions, health, traces
-    └── store/                   # In-memory store
+│   └── commands/               # guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, policy-verify, claude-hook, claude-init, init, diff, evidence-pr, traces, session-viewer, status
+├── mcp-server/src/             # @red-codes/mcp-server — MCP governance server
+│   ├── index.ts                # Entry point
+│   ├── server.ts               # MCP server implementation
+│   ├── config.ts               # Server configuration
+│   ├── backends/               # Storage backends
+│   └── tools/                  # 15 governance MCP tools
+└── vscode-extension/src/       # agentguard-vscode — VS Code extension
+    ├── extension.ts            # Extension entry point (sidebar panels, file watcher)
+    ├── providers/              # Tree data providers (run status, run history, recent events)
+    └── services/               # Event reader, notification formatter, notification service, diagnostics service, violation mapper
 
 tests/
 └── *.test.js               # 14 JS test files (custom zero-dependency harness)
@@ -240,7 +205,6 @@ See `docs/unified-architecture.md` for the full model.
 
 ### Package Layout
 Each workspace package maps to a single architectural concept:
-- **packages/analytics/** — Cross-session violation analytics (aggregation, clustering, trends, risk scoring, reporting)
 - **packages/kernel/** — Governed action kernel, escalation, evidence, decisions, simulation
 - **packages/events/** — Canonical event model (schema, bus, store, persistence)
 - **packages/policy/** — Policy evaluator + loaders (YAML/JSON, pack loader)
@@ -248,15 +212,13 @@ Each workspace package maps to a single architectural concept:
 - **packages/adapters/** — Execution adapters (file, shell, git, claude-code)
 - **packages/plugins/** — Plugin ecosystem (discovery, registry, validation, sandboxing)
 - **packages/renderers/** — Renderer plugin system (registry, TUI renderer)
-- **apps/cli/** — CLI entry point and commands (published as `@red-codes/agentguard`)
 - **packages/core/** — Shared utilities (types, actions, hash, execution-log)
-- **packages/storage/** — Storage backends: SQLite and Firestore (opt-in alternatives to JSONL, indexed queries)
-- **packages/telemetry/** — Runtime telemetry and logging
+- **packages/storage/** — Storage backend: SQLite (opt-in alternative to JSONL, indexed queries)
 - **packages/swarm/** — Shareable agent swarm templates (config, manifest, scaffolder)
-- **packages/telemetry-client/** — Telemetry client (identity, signing, queue, sender)
+- **apps/cli/** — CLI entry point and commands (published as `@red-codes/agentguard`)
+- **apps/mcp-server/** — MCP governance server (15 governance tools)
 
 ### CLI Commands
-- `agentguard analytics` — Analyze violation patterns across governance sessions
 - `agentguard guard` — Start the governed action runtime (policy + invariant enforcement)
 - `agentguard guard --policy <file>` — Use a specific policy file (YAML or JSON)
 - `agentguard guard --dry-run` — Evaluate without executing actions
@@ -275,8 +237,8 @@ Each workspace package maps to a single architectural concept:
 - `agentguard diff <run1> <run2>` — Compare two governance sessions side-by-side
 - `agentguard evidence-pr` — Attach governance evidence summary to a pull request
 - `agentguard traces [runId]` — Display policy evaluation traces for a run
-- `agentguard init <type>` — Scaffold governance extensions (invariant, policy-pack, adapter, renderer, replay-processor, firestore)
-- `agentguard telemetry` — Manage telemetry enrollment and settings
+- `agentguard init <type>` — Scaffold governance extensions (invariant, policy-pack, adapter, renderer, replay-processor)
+- `agentguard status` — Show current governance session status
 - `agentguard policy-verify <file>` — Verify policy file structure and rules
 
 ### Event Model
@@ -347,7 +309,7 @@ pnpm test --filter=@red-codes/kernel  # Test a single package
 - **Vitest workspace** (`vitest.workspace.ts`): orchestrates tests across all packages
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
 - **TypeScript tests** (distributed across `packages/*/tests/` and `apps/*/tests/`): 105 files using vitest
-- **Coverage areas**: adapters, analytics (including risk scorer), kernel (AAB, engine, monitor, blast radius, heartbeat, integration, e2e pipeline, conformance), CLI commands (args, guard, inspect, init, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate, policy-verify, diff, evidence-pr, traces, plugin), decision records, domain models, events, evidence packs, evidence summary, execution log, export-import roundtrip, impact forecast, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, sandbox, validation), policy evaluation (including composer, pack loader, policy packs, evaluation trace, suggest), renderers, replay (engine, comparator, processor), simulation, SQLite storage (analytics, commands, migrations, session, sink, store, factory), Firestore storage, webhook sink, swarm (scaffolder), telemetry (including tracepoint), telemetry client (client, identity, queue, sender, signing), telemetry server (enrollment, batch, rate limiter), TUI renderer, violation mapper, VS Code event reader, YAML loading
+- **Coverage areas**: adapters, kernel (AAB, engine, monitor, blast radius, heartbeat, integration, e2e pipeline, conformance), CLI commands (args, guard, inspect, init, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate, policy-verify, diff, evidence-pr, traces, plugin), decision records, domain models, events, evidence packs, evidence summary, execution log, export-import roundtrip, impact forecast, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, sandbox, validation), policy evaluation (including composer, pack loader, policy packs, evaluation trace), renderers, replay (engine, comparator, processor), simulation, SQLite storage (migrations, session, sink, store, factory), swarm (scaffolder), TUI renderer, violation mapper, VS Code event reader, YAML loading
 
 ## CI/CD & Automation
 

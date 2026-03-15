@@ -69,7 +69,11 @@ describe('Kernel Simulation Integration', () => {
     registry.register(makeHighRiskSimulator());
 
     const sunkRecords: GovernanceDecisionRecord[] = [];
-    const decisionSink: DecisionSink = { write(r) { sunkRecords.push(r); } };
+    const decisionSink: DecisionSink = {
+      write(r) {
+        sunkRecords.push(r);
+      },
+    };
 
     const kernel = createKernel({
       dryRun: true,

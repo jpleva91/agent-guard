@@ -74,9 +74,9 @@ describe('gitAdapter', () => {
 
     it('propagates git errors', async () => {
       mockExecFailure('nothing to commit');
-      await expect(
-        gitAdapter(makeAction({ type: 'git.commit', message: 'test' }))
-      ).rejects.toThrow('Git command failed: nothing to commit');
+      await expect(gitAdapter(makeAction({ type: 'git.commit', message: 'test' }))).rejects.toThrow(
+        'Git command failed: nothing to commit'
+      );
     });
   });
 
@@ -132,9 +132,7 @@ describe('gitAdapter', () => {
   describe('git.branch.create', () => {
     it('creates and checks out a new branch', async () => {
       mockExecSuccess("Switched to new branch 'feature'");
-      const result = await gitAdapter(
-        makeAction({ type: 'git.branch.create', target: 'feature' })
-      );
+      const result = await gitAdapter(makeAction({ type: 'git.branch.create', target: 'feature' }));
       expect(result).toEqual({
         created: true,
         branch: 'feature',
@@ -152,9 +150,7 @@ describe('gitAdapter', () => {
   describe('git.branch.delete', () => {
     it('deletes a branch', async () => {
       mockExecSuccess('Deleted branch old');
-      const result = await gitAdapter(
-        makeAction({ type: 'git.branch.delete', target: 'old' })
-      );
+      const result = await gitAdapter(makeAction({ type: 'git.branch.delete', target: 'old' }));
       expect(result).toEqual({ deleted: true, branch: 'old', output: 'Deleted branch old' });
     });
   });

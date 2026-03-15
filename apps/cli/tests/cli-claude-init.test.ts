@@ -137,9 +137,7 @@ describe('claudeInit', () => {
 
     // Should still install hooks (with fresh config); policy not generated since existsSync returns true
     expect(writeFileSync).toHaveBeenCalledTimes(1);
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('Warning')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Warning'));
   });
 
   it('uses global path with --global flag', async () => {
@@ -147,10 +145,9 @@ describe('claudeInit', () => {
 
     await claudeInit(['--global']);
 
-    expect(mkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining(join('/mock-home', '.claude')),
-      { recursive: true }
-    );
+    expect(mkdirSync).toHaveBeenCalledWith(expect.stringContaining(join('/mock-home', '.claude')), {
+      recursive: true,
+    });
     expect(writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining(join('/mock-home', '.claude', 'settings.json')),
       expect.any(String),
@@ -163,10 +160,9 @@ describe('claudeInit', () => {
 
     await claudeInit(['-g']);
 
-    expect(mkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining(join('/mock-home', '.claude')),
-      { recursive: true }
-    );
+    expect(mkdirSync).toHaveBeenCalledWith(expect.stringContaining(join('/mock-home', '.claude')), {
+      recursive: true,
+    });
   });
 
   it('removes hooks from PreToolUse, PostToolUse, and SessionStart with --remove flag', async () => {
@@ -371,9 +367,9 @@ describe('claudeInit', () => {
     await claudeInit([]);
 
     // Second writeFileSync call should be the policy file
-    const policyCalls = vi.mocked(writeFileSync).mock.calls.filter(
-      (call) => (call[0] as string).includes('agentguard.yaml')
-    );
+    const policyCalls = vi
+      .mocked(writeFileSync)
+      .mock.calls.filter((call) => (call[0] as string).includes('agentguard.yaml'));
     expect(policyCalls).toHaveLength(1);
     expect(policyCalls[0][1]).toContain('id: default-policy');
     expect(policyCalls[0][1]).toContain('git.push');
@@ -389,9 +385,9 @@ describe('claudeInit', () => {
     await claudeInit([]);
 
     // Only settings.json should be written, not policy
-    const policyCalls = vi.mocked(writeFileSync).mock.calls.filter(
-      (call) => (call[0] as string).endsWith('agentguard.yaml')
-    );
+    const policyCalls = vi
+      .mocked(writeFileSync)
+      .mock.calls.filter((call) => (call[0] as string).endsWith('agentguard.yaml'));
     expect(policyCalls).toHaveLength(0);
   });
 

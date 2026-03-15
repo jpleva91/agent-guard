@@ -54,9 +54,7 @@ function makeDecisionRecord(outcome: 'allow' | 'deny') {
     },
     invariants: {
       violations:
-        outcome === 'deny'
-          ? [{ name: 'no-secret-exposure', actual: '.env file detected' }]
-          : [],
+        outcome === 'deny' ? [{ name: 'no-secret-exposure', actual: '.env file detected' }] : [],
     },
     simulation: outcome === 'deny' ? { blastRadius: 5, riskLevel: 'high' } : null,
     execution: {

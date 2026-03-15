@@ -182,9 +182,7 @@ describe('plugin command', () => {
         type: 'renderer',
       };
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readFileSync).mockReturnValue(
-        JSON.stringify({ agentguard: manifest })
-      );
+      vi.mocked(readFileSync).mockReturnValue(JSON.stringify({ agentguard: manifest }));
       mockRegistry.install.mockReturnValue({ valid: true, errors: [] });
 
       const code = await plugin(['install', './my-plugin']);
@@ -201,9 +199,7 @@ describe('plugin command', () => {
         type: 'renderer',
       };
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readFileSync).mockReturnValue(
-        JSON.stringify({ agentguard: manifest })
-      );
+      vi.mocked(readFileSync).mockReturnValue(JSON.stringify({ agentguard: manifest }));
       mockRegistry.install.mockReturnValue({
         valid: false,
         errors: [{ field: 'type', message: 'Invalid plugin type' }],
@@ -211,9 +207,7 @@ describe('plugin command', () => {
 
       const code = await plugin(['install', './bad-plugin']);
       expect(code).toBe(1);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('Installation failed')
-      );
+      expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Installation failed'));
     });
   });
 
@@ -230,9 +224,7 @@ describe('plugin command', () => {
       mockRegistry.get.mockReturnValue(null);
       const code = await plugin(['remove', 'nonexistent']);
       expect(code).toBe(1);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('not installed')
-      );
+      expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not installed'));
     });
 
     it('returns 0 on successful removal', async () => {
@@ -277,9 +269,7 @@ describe('plugin command', () => {
       mockRegistry.enable.mockReturnValue(false);
       const code = await plugin(['enable', 'nonexistent']);
       expect(code).toBe(1);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('not installed')
-      );
+      expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not installed'));
     });
 
     it('returns 0 on success', async () => {
@@ -303,9 +293,7 @@ describe('plugin command', () => {
       mockRegistry.disable.mockReturnValue(false);
       const code = await plugin(['disable', 'nonexistent']);
       expect(code).toBe(1);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('not installed')
-      );
+      expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not installed'));
     });
 
     it('returns 0 on success', async () => {
@@ -332,9 +320,7 @@ describe('plugin command', () => {
       const code = await plugin(['search', 'renderer']);
       expect(code).toBe(0);
       expect(console.log).toHaveBeenCalledWith(expect.stringContaining('npm registry'));
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining('agentguard-renderer-json')
-      );
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining('agentguard-renderer-json'));
     });
   });
 });

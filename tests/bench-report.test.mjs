@@ -42,7 +42,8 @@ const SAMPLE_BENCH_DATA = {
       filepath: '/path/to/policy-evaluation.bench.ts',
       groups: [
         {
-          fullName: 'tests/benchmarks/policy-evaluation.bench.ts > Policy evaluation — single policy',
+          fullName:
+            'tests/benchmarks/policy-evaluation.bench.ts > Policy evaluation — single policy',
           benchmarks: [
             {
               id: 'test_0_0',
@@ -192,7 +193,7 @@ suite('formatHz', () => {
 suite('extractCategory', () => {
   test('extracts category from full name', () => {
     const result = extractCategory(
-      'tests/benchmarks/policy-evaluation.bench.ts > Policy evaluation — single policy',
+      'tests/benchmarks/policy-evaluation.bench.ts > Policy evaluation — single policy'
     );
     assert.equal(result, 'Policy evaluation — single policy');
   });
@@ -204,16 +205,12 @@ suite('extractCategory', () => {
 
 suite('extractFile', () => {
   test('extracts file key from bench path', () => {
-    const result = extractFile(
-      'tests/benchmarks/policy-evaluation.bench.ts > Policy evaluation',
-    );
+    const result = extractFile('tests/benchmarks/policy-evaluation.bench.ts > Policy evaluation');
     assert.equal(result, 'policy-evaluation');
   });
 
   test('extracts kernel-loop file key', () => {
-    const result = extractFile(
-      'tests/benchmarks/kernel-loop.bench.ts > Kernel propose',
-    );
+    const result = extractFile('tests/benchmarks/kernel-loop.bench.ts > Kernel propose');
     assert.equal(result, 'kernel-loop');
   });
 });

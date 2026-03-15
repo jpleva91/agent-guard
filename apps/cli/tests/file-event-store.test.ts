@@ -14,18 +14,8 @@ vi.mock('node:os', () => ({
   homedir: vi.fn(() => '/mock-home'),
 }));
 
-import {
-  createFileEventStore,
-  listSessions,
-  loadSession,
-} from '../src/file-event-store.js';
-import {
-  readFileSync,
-  writeFileSync,
-  existsSync,
-  readdirSync,
-  appendFileSync,
-} from 'node:fs';
+import { createFileEventStore, listSessions, loadSession } from '../src/file-event-store.js';
+import { readFileSync, writeFileSync, existsSync, readdirSync, appendFileSync } from 'node:fs';
 import type { DomainEvent } from '@red-codes/core';
 
 function makeFakeEvent(overrides: Partial<DomainEvent> = {}): DomainEvent {
@@ -88,7 +78,9 @@ describe('createFileEventStore', () => {
   describe('query', () => {
     it('returns all events with no filter', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<typeof readdirSync>);
+      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
       const event = makeFakeEvent();
       vi.mocked(readFileSync).mockReturnValue(JSON.stringify(event) + '\n');
 
@@ -100,7 +92,9 @@ describe('createFileEventStore', () => {
 
     it('filters by kind', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<typeof readdirSync>);
+      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
       const events = [
         makeFakeEvent({ kind: 'ActionRequested' }),
         makeFakeEvent({ id: 'evt_2', kind: 'ActionAllowed' }),
@@ -117,7 +111,9 @@ describe('createFileEventStore', () => {
 
     it('filters by since timestamp', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<typeof readdirSync>);
+      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
       const events = [
         makeFakeEvent({ timestamp: 1000 }),
         makeFakeEvent({ id: 'evt_2', timestamp: 2000 }),
@@ -134,7 +130,9 @@ describe('createFileEventStore', () => {
 
     it('filters by until timestamp', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<typeof readdirSync>);
+      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
       const events = [
         makeFakeEvent({ timestamp: 1000 }),
         makeFakeEvent({ id: 'evt_2', timestamp: 2000 }),
@@ -151,7 +149,9 @@ describe('createFileEventStore', () => {
 
     it('filters by fingerprint', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<typeof readdirSync>);
+      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
       const events = [
         makeFakeEvent({ fingerprint: 'fp_1' }),
         makeFakeEvent({ id: 'evt_2', fingerprint: 'fp_2' }),
@@ -169,7 +169,9 @@ describe('createFileEventStore', () => {
   describe('replay', () => {
     it('returns all events when no fromId specified', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<typeof readdirSync>);
+      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
       const events = [makeFakeEvent({ id: 'evt_1' }), makeFakeEvent({ id: 'evt_2' })];
       vi.mocked(readFileSync).mockReturnValue(
         events.map((e) => JSON.stringify(e)).join('\n') + '\n'
@@ -182,7 +184,9 @@ describe('createFileEventStore', () => {
 
     it('returns events from specific ID onward', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<typeof readdirSync>);
+      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
       const events = [
         makeFakeEvent({ id: 'evt_1', timestamp: 1000 }),
         makeFakeEvent({ id: 'evt_2', timestamp: 2000 }),
@@ -200,10 +204,10 @@ describe('createFileEventStore', () => {
 
     it('returns empty array when fromId not found', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<typeof readdirSync>);
-      vi.mocked(readFileSync).mockReturnValue(
-        JSON.stringify(makeFakeEvent()) + '\n'
-      );
+      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
+      vi.mocked(readFileSync).mockReturnValue(JSON.stringify(makeFakeEvent()) + '\n');
 
       const store = createFileEventStore('s1');
       const results = store.replay('nonexistent');
@@ -214,7 +218,9 @@ describe('createFileEventStore', () => {
   describe('count', () => {
     it('returns total event count', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<typeof readdirSync>);
+      vi.mocked(readdirSync).mockReturnValue(['s1.jsonl'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
       const events = [makeFakeEvent({ id: 'evt_1' }), makeFakeEvent({ id: 'evt_2' })];
       vi.mocked(readFileSync).mockReturnValue(
         events.map((e) => JSON.stringify(e)).join('\n') + '\n'
@@ -303,9 +309,7 @@ describe('loadSession', () => {
   it('skips malformed lines', () => {
     vi.mocked(existsSync).mockReturnValue(true);
     const event = makeFakeEvent();
-    vi.mocked(readFileSync).mockReturnValue(
-      'garbage\n' + JSON.stringify(event) + '\n'
-    );
+    vi.mocked(readFileSync).mockReturnValue('garbage\n' + JSON.stringify(event) + '\n');
 
     const events = loadSession('partial');
     expect(events).toHaveLength(1);

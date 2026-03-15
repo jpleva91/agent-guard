@@ -62,13 +62,15 @@ async function main() {
   if (totalFailed === 0) {
     console.log(`${GREEN}${BOLD}All ${totalPassed} tests passed${RESET}`);
   } else {
-    console.log(`${RED}${BOLD}${totalFailed} failed${RESET}, ${GREEN}${totalPassed} passed${RESET}`);
+    console.log(
+      `${RED}${BOLD}${totalFailed} failed${RESET}, ${GREEN}${totalPassed} passed${RESET}`
+    );
     process.exitCode = 1;
   }
   console.log('');
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error('Test runner failed:', err);
   process.exitCode = 1;
 });

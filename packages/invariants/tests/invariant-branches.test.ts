@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  DEFAULT_INVARIANTS,
-  isContainerConfigPath,
-  isCredentialPath,
-} from '@red-codes/invariants';
+import { DEFAULT_INVARIANTS, isContainerConfigPath, isCredentialPath } from '@red-codes/invariants';
 import type { SystemState } from '@red-codes/invariants';
 
 function findInvariant(id: string) {

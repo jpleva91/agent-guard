@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  createPluginSandbox,
-  createSandboxRegistry,
-} from '@red-codes/plugins';
+import { createPluginSandbox, createSandboxRegistry } from '@red-codes/plugins';
 import type { PluginManifest } from '@red-codes/plugins';
 
 function makeManifest(overrides: Partial<PluginManifest> = {}): PluginManifest {

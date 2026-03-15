@@ -117,7 +117,11 @@ describe('replay CLI functions', () => {
         startedAt: '2024-01-01T00:00:00Z',
         events: [
           { kind: 'ErrorObserved', timestamp: 1000, message: 'err' },
-          { kind: 'ENCOUNTER_STARTED', timestamp: 2000, monster: { name: 'Bug', type: 'fire', hp: 10 } },
+          {
+            kind: 'ENCOUNTER_STARTED',
+            timestamp: 2000,
+            monster: { name: 'Bug', type: 'fire', hp: 10 },
+          },
           { kind: 'BATTLE_ENDED', timestamp: 3000, result: 'victory' },
         ],
         summary: { duration: 3000 },

@@ -3,14 +3,8 @@
 // and result collection.
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  createReplayProcessorRegistry,
-  runReplayProcessorPipeline,
-} from '@red-codes/kernel';
-import type {
-  ReplayProcessor,
-  ReplayProcessorRegistry,
-} from '@red-codes/kernel';
+import { createReplayProcessorRegistry, runReplayProcessorPipeline } from '@red-codes/kernel';
+import type { ReplayProcessor, ReplayProcessorRegistry } from '@red-codes/kernel';
 import { buildReplaySession } from '@red-codes/kernel';
 import type { DomainEvent } from '@red-codes/core';
 

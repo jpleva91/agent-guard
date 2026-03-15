@@ -115,7 +115,7 @@ describe('scaffolder', () => {
     architect: 'arch'
     auditor: 'audit'
 `,
-      'utf8',
+      'utf8'
     );
 
     scaffold({ projectRoot: tmpDir, force: true });

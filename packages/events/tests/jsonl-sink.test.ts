@@ -8,10 +8,7 @@ vi.mock('node:fs', () => ({
 }));
 
 import { createJsonlSink, getEventFilePath } from '@red-codes/events';
-import {
-  createDecisionJsonlSink,
-  getDecisionFilePath,
-} from '@red-codes/events';
+import { createDecisionJsonlSink, getDecisionFilePath } from '@red-codes/events';
 import { mkdirSync, appendFileSync } from 'node:fs';
 import type { DomainEvent } from '@red-codes/core';
 import type { GovernanceDecisionRecord } from '@red-codes/core';
@@ -58,10 +55,7 @@ describe('createJsonlSink', () => {
     const event = makeFakeEvent();
     sink.write(event);
 
-    expect(mkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining('events'),
-      { recursive: true }
-    );
+    expect(mkdirSync).toHaveBeenCalledWith(expect.stringContaining('events'), { recursive: true });
   });
 
   it('only creates directory once', () => {
@@ -142,10 +136,9 @@ describe('createDecisionJsonlSink', () => {
     const sink = createDecisionJsonlSink({ runId: 'run_1' });
     sink.write(makeFakeDecisionRecord());
 
-    expect(mkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining('decisions'),
-      { recursive: true }
-    );
+    expect(mkdirSync).toHaveBeenCalledWith(expect.stringContaining('decisions'), {
+      recursive: true,
+    });
   });
 
   it('writes decision record as JSON line', () => {

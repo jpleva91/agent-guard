@@ -1,11 +1,7 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
 import { createInMemoryStore } from '../dist/events/store.js';
-import {
-  createEvent,
-  DAMAGE_DEALT,
-  BATTLE_ENDED,
-} from '../dist/events/schema.js';
+import { createEvent, DAMAGE_DEALT, BATTLE_ENDED } from '../dist/events/schema.js';
 
 suite('Event Store — In-Memory Implementation', () => {
   test('append and count', () => {
@@ -20,7 +16,7 @@ suite('Event Store — In-Memory Implementation', () => {
     const store = createInMemoryStore();
     assert.throws(
       () => store.append({ kind: 'Bogus' }),
-      (err) => err.message.includes('invalid event'),
+      (err) => err.message.includes('invalid event')
     );
     assert.strictEqual(store.count(), 0);
   });

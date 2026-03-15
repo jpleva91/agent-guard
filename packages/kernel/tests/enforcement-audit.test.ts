@@ -1,14 +1,9 @@
 // Tests for enforcement audit report generation
 import { describe, it, expect } from 'vitest';
-import {
-  generateEnforcementAudit,
-  formatEnforcementAudit,
-} from '../src/enforcement-audit.js';
+import { generateEnforcementAudit, formatEnforcementAudit } from '../src/enforcement-audit.js';
 import type { GovernanceDecisionRecord, DomainEvent } from '@red-codes/core';
 
-function makeDecision(
-  overrides: Partial<GovernanceDecisionRecord> = {}
-): GovernanceDecisionRecord {
+function makeDecision(overrides: Partial<GovernanceDecisionRecord> = {}): GovernanceDecisionRecord {
   return {
     recordId: 'dec_1',
     runId: 'run_test',

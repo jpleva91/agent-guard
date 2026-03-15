@@ -2380,8 +2380,7 @@ describe('no-destructive-migration', () => {
     const result = inv.check({
       currentTarget: 'migrations/009_big_cleanup.sql',
       currentActionType: 'file.write',
-      fileContentDiff:
-        'DROP TABLE old_users;\nTRUNCATE TABLE sessions;\nDROP INDEX idx_old;',
+      fileContentDiff: 'DROP TABLE old_users;\nTRUNCATE TABLE sessions;\nDROP INDEX idx_old;',
     });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('DROP TABLE');

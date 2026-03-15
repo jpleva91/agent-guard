@@ -219,8 +219,18 @@ describe('normalizeClaudeCodeAction — session_id propagation', () => {
 
   it('propagates session identity through all tool types', () => {
     const tools = [
-      'Write', 'Edit', 'Read', 'Bash', 'Glob', 'Grep',
-      'NotebookEdit', 'TodoWrite', 'WebFetch', 'WebSearch', 'Agent', 'Skill',
+      'Write',
+      'Edit',
+      'Read',
+      'Bash',
+      'Glob',
+      'Grep',
+      'NotebookEdit',
+      'TodoWrite',
+      'WebFetch',
+      'WebSearch',
+      'Agent',
+      'Skill',
     ];
     for (const tool of tools) {
       const payload: ClaudeCodeHookPayload = {
@@ -261,13 +271,9 @@ describe('Integration: session_id through kernel pipeline', () => {
     };
     const rawAction = normalizeClaudeCodeAction(payload);
     const result = await kernel.propose(rawAction);
-    const requestedEvent = result.events.find(
-      (e) => e.kind === 'ActionRequested'
-    );
+    const requestedEvent = result.events.find((e) => e.kind === 'ActionRequested');
     expect(requestedEvent).toBeDefined();
-    expect((requestedEvent as Record<string, unknown>).agentId).toMatch(
-      /^claude-code:[a-z0-9]+$/
-    );
+    expect((requestedEvent as Record<string, unknown>).agentId).toMatch(/^claude-code:[a-z0-9]+$/);
   });
 });
 

@@ -99,9 +99,7 @@ console.log('\n--- Verification ---');
 console.log(
   `Reached LOCKDOWN: ${safeResult.monitor.escalationLevel === ESCALATION.LOCKDOWN ? 'PASS' : 'FAIL'}`
 );
-console.log(
-  `Safe action blocked in LOCKDOWN: ${!safeResult.allowed ? 'PASS' : 'FAIL'}`
-);
+console.log(`Safe action blocked in LOCKDOWN: ${!safeResult.allowed ? 'PASS' : 'FAIL'}`);
 console.log(
   `Reset restored NORMAL: ${afterReset.monitor.escalationLevel === ESCALATION.NORMAL ? 'PASS' : 'FAIL'}`
 );

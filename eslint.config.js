@@ -55,7 +55,7 @@ export default [
       'prefer-const': 'warn',
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-undef': 'error',
-      'eqeqeq': ['error', 'always'],
+      eqeqeq: ['error', 'always'],
       'no-console': 'off',
       'no-unreachable': 'error',
       'no-duplicate-case': 'error',
@@ -79,7 +79,7 @@ export default [
     rules: {
       'no-var': 'error',
       'prefer-const': 'warn',
-      'eqeqeq': ['error', 'always'],
+      eqeqeq: ['error', 'always'],
       'no-console': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',

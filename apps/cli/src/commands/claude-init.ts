@@ -142,11 +142,8 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   settings.hooks.SessionStart.push({ hooks: sessionStartHooks });
 
   // Notification — auto-open session viewer when agent pauses for human input
-  if (!settings.hooks.Notification)
-    (settings.hooks as Record<string, unknown>).Notification = [];
-  (
-    (settings.hooks as Record<string, unknown>).Notification as SessionStartHookEntry[]
-  ).push({
+  if (!settings.hooks.Notification) (settings.hooks as Record<string, unknown>).Notification = [];
+  ((settings.hooks as Record<string, unknown>).Notification as SessionStartHookEntry[]).push({
     hooks: [
       {
         type: 'command',
@@ -178,9 +175,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   process.stderr.write(`  ${DIM}SessionStart:  auto-build + status check${RESET}\n`);
   process.stderr.write(`  ${DIM}PreToolUse:    governance enforcement (all tools)${RESET}\n`);
   process.stderr.write(`  ${DIM}PostToolUse:   error monitoring (Bash)${RESET}\n`);
-  process.stderr.write(
-    `  ${DIM}Notification:  auto-open session viewer on agent pause${RESET}\n`
-  );
+  process.stderr.write(`  ${DIM}Notification:  auto-open session viewer on agent pause${RESET}\n`);
   process.stderr.write(`  ${DIM}Stop:          session viewer HTML archival${RESET}\n`);
   if (storeBackend) {
     process.stderr.write(`  ${DIM}Storage:     ${storeBackend}${RESET}\n`);
@@ -284,9 +279,7 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
     notifHooks,
     HOOK_MARKER
   );
-  if (
-    ((settings.hooks as Record<string, unknown>).Notification as HookEntry[]).length === 0
-  ) {
+  if (((settings.hooks as Record<string, unknown>).Notification as HookEntry[]).length === 0) {
     delete (settings.hooks as Record<string, unknown>).Notification;
   }
 
@@ -459,16 +452,10 @@ function showProtectionSummary(policyGenerated: boolean): void {
 function hasAgentGuardHook(settings: Settings): boolean {
   const preToolUse = settings?.hooks?.PreToolUse || [];
   const postToolUse = settings?.hooks?.PostToolUse || [];
-  const notifHooks = (
-    (settings?.hooks as Record<string, unknown>)?.Notification || []
-  ) as HookEntry[];
+  const notifHooks = ((settings?.hooks as Record<string, unknown>)?.Notification ||
+    []) as HookEntry[];
   const stopHooks = ((settings?.hooks as Record<string, unknown>)?.Stop || []) as HookEntry[];
-  const allEntries = [
-    ...preToolUse,
-    ...postToolUse,
-    ...notifHooks,
-    ...stopHooks,
-  ] as HookEntry[];
+  const allEntries = [...preToolUse, ...postToolUse, ...notifHooks, ...stopHooks] as HookEntry[];
   return allEntries.some((entry) => {
     const hooks = entry.hooks || [];
     return hooks.some((h) => h.command && h.command.includes(HOOK_MARKER));

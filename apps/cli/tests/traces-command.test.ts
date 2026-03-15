@@ -2,10 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderPolicyTraces } from '@red-codes/renderers';
 import type { PolicyTraceEvent } from '@red-codes/renderers';
-import {
-  computeSummary,
-  renderTracesSummary,
-} from '../src/commands/traces.js';
+import { computeSummary, renderTracesSummary } from '../src/commands/traces.js';
 import type { TraceSummary } from '../src/commands/traces.js';
 
 // ---------------------------------------------------------------------------
@@ -97,10 +94,7 @@ describe('computeSummary', () => {
   });
 
   it('computes average duration', () => {
-    const traces = [
-      makeTraceEvent({ durationMs: 1.0 }),
-      makeTraceEvent({ durationMs: 3.0 }),
-    ];
+    const traces = [makeTraceEvent({ durationMs: 1.0 }), makeTraceEvent({ durationMs: 3.0 })];
     const summary = computeSummary(traces);
     expect(summary.avgDurationMs).toBe(2.0);
   });
@@ -284,9 +278,7 @@ describe('renderTracesSummary', () => {
       denied: 0,
       avgDurationMs: null,
       actionTypes: {},
-      topMatchedRules: [
-        { rule: '[allow] file.*', policy: 'default#1', matchCount: 5 },
-      ],
+      topMatchedRules: [{ rule: '[allow] file.*', policy: 'default#1', matchCount: 5 }],
       phaseBreakdown: {},
     };
     const output = renderTracesSummary(summary);

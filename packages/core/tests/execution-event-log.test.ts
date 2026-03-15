@@ -16,12 +16,7 @@ import {
   AGENT_ACTION_KINDS,
 } from '@red-codes/core';
 import { createExecutionEventLog } from '@red-codes/core';
-import {
-  buildCausalChain,
-  scoreAgentRun,
-  clusterFailures,
-  mapToEncounter,
-} from '@red-codes/core';
+import { buildCausalChain, scoreAgentRun, clusterFailures, mapToEncounter } from '@red-codes/core';
 
 describe('execution-log/event-schema', () => {
   beforeEach(() => {
@@ -152,19 +147,15 @@ describe('execution-log/event-log', () => {
 
   it('queries by kind', () => {
     const log = createExecutionEventLog();
-    log.append(
-      createExecutionEvent(AGENT_EDIT_FILE, { actor: 'agent', source: 'cli' }),
-    );
+    log.append(createExecutionEvent(AGENT_EDIT_FILE, { actor: 'agent', source: 'cli' }));
     log.append(
       createExecutionEvent(RUNTIME_EXCEPTION, {
         actor: 'system',
         source: 'runtime',
         payload: { message: 'error' },
-      }),
+      })
     );
-    log.append(
-      createExecutionEvent(AGENT_EDIT_FILE, { actor: 'agent', source: 'cli' }),
-    );
+    log.append(createExecutionEvent(AGENT_EDIT_FILE, { actor: 'agent', source: 'cli' }));
 
     expect(log.query({ kind: AGENT_EDIT_FILE })).toHaveLength(2);
     expect(log.query({ kind: RUNTIME_EXCEPTION })).toHaveLength(1);
@@ -172,15 +163,13 @@ describe('execution-log/event-log', () => {
 
   it('queries by actor', () => {
     const log = createExecutionEventLog();
-    log.append(
-      createExecutionEvent(AGENT_EDIT_FILE, { actor: 'agent', source: 'cli' }),
-    );
+    log.append(createExecutionEvent(AGENT_EDIT_FILE, { actor: 'agent', source: 'cli' }));
     log.append(
       createExecutionEvent(RUNTIME_EXCEPTION, {
         actor: 'system',
         source: 'runtime',
         payload: { message: 'err' },
-      }),
+      })
     );
 
     expect(log.query({ actor: 'agent' })).toHaveLength(1);
@@ -194,14 +183,14 @@ describe('execution-log/event-log', () => {
         actor: 'agent',
         source: 'cli',
         context: { agentRunId: 'run-1' },
-      }),
+      })
     );
     log.append(
       createExecutionEvent(AGENT_EDIT_FILE, {
         actor: 'agent',
         source: 'cli',
         context: { agentRunId: 'run-2' },
-      }),
+      })
     );
 
     expect(log.query({ agentRunId: 'run-1' })).toHaveLength(1);
@@ -214,14 +203,14 @@ describe('execution-log/event-log', () => {
         actor: 'agent',
         source: 'cli',
         context: { file: 'auth.ts' },
-      }),
+      })
     );
     log.append(
       createExecutionEvent(AGENT_EDIT_FILE, {
         actor: 'agent',
         source: 'cli',
         context: { file: 'index.ts' },
-      }),
+      })
     );
 
     expect(log.query({ file: 'auth.ts' })).toHaveLength(1);
@@ -296,14 +285,14 @@ describe('execution-log/event-log', () => {
         source: 'cli',
         context: { file: 'test.ts' },
         payload: { lines: 10 },
-      }),
+      })
     );
     log.append(
       createExecutionEvent(RUNTIME_EXCEPTION, {
         actor: 'system',
         source: 'runtime',
         payload: { message: 'error' },
-      }),
+      })
     );
 
     const ndjson = log.toNDJSON();
@@ -322,9 +311,7 @@ describe('execution-log/event-log', () => {
 
   it('clears all events', () => {
     const log = createExecutionEventLog();
-    log.append(
-      createExecutionEvent(AGENT_EDIT_FILE, { actor: 'agent', source: 'cli' }),
-    );
+    log.append(createExecutionEvent(AGENT_EDIT_FILE, { actor: 'agent', source: 'cli' }));
     log.clear();
     expect(log.count()).toBe(0);
   });
@@ -366,7 +353,7 @@ describe('execution-log/event-projections', () => {
           actor: 'agent',
           source: 'cli',
           context: { agentRunId: 'run-1', file: 'utils.ts' },
-        }),
+        })
       );
 
       const risk = scoreAgentRun(log, 'run-1');
@@ -383,7 +370,7 @@ describe('execution-log/event-projections', () => {
           source: 'ci',
           context: { agentRunId: 'run-2' },
           payload: { suite: 'auth' },
-        }),
+        })
       );
       log.append(
         createExecutionEvent(BUILD_FAILED, {
@@ -391,7 +378,7 @@ describe('execution-log/event-projections', () => {
           source: 'ci',
           context: { agentRunId: 'run-2' },
           payload: { reason: 'type error' },
-        }),
+        })
       );
 
       const risk = scoreAgentRun(log, 'run-2');
@@ -407,7 +394,7 @@ describe('execution-log/event-projections', () => {
           source: 'governance',
           context: { agentRunId: 'run-3' },
           payload: { policy: 'no-auth-edit' },
-        }),
+        })
       );
 
       const risk = scoreAgentRun(log, 'run-3');
@@ -422,7 +409,7 @@ describe('execution-log/event-projections', () => {
           actor: 'agent',
           source: 'cli',
           context: { agentRunId: 'run-4', file: 'auth/passwords.ts' },
-        }),
+        })
       );
 
       const risk = scoreAgentRun(log, 'run-4');
@@ -449,7 +436,7 @@ describe('execution-log/event-projections', () => {
           context: { file: 'auth.ts' },
           payload: { suite: 'test1' },
           timestamp: now,
-        }),
+        })
       );
       log.append(
         createExecutionEvent(RUNTIME_EXCEPTION, {
@@ -458,7 +445,7 @@ describe('execution-log/event-projections', () => {
           context: { file: 'auth.ts' },
           payload: { message: 'null ref' },
           timestamp: now + 1000,
-        }),
+        })
       );
       log.append(
         createExecutionEvent(BUILD_FAILED, {
@@ -467,7 +454,7 @@ describe('execution-log/event-projections', () => {
           context: { file: 'other.ts' },
           payload: { reason: 'syntax' },
           timestamp: now + 2000,
-        }),
+        })
       );
 
       const clusters = clusterFailures(log);
@@ -480,9 +467,7 @@ describe('execution-log/event-projections', () => {
 
     it('returns empty for no failures', () => {
       const log = createExecutionEventLog();
-      log.append(
-        createExecutionEvent(AGENT_EDIT_FILE, { actor: 'agent', source: 'cli' }),
-      );
+      log.append(createExecutionEvent(AGENT_EDIT_FILE, { actor: 'agent', source: 'cli' }));
       expect(clusterFailures(log)).toHaveLength(0);
     });
   });

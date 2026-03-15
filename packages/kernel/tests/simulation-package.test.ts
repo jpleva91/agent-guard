@@ -1,9 +1,6 @@
 // Tests for Package Simulator
 import { describe, it, expect } from 'vitest';
-import {
-  createPackageSimulator,
-  parseNpmInstallArgs,
-} from '@red-codes/kernel';
+import { createPackageSimulator, parseNpmInstallArgs } from '@red-codes/kernel';
 
 describe('PackageSimulator', () => {
   const simulator = createPackageSimulator();

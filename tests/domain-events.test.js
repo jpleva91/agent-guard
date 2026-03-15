@@ -102,7 +102,7 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws on unknown event kind', () => {
     assert.throws(
       () => createEvent('NonExistentKind', {}),
-      (err) => err.message.includes('Unknown event kind'),
+      (err) => err.message.includes('Unknown event kind')
     );
   });
 
@@ -111,28 +111,28 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws when ERROR_OBSERVED missing message', () => {
     assert.throws(
       () => createEvent(ERROR_OBSERVED, {}),
-      (err) => err.message.includes('message'),
+      (err) => err.message.includes('message')
     );
   });
 
   test('createEvent throws when BUG_CLASSIFIED missing required fields', () => {
     assert.throws(
       () => createEvent(BUG_CLASSIFIED, { severity: 2 }),
-      (err) => err.message.includes('speciesId'),
+      (err) => err.message.includes('speciesId')
     );
   });
 
   test('createEvent throws when MOVE_USED missing attacker', () => {
     assert.throws(
       () => createEvent(MOVE_USED, { move: 'slash' }),
-      (err) => err.message.includes('attacker'),
+      (err) => err.message.includes('attacker')
     );
   });
 
   test('createEvent throws when EVOLUTION_TRIGGERED missing fields', () => {
     assert.throws(
       () => createEvent(EVOLUTION_TRIGGERED, {}),
-      (err) => err.message.includes('from') && err.message.includes('to'),
+      (err) => err.message.includes('from') && err.message.includes('to')
     );
   });
 
@@ -292,7 +292,7 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws when RUN_STARTED missing runId', () => {
     assert.throws(
       () => createEvent(RUN_STARTED, {}),
-      (err) => err.message.includes('runId'),
+      (err) => err.message.includes('runId')
     );
   });
 
@@ -324,11 +324,11 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws when RUN_ENDED missing required fields', () => {
     assert.throws(
       () => createEvent(RUN_ENDED, { runId: 'run-001' }),
-      (err) => err.message.includes('result'),
+      (err) => err.message.includes('result')
     );
     assert.throws(
       () => createEvent(RUN_ENDED, { result: 'victory' }),
-      (err) => err.message.includes('runId'),
+      (err) => err.message.includes('runId')
     );
   });
 
@@ -358,11 +358,11 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws when CHECKPOINT_REACHED missing required fields', () => {
     assert.throws(
       () => createEvent(CHECKPOINT_REACHED, { runId: 'run-001' }),
-      (err) => err.message.includes('checkpoint'),
+      (err) => err.message.includes('checkpoint')
     );
     assert.throws(
       () => createEvent(CHECKPOINT_REACHED, { checkpoint: 'floor-1' }),
-      (err) => err.message.includes('runId'),
+      (err) => err.message.includes('runId')
     );
   });
 
@@ -412,7 +412,7 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws when POLICY_DENIED missing required fields', () => {
     assert.throws(
       () => createEvent(POLICY_DENIED, { policy: 'no-force-push' }),
-      (err) => err.message.includes('action'),
+      (err) => err.message.includes('action')
     );
   });
 
@@ -428,7 +428,7 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws when UNAUTHORIZED_ACTION missing required fields', () => {
     assert.throws(
       () => createEvent(UNAUTHORIZED_ACTION, { action: 'delete-database' }),
-      (err) => err.message.includes('reason'),
+      (err) => err.message.includes('reason')
     );
   });
 
@@ -447,7 +447,7 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws when INVARIANT_VIOLATION missing required fields', () => {
     assert.throws(
       () => createEvent(INVARIANT_VIOLATION, { invariant: 'size-budget' }),
-      (err) => err.message.includes('expected') && err.message.includes('actual'),
+      (err) => err.message.includes('expected') && err.message.includes('actual')
     );
   });
 
@@ -475,7 +475,7 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws when BLAST_RADIUS_EXCEEDED missing required fields', () => {
     assert.throws(
       () => createEvent(BLAST_RADIUS_EXCEEDED, { filesAffected: 25 }),
-      (err) => err.message.includes('limit'),
+      (err) => err.message.includes('limit')
     );
   });
 
@@ -491,7 +491,7 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws when MERGE_GUARD_FAILURE missing required fields', () => {
     assert.throws(
       () => createEvent(MERGE_GUARD_FAILURE, { branch: 'main' }),
-      (err) => err.message.includes('reason'),
+      (err) => err.message.includes('reason')
     );
   });
 
@@ -508,7 +508,7 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws when EVIDENCE_PACK_GENERATED missing required fields', () => {
     assert.throws(
       () => createEvent(EVIDENCE_PACK_GENERATED, { packId: 'pack-001' }),
-      (err) => err.message.includes('eventIds'),
+      (err) => err.message.includes('eventIds')
     );
   });
 
@@ -538,7 +538,7 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws when FILE_SAVED missing file', () => {
     assert.throws(
       () => createEvent(FILE_SAVED, {}),
-      (err) => err.message.includes('file'),
+      (err) => err.message.includes('file')
     );
   });
 
@@ -565,7 +565,7 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws when TEST_COMPLETED missing result', () => {
     assert.throws(
       () => createEvent(TEST_COMPLETED, {}),
-      (err) => err.message.includes('result'),
+      (err) => err.message.includes('result')
     );
   });
 
@@ -607,7 +607,7 @@ suite('Domain Events — Schema Validation', () => {
   test('createEvent throws when COMMIT_CREATED missing hash', () => {
     assert.throws(
       () => createEvent(COMMIT_CREATED, {}),
-      (err) => err.message.includes('hash'),
+      (err) => err.message.includes('hash')
     );
   });
 

@@ -183,9 +183,8 @@ describe('kernel/heartbeat', () => {
     it('fires onEvent for missed and unresponsive events', () => {
       const collected: DomainEvent[] = [];
       const now = Date.now();
-      const monitor = createHeartbeatMonitor(
-        { intervalMs: 1000, missedThreshold: 2 },
-        (event) => collected.push(event)
+      const monitor = createHeartbeatMonitor({ intervalMs: 1000, missedThreshold: 2 }, (event) =>
+        collected.push(event)
       );
 
       monitor.recordHeartbeat('agent-1');

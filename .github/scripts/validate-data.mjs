@@ -17,17 +17,29 @@ const [monstersRaw, movesRaw, typesRaw] = await Promise.all([
 ]);
 
 let monsters, moves, types;
-try { monsters = JSON.parse(monstersRaw); } catch { error('monsters.json', 'Invalid JSON'); }
-try { moves = JSON.parse(movesRaw); } catch { error('moves.json', 'Invalid JSON'); }
-try { types = JSON.parse(typesRaw); } catch { error('types.json', 'Invalid JSON'); }
+try {
+  monsters = JSON.parse(monstersRaw);
+} catch {
+  error('monsters.json', 'Invalid JSON');
+}
+try {
+  moves = JSON.parse(movesRaw);
+} catch {
+  error('moves.json', 'Invalid JSON');
+}
+try {
+  types = JSON.parse(typesRaw);
+} catch {
+  error('types.json', 'Invalid JSON');
+}
 
 if (errors.length > 0) {
-  errors.forEach(e => console.error(`ERROR: ${e}`));
+  errors.forEach((e) => console.error(`ERROR: ${e}`));
   process.exit(1);
 }
 
 const validTypes = new Set(types.types);
-const moveIds = new Set(moves.map(m => m.id));
+const moveIds = new Set(moves.map((m) => m.id));
 
 // Validate types.json
 for (const type of types.types) {
@@ -42,7 +54,10 @@ for (const type of types.types) {
       if (val === undefined) {
         error('types.json', `Missing effectiveness: ${type} vs ${target}`);
       } else if (![0.5, 1.0, 1.5].includes(val)) {
-        error('types.json', `Invalid effectiveness value ${val} for ${type} vs ${target} (must be 0.5, 1.0, or 1.5)`);
+        error(
+          'types.json',
+          `Invalid effectiveness value ${val} for ${type} vs ${target} (must be 0.5, 1.0, or 1.5)`
+        );
       }
     }
   }
@@ -69,7 +84,8 @@ for (const move of moves) {
 const monsterIds = new Set();
 const monsterNames = new Set();
 for (const mon of monsters) {
-  if (typeof mon.id !== 'number') error('monsters.json', `Monster "${mon.name}" missing numeric "id"`);
+  if (typeof mon.id !== 'number')
+    error('monsters.json', `Monster "${mon.name}" missing numeric "id"`);
   if (!mon.name) error('monsters.json', `Monster id ${mon.id} missing "name"`);
   if (!validTypes.has(mon.type)) {
     error('monsters.json', `Monster "${mon.name}" has invalid type "${mon.type}"`);
@@ -114,9 +130,11 @@ for (const mon of monsters) {
 // Report results
 if (errors.length > 0) {
   console.error(`\nValidation failed with ${errors.length} error(s):\n`);
-  errors.forEach(e => console.error(`  ERROR: ${e}`));
+  errors.forEach((e) => console.error(`  ERROR: ${e}`));
   console.error('');
   process.exit(1);
 } else {
-  console.log(`Validation passed: ${monsters.length} monsters, ${moves.length} moves, ${types.types.length} types`);
+  console.log(
+    `Validation passed: ${monsters.length} monsters, ${moves.length} moves, ${types.types.length} types`
+  );
 }

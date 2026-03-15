@@ -150,8 +150,7 @@ describe('describeComposition', () => {
 
 describe('PolicyComposed event', () => {
   it('creates a valid PolicyComposed event', async () => {
-    const { createEvent, POLICY_COMPOSED, resetEventCounter } =
-      await import('@red-codes/events');
+    const { createEvent, POLICY_COMPOSED, resetEventCounter } = await import('@red-codes/events');
 
     resetEventCounter();
 

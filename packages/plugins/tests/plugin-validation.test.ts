@@ -3,11 +3,7 @@
 // isolation, and sandbox registry management.
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  validateManifest,
-  validatePlugin,
-  checkApiVersionCompatibility,
-} from '@red-codes/plugins';
+import { validateManifest, validatePlugin, checkApiVersionCompatibility } from '@red-codes/plugins';
 import { createPluginSandbox, createSandboxRegistry } from '@red-codes/plugins';
 import type { PluginManifest } from '@red-codes/plugins';
 import { VALID_CAPABILITIES } from '@red-codes/plugins';

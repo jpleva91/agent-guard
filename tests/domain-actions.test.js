@@ -144,14 +144,14 @@ suite('Domain Actions — Canonical Action Schema', () => {
   test('createAction throws on unknown type', () => {
     assert.throws(
       () => createAction('file.explode', 'x.js', 'Boom'),
-      (err) => err.message.includes('Unknown action type'),
+      (err) => err.message.includes('Unknown action type')
     );
   });
 
   test('createAction throws on missing justification', () => {
     assert.throws(
       () => createAction('file.write', 'x.js', ''),
-      (err) => err.message.includes('justification'),
+      (err) => err.message.includes('justification')
     );
   });
 

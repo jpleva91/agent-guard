@@ -51,9 +51,7 @@ const actions = [
   { tool: 'Write', file: '.env', content: 'SECRET=leaked', agent: 'claude-code' },
 ];
 
-process.stderr.write(
-  renderBanner({ policyName: 'Demo Safety Policy', invariantCount: 6 })
-);
+process.stderr.write(renderBanner({ policyName: 'Demo Safety Policy', invariantCount: 6 }));
 
 const results = [];
 for (const action of actions) {

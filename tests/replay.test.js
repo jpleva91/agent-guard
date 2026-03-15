@@ -14,11 +14,11 @@ suite('Replay CLI', () => {
     const recorder = createRecorder('npm', ['test']);
     recorder.recordError(
       { message: 'SyntaxError: unexpected token', type: 'syntax', severity: 3 },
-      { file: 'index.js', line: 10 },
+      { file: 'index.js', line: 10 }
     );
     recorder.recordEncounter(
       { id: 5, name: 'SyntaxHorror', type: 'frontend', hp: 25 },
-      { message: 'SyntaxError: unexpected token' },
+      { message: 'SyntaxError: unexpected token' }
     );
     recorder.recordBattle('victory');
     recorder.end(0);
@@ -59,7 +59,7 @@ suite('Replay CLI', () => {
     const recorder = createRecorder('node', ['app.js']);
     recorder.recordEncounter(
       { id: 1, name: 'NullPointer', type: 'backend', hp: 30 },
-      { message: 'Cannot read property of null' },
+      { message: 'Cannot read property of null' }
     );
     recorder.end(0);
 

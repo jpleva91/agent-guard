@@ -66,16 +66,17 @@ describe('inspect', () => {
       if (String(p) === EVENTS_DIR) return true;
       return true;
     });
-    vi.mocked(readdirSync).mockReturnValue(['run_001.jsonl', 'run_002.jsonl'] as unknown as ReturnType<typeof readdirSync>);
+    vi.mocked(readdirSync).mockReturnValue([
+      'run_001.jsonl',
+      'run_002.jsonl',
+    ] as unknown as ReturnType<typeof readdirSync>);
 
     const eventContent = makeActionEvent('ActionAllowed') + '\n';
     vi.mocked(readFileSync).mockReturnValue(eventContent);
 
     await inspect(['--list']);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('Recorded Runs')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Recorded Runs'));
   });
 
   it('loads specific run by ID', async () => {
@@ -86,23 +87,22 @@ describe('inspect', () => {
 
     await inspect(['run_001']);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('run_001')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('run_001'));
   });
 
   it('loads most recent run with --last', async () => {
     vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readdirSync).mockReturnValue(['run_001.jsonl', 'run_002.jsonl'] as unknown as ReturnType<typeof readdirSync>);
+    vi.mocked(readdirSync).mockReturnValue([
+      'run_001.jsonl',
+      'run_002.jsonl',
+    ] as unknown as ReturnType<typeof readdirSync>);
     const content = makeActionEvent('ActionAllowed') + '\n';
     vi.mocked(readFileSync).mockReturnValue(content);
 
     await inspect(['--last']);
 
     // Should load the most recent (sorted reverse → run_002)
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('run_002')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('run_002'));
   });
 
   it('shows decision records with --decisions flag', async () => {
@@ -117,9 +117,7 @@ describe('inspect', () => {
 
     await inspect(['run_001', '--decisions']);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('Decision Records')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Decision Records'));
   });
 
   it('handles no events found for a run', async () => {
@@ -127,9 +125,7 @@ describe('inspect', () => {
 
     await inspect(['run_missing']);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('No events found')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('No events found'));
   });
 
   it('skips malformed JSONL lines gracefully', async () => {
@@ -140,9 +136,7 @@ describe('inspect', () => {
     await inspect(['run_001']);
 
     // Should still render without throwing
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('run_001')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('run_001'));
   });
 
   it('shows policy traces with --traces flag', async () => {
@@ -218,9 +212,7 @@ describe('inspect', () => {
 
     await inspect(['run_001', '--decisions', '--traces']);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('Decision Records')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Decision Records'));
     expect(process.stderr.write).toHaveBeenCalledWith(
       expect.stringContaining('Policy Evaluation Traces')
     );
@@ -237,9 +229,7 @@ describe('inspect', () => {
 
     await inspect(['run_001']);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('DENIED')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('DENIED'));
   });
 });
 
@@ -247,9 +237,7 @@ describe('events', () => {
   it('shows usage when no run ID provided', async () => {
     await events([]);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('Usage:')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
   });
 
   it('dumps raw events as JSON to stdout', async () => {
@@ -267,7 +255,9 @@ describe('events', () => {
 
   it('handles --last flag', async () => {
     vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readdirSync).mockReturnValue(['run_latest.jsonl'] as unknown as ReturnType<typeof readdirSync>);
+    vi.mocked(readdirSync).mockReturnValue(['run_latest.jsonl'] as unknown as ReturnType<
+      typeof readdirSync
+    >);
     const content = makeActionEvent('ActionAllowed') + '\n';
     vi.mocked(readFileSync).mockReturnValue(content);
 
@@ -282,8 +272,6 @@ describe('events', () => {
 
     await events(['--last']);
 
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('No runs recorded')
-    );
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('No runs recorded'));
   });
 });

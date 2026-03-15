@@ -110,7 +110,12 @@ describe('loadPolicyFile', () => {
     const absPath = resolve('test-policy.yaml');
     const yamlContent = 'id: test\nname: Test\nextends: [ci-safe]';
     const localPolicy = { id: 'test', name: 'Test', rules: [{ action: 'file.read' }], severity: 3 };
-    const packPolicy = { id: 'ci-safe', name: 'CI Safe', rules: [{ action: 'git.push' }], severity: 2 };
+    const packPolicy = {
+      id: 'ci-safe',
+      name: 'CI Safe',
+      rules: [{ action: 'git.push' }],
+      severity: 2,
+    };
     const mergedPolicies = [localPolicy, packPolicy];
 
     vi.mocked(existsSync).mockReturnValue(true);
@@ -238,9 +243,7 @@ describe('loadComposedPolicies', () => {
     loadComposedPolicies();
 
     expect(composePolicies).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({ path: userPolicyPath, layer: 'user' }),
-      ])
+      expect.arrayContaining([expect.objectContaining({ path: userPolicyPath, layer: 'user' })])
     );
   });
 
@@ -260,9 +263,7 @@ describe('loadComposedPolicies', () => {
     loadComposedPolicies();
 
     expect(composePolicies).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({ layer: 'project' }),
-      ])
+      expect.arrayContaining([expect.objectContaining({ layer: 'project' })])
     );
   });
 
@@ -273,14 +274,15 @@ describe('loadComposedPolicies', () => {
     // No user or project policy, only explicit
     vi.mocked(existsSync).mockImplementation((p) => p === resolve('custom.json'));
     vi.mocked(readFileSync).mockReturnValue(jsonContent);
-    vi.mocked(composePolicies).mockReturnValue({ policies: [explicitPolicy], sources: [] } as never);
+    vi.mocked(composePolicies).mockReturnValue({
+      policies: [explicitPolicy],
+      sources: [],
+    } as never);
 
     loadComposedPolicies(['custom.json']);
 
     expect(composePolicies).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({ layer: 'explicit' }),
-      ])
+      expect.arrayContaining([expect.objectContaining({ layer: 'explicit' })])
     );
   });
 
@@ -290,9 +292,7 @@ describe('loadComposedPolicies', () => {
     const absDefault = resolve('agentguard.yaml');
 
     // agentguard.yaml exists as both project default and is passed explicitly
-    vi.mocked(existsSync).mockImplementation(
-      (p) => p === 'agentguard.yaml' || p === absDefault
-    );
+    vi.mocked(existsSync).mockImplementation((p) => p === 'agentguard.yaml' || p === absDefault);
     vi.mocked(readFileSync).mockReturnValue(yamlContent);
     vi.mocked(loadYamlPolicy).mockReturnValue(policy as never);
     vi.mocked(parseYamlPolicy).mockReturnValue({ extends: [] } as never);
@@ -317,9 +317,7 @@ describe('loadComposedPolicies', () => {
 
     loadComposedPolicies();
 
-    expect(mockStderr).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to load user policy')
-    );
+    expect(mockStderr).toHaveBeenCalledWith(expect.stringContaining('Failed to load user policy'));
     // composePolicies should still be called (with empty sources)
     expect(composePolicies).toHaveBeenCalled();
   });

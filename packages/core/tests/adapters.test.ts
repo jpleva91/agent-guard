@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { createAdapterRegistry, createDryRunAdapter, createDryRunRegistry } from '../src/adapters.js';
+import {
+  createAdapterRegistry,
+  createDryRunAdapter,
+  createDryRunRegistry,
+} from '../src/adapters.js';
 import { DECISION } from '../src/actions.js';
 
 function makeAction(cls: string, type: string, id = 'act-1') {

@@ -6,11 +6,7 @@ import {
   serializeEvidencePack,
   EVIDENCE_PACK_SCHEMA_VERSION,
 } from '@red-codes/kernel';
-import type {
-  NormalizedIntent,
-  EvalResult,
-  LoadedPolicy,
-} from '@red-codes/policy';
+import type { NormalizedIntent, EvalResult, LoadedPolicy } from '@red-codes/policy';
 import type { InvariantCheck } from '@red-codes/invariants';
 import type { DomainEvent } from '@red-codes/core';
 import type { SimulationSummary } from '@red-codes/core';

@@ -268,10 +268,7 @@ describe('evaluate', () => {
           },
         ],
       });
-      const result = evaluate(
-        makeIntent({ action: 'git.push', branch: 'main' }),
-        [policy]
-      );
+      const result = evaluate(makeIntent({ action: 'git.push', branch: 'main' }), [policy]);
       expect(result.allowed).toBe(false);
     });
 
@@ -288,10 +285,7 @@ describe('evaluate', () => {
       });
       // branch is 'feature' — doesn't match 'main' or 'master',
       // but matchConditions still returns true (falls through)
-      const result = evaluate(
-        makeIntent({ action: 'git.push', branch: 'feature' }),
-        [policy]
-      );
+      const result = evaluate(makeIntent({ action: 'git.push', branch: 'feature' }), [policy]);
       expect(result.allowed).toBe(false);
     });
   });
@@ -311,9 +305,9 @@ describe('evaluate', () => {
     expect(evaluate(makeIntent({ action: 'file.read' }), [allowPolicy, denyPolicy]).allowed).toBe(
       true
     );
-    expect(
-      evaluate(makeIntent({ action: 'file.write' }), [allowPolicy, denyPolicy]).allowed
-    ).toBe(false);
+    expect(evaluate(makeIntent({ action: 'file.write' }), [allowPolicy, denyPolicy]).allowed).toBe(
+      false
+    );
   });
 
   it('returns severity from matched policy', () => {

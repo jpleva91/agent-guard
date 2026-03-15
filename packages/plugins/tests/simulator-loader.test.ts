@@ -54,9 +54,9 @@ function createMockPluginRegistry(plugins: InstalledPlugin[]): PluginRegistry {
     enable: vi.fn().mockReturnValue(false),
     disable: vi.fn().mockReturnValue(false),
     list: vi.fn().mockReturnValue(plugins),
-    listByType: vi.fn().mockImplementation((type: string) =>
-      plugins.filter((p) => p.manifest.type === type)
-    ),
+    listByType: vi
+      .fn()
+      .mockImplementation((type: string) => plugins.filter((p) => p.manifest.type === type)),
     count: vi.fn().mockReturnValue(plugins.length),
     save: vi.fn(),
     reload: vi.fn(),
@@ -86,9 +86,9 @@ describe('isValidSimulator', () => {
   });
 
   it('returns false for empty id', () => {
-    expect(
-      isValidSimulator({ id: '', supports: () => false, simulate: async () => ({}) })
-    ).toBe(false);
+    expect(isValidSimulator({ id: '', supports: () => false, simulate: async () => ({}) })).toBe(
+      false
+    );
   });
 
   it('returns false for missing supports function', () => {

@@ -401,9 +401,9 @@ describe('Kernel proposal timeout', () => {
       evaluateOptions: { defaultDeny: false },
     });
 
-    await expect(
-      kernel.propose({ tool: 'Read', file: 'test.ts', agent: 'test' })
-    ).rejects.toThrow('timed out');
+    await expect(kernel.propose({ tool: 'Read', file: 'test.ts', agent: 'test' })).rejects.toThrow(
+      'timed out'
+    );
   });
 
   it('does not timeout when proposal completes quickly', async () => {

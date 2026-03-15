@@ -84,9 +84,7 @@ describe('Conformance: Escalation progression', () => {
 
       for (let i = 0; i < fixture.actions.length; i++) {
         const result = await kernel.propose(fixture.actions[i]);
-        expect(result.decision.monitor.escalationLevel).toBe(
-          fixture.expectedEscalation[i]
-        );
+        expect(result.decision.monitor.escalationLevel).toBe(fixture.expectedEscalation[i]);
       }
     });
   }

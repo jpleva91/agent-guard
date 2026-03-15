@@ -11,19 +11,34 @@ describe('FilesystemSimulator', () => {
 
   it('supports file.write', () => {
     expect(
-      simulator.supports({ action: 'file.write', target: 'test.ts', agent: 'test', destructive: false })
+      simulator.supports({
+        action: 'file.write',
+        target: 'test.ts',
+        agent: 'test',
+        destructive: false,
+      })
     ).toBe(true);
   });
 
   it('supports file.delete', () => {
     expect(
-      simulator.supports({ action: 'file.delete', target: 'test.ts', agent: 'test', destructive: false })
+      simulator.supports({
+        action: 'file.delete',
+        target: 'test.ts',
+        agent: 'test',
+        destructive: false,
+      })
     ).toBe(true);
   });
 
   it('does not support file.read', () => {
     expect(
-      simulator.supports({ action: 'file.read', target: 'test.ts', agent: 'test', destructive: false })
+      simulator.supports({
+        action: 'file.read',
+        target: 'test.ts',
+        agent: 'test',
+        destructive: false,
+      })
     ).toBe(false);
   });
 
@@ -46,7 +61,12 @@ describe('FilesystemSimulator', () => {
 
   it('returns high risk for credential files', async () => {
     const result = await simulator.simulate(
-      { action: 'file.write', target: 'config/credentials.json', agent: 'test', destructive: false },
+      {
+        action: 'file.write',
+        target: 'config/credentials.json',
+        agent: 'test',
+        destructive: false,
+      },
       {}
     );
 
@@ -73,7 +93,12 @@ describe('FilesystemSimulator', () => {
 
   it('returns medium risk for CI config', async () => {
     const result = await simulator.simulate(
-      { action: 'file.write', target: '.github/workflows/ci.yml', agent: 'test', destructive: false },
+      {
+        action: 'file.write',
+        target: '.github/workflows/ci.yml',
+        agent: 'test',
+        destructive: false,
+      },
       {}
     );
 
@@ -110,7 +135,13 @@ describe('FilesystemSimulator', () => {
 
   it('uses filesAffected for blast radius', async () => {
     const result = await simulator.simulate(
-      { action: 'file.write', target: 'test.ts', agent: 'test', destructive: false, filesAffected: 5 },
+      {
+        action: 'file.write',
+        target: 'test.ts',
+        agent: 'test',
+        destructive: false,
+        filesAffected: 5,
+      },
       {}
     );
 
@@ -166,7 +197,12 @@ describe('FilesystemSimulator edge cases', () => {
 
   it('detects sensitive files in nested paths', async () => {
     const result = await simulator.simulate(
-      { action: 'file.write', target: 'deploy/config/.env.production', agent: 'test', destructive: false },
+      {
+        action: 'file.write',
+        target: 'deploy/config/.env.production',
+        agent: 'test',
+        destructive: false,
+      },
       {}
     );
     expect(result.riskLevel).toBe('high');

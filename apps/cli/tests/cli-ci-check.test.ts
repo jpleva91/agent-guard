@@ -15,11 +15,7 @@ vi.mock('@red-codes/kernel', () => ({
 
 import { ciCheck } from '../src/commands/ci-check.js';
 import { readFileSync, existsSync } from 'node:fs';
-import {
-  loadReplaySession,
-  getLatestRunId,
-  buildReplaySession,
-} from '@red-codes/kernel';
+import { loadReplaySession, getLatestRunId, buildReplaySession } from '@red-codes/kernel';
 
 function makeReplaySession(overrides: Record<string, unknown> = {}) {
   return {

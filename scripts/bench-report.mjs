@@ -119,16 +119,12 @@ function generateReport(data) {
     for (const [category, benchmarks] of categories) {
       lines.push(`### ${category}`);
       lines.push('');
-      lines.push(
-        '| Benchmark | ops/sec | p50 | p75 | p99 | samples | rme |',
-      );
-      lines.push(
-        '|-----------|---------|-----|-----|-----|---------|-----|',
-      );
+      lines.push('| Benchmark | ops/sec | p50 | p75 | p99 | samples | rme |');
+      lines.push('|-----------|---------|-----|-----|-----|---------|-----|');
 
       for (const b of benchmarks) {
         lines.push(
-          `| ${b.name} | ${formatHz(b.hz)} | ${formatLatency(b.p50)} | ${formatLatency(b.p75)} | ${formatLatency(b.p99)} | ${b.samples.toLocaleString()} | ±${b.rme.toFixed(2)}% |`,
+          `| ${b.name} | ${formatHz(b.hz)} | ${formatLatency(b.p50)} | ${formatLatency(b.p75)} | ${formatLatency(b.p99)} | ${b.samples.toLocaleString()} | ±${b.rme.toFixed(2)}% |`
         );
       }
       lines.push('');
@@ -163,7 +159,7 @@ function generateReport(data) {
   lines.push('|-----------|------------|---------|---------|');
   for (const s of summaries) {
     lines.push(
-      `| ${s.label} | ${s.count} | ${formatLatency(s.avgP99)} | ${formatLatency(s.maxP99)} |`,
+      `| ${s.label} | ${s.count} | ${formatLatency(s.avgP99)} | ${formatLatency(s.maxP99)} |`
     );
   }
   lines.push('');
@@ -214,23 +210,38 @@ function main() {
       console.error('\n--- BENCHMARK REGRESSION DETECTED ---');
       for (const r of regressions) {
         console.error(
-          `  FAIL: ${r.name} — p99 ${formatLatency(r.p99)} exceeds threshold ${formatLatency(r.threshold)}`,
+          `  FAIL: ${r.name} — p99 ${formatLatency(r.p99)} exceeds threshold ${formatLatency(r.threshold)}`
         );
       }
-      console.error(`\n${regressions.length} benchmark(s) exceeded the p99 threshold of ${formatLatency(args.threshold)}`);
+      console.error(
+        `\n${regressions.length} benchmark(s) exceeded the p99 threshold of ${formatLatency(args.threshold)}`
+      );
       process.exit(1);
     } else {
-      console.log(`\nAll ${allBenchmarks.length} benchmarks within p99 threshold of ${formatLatency(args.threshold)}`);
+      console.log(
+        `\nAll ${allBenchmarks.length} benchmarks within p99 threshold of ${formatLatency(args.threshold)}`
+      );
     }
   }
 }
 
 // Export for testing
-export { parseArgs, formatLatency, formatHz, generateReport, checkThreshold, extractCategory, extractFile };
+export {
+  parseArgs,
+  formatLatency,
+  formatHz,
+  generateReport,
+  checkThreshold,
+  extractCategory,
+  extractFile,
+};
 
 // Only run when invoked directly (not when imported by tests)
 import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
-if (process.argv[1] === __filename || process.argv[1]?.replace(/\\/g, '/') === __filename.replace(/\\/g, '/')) {
+if (
+  process.argv[1] === __filename ||
+  process.argv[1]?.replace(/\\/g, '/') === __filename.replace(/\\/g, '/')
+) {
   main();
 }

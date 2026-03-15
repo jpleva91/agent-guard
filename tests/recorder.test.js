@@ -20,7 +20,7 @@ suite('Session Recorder', () => {
     const recorder = createRecorder('npm', ['test']);
     recorder.recordError(
       { message: 'ReferenceError: x is not defined', type: 'undefined-reference', severity: 2 },
-      { file: 'app.js', line: 42 },
+      { file: 'app.js', line: 42 }
     );
     recorder.end(1);
 
@@ -36,7 +36,7 @@ suite('Session Recorder', () => {
     const recorder = createRecorder('node', ['server.js']);
     recorder.recordEncounter(
       { id: 1, name: 'NullPointer', type: 'backend', hp: 30 },
-      { message: 'Cannot read property of null' },
+      { message: 'Cannot read property of null' }
     );
     recorder.end(0);
 
@@ -62,7 +62,7 @@ suite('Session Recorder', () => {
     recorder.recordError({ message: 'err', type: 'unknown', severity: 3 }, null);
     recorder.recordEncounter(
       { id: 1, name: 'NullPointer', type: 'backend', hp: 30 },
-      { message: 'err' },
+      { message: 'err' }
     );
     recorder.recordBattle('victory');
     recorder.recordBoss({ id: 'boss1', name: 'TestBoss', type: 'testing' });

@@ -102,7 +102,6 @@ describe('init command', () => {
             expect(pkg.agentguard.apiVersion).toBe('^1.0.0');
 
             expect(pkg.agentguard.type).toBe(type);
-
           }
         });
 
@@ -132,7 +131,13 @@ describe('init command', () => {
     });
 
     it('should generate test files for non-policy-pack types', async () => {
-      const typesWithTests = ['invariant', 'adapter', 'renderer', 'replay-processor', 'simulator'] as const;
+      const typesWithTests = [
+        'invariant',
+        'adapter',
+        'renderer',
+        'replay-processor',
+        'simulator',
+      ] as const;
 
       for (const type of typesWithTests) {
         vi.clearAllMocks();
@@ -185,7 +190,13 @@ describe('init command', () => {
     });
 
     it('should generate TypeScript source for non-policy-pack types', async () => {
-      const typesWithTs = ['invariant', 'adapter', 'renderer', 'replay-processor', 'simulator'] as const;
+      const typesWithTs = [
+        'invariant',
+        'adapter',
+        'renderer',
+        'replay-processor',
+        'simulator',
+      ] as const;
 
       for (const type of typesWithTs) {
         vi.clearAllMocks();
@@ -223,7 +234,6 @@ describe('init command', () => {
 
   describe('custom directory', () => {
     it('should use --dir when provided', async () => {
-
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
       const code = await init([
@@ -242,7 +252,6 @@ describe('init command', () => {
         (call) => typeof call[0] === 'string' && (call[0] as string).includes('custom-dir')
       );
       expect(hasCustomDir).toBe(true);
-
 
       // Next steps output should show the --dir path, not the --name
       const allOutput = consoleSpy.mock.calls.flat().join('\n');
@@ -269,13 +278,19 @@ describe('init command', () => {
       vi.spyOn(console, 'log').mockImplementation(() => {});
       const code = await init(['--extension', 'renderer', '--name', 'my-renderer-v2']);
       expect(code).toBe(0);
-
     });
   });
 
   describe('valid extension types', () => {
     it('should accept all six extension types', async () => {
-      const types = ['invariant', 'policy-pack', 'adapter', 'renderer', 'replay-processor', 'simulator'];
+      const types = [
+        'invariant',
+        'policy-pack',
+        'adapter',
+        'renderer',
+        'replay-processor',
+        'simulator',
+      ];
       for (const type of types) {
         vi.clearAllMocks();
         vi.mocked(existsSync).mockReturnValue(false);

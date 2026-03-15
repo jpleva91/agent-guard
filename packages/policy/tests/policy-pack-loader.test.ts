@@ -2,12 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import {
-  resolvePackPath,
-  loadPackFile,
-  resolveExtends,
-  mergePolicies,
-} from '@red-codes/policy';
+import { resolvePackPath, loadPackFile, resolveExtends, mergePolicies } from '@red-codes/policy';
 import { parseYamlPolicy } from '@red-codes/policy';
 import type { LoadedPolicy } from '@red-codes/policy';
 

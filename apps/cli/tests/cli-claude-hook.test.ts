@@ -118,9 +118,7 @@ describe('claudeHook', () => {
     try {
       await claudeHook('post');
       expect(process.exit).toHaveBeenCalledWith(0);
-      expect(process.stdout.write).toHaveBeenCalledWith(
-        expect.stringContaining('Error detected')
-      );
+      expect(process.stdout.write).toHaveBeenCalledWith(expect.stringContaining('Error detected'));
       expect(process.stdout.write).toHaveBeenCalledWith(
         expect.stringContaining('Permission denied')
       );
@@ -137,9 +135,7 @@ describe('claudeHook', () => {
     const restore = mockStdin(input);
     try {
       await claudeHook('post');
-      expect(process.stdout.write).toHaveBeenCalledWith(
-        expect.stringContaining('Error detected')
-      );
+      expect(process.stdout.write).toHaveBeenCalledWith(expect.stringContaining('Error detected'));
     } finally {
       restore();
     }
@@ -172,9 +168,7 @@ describe('claudeHook', () => {
     const restore = mockStdin(input);
     try {
       await claudeHook(); // no hookType — infer from tool_output
-      expect(process.stdout.write).toHaveBeenCalledWith(
-        expect.stringContaining('Error detected')
-      );
+      expect(process.stdout.write).toHaveBeenCalledWith(expect.stringContaining('Error detected'));
     } finally {
       restore();
     }

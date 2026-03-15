@@ -79,9 +79,7 @@ describe('validatePolicy', () => {
       rules: [{ effect: 'deny' }],
     });
     expect(result.valid).toBe(false);
-    expect(result.errors).toEqual(
-      expect.arrayContaining([expect.stringContaining('action')])
-    );
+    expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('action')]));
   });
 
   it('validates rule missing effect', () => {
@@ -91,9 +89,7 @@ describe('validatePolicy', () => {
       rules: [{ action: 'file.write' }],
     });
     expect(result.valid).toBe(false);
-    expect(result.errors).toEqual(
-      expect.arrayContaining([expect.stringContaining('effect')])
-    );
+    expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('effect')]));
   });
 
   it('validates non-string action type', () => {
@@ -150,9 +146,7 @@ describe('validatePolicy', () => {
       rules: [{ action: '*', effect: 'deny', conditions: { limit: 'not-a-number' } }],
     });
     expect(result.valid).toBe(false);
-    expect(result.errors).toEqual(
-      expect.arrayContaining([expect.stringContaining('limit')])
-    );
+    expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('limit')]));
   });
 
   it('rejects non-object conditions', () => {
