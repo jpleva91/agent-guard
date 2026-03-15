@@ -6,8 +6,17 @@
 
 import { randomUUID } from 'node:crypto';
 import { execSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
+
+/** Resolve the CLI command — use local bin.js if in the agentguard dev repo, else bare `agentguard`. */
+function resolveCliCommand(): string {
+  const localBin = join(process.cwd(), 'apps', 'cli', 'dist', 'bin.js');
+  if (existsSync(localBin)) return `node ${localBin}`;
+  return 'agentguard';
+}
 
 export async function claudeHook(hookType?: string, extraArgs: string[] = []): Promise<void> {
   try {
@@ -189,7 +198,8 @@ function generateSessionViewerQuietly(cliArgs: string[]): void {
     const storeFlag = storeFlagIdx !== -1 ? ` --store ${cliArgs[storeFlagIdx + 1]}` : '';
     const dbPathIdx = cliArgs.indexOf('--db-path');
     const dbPathFlag = dbPathIdx !== -1 ? ` --db-path "${cliArgs[dbPathIdx + 1]}"` : '';
-    execSync(`agentguard session-viewer --last --no-open${storeFlag}${dbPathFlag}`, {
+    const cli = resolveCliCommand();
+    execSync(`${cli} session-viewer --last --no-open${storeFlag}${dbPathFlag}`, {
       stdio: 'ignore',
       timeout: 10000,
     });

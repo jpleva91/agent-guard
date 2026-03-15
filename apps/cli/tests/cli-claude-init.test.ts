@@ -50,18 +50,38 @@ describe('claudeInit', () => {
     expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('post');
   });
 
-  it('installs SessionStart build hook on first install', async () => {
+  it('installs SessionStart status hook (no build hook) for globally-installed case', async () => {
     vi.mocked(existsSync).mockReturnValue(false);
 
     await claudeInit([]);
 
     const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
     expect(written.hooks.SessionStart).toHaveLength(1);
-    expect(written.hooks.SessionStart[0].hooks[0].type).toBe('command');
-    expect(written.hooks.SessionStart[0].hooks[0].command).toContain('apps/cli/dist/bin.js');
-    expect(written.hooks.SessionStart[0].hooks[0].command).toContain('npm run build');
+    // Only the status hook — no build step when agentguard is globally installed
+    expect(written.hooks.SessionStart[0].hooks).toHaveLength(1);
+    expect(written.hooks.SessionStart[0].hooks[0].command).toContain('status');
+  });
+
+  it('installs SessionStart build + status hooks in local dev repo', async () => {
+    // Simulate being in the agentguard dev repo (apps/cli/src/bin.ts exists)
+    vi.mocked(existsSync).mockImplementation((p: unknown) => {
+      const path = String(p);
+      if (path.endsWith(join('apps', 'cli', 'src', 'bin.ts'))) return true;
+      return false;
+    });
+
+    await claudeInit([]);
+
+    const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
+    expect(written.hooks.SessionStart).toHaveLength(1);
+    expect(written.hooks.SessionStart[0].hooks).toHaveLength(2);
+    // Build hook first
+    expect(written.hooks.SessionStart[0].hooks[0].command).toContain('pnpm build');
     expect(written.hooks.SessionStart[0].hooks[0].blocking).toBe(true);
     expect(written.hooks.SessionStart[0].hooks[0].timeout).toBe(120000);
+    // Status hook second, using local binary
+    expect(written.hooks.SessionStart[0].hooks[1].command).toContain('node apps/cli/dist/bin.js');
+    expect(written.hooks.SessionStart[0].hooks[1].command).toContain('status');
   });
 
   it('detects already-configured hook in PreToolUse and warns', async () => {

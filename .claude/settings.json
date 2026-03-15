@@ -1,29 +1,11 @@
 {
   "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "test -f apps/cli/dist/bin.js || (pnpm install --frozen-lockfile && pnpm build)",
-            "timeout": 120000,
-            "blocking": true
-          },
-          {
-            "type": "command",
-            "command": "npx agentguard status",
-            "timeout": 10000,
-            "blocking": false
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "npx agentguard claude-hook pre"
+            "command": "node apps/cli/dist/bin.js claude-hook pre --store sqlite"
           }
         ]
       }
@@ -34,7 +16,37 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx agentguard claude-hook post"
+            "command": "node apps/cli/dist/bin.js claude-hook post --store sqlite"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f apps/cli/dist/bin.js || pnpm build",
+            "timeout": 120000,
+            "blocking": true
+          },
+          {
+            "type": "command",
+            "command": "node apps/cli/dist/bin.js status",
+            "timeout": 10000,
+            "blocking": false
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node apps/cli/dist/bin.js claude-hook stop --store sqlite",
+            "timeout": 15000,
+            "blocking": false
           }
         ]
       }

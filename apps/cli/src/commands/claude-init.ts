@@ -8,6 +8,17 @@ import { RESET, BOLD, DIM, FG } from '../colors.js';
 
 const HOOK_MARKER = 'claude-hook';
 const BUILD_MARKER = 'apps/cli/dist/bin.js';
+const LOCAL_BIN = 'node apps/cli/dist/bin.js';
+
+/** Detect if we're in the agentguard development repo (local dev) vs. globally installed. */
+function resolveCliPrefix(): { cli: string; isLocal: boolean } {
+  // If apps/cli/src/bin.ts exists, we're in the agentguard source repo
+  const localMarker = join(process.cwd(), 'apps', 'cli', 'src', 'bin.ts');
+  if (existsSync(localMarker)) {
+    return { cli: LOCAL_BIN, isLocal: true };
+  }
+  return { cli: 'agentguard', isLocal: false };
+}
 
 interface HookEntry {
   matcher?: string;
@@ -80,13 +91,15 @@ export async function claudeInit(args: string[] = []): Promise<void> {
 
   if (!settings.hooks) settings.hooks = {};
 
+  const { cli, isLocal } = resolveCliPrefix();
+
   // PreToolUse — governance enforcement (routes all tool calls through the kernel)
   if (!settings.hooks.PreToolUse) settings.hooks.PreToolUse = [];
   settings.hooks.PreToolUse.push({
     hooks: [
       {
         type: 'command',
-        command: `agentguard claude-hook pre${storeSuffix}${dbPathSuffix}`,
+        command: `${cli} claude-hook pre${storeSuffix}${dbPathSuffix}`,
       },
     ],
   });
@@ -98,29 +111,35 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `agentguard claude-hook post${storeSuffix}${dbPathSuffix}`,
+        command: `${cli} claude-hook post${storeSuffix}${dbPathSuffix}`,
       },
     ],
   });
 
   // SessionStart — ensure CLI is built, then show governance status
   if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
-  settings.hooks.SessionStart.push({
-    hooks: [
-      {
-        type: 'command',
-        command: `test -f apps/cli/dist/bin.js || npm run build`,
-        timeout: 120000,
-        blocking: true,
-      },
-      {
-        type: 'command',
-        command: `agentguard status`,
-        timeout: 10000,
-        blocking: false,
-      },
-    ],
+  const sessionStartHooks: Array<{
+    type: string;
+    command: string;
+    timeout: number;
+    blocking: boolean;
+  }> = [];
+  if (isLocal) {
+    // In the agentguard dev repo, auto-build if dist is missing
+    sessionStartHooks.push({
+      type: 'command',
+      command: `test -f apps/cli/dist/bin.js || pnpm build`,
+      timeout: 120000,
+      blocking: true,
+    });
+  }
+  sessionStartHooks.push({
+    type: 'command',
+    command: `${cli} status`,
+    timeout: 10000,
+    blocking: false,
   });
+  settings.hooks.SessionStart.push({ hooks: sessionStartHooks });
 
   // Stop — generate session viewer on session end
   if (!settings.hooks.Stop) (settings.hooks as Record<string, unknown>).Stop = [];
@@ -128,7 +147,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `agentguard claude-hook stop${storeSuffix}${dbPathSuffix}`,
+        command: `${cli} claude-hook stop${storeSuffix}${dbPathSuffix}`,
         timeout: 15000,
         blocking: false,
       },
