@@ -2,12 +2,19 @@
 // of a governance session and open it in the default browser.
 // Supports both JSONL (default) and SQLite storage backends.
 
-import { readFileSync, existsSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
+import {
+  readFileSync,
+  existsSync,
+  readdirSync,
+  writeFileSync,
+  mkdirSync,
+  unlinkSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { request } from 'node:https';
-import { request as httpRequest } from 'node:http';
+import { request as httpRequest, createServer } from 'node:http';
 import { getEventFilePath, getDecisionFilePath } from '@red-codes/events';
 import { buildReplaySession } from '@red-codes/kernel';
 import type { DomainEvent } from '@red-codes/core';
@@ -85,6 +92,128 @@ async function openSqliteDb(storageConfig: StorageConfig) {
     return null;
   }
   return storage;
+}
+
+// ---------------------------------------------------------------------------
+// Live server — serves the session viewer HTML and provides a polling endpoint
+// for incremental event updates without hard page refreshes.
+// ---------------------------------------------------------------------------
+
+const LIVE_SERVER_FILE = join(BASE_DIR, 'live-viewer.json');
+
+interface LiveServerInfo {
+  port: number;
+  pid: number;
+  startedAt: number;
+}
+
+/** Check if a live server is already running. Returns port if reachable, null otherwise. */
+export function detectLiveServer(): number | null {
+  if (!existsSync(LIVE_SERVER_FILE)) return null;
+  try {
+    const info = JSON.parse(readFileSync(LIVE_SERVER_FILE, 'utf8')) as LiveServerInfo;
+    // Check if the process is still alive
+    try {
+      process.kill(info.pid, 0);
+    } catch {
+      // Process dead — clean up stale file
+      try {
+        unlinkSync(LIVE_SERVER_FILE);
+      } catch {
+        /* ignore */
+      }
+      return null;
+    }
+    return info.port;
+  } catch {
+    return null;
+  }
+}
+
+interface LiveServer {
+  port: number;
+  /** Update the HTML served by the server (call after you know the port). */
+  setHtml: (html: string) => void;
+}
+
+type PollDataLoader = (afterEvent: number, afterDecision: number) => {
+  events: DomainEvent[];
+  decisions: GovernanceDecisionRecord[];
+  actions: unknown[];
+  summary: Record<string, unknown>;
+};
+
+/** Start a live HTTP server for the session viewer. */
+function startLiveServer(loadNewData: PollDataLoader): Promise<LiveServer> {
+  return new Promise((resolve, reject) => {
+    let currentHtml = '<html><body>Loading...</body></html>';
+
+    const server = createServer((req, res) => {
+      const url = new URL(req.url || '/', `http://localhost`);
+
+      if (url.pathname === '/api/poll') {
+        const afterEvent = Number(url.searchParams.get('afterEvent') || '0');
+        const afterDecision = Number(url.searchParams.get('afterDecision') || '0');
+
+        try {
+          const data = loadNewData(afterEvent, afterDecision);
+          res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          });
+          res.end(JSON.stringify(data));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: String(err) }));
+        }
+        return;
+      }
+
+      // Serve the HTML page for any other path
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(currentHtml);
+    });
+
+    server.listen(0, '127.0.0.1', () => {
+      const addr = server.address();
+      if (!addr || typeof addr === 'string') {
+        reject(new Error('Failed to bind server'));
+        return;
+      }
+      const port = addr.port;
+
+      // Write server info so hooks can detect us
+      const info: LiveServerInfo = { port, pid: process.pid, startedAt: Date.now() };
+      try {
+        if (!existsSync(BASE_DIR)) mkdirSync(BASE_DIR, { recursive: true });
+        writeFileSync(LIVE_SERVER_FILE, JSON.stringify(info), 'utf8');
+      } catch {
+        /* non-fatal */
+      }
+
+      // Clean up on exit
+      const cleanup = () => {
+        try {
+          unlinkSync(LIVE_SERVER_FILE);
+        } catch {
+          /* ignore */
+        }
+        server.close();
+      };
+      process.on('SIGINT', cleanup);
+      process.on('SIGTERM', cleanup);
+      process.on('exit', cleanup);
+
+      resolve({
+        port,
+        setHtml: (html: string) => {
+          currentHtml = html;
+        },
+      });
+    });
+
+    server.on('error', reject);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -173,6 +302,7 @@ export async function sessionViewer(
 ): Promise<number> {
   const noOpen = args.includes('--no-open');
   const share = args.includes('--share');
+  const live = args.includes('--live');
 
   // Parse --server <url> flag
   let serverUrl = DEFAULT_SERVER_URL;
@@ -199,6 +329,7 @@ export async function sessionViewer(
     (a) =>
       a !== '--no-open' &&
       a !== '--share' &&
+      a !== '--live' &&
       a !== '--store' &&
       a !== '--db-path' &&
       a !== '--merge-recent' &&
@@ -345,6 +476,101 @@ export async function sessionViewer(
   // Build session and summary
   const session = buildReplaySession(sessionLabel, eventList);
   const evidenceSummary = aggregateEvents(eventList);
+
+  // ---------------------------------------------------------------------------
+  // Live mode — start an HTTP server, serve the page, poll for new events
+  // ---------------------------------------------------------------------------
+  if (live) {
+    const singleRunId = !shouldMerge ? sessionLabel : undefined;
+
+    const loadNewData = (afterEvent: number, afterDecision: number) => {
+      // Re-read from JSONL to pick up events written since last poll
+      let freshEvents: DomainEvent[];
+      let freshDecisions: GovernanceDecisionRecord[];
+
+      if (shouldMerge) {
+        // In merge mode, re-scan all merged runs plus any new runs
+        const currentRuns = listRunsJsonl();
+        const count = mergeCount > 0 ? mergeCount : Math.min(currentRuns.length, 50);
+        const runsToScan = currentRuns.slice(0, count);
+        freshEvents = [];
+        freshDecisions = [];
+        for (const runId of runsToScan) {
+          freshEvents.push(...loadEventsJsonl(runId));
+          freshDecisions.push(...loadDecisionsJsonl(runId));
+        }
+        freshEvents.sort((a, b) => a.timestamp - b.timestamp);
+        freshDecisions.sort((a, b) => a.timestamp - b.timestamp);
+      } else {
+        freshEvents = loadEventsJsonl(singleRunId!);
+        freshDecisions = loadDecisionsJsonl(singleRunId!);
+      }
+
+      const newEvents = freshEvents.filter((e) => e.timestamp > afterEvent);
+      const newDecisions = freshDecisions.filter((d) => d.timestamp > afterDecision);
+
+      // Rebuild session to get updated actions and summary
+      const freshSession = buildReplaySession(sessionLabel, freshEvents);
+      const freshSummary = aggregateEvents(freshEvents);
+
+      // Only return actions that are new (beyond what the client already has)
+      const existingActionCount = eventList.length > 0
+        ? buildReplaySession(sessionLabel, eventList.filter((e) => e.timestamp <= afterEvent)).actions.length
+        : 0;
+      const newActions = freshSession.actions.slice(existingActionCount);
+
+      return {
+        events: newEvents,
+        decisions: newDecisions,
+        actions: newActions,
+        summary: {
+          totalActions: freshSession.summary.totalActions,
+          allowed: freshSession.summary.allowed,
+          denied: freshSession.summary.denied,
+          invariantViolations: freshSummary.invariantViolations,
+          escalations: freshSummary.escalations,
+          maxEscalationLevel: freshSummary.maxEscalationLevel,
+          actionTypeBreakdown: freshSummary.actionTypeBreakdown,
+        },
+      };
+    };
+
+    try {
+      // Start the server first to get the port, then generate HTML with the correct URL
+      const server = await startLiveServer(loadNewData);
+      const liveUrl = `http://127.0.0.1:${server.port}`;
+
+      const liveHtml = generateSessionHtml(session, evidenceSummary, decisionList, eventList, {
+        liveEndpoint: liveUrl,
+      });
+      server.setHtml(liveHtml);
+
+      // Also write a static copy for offline viewing
+      const outFile = outputPath || join(VIEWS_DIR, `${sessionLabel}.html`);
+      const outDir = outputPath ? join(outFile, '..') : VIEWS_DIR;
+      if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
+      writeFileSync(outFile, liveHtml, 'utf8');
+
+      process.stderr.write(`\n  \x1b[32m✓\x1b[0m Live session viewer running at: \x1b[1m\x1b[36m${liveUrl}\x1b[0m\n`);
+      process.stderr.write(`  Press Ctrl+C to stop.\n\n`);
+
+      if (!noOpen) {
+        openInBrowser(liveUrl);
+      }
+
+      // Keep the process alive until interrupted
+      await new Promise(() => {});
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      process.stderr.write(`  \x1b[31mError starting live server:\x1b[0m ${msg}\n`);
+      process.stderr.write(`  Falling back to static HTML.\n\n`);
+      // Fall through to static mode
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Static mode (default) — generate HTML file and optionally open it
+  // ---------------------------------------------------------------------------
 
   // Generate HTML
   const html = generateSessionHtml(session, evidenceSummary, decisionList, eventList);

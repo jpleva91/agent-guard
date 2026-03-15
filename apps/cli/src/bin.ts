@@ -335,6 +335,10 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--output, -o <file>', description: 'Output HTML file path' },
       { flag: '--no-open', description: 'Do not open in browser automatically' },
       {
+        flag: '--live',
+        description: 'Start a live server that polls for new events (no hard refresh)',
+      },
+      {
         flag: '--merge-recent <n>',
         description: 'Merge N most recent runs into one view (auto-detected for hook runs)',
       },
@@ -352,6 +356,7 @@ const COMMANDS: Record<string, CommandHelp> = {
     ],
     examples: [
       'agentguard session-viewer --last',
+      'agentguard session-viewer --last --live',
       'agentguard session-viewer --last --share',
       'agentguard session-viewer run_1234567890_abc',
       'agentguard session-viewer --last --merge-recent 100',

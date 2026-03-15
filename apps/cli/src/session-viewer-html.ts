@@ -32,15 +32,23 @@ function formatDuration(ms: number): string {
   return `${minutes}m ${seconds % 60}s`;
 }
 
+export interface SessionHtmlOptions {
+  /** Base URL of the live server (e.g. "http://localhost:4821"). When set, the page polls for new events. */
+  liveEndpoint?: string;
+}
+
 export function generateSessionHtml(
   session: ReplaySession,
   summary: EvidenceSummary,
   decisions: GovernanceDecisionRecord[],
-  events: readonly DomainEvent[]
+  events: readonly DomainEvent[],
+  options?: SessionHtmlOptions
 ): string {
   const runId = escapeHtml(session.runId);
   const startTime = session.startEvent ? formatTs(session.startEvent.timestamp) : 'N/A';
   const duration = formatDuration(session.summary.durationMs);
+
+  const liveEndpoint = options?.liveEndpoint;
 
   // Serialize all data for client-side rendering
   const embeddedData = safeJsonEmbed({
@@ -54,6 +62,7 @@ export function generateSessionHtml(
     summary,
     decisions,
     events,
+    liveEndpoint: liveEndpoint || null,
   });
 
   return `<!DOCTYPE html>
@@ -164,6 +173,10 @@ export function generateSessionHtml(
 
     .event-row:hover { background: #334155; }
 
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
     @media (max-width: 768px) {
       .summary-grid { grid-template-columns: repeat(2, 1fr) !important; }
     }
@@ -178,6 +191,7 @@ export function generateSessionHtml(
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
         </svg>
         <h1 style="font-size:1.5rem; font-weight:700; margin:0;">AgentGuard Session Viewer</h1>
+        <span id="live-badge" style="display:none; margin-left:auto; padding:0.25rem 0.75rem; border-radius:9999px; font-size:0.75rem; font-weight:600; background:rgba(34,197,94,0.15); color:#22C55E; animation:pulse 2s infinite;">LIVE</span>
       </div>
       <div class="font-mono" style="font-size:0.875rem; color:#94A3B8;">
         <span style="color:#F8FAFC; font-weight:500;">${runId}</span>
@@ -488,6 +502,255 @@ export function generateSessionHtml(
           container.appendChild(btn);
         }
       }
+    })();
+
+    // ---- Live polling (soft-refresh) ----
+    // When DATA.liveEndpoint is set, polls the server for new events/decisions
+    // and incrementally appends them to the DOM without a hard refresh.
+    // All rendered strings pass through esc() to prevent injection.
+    (function() {
+      if (!DATA.liveEndpoint) return;
+
+      var liveBadge = document.getElementById('live-badge');
+      liveBadge.style.display = 'inline-block';
+
+      var POLL_MS = 3000;
+      var lastTimestamp = DATA.events.length > 0
+        ? DATA.events[DATA.events.length - 1].timestamp
+        : (DATA.session.startEvent ? DATA.session.startEvent.timestamp : 0);
+      var lastDecisionTimestamp = DATA.decisions.length > 0
+        ? DATA.decisions[DATA.decisions.length - 1].timestamp
+        : 0;
+
+      // References to containers for incremental appends
+      var timelineContainer = document.getElementById('action-timeline');
+      var eventStreamContainer = document.getElementById('event-stream');
+      var eventCountEl = document.getElementById('event-count');
+      var violationsContainer = document.getElementById('violations-list');
+      var violationsSection = document.getElementById('violations-section');
+
+      // Track whether the raw stream details panel is open
+      var eventStreamDetails = eventStreamContainer ? eventStreamContainer.parentElement : null;
+      var streamIsOpen = eventStreamDetails && eventStreamDetails.open;
+      if (eventStreamDetails) {
+        eventStreamDetails.addEventListener('toggle', function() {
+          streamIsOpen = this.open;
+        });
+      }
+
+      function updateSummaryCards(s) {
+        var cards = document.querySelectorAll('.summary-grid .card-sm');
+        if (cards.length >= 6) {
+          cards[0].querySelector('div').textContent = String(s.totalActions);
+          cards[1].querySelector('div').textContent = String(s.allowed);
+          cards[2].querySelector('div').textContent = String(s.denied);
+          cards[3].querySelector('div').textContent = String(s.invariantViolations);
+          cards[4].querySelector('div').textContent = String(s.escalations);
+          var maxEl = cards[5].querySelector('div');
+          maxEl.textContent = s.maxEscalationLevel;
+          maxEl.style.color = s.maxEscalationLevel === 'NORMAL' ? '#22C55E'
+            : s.maxEscalationLevel === 'ELEVATED' ? '#F59E0B' : '#EF4444';
+        }
+      }
+
+      function appendTimelineAction(action) {
+        var dotClass = !action.allowed ? 'dot-denied' : action.escalationEvent ? 'dot-escalated' : 'dot-allowed';
+        var statusText = !action.allowed ? 'DENIED'
+          : action.executed ? (action.succeeded ? 'EXECUTED' : 'FAILED') : 'ALLOWED';
+        var statusClass = !action.allowed ? 'badge-denied'
+          : action.executed ? (action.succeeded ? 'badge-allowed' : 'badge-failed') : 'badge-executed';
+        var ts = action.requestedEvent ? relTime(action.requestedEvent.timestamp) : '';
+
+        // Add timeline-line to previous last entry
+        var entries = timelineContainer.children;
+        if (entries.length > 0) {
+          var prev = entries[entries.length - 1];
+          if (!prev.querySelector('.timeline-line')) {
+            var line = document.createElement('div');
+            line.className = 'timeline-line';
+            prev.insertBefore(line, prev.firstChild);
+          }
+        }
+
+        var entryDiv = document.createElement('div');
+        entryDiv.style.cssText = 'position:relative; padding-left:2rem; padding-bottom:1rem;';
+
+        var dot = document.createElement('div');
+        dot.className = 'timeline-dot ' + dotClass;
+        dot.style.cssText = 'position:absolute; left:0; top:4px;';
+        entryDiv.appendChild(dot);
+
+        var details = document.createElement('details');
+        var summary = document.createElement('summary');
+        summary.style.cssText = 'display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;';
+
+        var tsSpan = document.createElement('span');
+        tsSpan.className = 'font-mono';
+        tsSpan.style.cssText = 'font-size:0.75rem; color:#94A3B8; min-width:4rem;';
+        tsSpan.textContent = ts;
+        summary.appendChild(tsSpan);
+
+        var typeSpan = document.createElement('span');
+        typeSpan.style.fontWeight = '500';
+        typeSpan.textContent = action.actionType;
+        summary.appendChild(typeSpan);
+
+        var targetSpan = document.createElement('span');
+        targetSpan.style.cssText = 'color:#94A3B8; font-size:0.875rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:400px;';
+        targetSpan.textContent = action.target || '';
+        summary.appendChild(targetSpan);
+
+        var badge = document.createElement('span');
+        badge.className = 'badge ' + statusClass;
+        badge.textContent = statusText;
+        summary.appendChild(badge);
+
+        details.appendChild(summary);
+        entryDiv.appendChild(details);
+        timelineContainer.appendChild(entryDiv);
+      }
+
+      function appendEventRow(ev, idx) {
+        var kindColor = ev.kind.includes('Denied') || ev.kind.includes('Violation') || ev.kind.includes('Failed')
+          ? '#EF4444'
+          : ev.kind.includes('Allowed') || ev.kind.includes('Executed')
+            ? '#22C55E'
+            : ev.kind.includes('Escalat')
+              ? '#F59E0B'
+              : '#94A3B8';
+
+        var row = document.createElement('details');
+        row.className = 'event-row';
+        row.style.cssText = 'padding:0.375rem 0.5rem; border-bottom:1px solid #1E293B; font-size:0.8125rem; border-radius:0.25rem;';
+
+        var summary = document.createElement('summary');
+        summary.className = 'font-mono';
+        summary.style.cssText = 'display:flex; gap:1rem; align-items:center;';
+
+        var numSpan = document.createElement('span');
+        numSpan.style.cssText = 'color:#94A3B8; min-width:4rem;';
+        numSpan.textContent = String(idx + 1);
+        summary.appendChild(numSpan);
+
+        var kindSpan = document.createElement('span');
+        kindSpan.style.cssText = 'color:' + kindColor + '; font-weight:500; min-width:14rem;';
+        kindSpan.textContent = ev.kind;
+        summary.appendChild(kindSpan);
+
+        var timeSpan = document.createElement('span');
+        timeSpan.style.cssText = 'color:#94A3B8; font-size:0.75rem;';
+        timeSpan.textContent = new Date(ev.timestamp).toISOString().slice(11, 23);
+        summary.appendChild(timeSpan);
+
+        row.appendChild(summary);
+
+        var pre = document.createElement('pre');
+        pre.className = 'font-mono';
+        pre.style.cssText = 'margin:0.5rem 0 0.5rem 5rem; padding:0.75rem; background:#0F172A; border-radius:0.375rem; font-size:0.75rem; overflow-x:auto; white-space:pre-wrap; word-break:break-all;';
+        pre.textContent = prettyJson(ev);
+        row.appendChild(pre);
+
+        var loadMoreBtn = eventStreamContainer.querySelector('.load-more-btn');
+        if (loadMoreBtn) {
+          eventStreamContainer.insertBefore(row, loadMoreBtn);
+        } else {
+          eventStreamContainer.appendChild(row);
+        }
+      }
+
+      function appendViolation(v) {
+        violationsSection.style.display = '';
+        var div = document.createElement('div');
+        div.className = 'card-sm';
+        div.style.marginBottom = '0.5rem';
+
+        var header = document.createElement('div');
+        header.style.cssText = 'display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;';
+        var nameSpan = document.createElement('span');
+        nameSpan.style.cssText = 'color:#EF4444; font-weight:600;';
+        nameSpan.textContent = '\u26A0 ' + (v.invariant || 'Unknown');
+        header.appendChild(nameSpan);
+        if (v.severity != null) {
+          var sevBadge = document.createElement('span');
+          sevBadge.className = 'badge badge-denied';
+          sevBadge.textContent = 'severity ' + String(v.severity);
+          header.appendChild(sevBadge);
+        }
+        div.appendChild(header);
+
+        var detail = document.createElement('div');
+        detail.style.cssText = 'font-size:0.8125rem; color:#94A3B8;';
+        var parts = [];
+        if (v.expected) parts.push('Expected: ' + String(v.expected));
+        if (v.actual) parts.push('Actual: ' + String(v.actual));
+        detail.textContent = parts.join(' \u00B7 ');
+        div.appendChild(detail);
+
+        violationsContainer.appendChild(div);
+      }
+
+      function poll() {
+        fetch(DATA.liveEndpoint + '/api/poll?afterEvent=' + lastTimestamp + '&afterDecision=' + lastDecisionTimestamp)
+          .then(function(res) { return res.json(); })
+          .then(function(data) {
+            if (!data) return;
+
+            // Update summary cards
+            if (data.summary) {
+              updateSummaryCards(data.summary);
+            }
+
+            // Append new events
+            var newEvents = data.events || [];
+            if (newEvents.length > 0) {
+              var baseIdx = DATA.events.length;
+              for (var i = 0; i < newEvents.length; i++) {
+                var ev = newEvents[i];
+                DATA.events.push(ev);
+
+                // Append to raw event stream if it has been opened
+                if (streamIsOpen) {
+                  appendEventRow(ev, baseIdx + i);
+                }
+
+                if (ev.kind === 'InvariantViolation') {
+                  appendViolation(ev);
+                }
+              }
+              lastTimestamp = newEvents[newEvents.length - 1].timestamp;
+              eventCountEl.textContent = '(' + DATA.events.length + ' events)';
+            }
+
+            // Append new actions to timeline
+            var newActions = data.actions || [];
+            for (var j = 0; j < newActions.length; j++) {
+              DATA.session.actions.push(newActions[j]);
+              appendTimelineAction(newActions[j]);
+            }
+
+            // Update decisions
+            var newDecisions = data.decisions || [];
+            if (newDecisions.length > 0) {
+              for (var k = 0; k < newDecisions.length; k++) {
+                DATA.decisions.push(newDecisions[k]);
+              }
+              lastDecisionTimestamp = newDecisions[newDecisions.length - 1].timestamp;
+            }
+
+            liveBadge.style.display = 'inline-block';
+            liveBadge.style.background = 'rgba(34,197,94,0.15)';
+            liveBadge.style.color = '#22C55E';
+            liveBadge.textContent = 'LIVE';
+          })
+          .catch(function() {
+            liveBadge.style.background = 'rgba(245,158,11,0.15)';
+            liveBadge.style.color = '#F59E0B';
+            liveBadge.textContent = 'RECONNECTING';
+          });
+      }
+
+      setInterval(poll, POLL_MS);
+      setTimeout(poll, 500);
     })();
   <\/script>
 </body>

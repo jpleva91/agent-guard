@@ -200,9 +200,13 @@ function generateSessionViewerQuietly(cliArgs: string[]): void {
 
 async function handleNotification(cliArgs: string[]): Promise<void> {
   // Agent paused for human input — open the session viewer in the browser.
-  // This gives the user a visual overview of governance decisions from the agent's turn.
+  // If a live server is already running, skip regeneration — the live page polls for new data.
   try {
-    const { sessionViewer } = await import('./session-viewer.js');
+    const { detectLiveServer, sessionViewer } = await import('./session-viewer.js');
+    if (detectLiveServer() !== null) {
+      // Live server is running — it will pick up new events via polling. No action needed.
+      return;
+    }
     const { resolveStorageConfig } = await import('@red-codes/storage');
     const storageConfig = resolveStorageConfig(cliArgs);
     await sessionViewer(['--last', ...cliArgs], storageConfig);
@@ -213,9 +217,12 @@ async function handleNotification(cliArgs: string[]): Promise<void> {
 
 async function handleStop(cliArgs: string[]): Promise<void> {
   // On session end, generate the session viewer HTML quietly (no browser open).
-  // The Notification hook already opened the browser when the agent last paused.
+  // If a live server is running, skip — it already has the latest data.
   try {
-    const { sessionViewer } = await import('./session-viewer.js');
+    const { detectLiveServer, sessionViewer } = await import('./session-viewer.js');
+    if (detectLiveServer() !== null) {
+      return;
+    }
     const { resolveStorageConfig } = await import('@red-codes/storage');
     const storageConfig = resolveStorageConfig(cliArgs);
     await sessionViewer(['--last', '--no-open', ...cliArgs], storageConfig);
