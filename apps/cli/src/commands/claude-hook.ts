@@ -7,7 +7,7 @@
 // Supports both JSONL (default) and SQLite storage backends via --store flag or AGENTGUARD_STORE env var.
 
 import { randomUUID } from 'node:crypto';
-import { execSync } from 'node:child_process';
+import { execSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -200,16 +200,31 @@ function generateSessionViewerQuietly(cliArgs: string[]): void {
 
 async function handleNotification(cliArgs: string[]): Promise<void> {
   // Agent paused for human input — open the session viewer in the browser.
-  // If a live server is already running, skip regeneration — the live page polls for new data.
+  // If a live server is already running, skip — the live page polls for new data.
+  // Otherwise, spawn a detached live server process so events stream in without hard refresh.
   try {
-    const { detectLiveServer, sessionViewer } = await import('./session-viewer.js');
+    const { detectLiveServer } = await import('./session-viewer.js');
     if (detectLiveServer() !== null) {
-      // Live server is running — it will pick up new events via polling. No action needed.
       return;
     }
-    const { resolveStorageConfig } = await import('@red-codes/storage');
-    const storageConfig = resolveStorageConfig(cliArgs);
-    await sessionViewer(['--last', ...cliArgs], storageConfig);
+
+    // Spawn the live server as a detached process so the hook can exit immediately.
+    // The live server stays running and the browser page polls it for updates.
+    const cli = resolveCliCommand();
+    const storeFlagIdx = cliArgs.indexOf('--store');
+    const storeFlag = storeFlagIdx !== -1 ? ['--store', cliArgs[storeFlagIdx + 1]] : [];
+    const dbPathIdx = cliArgs.indexOf('--db-path');
+    const dbPathFlag = dbPathIdx !== -1 ? ['--db-path', cliArgs[dbPathIdx + 1]] : [];
+
+    const cliParts = cli.split(' ');
+    const cmd = cliParts[0];
+    const baseArgs = [...cliParts.slice(1), 'session-viewer', '--last', '--live', ...storeFlag, ...dbPathFlag];
+
+    const child = spawn(cmd, baseArgs, {
+      detached: true,
+      stdio: 'ignore',
+    });
+    child.unref();
   } catch {
     // Non-fatal — viewer generation is best-effort
   }
