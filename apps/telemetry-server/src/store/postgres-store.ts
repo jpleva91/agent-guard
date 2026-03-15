@@ -131,15 +131,12 @@ export function createPostgresStore(): TelemetryDataStore {
     async appendTraces(traces: TraceSpan[]): Promise<void> {
       for (const span of traces) {
         const id =
-          (span as unknown as Record<string, unknown>).id?.toString() ??
-          `trace-${span.startTime}`;
+          (span as unknown as Record<string, unknown>).id?.toString() ?? `trace-${span.startTime}`;
         const attrs = span.attributes as Record<string, unknown> | undefined;
         const runId = (attrs?.runId ?? attrs?.run_id ?? '') as string;
         const kind = span.kind ?? '';
         const startTime =
-          typeof span.startTime === 'number'
-            ? span.startTime
-            : new Date(span.startTime).getTime();
+          typeof span.startTime === 'number' ? span.startTime : new Date(span.startTime).getTime();
         await sql`
           INSERT INTO telemetry_traces (id, run_id, kind, start_time, data)
           VALUES (${id}, ${runId}, ${kind}, ${startTime}, ${JSON.stringify(span)})
@@ -176,7 +173,10 @@ export function createPostgresStore(): TelemetryDataStore {
 
       const where = conditions.join(' AND ');
 
-      const countResult = await sql.query(`SELECT COUNT(*)::int as total FROM telemetry_events WHERE ${where}`, params);
+      const countResult = await sql.query(
+        `SELECT COUNT(*)::int as total FROM telemetry_events WHERE ${where}`,
+        params
+      );
       const total = countResult.rows[0].total;
 
       const dataResult = await sql.query(
@@ -217,7 +217,10 @@ export function createPostgresStore(): TelemetryDataStore {
 
       const where = conditions.join(' AND ');
 
-      const countResult = await sql.query(`SELECT COUNT(*)::int as total FROM telemetry_decisions WHERE ${where}`, params);
+      const countResult = await sql.query(
+        `SELECT COUNT(*)::int as total FROM telemetry_decisions WHERE ${where}`,
+        params
+      );
       const total = countResult.rows[0].total;
 
       const dataResult = await sql.query(
@@ -256,7 +259,10 @@ export function createPostgresStore(): TelemetryDataStore {
 
       const where = conditions.join(' AND ');
 
-      const countResult = await sql.query(`SELECT COUNT(*)::int as total FROM telemetry_traces WHERE ${where}`, params);
+      const countResult = await sql.query(
+        `SELECT COUNT(*)::int as total FROM telemetry_traces WHERE ${where}`,
+        params
+      );
       const total = countResult.rows[0].total;
 
       const dataResult = await sql.query(
@@ -328,7 +334,10 @@ export function createPostgresStore(): TelemetryDataStore {
 
       const where = conditions.join(' AND ');
 
-      const countResult = await sql.query(`SELECT COUNT(*)::int as total FROM telemetry_payloads WHERE ${where}`, params);
+      const countResult = await sql.query(
+        `SELECT COUNT(*)::int as total FROM telemetry_payloads WHERE ${where}`,
+        params
+      );
       const total = countResult.rows[0].total;
 
       const dataResult = await sql.query(

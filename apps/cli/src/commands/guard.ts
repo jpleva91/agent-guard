@@ -12,6 +12,7 @@ import { createSimulatorRegistry } from '@red-codes/kernel';
 import { createGitSimulator } from '@red-codes/kernel';
 import { createFilesystemSimulator } from '@red-codes/kernel';
 import { createPackageSimulator } from '@red-codes/kernel';
+import { createDependencyGraphSimulator } from '@red-codes/kernel';
 import type { RawAgentAction } from '@red-codes/kernel';
 import { generateSeed, createSeededRng } from '@red-codes/core';
 import { simpleHash } from '@red-codes/core';
@@ -68,6 +69,7 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
   if (options.simulate !== false) {
     simulators.register(createGitSimulator());
     simulators.register(createFilesystemSimulator());
+    simulators.register(createDependencyGraphSimulator());
     simulators.register(createPackageSimulator());
 
     // Load community simulator plugins from the plugin registry

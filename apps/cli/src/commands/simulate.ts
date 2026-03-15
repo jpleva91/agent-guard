@@ -11,6 +11,7 @@ import {
   createFilesystemSimulator,
   createPackageSimulator,
   simulatePlan,
+  createDependencyGraphSimulator,
 } from '@red-codes/kernel';
 import type { RawAgentAction, SimulationResult, PlanSimulationResult } from '@red-codes/kernel';
 import { evaluate, loadPolicies } from '@red-codes/policy';
@@ -408,6 +409,7 @@ export async function simulate(args: string[], options: SimulateOptions = {}): P
   const simulators = createSimulatorRegistry();
   simulators.register(createGitSimulator());
   simulators.register(createFilesystemSimulator());
+  simulators.register(createDependencyGraphSimulator());
   simulators.register(createPackageSimulator());
 
   // Plan mode: simulate a batch of actions

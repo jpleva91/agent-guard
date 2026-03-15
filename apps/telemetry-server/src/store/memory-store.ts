@@ -182,7 +182,9 @@ export function createMemoryStore(maxSize = DEFAULT_MAX_SIZE): TelemetryDataStor
       evict(payloads);
     },
 
-    async queryTelemetryPayloads(filter: QueryFilter): Promise<QueryResult<TelemetryPayloadRecord>> {
+    async queryTelemetryPayloads(
+      filter: QueryFilter
+    ): Promise<QueryResult<TelemetryPayloadRecord>> {
       let filtered = [...payloads];
 
       if (filter.since || filter.until) {

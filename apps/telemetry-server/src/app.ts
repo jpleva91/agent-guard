@@ -18,9 +18,7 @@ import type { ServerConfig } from './config.js';
 
 async function createStore(config: ServerConfig): Promise<TelemetryDataStore> {
   if (config.storageBackend === 'postgres') {
-    const { createPostgresStore, migratePostgresStore } = await import(
-      './store/postgres-store.js'
-    );
+    const { createPostgresStore, migratePostgresStore } = await import('./store/postgres-store.js');
     await migratePostgresStore();
     return createPostgresStore();
   }
