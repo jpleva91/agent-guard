@@ -90,7 +90,7 @@ describe('save/load/delete identity', () => {
     expect(existsSync(nestedPath)).toBe(true);
   });
 
-  it('sets restrictive file permissions', () => {
+  it.skipIf(process.platform === 'win32')('sets restrictive file permissions', () => {
     const identity = generateIdentity();
     saveIdentity(identity, identityPath);
     const stats = require('node:fs').statSync(identityPath);
