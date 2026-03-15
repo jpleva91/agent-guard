@@ -12,14 +12,6 @@ import { bold, color, dim } from '../colors.js';
 import { validatePolicy, VALID_ACTIONS } from '@red-codes/policy';
 import { parseYamlPolicy } from '@red-codes/policy';
 import { ACTION_TYPES } from '@red-codes/core';
-import { analyze } from '@red-codes/analytics';
-import {
-  generateSuggestions,
-  toYaml,
-  toJsonSuggestions,
-  toTerminalSuggestions,
-  toMarkdownSuggestions,
-} from '@red-codes/analytics';
 import type { PolicyVerifyResult } from './policy-verify.js';
 import { verifyPolicyFix } from './policy-verify.js';
 
@@ -463,68 +455,11 @@ async function policyValidate(args: string[]): Promise<number> {
 // Subcommand: suggest
 // ---------------------------------------------------------------------------
 
-async function policySuggest(args: string[]): Promise<number> {
-  const parsed = parseArgs(args, {
-    boolean: ['--json', '--yaml', '--markdown', '--md'],
-    string: ['--dir', '-d', '--format', '-f', '--min-cluster'],
-    alias: { '-d': '--dir', '-f': '--format' },
-  });
-
-  const baseDir = (parsed.flags.dir as string) ?? '.agentguard';
-  const minCluster = parsed.flags['min-cluster']
-    ? parseInt(parsed.flags['min-cluster'] as string, 10)
-    : 2;
-
-  // Determine output format
-  let format: 'terminal' | 'json' | 'yaml' | 'markdown' = 'terminal';
-  if (parsed.flags.json) format = 'json';
-  else if (parsed.flags.yaml) format = 'yaml';
-  else if (parsed.flags.markdown || parsed.flags.md) format = 'markdown';
-  else if (parsed.flags.format) {
-    const f = parsed.flags.format as string;
-    if (['json', 'yaml', 'markdown', 'terminal'].includes(f)) {
-      format = f as typeof format;
-    }
-  }
-
-  // Run analytics pipeline
-  const report = analyze({ baseDir, minClusterSize: minCluster });
-
-  if (report.totalViolations === 0) {
-    if (format === 'json') {
-      const empty = {
-        generatedAt: Date.now(),
-        sessionsAnalyzed: report.sessionsAnalyzed,
-        totalViolations: 0,
-        suggestions: [],
-      };
-      process.stdout.write(JSON.stringify(empty, null, 2) + '\n');
-    } else {
-      process.stderr.write('\n  No violations found — no policy suggestions to generate.\n');
-      process.stderr.write(`  Sessions analyzed: ${report.sessionsAnalyzed}\n\n`);
-    }
-    return 0;
-  }
-
-  // Generate suggestions from violation patterns
-  const suggestions = generateSuggestions(report);
-
-  switch (format) {
-    case 'json':
-      process.stdout.write(toJsonSuggestions(suggestions) + '\n');
-      break;
-    case 'yaml':
-      process.stdout.write(toYaml(suggestions));
-      break;
-    case 'markdown':
-      process.stdout.write(toMarkdownSuggestions(suggestions) + '\n');
-      break;
-    case 'terminal':
-    default:
-      process.stderr.write(toTerminalSuggestions(suggestions));
-      break;
-  }
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function policySuggest(_args: string[]): Promise<number> {
+  console.log(
+    'Advanced policy suggestions are available in AgentGuard Cloud. Visit https://agentguard.dev'
+  );
   return 0;
 }
 

@@ -9,14 +9,38 @@
 // A "regression" is when an action that was previously allowed would now be
 // denied by the new policy — an unintended side effect of the policy change.
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { resolve, join } from 'node:path';
 import type { DomainEvent } from '@red-codes/core';
 import type { NormalizedIntent, LoadedPolicy, EvalResult } from '@red-codes/policy';
 import { evaluate } from '@red-codes/policy';
 import { loadYamlPolicy } from '@red-codes/policy';
 import { loadPolicies } from '@red-codes/policy';
-import { listSessionIds, loadSessionEvents } from '@red-codes/analytics';
+
+/** List all session IDs present in a base directory (reads sub-directory names). */
+function listSessionIds(baseDir: string): string[] {
+  const eventsDir = join(baseDir, 'events');
+  if (!existsSync(eventsDir)) return [];
+  try {
+    return readdirSync(eventsDir).filter((name) => name.endsWith('.jsonl')).map((name) => name.replace(/\.jsonl$/, ''));
+  } catch {
+    return [];
+  }
+}
+
+/** Load all events for a session from its JSONL file. */
+function loadSessionEvents(sessionId: string, baseDir: string): DomainEvent[] {
+  const filePath = join(baseDir, 'events', `${sessionId}.jsonl`);
+  if (!existsSync(filePath)) return [];
+  try {
+    return readFileSync(filePath, 'utf8')
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line) as DomainEvent);
+  } catch {
+    return [];
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Types

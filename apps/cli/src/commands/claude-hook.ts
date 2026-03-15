@@ -70,7 +70,6 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
 async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[]): Promise<void> {
   const { processClaudeCodeHook, formatHookResponse } = await import('@red-codes/adapters');
   const { createKernel } = await import('@red-codes/kernel');
-  const { createTelemetryDecisionSink } = await import('@red-codes/telemetry');
   const { loadPolicyDefs } = await import('../policy-resolver.js');
   const { resolveStorageConfig, createStorageBundle } = await import('@red-codes/storage');
 
@@ -99,32 +98,13 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[
   let storage: Awaited<ReturnType<typeof createStorageBundle>> | null = null;
   let eventSink: import('@red-codes/core').EventSink | undefined;
   let decisionSink: import('@red-codes/core').DecisionSink | undefined;
-  let telemetrySink: import('@red-codes/core').DecisionSink | undefined;
 
   try {
     storage = await createStorageBundle(storageConfig);
     eventSink = storage.createEventSink(runId);
     decisionSink = storage.createDecisionSink(runId);
-    telemetrySink = createTelemetryDecisionSink();
   } catch {
     // Sink creation failure is non-fatal
-  }
-
-  // Build tracer with webhook trace backend when using webhook storage
-  let tracer: import('@red-codes/telemetry').Tracer | undefined;
-  if (storageConfig.backend === 'webhook') {
-    const { createTracer } = await import('@red-codes/telemetry');
-    const { createWebhookTraceBackend } = await import('@red-codes/storage');
-    tracer = createTracer({
-      backends: [
-        createWebhookTraceBackend({
-          url: storageConfig.webhookUrl ?? process.env.AGENTGUARD_WEBHOOK_URL ?? '',
-          headers: storageConfig.webhookHeaders,
-          batchSize: storageConfig.webhookBatchSize,
-          flushIntervalMs: storageConfig.webhookFlushIntervalMs,
-        }),
-      ],
-    });
   }
 
   // Build kernel — dryRun: true = evaluate policies/invariants only (no adapter execution).
@@ -136,10 +116,7 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[
     dryRun: true,
     evaluateOptions: { defaultDeny: false },
     sinks: eventSink ? [eventSink] : [],
-    decisionSinks: [decisionSink, telemetrySink].filter(
-      Boolean
-    ) as import('@red-codes/core').DecisionSink[],
-    tracer,
+    decisionSinks: [decisionSink].filter(Boolean) as import('@red-codes/core').DecisionSink[],
   });
 
   // Record session in the sessions table (SQLite only).
