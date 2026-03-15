@@ -42,23 +42,11 @@ importers:
         specifier: ^4.0.18
         version: 4.1.0(@types/node@25.5.0)(vite@7.3.1(@types/node@25.5.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
 
-  apps/agentguardhq:
-    dependencies:
-      '@red-codes/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@red-codes/telemetry':
-        specifier: workspace:*
-        version: link:../../packages/telemetry
-
   apps/cli:
     dependencies:
       '@red-codes/adapters':
         specifier: workspace:*
         version: link:../../packages/adapters
-      '@red-codes/analytics':
-        specifier: workspace:*
-        version: link:../../packages/analytics
       '@red-codes/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -86,12 +74,6 @@ importers:
       '@red-codes/swarm':
         specifier: workspace:*
         version: link:../../packages/swarm
-      '@red-codes/telemetry':
-        specifier: workspace:*
-        version: link:../../packages/telemetry
-      '@red-codes/telemetry-client':
-        specifier: workspace:*
-        version: link:../../packages/telemetry-client
       chokidar:
         specifier: ^5.0.0
         version: 5.0.0
@@ -118,9 +100,6 @@ importers:
       '@red-codes/adapters':
         specifier: workspace:*
         version: link:../../packages/adapters
-      '@red-codes/analytics':
-        specifier: workspace:*
-        version: link:../../packages/analytics
       '@red-codes/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -139,30 +118,9 @@ importers:
       '@red-codes/storage':
         specifier: workspace:*
         version: link:../../packages/storage
-      '@red-codes/telemetry':
-        specifier: workspace:*
-        version: link:../../packages/telemetry
       zod:
         specifier: ^3.25.0
         version: 3.25.76
-
-  apps/telemetry-server:
-    dependencies:
-      '@hono/node-server':
-        specifier: ^1.14.0
-        version: 1.19.11(hono@4.12.8)
-      '@red-codes/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@red-codes/telemetry':
-        specifier: workspace:*
-        version: link:../../packages/telemetry
-      '@red-codes/telemetry-client':
-        specifier: workspace:*
-        version: link:../../packages/telemetry-client
-      hono:
-        specifier: ^4.7.0
-        version: 4.12.8
 
   apps/vscode-extension:
     devDependencies:
@@ -172,24 +130,6 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
-
-  packages/adapter-openclaw:
-    dependencies:
-      '@red-codes/core':
-        specifier: workspace:*
-        version: link:../core
-      '@red-codes/events':
-        specifier: workspace:*
-        version: link:../events
-      '@red-codes/invariants':
-        specifier: workspace:*
-        version: link:../invariants
-      '@red-codes/kernel':
-        specifier: workspace:*
-        version: link:../kernel
-      '@red-codes/policy':
-        specifier: workspace:*
-        version: link:../policy
 
   packages/adapters:
     dependencies:
@@ -203,12 +143,6 @@ importers:
       '@red-codes/events':
         specifier: workspace:*
         version: link:../events
-
-  packages/analytics:
-    dependencies:
-      '@red-codes/core':
-        specifier: workspace:*
-        version: link:../core
 
   packages/core: {}
 
@@ -241,9 +175,6 @@ importers:
       '@red-codes/policy':
         specifier: workspace:*
         version: link:../policy
-      '@red-codes/telemetry':
-        specifier: workspace:*
-        version: link:../telemetry
 
   packages/plugins:
     dependencies:
@@ -257,9 +188,6 @@ importers:
         specifier: workspace:*
         version: link:../core
     devDependencies:
-      '@red-codes/analytics':
-        specifier: workspace:*
-        version: link:../analytics
       '@red-codes/events':
         specifier: workspace:*
         version: link:../events
@@ -285,29 +213,14 @@ importers:
         specifier: workspace:*
         version: link:../kernel
 
-  packages/sentinel01:
-    dependencies:
-      '@red-codes/core':
-        specifier: workspace:*
-        version: link:../core
-
   packages/storage:
     dependencies:
-      '@red-codes/analytics':
-        specifier: workspace:*
-        version: link:../analytics
       '@red-codes/core':
         specifier: workspace:*
         version: link:../core
       '@red-codes/events':
         specifier: workspace:*
         version: link:../events
-      '@red-codes/kernel':
-        specifier: workspace:*
-        version: link:../kernel
-      '@red-codes/telemetry':
-        specifier: workspace:*
-        version: link:../telemetry
     optionalDependencies:
       better-sqlite3:
         specifier: ^12.6.2
@@ -329,18 +242,6 @@ importers:
       vitest:
         specifier: ^3.2.1
         version: 3.2.4(@types/node@25.5.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
-
-  packages/telemetry:
-    dependencies:
-      '@red-codes/core':
-        specifier: workspace:*
-        version: link:../core
-
-  packages/telemetry-client:
-    dependencies:
-      '@red-codes/core':
-        specifier: workspace:*
-        version: link:../core
 
 packages:
 
