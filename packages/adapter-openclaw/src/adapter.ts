@@ -3,7 +3,13 @@
 // The kernel handles all policy evaluation, invariant checking, and event emission.
 
 import type { Kernel, KernelResult } from '@red-codes/kernel';
-import type { OpenClawToolCall, OpenClawContext, GuardRequest, GuardDecision, GuardResult } from './types.js';
+import type {
+  OpenClawToolCall,
+  OpenClawContext,
+  GuardRequest,
+  GuardDecision,
+  GuardResult,
+} from './types.js';
 import { normalizeOpenClawAction, buildGuardRequest } from './normalize.js';
 
 /** Map kernel violation severity (numeric) to GuardDecision severity labels. */
