@@ -1,0 +1,56 @@
+name: Deploy Telemetry Server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/telemetry-server/**'
+      - 'packages/core/**'
+      - 'packages/telemetry/**'
+      - 'packages/telemetry-client/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-telemetry
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build --filter=@red-codes/telemetry-server...
+      - run: pnpm test --filter=@red-codes/telemetry-server
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build --filter=@red-codes/telemetry-server...
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Deploy to Vercel
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/telemetry-server
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
