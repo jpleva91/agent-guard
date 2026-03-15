@@ -112,14 +112,29 @@ export async function sessionViewer(
   storageConfig?: StorageConfig,
 ): Promise<number> {
   const noOpen = args.includes('--no-open');
+
+  // Parse --merge-recent <n> flag (combine N most recent runs into one view)
+  let mergeCount = 0;
+  const mergeIdx = args.indexOf('--merge-recent');
+  if (mergeIdx !== -1 && args[mergeIdx + 1]) {
+    mergeCount = parseInt(args[mergeIdx + 1], 10) || 0;
+  }
+
   const filteredArgs = args.filter(
     (a) =>
       a !== '--no-open' &&
       a !== '--store' &&
       a !== '--db-path' &&
+      a !== '--merge-recent' &&
       a !== 'sqlite' &&
       a !== 'jsonl',
   );
+
+  // Remove the merge count value from filteredArgs
+  if (mergeCount > 0) {
+    const valIdx = filteredArgs.indexOf(String(mergeCount));
+    if (valIdx !== -1) filteredArgs.splice(valIdx, 1);
+  }
 
   // Parse --output / -o flag
   let outputPath: string | undefined;
@@ -173,60 +188,94 @@ export async function sessionViewer(
     return 0;
   }
 
-  // Resolve run ID
-  let targetRunId: string | undefined;
-  if (!targetArg || targetArg === '--last') {
+  // ---------------------------------------------------------------------------
+  // Load events (supports merging multiple recent runs)
+  // ---------------------------------------------------------------------------
+
+  let eventList: DomainEvent[];
+  let decisionList: GovernanceDecisionRecord[];
+  let sessionLabel: string;
+
+  // --last with hook-based runs: auto-merge recent runs for a useful view
+  const isLastMode = !targetArg || targetArg === '--last';
+  const shouldMerge = mergeCount > 0 || (isLastMode && !useSqlite && listRunsJsonl()[0]?.startsWith('hook_'));
+
+  if (shouldMerge && !useSqlite) {
+    const runs = listRunsJsonl();
+    if (runs.length === 0) {
+      process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
+      process.stderr.write('  Run \x1b[1magentguard guard\x1b[0m to start recording.\n\n');
+      return 1;
+    }
+    const count = mergeCount > 0 ? mergeCount : Math.min(runs.length, 50);
+    const runsToMerge = runs.slice(0, count);
+
+    eventList = [];
+    decisionList = [];
+    for (const runId of runsToMerge) {
+      eventList.push(...loadEventsJsonl(runId));
+      decisionList.push(...loadDecisionsJsonl(runId));
+    }
+    // Sort by timestamp
+    eventList.sort((a, b) => a.timestamp - b.timestamp);
+    decisionList.sort((a, b) => a.timestamp - b.timestamp);
+
+    sessionLabel = `session_merged_${runsToMerge.length}_runs`;
+    process.stderr.write(`  Merging ${runsToMerge.length} recent runs into a single view...\n`);
+  } else {
+    // Single run mode
+    let targetRunId: string | undefined;
+    if (isLastMode) {
+      if (useSqlite) {
+        const storage = await openSqliteDb(storageConfig);
+        if (!storage) return 1;
+        const { getLatestRunId: getLatestRunIdSqlite } = await import('@red-codes/storage');
+        const db = storage.db as import('better-sqlite3').Database;
+        targetRunId = getLatestRunIdSqlite(db) ?? undefined;
+        storage.close();
+      } else {
+        targetRunId = listRunsJsonl()[0];
+      }
+    } else {
+      targetRunId = targetArg;
+    }
+
+    if (!targetRunId) {
+      process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
+      process.stderr.write('  Run \x1b[1magentguard guard\x1b[0m to start recording.\n\n');
+      return 1;
+    }
+
     if (useSqlite) {
       const storage = await openSqliteDb(storageConfig);
       if (!storage) return 1;
-      const { getLatestRunId: getLatestRunIdSqlite } = await import('@red-codes/storage');
+      const { loadRunEvents, loadRunDecisions } = await import('@red-codes/storage');
       const db = storage.db as import('better-sqlite3').Database;
-      targetRunId = getLatestRunIdSqlite(db) ?? undefined;
+      eventList = loadRunEvents(db, targetRunId);
+      decisionList = loadRunDecisions(db, targetRunId);
       storage.close();
     } else {
-      targetRunId = listRunsJsonl()[0];
+      eventList = loadEventsJsonl(targetRunId);
+      decisionList = loadDecisionsJsonl(targetRunId);
     }
-  } else {
-    targetRunId = targetArg;
-  }
 
-  if (!targetRunId) {
-    process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
-    process.stderr.write('  Run \x1b[1magentguard guard\x1b[0m to start recording.\n\n');
-    return 1;
-  }
-
-  // Load events
-  let eventList: DomainEvent[];
-  let decisionList: GovernanceDecisionRecord[];
-
-  if (useSqlite) {
-    const storage = await openSqliteDb(storageConfig);
-    if (!storage) return 1;
-    const { loadRunEvents, loadRunDecisions } = await import('@red-codes/storage');
-    const db = storage.db as import('better-sqlite3').Database;
-    eventList = loadRunEvents(db, targetRunId);
-    decisionList = loadRunDecisions(db, targetRunId);
-    storage.close();
-  } else {
-    eventList = loadEventsJsonl(targetRunId);
-    decisionList = loadDecisionsJsonl(targetRunId);
+    sessionLabel = targetRunId;
   }
 
   if (eventList.length === 0) {
-    process.stderr.write(`  \x1b[31mError:\x1b[0m No events found for run: ${targetRunId}\n`);
+    process.stderr.write(`  \x1b[31mError:\x1b[0m No events found.\n`);
     return 1;
   }
 
   // Build session and summary
-  const session = buildReplaySession(targetRunId, eventList);
+  const session = buildReplaySession(sessionLabel, eventList);
   const evidenceSummary = aggregateEvents(eventList);
 
   // Generate HTML
   const html = generateSessionHtml(session, evidenceSummary, decisionList, eventList);
 
   // Determine output path
-  const outFile = outputPath || join(VIEWS_DIR, `${targetRunId}.html`);
+  const outFile = outputPath || join(VIEWS_DIR, `${sessionLabel}.html`);
   const outDir = outputPath ? join(outFile, '..') : VIEWS_DIR;
   if (!existsSync(outDir)) {
     mkdirSync(outDir, { recursive: true });

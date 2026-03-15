@@ -335,12 +335,17 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--list', description: 'List available runs' },
       { flag: '--output, -o <file>', description: 'Output HTML file path' },
       { flag: '--no-open', description: 'Do not open in browser automatically' },
+      {
+        flag: '--merge-recent <n>',
+        description: 'Merge N most recent runs into one view (auto-detected for hook runs)',
+      },
       { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
       { flag: '--db-path <path>', description: 'SQLite database path' },
     ],
     examples: [
       'agentguard session-viewer --last',
       'agentguard session-viewer run_1234567890_abc',
+      'agentguard session-viewer --last --merge-recent 100',
       'agentguard session-viewer --last --output report.html',
       'agentguard session-viewer --last --no-open',
     ],
