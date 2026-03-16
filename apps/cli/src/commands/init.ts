@@ -291,6 +291,7 @@ export interface SystemState {
   forcePush?: boolean;
   isPush?: boolean;
   testsPass?: boolean;
+  formatPass?: boolean;
   filesAffected?: number;
   blastRadiusLimit?: number;
   protectedBranches?: string[];
@@ -439,6 +440,13 @@ rules:
     conditions:
       requireTests: true
     reason: "Tests must pass before deployment"
+
+  # Deny commit without format check
+  - action: "git.commit"
+    effect: deny
+    conditions:
+      requireFormat: true
+    reason: "Formatting must pass before committing"
 `,
     },
     {
