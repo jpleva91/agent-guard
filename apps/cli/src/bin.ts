@@ -299,7 +299,10 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--run, -r <runId>', description: 'Use events from a specific run' },
       { flag: '--last', description: 'Use events from the most recent run only' },
       { flag: '--dry-run', description: 'Print markdown without posting to GitHub' },
-      { flag: '--store <backend>', description: 'Storage backend: jsonl or sqlite (default: jsonl)' },
+      {
+        flag: '--store <backend>',
+        description: 'Storage backend: jsonl or sqlite (default: jsonl)',
+      },
       { flag: '--db-path <path>', description: 'Path to SQLite database file' },
     ],
     examples: [
