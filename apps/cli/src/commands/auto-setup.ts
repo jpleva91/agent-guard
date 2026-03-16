@@ -177,32 +177,25 @@ export async function autoSetup(args: string[] = []): Promise<AutoSetupResult> {
     process.stderr.write(`  ${FG.yellow}!${RESET}  Hooks not configured — auto-installing...\n\n`);
   }
 
+  // Resolve forwarded args before dry-run check so the message reflects actual flags
+  const storeIdx = args.findIndex((a) => a === '--store');
+  const storeBackend = storeIdx !== -1 && args[storeIdx + 1] ? args[storeIdx + 1] : 'sqlite';
+
+  const dbPathIdx = args.findIndex((a) => a === '--db-path');
+  const forwardArgs: string[] = ['--store', storeBackend];
+  if (dbPathIdx !== -1 && args[dbPathIdx + 1]) {
+    forwardArgs.push('--db-path', args[dbPathIdx + 1]);
+  }
+
   // Step 4: Auto-install (delegate to claude-init)
   if (dryRun) {
     result.skipped = 'Dry run — skipped installation';
     if (!quiet) {
       process.stderr.write(
-        `  ${DIM}[dry-run] Would run: agentguard claude-init --store sqlite${RESET}\n\n`
+        `  ${DIM}[dry-run] Would run: agentguard claude-init --store ${storeBackend}${RESET}\n\n`
       );
     }
     return result;
-  }
-
-  // Forward storage flags if provided, default to sqlite
-  const forwardArgs: string[] = [];
-
-  // Use --store from args or default to sqlite
-  const storeIdx = args.findIndex((a) => a === '--store');
-  if (storeIdx !== -1 && args[storeIdx + 1]) {
-    forwardArgs.push('--store', args[storeIdx + 1]);
-  } else {
-    forwardArgs.push('--store', 'sqlite');
-  }
-
-  // Forward --db-path if provided
-  const dbPathIdx = args.findIndex((a) => a === '--db-path');
-  if (dbPathIdx !== -1 && args[dbPathIdx + 1]) {
-    forwardArgs.push('--db-path', args[dbPathIdx + 1]);
   }
 
   await claudeInit(forwardArgs);

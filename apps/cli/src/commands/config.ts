@@ -5,6 +5,7 @@ import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import { RESET, BOLD, DIM, FG } from '../colors.js';
 import { findDefaultPolicy } from '../policy-resolver.js';
+import { detectExistingHooks } from './auto-setup.js';
 
 /** AgentGuard configuration schema. */
 export interface AgentGuardConfig {
@@ -166,7 +167,7 @@ function showConfig(args: string[]): number {
 
   // Also detect runtime context
   const policyPath = resolved.policy ?? findDefaultPolicy() ?? null;
-  const hooksInstalled = checkHooksInstalled(cwd);
+  const hooksInstalled = detectExistingHooks(cwd);
 
   if (json) {
     console.log(JSON.stringify({ ...resolved, _runtime: { policyPath, hooksInstalled } }, null, 2));
@@ -326,29 +327,6 @@ function showConfigHelp(): number {
     agentguard config get viewer.autoOpen
 `);
   return 0;
-}
-
-function checkHooksInstalled(cwd: string): boolean {
-  const localPath = join(cwd, '.claude', 'settings.json');
-  const globalPath = join(homedir(), '.claude', 'settings.json');
-
-  for (const settingsPath of [localPath, globalPath]) {
-    if (existsSync(settingsPath)) {
-      try {
-        const settings = JSON.parse(readFileSync(settingsPath, 'utf8')) as Record<string, unknown>;
-        const hooks = settings.hooks as Record<string, unknown[]> | undefined;
-        const preToolUse = (hooks?.PreToolUse ?? []) as Array<{
-          hooks?: Array<{ command?: string }>;
-        }>;
-        return preToolUse.some((entry) =>
-          (entry.hooks ?? []).some((h) => h.command?.includes('claude-hook'))
-        );
-      } catch {
-        // Continue
-      }
-    }
-  }
-  return false;
 }
 
 // --- Simple YAML parser/serializer (no external deps) ---

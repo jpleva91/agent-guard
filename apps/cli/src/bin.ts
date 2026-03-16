@@ -709,12 +709,11 @@ async function main() {
     }
 
     case 'config': {
+      const { config: configCmd } = await import('./commands/config.js');
       if (wantsHelp) {
-        const { config: configCmd } = await import('./commands/config.js');
         await configCmd(['help']);
         break;
       }
-      const { config: configCmd } = await import('./commands/config.js');
       const code = await configCmd(args.slice(1));
       process.exit(code);
       break;
