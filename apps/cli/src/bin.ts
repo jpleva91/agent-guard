@@ -167,6 +167,26 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard import session.jsonl --store sqlite',
     ],
   },
+  migrate: {
+    name: 'agentguard migrate',
+    description: 'Bulk-import JSONL event/decision files into SQLite',
+    usage: 'agentguard migrate [flags]',
+    flags: [
+      { flag: '--dir, -d <path>', description: 'Base directory for JSONL data (default: .agentguard)' },
+      { flag: '--dry-run', description: 'Preview what would be imported without writing' },
+      { flag: '--verbose', description: 'Show per-file import details' },
+      {
+        flag: '--db-path <path>',
+        description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
+      },
+    ],
+    examples: [
+      'agentguard migrate',
+      'agentguard migrate --dry-run',
+      'agentguard migrate --verbose',
+      'agentguard migrate --dir .agentguard --db-path ./local.db',
+    ],
+  },
   'ci-check': {
     name: 'agentguard ci-check',
     description: 'CI governance verification — check a session for violations',
@@ -518,6 +538,17 @@ async function main() {
       break;
     }
 
+    case 'migrate': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.migrate));
+        break;
+      }
+      const { migrate: migrateCmd } = await import('./commands/migrate.js');
+      const code = await migrateCmd(args.slice(1), resolveStorageConfig(args.slice(1)));
+      process.exit(code);
+      break;
+    }
+
     case 'ci-check': {
       if (wantsHelp) {
         console.log(formatHelp(COMMANDS['ci-check']));
@@ -792,6 +823,8 @@ function printHelp(): void {
     agentguard export <runId>                 Export a governance session to JSONL
     agentguard export --last                  Export the most recent run
     agentguard import <file>                  Import a governance session from JSONL
+    agentguard migrate                        Bulk-import JSONL files into SQLite
+    agentguard migrate --dry-run              Preview migration without writing
 
   \x1b[1mReplay:\x1b[0m
     agentguard replay                         List recorded sessions
