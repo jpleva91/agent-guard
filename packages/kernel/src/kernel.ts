@@ -69,6 +69,8 @@ export interface KernelResult {
   paused?: boolean;
   /** True if the action was executed then rolled back */
   rolledBack?: boolean;
+  /** True if the action was modified by a MODIFY intervention and re-evaluated successfully */
+  modified?: boolean;
 }
 
 /**
@@ -87,6 +89,18 @@ export type PauseHandler = (context: {
  * Snapshot provider — captures and restores pre-execution state for ROLLBACK support.
  * The kernel calls `capture()` before execution and `restore()` if rollback is needed.
  */
+/**
+ * Modify handler callback — invoked when the kernel encounters a MODIFY intervention.
+ * Receives the action details and must return a modified version of the raw action.
+ * If not provided, MODIFY interventions auto-deny.
+ */
+export type ModifyHandler = (context: {
+  action: CanonicalAction | null;
+  intent: MonitorDecision['intent'];
+  reason: string;
+  runId: string;
+}) => Promise<{ modified: boolean; changes?: Partial<RawAgentAction>; reason?: string }>;
+
 export interface SnapshotProvider {
   capture(action: CanonicalAction): Promise<{ snapshotId: string }>;
   restore(snapshotId: string): Promise<{ success: boolean; error?: string }>;
@@ -120,6 +134,10 @@ export interface KernelConfig extends MonitorConfig {
   pauseTimeoutMs?: number;
   /** Snapshot provider for ROLLBACK interventions. If not provided, rollback is best-effort. */
   snapshotProvider?: SnapshotProvider;
+  /** Callback for MODIFY interventions. If not provided, MODIFY auto-denies. */
+  modifyHandler?: ModifyHandler;
+  /** Timeout (ms) for MODIFY interventions before auto-deny. Default: 30000 */
+  modifyTimeoutMs?: number;
 }
 
 export interface Kernel {
@@ -152,6 +170,8 @@ export function createKernel(config: KernelConfig = {}): Kernel {
   const pauseHandler = config.pauseHandler ?? null;
   const pauseTimeoutMs = config.pauseTimeoutMs ?? 30_000;
   const snapshotProvider = config.snapshotProvider ?? null;
+  const modifyHandler = config.modifyHandler ?? null;
+  const modifyTimeoutMs = config.modifyTimeoutMs ?? 30_000;
   const tracer = config.tracer ?? null;
   const actionLog: KernelResult[] = [];
   let eventCount = 0;
@@ -190,6 +210,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
         tracer?.startSpan('kernel.propose', `propose:${rawAction.tool || 'unknown'}`) ?? null;
       const proposalBody = async (): Promise<KernelResult> => {
         const allEvents: DomainEvent[] = [];
+        let wasModified = false;
 
         // 1. Emit ACTION_REQUESTED
         const requestedEvent = createEvent(ACTION_REQUESTED, {
@@ -337,7 +358,155 @@ export function createKernel(config: KernelConfig = {}): Kernel {
               return result;
             }
           }
-          // 5a-ii. ROLLBACK intervention — execute with snapshot safety net
+          // 5a-ii. MODIFY intervention — programmatic action rewrite + re-evaluation
+          else if (hasExplicitDenial && interventionType === INTERVENTION.MODIFY) {
+            const escalatedEvent = createEvent(ACTION_ESCALATED, {
+              actionType: decision.intent.action,
+              target: decision.intent.target,
+              reason: `MODIFY intervention: ${decision.decision.reason}`,
+              actionId: action?.id,
+              policyHash: decision.decision.matchedPolicy?.id,
+              metadata: {
+                runId,
+                intervention: interventionType,
+                violations: decision.violations,
+                modifyTimeoutMs,
+              },
+            });
+            allEvents.push(escalatedEvent);
+
+            let modifyApplied = false;
+            let modifyReason = 'No modify handler — auto-denied';
+
+            if (modifyHandler) {
+              try {
+                let timer: ReturnType<typeof setTimeout> | undefined;
+                const timeoutPromise = new Promise<{ modified: false; reason: string }>(
+                  (resolve) => {
+                    timer = setTimeout(
+                      () =>
+                        resolve({
+                          modified: false,
+                          reason: `MODIFY timed out after ${modifyTimeoutMs}ms`,
+                        }),
+                      modifyTimeoutMs
+                    );
+                  }
+                );
+                const handlerPromise = modifyHandler({
+                  action,
+                  intent: decision.intent,
+                  reason: decision.decision.reason,
+                  runId,
+                });
+                const modifyResult = await Promise.race([handlerPromise, timeoutPromise]);
+                clearTimeout(timer!);
+
+                if (modifyResult.modified && modifyResult.changes) {
+                  // Merge modifications into the original raw action and re-evaluate
+                  const modifiedRawAction: RawAgentAction = {
+                    ...rawAction,
+                    ...modifyResult.changes,
+                    metadata: {
+                      ...rawAction.metadata,
+                      ...modifyResult.changes.metadata,
+                      modifiedBy: 'modify-intervention',
+                      originalCommand: rawAction.command,
+                    },
+                  };
+
+                  const reEvalDecision = monitor.process(modifiedRawAction, systemContext);
+
+                  if (reEvalDecision.allowed) {
+                    // Modified action passed re-evaluation — update decision and action
+                    decision = reEvalDecision;
+                    modifyApplied = true;
+                    modifyReason =
+                      modifyResult.reason || 'Action modified and re-evaluation passed';
+
+                    // Rebuild canonical action from modified intent
+                    try {
+                      const modifiedActionType = decision.intent.action;
+                      const modifiedTarget = decision.intent.target;
+                      if (modifiedActionType !== 'unknown') {
+                        action = createAction(modifiedActionType, modifiedTarget, 'kernel-modified', {
+                          command: modifiedRawAction.command,
+                          agent: modifiedRawAction.agent,
+                          runId,
+                        });
+                      }
+                    } catch {
+                      // Action creation may fail — continue with original action
+                    }
+                  } else {
+                    modifyApplied = false;
+                    modifyReason =
+                      'Modified action denied on re-evaluation: ' + reEvalDecision.decision.reason;
+                  }
+                } else {
+                  modifyApplied = false;
+                  modifyReason =
+                    modifyResult.reason || 'Modify handler declined to modify';
+                }
+              } catch (err) {
+                modifyApplied = false;
+                modifyReason = `Modify handler error: ${err instanceof Error ? err.message : String(err)}`;
+              }
+            }
+
+            if (modifyApplied) {
+              wasModified = true;
+            }
+
+            if (!modifyApplied) {
+              // Modification failed or declined — deny
+              const deniedEvent = createEvent(ACTION_DENIED, {
+                actionType: decision.intent.action,
+                target: decision.intent.target,
+                reason: modifyReason,
+                actionId: action?.id,
+                policyHash: decision.decision.matchedPolicy?.id,
+                metadata: { runId, intervention: interventionType, modified: false },
+              });
+              allEvents.push(deniedEvent);
+              sinkEvents(allEvents);
+
+              const decisionRecord = buildDecisionRecord({
+                runId,
+                decision,
+                execution: null,
+                executionDurationMs: null,
+                simulation: null,
+              });
+              sinkDecision(decisionRecord);
+
+              const decisionEvent = createEvent(DECISION_RECORDED, {
+                recordId: decisionRecord.recordId,
+                outcome: decisionRecord.outcome,
+                actionType: decisionRecord.action.type,
+                target: decisionRecord.action.target,
+                reason: decisionRecord.reason,
+              });
+              sinkEvent(decisionEvent);
+
+              const result: KernelResult = {
+                allowed: false,
+                executed: false,
+                decision,
+                execution: null,
+                action,
+                events: allEvents,
+                runId,
+                decisionRecord,
+                intervention: interventionType,
+                modified: false,
+              };
+              actionLog.push(result);
+              return result;
+            }
+            // modifyApplied === true — fall through to the ALLOWED execution path below
+          }
+          // 5a-iii. ROLLBACK intervention — execute with snapshot safety net
           else if (hasExplicitDenial && interventionType === INTERVENTION.ROLLBACK) {
             // ROLLBACK: allow execution but capture pre-execution snapshot for undo
             const escalatedEvent = createEvent(ACTION_ESCALATED, {
@@ -832,13 +1001,24 @@ export function createKernel(config: KernelConfig = {}): Kernel {
             }
           : null;
 
-        const decisionRecord = buildDecisionRecord({
-          runId,
-          decision,
-          execution,
-          executionDurationMs,
-          simulation: simSummary,
-        });
+        const decisionRecord = wasModified
+          ? {
+              ...buildDecisionRecord({
+                runId,
+                decision,
+                execution,
+                executionDurationMs,
+                simulation: simSummary,
+              }),
+              outcome: 'modify' as const,
+            }
+          : buildDecisionRecord({
+              runId,
+              decision,
+              execution,
+              executionDurationMs,
+              simulation: simSummary,
+            });
         sinkDecision(decisionRecord);
 
         // Emit DECISION_RECORDED event
@@ -860,6 +1040,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
           events: allEvents,
           runId,
           decisionRecord,
+          ...(wasModified ? { modified: true, intervention: INTERVENTION.MODIFY } : {}),
         };
         actionLog.push(result);
         return result;

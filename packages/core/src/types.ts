@@ -804,7 +804,7 @@ export interface AuthorizationResult {
 }
 
 /** Intervention mode */
-export type Intervention = 'deny' | 'rollback' | 'pause' | 'test-only';
+export type Intervention = 'deny' | 'rollback' | 'pause' | 'modify' | 'test-only';
 
 /** Full engine decision */
 export interface EngineDecision {
@@ -1035,7 +1035,7 @@ export interface GovernanceDecisionRecord {
     persona?: AgentPersona;
   };
   /** Final governance outcome */
-  outcome: 'allow' | 'deny' | 'pause' | 'rollback';
+  outcome: 'allow' | 'deny' | 'pause' | 'rollback' | 'modify';
   /** Human-readable reason for the outcome */
   reason: string;
   /** Intervention type if denied */

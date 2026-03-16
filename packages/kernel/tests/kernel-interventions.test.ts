@@ -1,7 +1,7 @@
-// Tests for PAUSE and ROLLBACK intervention types in the Governed Action Kernel
+// Tests for PAUSE, ROLLBACK, and MODIFY intervention types in the Governed Action Kernel
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createKernel } from '@red-codes/kernel';
-import type { PauseHandler, SnapshotProvider } from '@red-codes/kernel';
+import type { PauseHandler, ModifyHandler, SnapshotProvider } from '@red-codes/kernel';
 import { INTERVENTION } from '@red-codes/kernel';
 import { resetActionCounter } from '@red-codes/core';
 import { resetEventCounter } from '@red-codes/events';
@@ -13,7 +13,7 @@ beforeEach(() => {
 });
 
 // Helper: create a policy that denies git.push with a specific intervention
-function pushDenyPolicy(intervention?: 'pause' | 'rollback' | 'deny', severity = 4) {
+function pushDenyPolicy(intervention?: 'pause' | 'rollback' | 'deny' | 'modify', severity = 4) {
   return {
     id: 'test-policy',
     name: 'Test Policy',
@@ -30,7 +30,7 @@ function pushDenyPolicy(intervention?: 'pause' | 'rollback' | 'deny', severity =
 }
 
 // Helper: create a policy that denies file.write with a specific intervention
-function writePolicy(intervention?: 'pause' | 'rollback' | 'deny', severity = 3) {
+function writePolicy(intervention?: 'pause' | 'rollback' | 'deny' | 'modify', severity = 3) {
   return {
     id: 'write-policy',
     name: 'Write Policy',
@@ -424,6 +424,245 @@ describe('Policy intervention override', () => {
   });
 });
 
+describe('MODIFY Intervention', () => {
+  it('auto-denies when no modify handler is provided', async () => {
+    const kernel = createKernel({
+      dryRun: true,
+      policyDefs: [pushDenyPolicy('modify')],
+    });
+
+    const result = await kernel.propose({
+      tool: 'Bash',
+      command: 'git push origin main',
+      agent: 'test-agent',
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.modified).toBe(false);
+    expect(result.intervention).toBe(INTERVENTION.MODIFY);
+  });
+
+  it('allows action when modify handler rewrites and re-evaluation passes', async () => {
+    // Policy denies shell.exec with modify intervention, but allows file.read
+    const handler: ModifyHandler = vi.fn().mockResolvedValue({
+      modified: true,
+      changes: { tool: 'Read', file: 'src/index.ts', command: undefined },
+      reason: 'Converted exec to read',
+    });
+
+    const kernel = createKernel({
+      dryRun: true,
+      invariants: [], // disable invariants for clean re-evaluation
+      evaluateOptions: { defaultDeny: false },
+      policyDefs: [
+        {
+          id: 'exec-policy',
+          name: 'Exec Policy',
+          rules: [
+            {
+              action: 'shell.exec',
+              effect: 'deny' as const,
+              reason: 'Shell exec not allowed — modify to read',
+              intervention: 'modify' as const,
+            },
+            {
+              action: 'file.read',
+              effect: 'allow' as const,
+            },
+          ],
+          severity: 4,
+        },
+      ],
+      modifyHandler: handler,
+    });
+
+    const result = await kernel.propose({
+      tool: 'Bash',
+      command: 'cat src/index.ts',
+      agent: 'test-agent',
+    });
+
+    expect(result.allowed).toBe(true);
+    expect(result.modified).toBe(true);
+    expect(handler).toHaveBeenCalledOnce();
+    expect(handler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reason: 'Shell exec not allowed — modify to read',
+        runId: expect.stringMatching(/^run_/),
+      })
+    );
+  });
+
+  it('denies when modify handler returns modified: false', async () => {
+    const handler: ModifyHandler = vi.fn().mockResolvedValue({
+      modified: false,
+      reason: 'Cannot modify this action',
+    });
+
+    const kernel = createKernel({
+      dryRun: true,
+      policyDefs: [pushDenyPolicy('modify')],
+      modifyHandler: handler,
+    });
+
+    const result = await kernel.propose({
+      tool: 'Bash',
+      command: 'git push origin main',
+      agent: 'test-agent',
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.modified).toBe(false);
+    expect(result.intervention).toBe(INTERVENTION.MODIFY);
+  });
+
+  it('denies when modified action fails re-evaluation', async () => {
+    // Handler modifies the action, but the modified version is also denied
+    const handler: ModifyHandler = vi.fn().mockResolvedValue({
+      modified: true,
+      changes: { command: 'git push origin main' },
+      reason: 'Modified command',
+    });
+
+    const kernel = createKernel({
+      dryRun: true,
+      policyDefs: [pushDenyPolicy('modify')], // denies all git.push
+      modifyHandler: handler,
+    });
+
+    const result = await kernel.propose({
+      tool: 'Bash',
+      command: 'git push origin main',
+      agent: 'test-agent',
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.modified).toBe(false);
+  });
+
+  it('auto-denies when modify handler times out', async () => {
+    const handler: ModifyHandler = vi
+      .fn()
+      .mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve({ modified: true }), 5000))
+      );
+
+    const kernel = createKernel({
+      dryRun: true,
+      policyDefs: [pushDenyPolicy('modify')],
+      modifyHandler: handler,
+      modifyTimeoutMs: 50,
+    });
+
+    const result = await kernel.propose({
+      tool: 'Bash',
+      command: 'git push origin main',
+      agent: 'test-agent',
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.modified).toBe(false);
+  });
+
+  it('auto-denies when modify handler throws', async () => {
+    const handler: ModifyHandler = vi.fn().mockRejectedValue(new Error('handler crashed'));
+
+    const kernel = createKernel({
+      dryRun: true,
+      policyDefs: [pushDenyPolicy('modify')],
+      modifyHandler: handler,
+    });
+
+    const result = await kernel.propose({
+      tool: 'Bash',
+      command: 'git push origin main',
+      agent: 'test-agent',
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.modified).toBe(false);
+  });
+
+  it('emits ActionEscalated event for MODIFY', async () => {
+    const events: DomainEvent[] = [];
+    const kernel = createKernel({
+      dryRun: true,
+      policyDefs: [pushDenyPolicy('modify')],
+      sinks: [{ write: (e: DomainEvent) => events.push(e) }],
+    });
+
+    await kernel.propose({
+      tool: 'Bash',
+      command: 'git push origin main',
+      agent: 'test-agent',
+    });
+
+    const escalated = events.find((e) => e.kind === 'ActionEscalated');
+    expect(escalated).toBeDefined();
+    expect(escalated!.reason as string).toContain('MODIFY intervention');
+  });
+
+  it('creates decision record with modify outcome on success', async () => {
+    const handler: ModifyHandler = vi.fn().mockResolvedValue({
+      modified: true,
+      changes: { tool: 'Read', file: 'src/index.ts', command: undefined },
+      reason: 'Converted exec to read',
+    });
+
+    const kernel = createKernel({
+      dryRun: true,
+      invariants: [], // disable invariants for clean re-evaluation
+      evaluateOptions: { defaultDeny: false },
+      policyDefs: [
+        {
+          id: 'exec-policy',
+          name: 'Exec Policy',
+          rules: [
+            {
+              action: 'shell.exec',
+              effect: 'deny' as const,
+              reason: 'Shell exec not allowed',
+              intervention: 'modify' as const,
+            },
+            {
+              action: 'file.read',
+              effect: 'allow' as const,
+            },
+          ],
+          severity: 4,
+        },
+      ],
+      modifyHandler: handler,
+    });
+
+    const result = await kernel.propose({
+      tool: 'Bash',
+      command: 'cat src/index.ts',
+      agent: 'test-agent',
+    });
+
+    expect(result.decisionRecord).toBeDefined();
+    expect(result.decisionRecord!.outcome).toBe('modify');
+  });
+
+  it('policy intervention=modify overrides severity-based selection', async () => {
+    // Severity 5 would normally → DENY, but policy says modify
+    const kernel = createKernel({
+      dryRun: true,
+      policyDefs: [pushDenyPolicy('modify', 5)],
+    });
+
+    const result = await kernel.propose({
+      tool: 'Bash',
+      command: 'git push origin main',
+      agent: 'test-agent',
+    });
+
+    expect(result.intervention).toBe(INTERVENTION.MODIFY);
+    expect(result.modified).toBe(false); // no handler → auto-deny
+  });
+});
+
 describe('Intervention decision records', () => {
   it('PAUSE denial creates a decision record with intervention', async () => {
     const kernel = createKernel({
@@ -456,5 +695,21 @@ describe('Intervention decision records', () => {
 
     expect(result.decisionRecord).toBeDefined();
     expect(result.decisionRecord!.intervention).toBe(INTERVENTION.ROLLBACK);
+  });
+
+  it('MODIFY denial creates a decision record with intervention', async () => {
+    const kernel = createKernel({
+      dryRun: true,
+      policyDefs: [pushDenyPolicy('modify')],
+    });
+
+    const result = await kernel.propose({
+      tool: 'Bash',
+      command: 'git push origin main',
+      agent: 'test-agent',
+    });
+
+    expect(result.decisionRecord).toBeDefined();
+    expect(result.decisionRecord!.intervention).toBe(INTERVENTION.MODIFY);
   });
 });

@@ -24,6 +24,7 @@ export const INTERVENTION = {
   DENY: 'deny',
   ROLLBACK: 'rollback',
   PAUSE: 'pause',
+  MODIFY: 'modify',
   TEST_ONLY: 'test-only',
 } as const;
 
@@ -70,6 +71,7 @@ function selectIntervention(decision: EvalResult, violations: InvariantCheck[]):
       deny: INTERVENTION.DENY,
       pause: INTERVENTION.PAUSE,
       rollback: INTERVENTION.ROLLBACK,
+      modify: INTERVENTION.MODIFY,
     };
     if (mapped[decision.policyIntervention]) {
       return mapped[decision.policyIntervention];

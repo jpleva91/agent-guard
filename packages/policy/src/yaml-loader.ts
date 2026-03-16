@@ -37,6 +37,7 @@ interface YamlRule {
   requireTests?: boolean;
   requireFormat?: boolean;
   persona?: PersonaCondition;
+  intervention?: string;
   forecast?: ForecastCondition;
 }
 
@@ -432,6 +433,9 @@ function applyRuleField(rule: YamlRule, key: string, val: string): void {
       if (arr.length > 0) rule.branches = arr;
       break;
     }
+    case 'intervention':
+      rule.intervention = trimQuotes(val);
+      break;
   }
 }
 
@@ -481,12 +485,18 @@ function convertRule(yamlRule: YamlRule): PolicyRule {
     action = yamlRule.action || '*';
   }
 
-  return {
+  const rule: PolicyRule = {
     action,
     effect: (yamlRule.effect as 'allow' | 'deny') || 'deny',
     conditions: hasConditions ? conditions : undefined,
     reason: yamlRule.reason,
   };
+
+  if (yamlRule.intervention) {
+    rule.intervention = yamlRule.intervention as PolicyRule['intervention'];
+  }
+
+  return rule;
 }
 
 /** Convert a YamlPersonaDef to an AgentPersona (for policy defaults). */

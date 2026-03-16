@@ -14,6 +14,7 @@ export type {
   KernelConfig,
   Kernel,
   PauseHandler,
+  ModifyHandler,
   SnapshotProvider,
 } from './kernel.js';
 export type { EngineDecision, EngineConfig, Engine, InterventionType } from './decision.js';
