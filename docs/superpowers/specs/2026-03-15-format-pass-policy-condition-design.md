@@ -39,23 +39,35 @@ Agent attempts git.commit -> policy evaluator checks requireFormat condition
                           formatPass=true? -> allow    formatPass=false? -> deny
 ```
 
+### Key wiring detail: `systemContext` -> `intent.metadata`
+
+The evaluator reads `intent.metadata` but `formatPass`/`testsPass` arrive via
+`systemContext` (passed by CLI callers). These are two separate paths:
+
+- `rawAction.metadata` -- set by the adapter from the hook payload
+- `systemContext` -- set by the CLI from session-level state
+
+The kernel's `decision.ts` `evaluate()` method must merge relevant `systemContext` flags
+into `rawAction.metadata` before calling `authorize()`, so that the policy evaluator can
+read them from `intent.metadata`. This is change #9.
+
 ## Changes
 
 ### 1. `SystemState` -- add `formatPass` field
 
-**`packages/invariants/src/definitions.ts`** (line ~35):
+**`packages/invariants/src/definitions.ts`** `SystemState` interface:
 ```typescript
 formatPass?: boolean;
 ```
 
-**`packages/core/src/types.ts`** (line ~844):
+**`packages/core/src/types.ts`** `SystemState` interface (line ~836):
 ```typescript
 readonly formatPass?: boolean;
 ```
 
 ### 2. `buildSystemState()` -- wire `formatPass`
 
-**`packages/invariants/src/checker.ts`** (line ~69):
+**`packages/invariants/src/checker.ts`** `buildSystemState()`:
 ```typescript
 formatPass: context.formatPass as boolean | undefined,
 ```
@@ -71,31 +83,31 @@ requireFormat?: boolean;
 
 **`packages/policy/src/evaluator.ts`** `matchConditions()`:
 
-After the existing persona check, add:
+Add BEFORE the existing `scope` check (so these gate conditions short-circuit before
+other conditions are evaluated):
 
 ```typescript
-// requireTests: for deny rules, match (= deny applies) when tests have NOT passed
-if (conditions.requireTests && intent.metadata?.testsPass !== true) {
-  return { matched: true, scopeMatched, limitExceeded, branchMatched, personaMatched };
-}
-// Skip this deny rule when tests have passed
+// requireTests: skip this rule entirely when tests have passed (gate condition)
 if (conditions.requireTests && intent.metadata?.testsPass === true) {
-  return { matched: false, scopeMatched, limitExceeded, branchMatched, personaMatched };
+  return { matched: false };
 }
 
-// requireFormat: for deny rules, match (= deny applies) when format has NOT passed
-if (conditions.requireFormat && intent.metadata?.formatPass !== true) {
-  return { matched: true, scopeMatched, limitExceeded, branchMatched, personaMatched };
-}
-// Skip this deny rule when format has passed
+// requireFormat: skip this rule entirely when formatting has passed (gate condition)
 if (conditions.requireFormat && intent.metadata?.formatPass === true) {
-  return { matched: false, scopeMatched, limitExceeded, branchMatched, personaMatched };
+  return { matched: false };
 }
 ```
 
-For deny rules, `matched: true` means "this deny rule applies" -- so when the flag
-is falsy the deny matches and blocks the action. When the flag is true the condition
-doesn't match and the deny rule is skipped, allowing the action through.
+Semantics: For a deny rule with `requireFormat: true`, the rule matches (denies) by
+default. The ONLY way to skip the deny is if `formatPass === true` in the intent
+metadata. This means:
+- `formatPass` missing/undefined -> deny fires (safe default)
+- `formatPass: false` -> deny fires
+- `formatPass: true` -> deny skipped, action proceeds to next rule
+
+By placing these checks first and only returning `matched: false` (skip), all
+subsequent conditions (scope, branches, limit, persona) still compose correctly when
+the gate condition is not satisfied. The function falls through to normal evaluation.
 
 ### 5. YAML parser -- parse `requireFormat`
 
@@ -106,7 +118,7 @@ Add to `YamlRule` interface:
 requireFormat?: boolean;
 ```
 
-Add case to `parseRuleField()`:
+Add case to `applyRuleField()`:
 ```typescript
 case 'requireFormat':
   rule.requireFormat = val === 'true';
@@ -139,14 +151,41 @@ formatPass: z.boolean().optional().describe('Has formatting (Prettier) passed?')
   reason: Run pnpm format:fix before committing -- all files must pass Prettier
 ```
 
-### 8. Intent metadata propagation
+### 8. CLI policy command -- serialize `requireFormat`
 
-`NormalizedIntent.metadata` is a `Record<string, unknown>`. The kernel's `decision.ts`
-passes `systemContext` through to `buildSystemState()`. The evaluator reads
-`intent.metadata?.formatPass` and `intent.metadata?.testsPass`.
+**`apps/cli/src/commands/policy.ts`** (after the existing `requireTests` block):
+```typescript
+if (r.requireFormat !== undefined) {
+  rule.conditions = { ...(rule.conditions as object), requireFormat: r.requireFormat };
+}
+```
 
-The CLI `guard` command and `claude-hook` command pass session-level context (including
-`testsPass`) when calling `engine.evaluate()`. The same mechanism carries `formatPass`.
+### 9. Decision engine -- merge `systemContext` flags into `rawAction.metadata`
+
+**`packages/kernel/src/decision.ts`** `evaluate()` method:
+
+Before calling `authorize(rawAction, policies)`, merge session-level flags:
+
+```typescript
+// Merge session-level state flags into rawAction.metadata so the policy
+// evaluator can read them via intent.metadata (evaluator has no access to systemContext)
+const enrichedAction = {
+  ...rawAction,
+  metadata: {
+    ...rawAction?.metadata,
+    testsPass: systemContext.testsPass ?? rawAction?.metadata?.testsPass,
+    formatPass: systemContext.formatPass ?? rawAction?.metadata?.formatPass,
+  },
+};
+```
+
+Then pass `enrichedAction` to `authorize()` instead of `rawAction`.
+
+### 10. CLI init scaffold -- update templates
+
+**`apps/cli/src/commands/init.ts`**:
+- Add `formatPass?: boolean` to the scaffolded `SystemState` interface (~line 293)
+- Update the example policy-pack template to show `requireFormat` alongside `requireTests`
 
 ## How `formatPass` gets set
 
@@ -163,11 +202,21 @@ observing what the agent already does.
    falsy; allows when `formatPass: true` in metadata.
 2. **Unit: evaluator** -- `requireTests: true` denies `git.commit` when `testsPass` is
    falsy; allows when `testsPass: true` (fixes existing bug).
-3. **Unit: YAML loader** -- `requireFormat` parsed correctly from YAML.
-4. **Unit: checker** -- `buildSystemState()` includes `formatPass`.
-5. **Integration: e2e pipeline** -- `git.commit` action denied when `formatPass` not set,
+3. **Unit: evaluator** -- Gate conditions compose with other conditions: a rule with both
+   `requireFormat: true` and `branches: [main]` skips correctly when format passes,
+   regardless of branch.
+4. **Unit: YAML loader** -- `requireFormat` parsed correctly from YAML.
+5. **Unit: checker** -- `buildSystemState()` includes `formatPass`.
+6. **Unit: decision engine** -- `systemContext.formatPass` is merged into
+   `rawAction.metadata` before policy evaluation.
+7. **Integration: e2e pipeline** -- `git.commit` action denied when `formatPass` not set,
    allowed when `formatPass: true` passed in context.
-6. **Policy validation** -- `agentguard.yaml` loads without errors after change.
+8. **Integration: policy command** -- `requireFormat` conditions round-trip through
+   policy serialization.
+9. **Policy validation** -- `agentguard.yaml` loads without errors after change.
+10. **Benchmark check** -- Verify `policy-evaluation.bench.ts` fixture using
+    `requireTests: true` still works correctly after evaluator fix (semantic change:
+    it will now always fire the deny since no `testsPass` is provided).
 
 ## Non-Goals
 
