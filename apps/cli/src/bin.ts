@@ -366,6 +366,16 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard config keys',
     ],
   },
+  trust: {
+    name: 'agentguard trust',
+    description: 'Trust a project-local policy file after risk review',
+    usage: 'agentguard trust <policy-file> [flags]',
+    flags: [{ flag: '--yes, -y', description: 'Skip confirmation prompt' }],
+    examples: [
+      'agentguard trust agentguard.yaml',
+      'agentguard trust .agentguard/policy.yaml --yes',
+    ],
+  },
   'session-viewer': {
     name: 'agentguard session-viewer',
     description: 'Generate an interactive HTML visualization of a governance session',
@@ -675,6 +685,17 @@ async function main() {
       }
       const { sessionViewer } = await import('./commands/session-viewer.js');
       const code = await sessionViewer(args.slice(1), resolveStorageConfig(args.slice(1)));
+      process.exit(code);
+      break;
+    }
+
+    case 'trust': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.trust));
+        break;
+      }
+      const { trust: trustCmd } = await import('./commands/trust.js');
+      const code = await trustCmd(args.slice(1));
       process.exit(code);
       break;
     }
