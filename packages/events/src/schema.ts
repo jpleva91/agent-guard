@@ -84,6 +84,19 @@ export const HEARTBEAT_EMITTED: EventKind = 'HeartbeatEmitted';
 export const HEARTBEAT_MISSED: EventKind = 'HeartbeatMissed';
 export const AGENT_UNRESPONSIVE: EventKind = 'AgentUnresponsive';
 
+// Integrity & Trust
+export const HOOK_INTEGRITY_VERIFIED: EventKind = 'HookIntegrityVerified';
+export const HOOK_INTEGRITY_FAILED: EventKind = 'HookIntegrityFailed';
+export const POLICY_TRUST_VERIFIED: EventKind = 'PolicyTrustVerified';
+export const POLICY_TRUST_DENIED: EventKind = 'PolicyTrustDenied';
+
+// Adoption Analytics
+export const ADOPTION_ANALYZED: EventKind = 'AdoptionAnalyzed';
+export const ADOPTION_ANALYSIS_FAILED: EventKind = 'AdoptionAnalysisFailed';
+
+// Denial Learning
+export const DENIAL_PATTERN_DETECTED: EventKind = 'DenialPatternDetected';
+
 // --- Event Schemas ---
 const EVENT_SCHEMAS: Record<string, EventSchema> = {
   [ERROR_OBSERVED]: {
@@ -291,6 +304,34 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   [AGENT_UNRESPONSIVE]: {
     required: ['agentId', 'missedCount', 'threshold'],
     optional: ['lastHeartbeatAt', 'metadata'],
+  },
+  [HOOK_INTEGRITY_VERIFIED]: {
+    required: ['settingsPath', 'hash'],
+    optional: [],
+  },
+  [HOOK_INTEGRITY_FAILED]: {
+    required: ['settingsPath', 'reason'],
+    optional: ['expectedHash', 'actualHash', 'command'],
+  },
+  [POLICY_TRUST_VERIFIED]: {
+    required: ['policyPath', 'status'],
+    optional: ['riskFlags'],
+  },
+  [POLICY_TRUST_DENIED]: {
+    required: ['policyPath', 'reason'],
+    optional: ['riskFlags'],
+  },
+  [ADOPTION_ANALYZED]: {
+    required: ['sessionId', 'adoptionPct', 'totalToolCalls', 'governedActions'],
+    optional: ['ungoverned', 'bypassAttempts'],
+  },
+  [ADOPTION_ANALYSIS_FAILED]: {
+    required: ['sessionId', 'error'],
+    optional: [],
+  },
+  [DENIAL_PATTERN_DETECTED]: {
+    required: ['actionType', 'occurrences', 'confidence'],
+    optional: ['invariant', 'policyRule', 'suggestion', 'resolution'],
   },
 };
 
