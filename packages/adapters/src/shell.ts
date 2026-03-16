@@ -144,9 +144,11 @@ export function createShellAdapter(
   const credentialOptions = isNewOptions
     ? ((optionsOrCredentials as ShellAdapterOptions).credentials ?? {})
     : ((optionsOrCredentials as CredentialStrippingOptions) ?? {});
+  // RTK defaults to ON via AGENTGUARD_RTK_ENABLED env var (set 'false' to disable)
+  const envRtk = process.env.AGENTGUARD_RTK_ENABLED !== 'false';
   const rtkEnabled = isNewOptions
-    ? ((optionsOrCredentials as ShellAdapterOptions).rtkEnabled ?? false)
-    : false;
+    ? ((optionsOrCredentials as ShellAdapterOptions).rtkEnabled ?? envRtk)
+    : envRtk;
 
   return async (action: CanonicalAction): Promise<ShellResult> => {
     let command = (action as Record<string, unknown>).command as string | undefined;
@@ -203,7 +205,8 @@ export function createShellAdapter(
 }
 
 /**
- * Default shell adapter with credential stripping enabled.
+ * Default shell adapter with credential stripping and RTK token optimization enabled.
+ * RTK is on by default (set AGENTGUARD_RTK_ENABLED=false to disable).
  * Strips all DEFAULT_STRIPPED_CREDENTIALS from the child process environment.
  */
 export const shellAdapter = createShellAdapter();
