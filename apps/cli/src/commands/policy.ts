@@ -458,7 +458,6 @@ async function policyValidate(args: string[]): Promise<number> {
 // Subcommand: suggest
 // ---------------------------------------------------------------------------
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function policySuggest(_args: string[]): Promise<number> {
   console.log(
     'Advanced policy suggestions are available in AgentGuard Cloud. Visit https://agentguard.dev'

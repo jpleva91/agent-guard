@@ -432,8 +432,8 @@ export async function sessionViewer(
       // For live mode with SQLite, we re-query the database
       // Note: This runs synchronously within the HTTP handler, which is fine
       // since SQLite is fast for these queries
-      let freshEvents: DomainEvent[] = eventList;
-      let freshDecisions: GovernanceDecisionRecord[] = decisionList;
+      const freshEvents: DomainEvent[] = eventList;
+      const freshDecisions: GovernanceDecisionRecord[] = decisionList;
 
       // Re-read is handled by the polling mechanism
       // In a future iteration, this could re-query SQLite for truly live data using singleRunId

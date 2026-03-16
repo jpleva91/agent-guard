@@ -4,8 +4,6 @@
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseArgs } from '../args.js';
-import type { DomainEvent } from '@red-codes/core';
-import type { GovernanceDecisionRecord } from '@red-codes/core';
 import type { StorageConfig } from '@red-codes/storage';
 
 /**
@@ -74,9 +72,6 @@ export async function exportSession(args: string[], storageConfig?: StorageConfi
   }
 
   // Load events and decisions from SQLite
-  let events: DomainEvent[];
-  let decisions: GovernanceDecisionRecord[];
-
   const { createStorageBundle } = await import('@red-codes/storage');
   const storage = await createStorageBundle(config);
   if (!storage.db) {
@@ -86,8 +81,8 @@ export async function exportSession(args: string[], storageConfig?: StorageConfi
   }
   const { loadRunEvents, loadRunDecisions } = await import('@red-codes/storage');
   const db = storage.db as import('better-sqlite3').Database;
-  events = loadRunEvents(db, runId);
-  decisions = loadRunDecisions(db, runId);
+  const events = loadRunEvents(db, runId);
+  const decisions = loadRunDecisions(db, runId);
   storage.close();
 
   if (events.length === 0) {
