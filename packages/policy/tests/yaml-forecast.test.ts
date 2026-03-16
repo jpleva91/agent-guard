@@ -83,4 +83,34 @@ rules:
     const policy = loadYamlPolicy(yaml);
     expect(policy.rules[0].conditions?.forecast).toBeUndefined();
   });
+
+  it('filters out invalid riskLevel values in inline array', () => {
+    const yaml = `
+id: forecast-invalid-risk
+name: Forecast Invalid Risk
+rules:
+  - action: file.write
+    effect: deny
+    forecast:
+      riskLevel: [high, critical, unknown]
+`;
+    const policy = loadYamlPolicy(yaml);
+    // 'critical' and 'unknown' are not valid — only 'high' survives
+    expect(policy.rules[0].conditions?.forecast?.riskLevel).toEqual(['high']);
+  });
+
+  it('ignores single invalid riskLevel value', () => {
+    const yaml = `
+id: forecast-invalid-single
+name: Forecast Invalid Single
+rules:
+  - action: file.write
+    effect: deny
+    forecast:
+      riskLevel: critical
+`;
+    const policy = loadYamlPolicy(yaml);
+    // Invalid value — riskLevel should not be set
+    expect(policy.rules[0].conditions?.forecast?.riskLevel).toBeUndefined();
+  });
 });

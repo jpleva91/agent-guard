@@ -6,6 +6,7 @@ import type {
   LoadedPolicy,
   IntentForecast,
   ForecastCondition,
+  ForecastMatchValues,
 } from '@red-codes/policy';
 
 function makeForecast(overrides: Partial<IntentForecast> = {}): IntentForecast {
@@ -55,77 +56,101 @@ function makeForecastPolicy(
 
 describe('matchForecastCondition', () => {
   it('returns false when no forecast data is present', () => {
-    expect(matchForecastCondition({ testRiskScore: 50 }, undefined)).toBe(false);
+    expect(matchForecastCondition({ testRiskScore: 50 }, undefined).matched).toBe(false);
   });
 
   it('matches when testRiskScore meets threshold', () => {
     const forecast = makeForecast({ testRiskScore: 60 });
-    expect(matchForecastCondition({ testRiskScore: 50 }, forecast)).toBe(true);
+    expect(matchForecastCondition({ testRiskScore: 50 }, forecast).matched).toBe(true);
   });
 
   it('matches when testRiskScore equals threshold exactly', () => {
     const forecast = makeForecast({ testRiskScore: 50 });
-    expect(matchForecastCondition({ testRiskScore: 50 }, forecast)).toBe(true);
+    expect(matchForecastCondition({ testRiskScore: 50 }, forecast).matched).toBe(true);
   });
 
   it('does not match when testRiskScore is below threshold', () => {
     const forecast = makeForecast({ testRiskScore: 30 });
-    expect(matchForecastCondition({ testRiskScore: 50 }, forecast)).toBe(false);
+    expect(matchForecastCondition({ testRiskScore: 50 }, forecast).matched).toBe(false);
   });
 
   it('matches when blastRadiusScore meets threshold', () => {
     const forecast = makeForecast({ blastRadiusScore: 40 });
-    expect(matchForecastCondition({ blastRadiusScore: 30 }, forecast)).toBe(true);
+    expect(matchForecastCondition({ blastRadiusScore: 30 }, forecast).matched).toBe(true);
   });
 
   it('does not match when blastRadiusScore is below threshold', () => {
     const forecast = makeForecast({ blastRadiusScore: 10 });
-    expect(matchForecastCondition({ blastRadiusScore: 30 }, forecast)).toBe(false);
+    expect(matchForecastCondition({ blastRadiusScore: 30 }, forecast).matched).toBe(false);
   });
 
   it('matches when riskLevel is in the specified list', () => {
     const forecast = makeForecast({ riskLevel: 'high' });
-    expect(matchForecastCondition({ riskLevel: ['high', 'medium'] }, forecast)).toBe(true);
+    expect(matchForecastCondition({ riskLevel: ['high', 'medium'] }, forecast).matched).toBe(true);
   });
 
   it('does not match when riskLevel is not in the list', () => {
     const forecast = makeForecast({ riskLevel: 'low' });
-    expect(matchForecastCondition({ riskLevel: ['high', 'medium'] }, forecast)).toBe(false);
+    expect(matchForecastCondition({ riskLevel: ['high', 'medium'] }, forecast).matched).toBe(false);
   });
 
   it('matches when predictedFileCount meets threshold', () => {
     const forecast = makeForecast({ predictedFiles: ['a.ts', 'b.ts', 'c.ts'] });
-    expect(matchForecastCondition({ predictedFileCount: 3 }, forecast)).toBe(true);
+    expect(matchForecastCondition({ predictedFileCount: 3 }, forecast).matched).toBe(true);
   });
 
   it('does not match when predictedFileCount is below threshold', () => {
     const forecast = makeForecast({ predictedFiles: ['a.ts'] });
-    expect(matchForecastCondition({ predictedFileCount: 3 }, forecast)).toBe(false);
+    expect(matchForecastCondition({ predictedFileCount: 3 }, forecast).matched).toBe(false);
   });
 
   it('matches when dependencyCount meets threshold', () => {
     const forecast = makeForecast({ dependenciesAffected: ['a', 'b', 'c', 'd'] });
-    expect(matchForecastCondition({ dependencyCount: 3 }, forecast)).toBe(true);
+    expect(matchForecastCondition({ dependencyCount: 3 }, forecast).matched).toBe(true);
   });
 
   it('does not match when dependencyCount is below threshold', () => {
     const forecast = makeForecast({ dependenciesAffected: ['a'] });
-    expect(matchForecastCondition({ dependencyCount: 3 }, forecast)).toBe(false);
+    expect(matchForecastCondition({ dependencyCount: 3 }, forecast).matched).toBe(false);
   });
 
   it('requires all specified conditions to match', () => {
     const forecast = makeForecast({ testRiskScore: 80, blastRadiusScore: 10 });
     // testRiskScore passes but blastRadiusScore fails
     expect(
-      matchForecastCondition({ testRiskScore: 50, blastRadiusScore: 30 }, forecast)
+      matchForecastCondition({ testRiskScore: 50, blastRadiusScore: 30 }, forecast).matched
     ).toBe(false);
   });
 
   it('matches when all specified conditions are met', () => {
     const forecast = makeForecast({ testRiskScore: 80, blastRadiusScore: 40 });
     expect(
-      matchForecastCondition({ testRiskScore: 50, blastRadiusScore: 30 }, forecast)
+      matchForecastCondition({ testRiskScore: 50, blastRadiusScore: 30 }, forecast).matched
     ).toBe(true);
+  });
+
+  it('populates forecastValues with actual vs threshold for testRiskScore', () => {
+    const forecast = makeForecast({ testRiskScore: 60 });
+    const { values } = matchForecastCondition({ testRiskScore: 50 }, forecast);
+    expect(values.testRiskScore).toEqual({ actual: 60, threshold: 50 });
+  });
+
+  it('populates forecastValues for riskLevel with actual and required', () => {
+    const forecast = makeForecast({ riskLevel: 'high' });
+    const { values } = matchForecastCondition({ riskLevel: ['high', 'medium'] }, forecast);
+    expect(values.riskLevel).toEqual({ actual: 'high', required: ['high', 'medium'] });
+  });
+
+  it('populates forecastValues even when condition does not match', () => {
+    const forecast = makeForecast({ testRiskScore: 30 });
+    const { matched, values } = matchForecastCondition({ testRiskScore: 50 }, forecast);
+    expect(matched).toBe(false);
+    expect(values.testRiskScore).toEqual({ actual: 30, threshold: 50 });
+  });
+
+  it('returns empty values when no forecast data', () => {
+    const { values } = matchForecastCondition({ testRiskScore: 50 }, undefined);
+    expect(values).toEqual({});
   });
 });
 
@@ -171,6 +196,16 @@ describe('forecast conditions in policy evaluation', () => {
     expect(matchedRule!.conditionDetails.forecastMatched).toBe(true);
   });
 
+  it('records forecastValues in trace conditionDetails with actual vs threshold', () => {
+    const policy = makeForecastPolicy({ testRiskScore: 50 });
+    const intent = makeIntent({ forecast: makeForecast({ testRiskScore: 60 }) });
+    const result = evaluate(intent, [policy]);
+    const matchedRule = result.trace!.rulesEvaluated.find((r) => r.outcome === 'match');
+    const forecastValues = matchedRule!.conditionDetails.forecastValues as ForecastMatchValues;
+    expect(forecastValues).toBeDefined();
+    expect(forecastValues.testRiskScore).toEqual({ actual: 60, threshold: 50 });
+  });
+
   it('records forecastMatched as false when forecast does not meet threshold', () => {
     const policy = makeForecastPolicy({ testRiskScore: 90 });
     const intent = makeIntent({ forecast: makeForecast({ testRiskScore: 30 }) });
@@ -181,6 +216,8 @@ describe('forecast conditions in policy evaluation', () => {
     );
     expect(denyRule).toBeDefined();
     expect(denyRule!.conditionDetails.forecastMatched).toBe(false);
+    const forecastValues = denyRule!.conditionDetails.forecastValues as ForecastMatchValues;
+    expect(forecastValues?.testRiskScore).toEqual({ actual: 30, threshold: 90 });
   });
 });
 

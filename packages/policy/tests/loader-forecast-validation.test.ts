@@ -40,9 +40,7 @@ describe('policy loader forecast condition validation', () => {
       ],
     });
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain(
-      'Rule[0]: Forecast condition "testRiskScore" must be a number'
-    );
+    expect(result.errors).toContain('Rule[0]: Forecast condition "testRiskScore" must be a number');
   });
 
   it('rejects forecast with non-number blastRadiusScore', () => {

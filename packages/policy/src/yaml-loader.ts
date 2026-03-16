@@ -130,11 +130,18 @@ function applyForecastField(forecast: ForecastCondition, key: string, val: strin
       break;
     }
     case 'riskLevel': {
+      const VALID_RISK_LEVELS: Array<'low' | 'medium' | 'high'> = ['low', 'medium', 'high'];
       const arr = parseInlineArray(val);
       if (arr.length > 0) {
-        forecast.riskLevel = arr as Array<'low' | 'medium' | 'high'>;
+        const filtered = arr.filter((v) =>
+          VALID_RISK_LEVELS.includes(v as 'low' | 'medium' | 'high')
+        ) as Array<'low' | 'medium' | 'high'>;
+        if (filtered.length > 0) forecast.riskLevel = filtered;
       } else if (val) {
-        forecast.riskLevel = [trimQuotes(val) as 'low' | 'medium' | 'high'];
+        const trimmed = trimQuotes(val);
+        if (VALID_RISK_LEVELS.includes(trimmed as 'low' | 'medium' | 'high')) {
+          forecast.riskLevel = [trimmed as 'low' | 'medium' | 'high'];
+        }
       }
       break;
     }

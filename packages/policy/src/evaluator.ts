@@ -34,6 +34,19 @@ export interface ForecastCondition {
 }
 
 /**
+ * Captures the actual vs. threshold comparison for each evaluated forecast field.
+ * Populated in conditionDetails when a forecast condition is present, giving
+ * operators a concrete audit trail (e.g. testRiskScore: { actual: 60, threshold: 50 }).
+ */
+export interface ForecastMatchValues {
+  testRiskScore?: { actual: number; threshold: number };
+  blastRadiusScore?: { actual: number; threshold: number };
+  riskLevel?: { actual: 'low' | 'medium' | 'high'; required: Array<'low' | 'medium' | 'high'> };
+  predictedFileCount?: { actual: number; threshold: number };
+  dependencyCount?: { actual: number; threshold: number };
+}
+
+/**
  * Forecast data that can be attached to a NormalizedIntent for
  * predictive policy evaluation. Mirrors the shape of ImpactForecast
  * from the kernel simulation package without creating a dependency.
@@ -101,6 +114,8 @@ export interface RuleEvaluation {
     branchMatched?: boolean;
     personaMatched?: boolean;
     forecastMatched?: boolean;
+    /** Actual vs. threshold values for each evaluated forecast field */
+    forecastValues?: ForecastMatchValues;
   };
   outcome: 'match' | 'no-match' | 'skipped';
 }
@@ -171,6 +186,7 @@ interface ConditionMatchResult {
   branchMatched?: boolean;
   personaMatched?: boolean;
   forecastMatched?: boolean;
+  forecastValues?: ForecastMatchValues;
 }
 
 function matchPersonaCondition(
@@ -203,44 +219,59 @@ function matchPersonaCondition(
 function matchForecastCondition(
   forecastCond: ForecastCondition,
   forecast: IntentForecast | undefined
-): boolean {
-  if (!forecast) return false;
+): { matched: boolean; values: ForecastMatchValues } {
+  if (!forecast) return { matched: false, values: {} };
 
-  if (
-    forecastCond.testRiskScore !== undefined &&
-    forecast.testRiskScore < forecastCond.testRiskScore
-  ) {
-    return false;
-  }
+  const values: ForecastMatchValues = {};
 
-  if (
-    forecastCond.blastRadiusScore !== undefined &&
-    forecast.blastRadiusScore < forecastCond.blastRadiusScore
-  ) {
-    return false;
-  }
-
-  if (forecastCond.riskLevel && forecastCond.riskLevel.length > 0) {
-    if (!forecastCond.riskLevel.includes(forecast.riskLevel)) {
-      return false;
+  if (forecastCond.testRiskScore !== undefined) {
+    values.testRiskScore = {
+      actual: forecast.testRiskScore,
+      threshold: forecastCond.testRiskScore,
+    };
+    if (forecast.testRiskScore < forecastCond.testRiskScore) {
+      return { matched: false, values };
     }
   }
 
-  if (
-    forecastCond.predictedFileCount !== undefined &&
-    forecast.predictedFiles.length < forecastCond.predictedFileCount
-  ) {
-    return false;
+  if (forecastCond.blastRadiusScore !== undefined) {
+    values.blastRadiusScore = {
+      actual: forecast.blastRadiusScore,
+      threshold: forecastCond.blastRadiusScore,
+    };
+    if (forecast.blastRadiusScore < forecastCond.blastRadiusScore) {
+      return { matched: false, values };
+    }
   }
 
-  if (
-    forecastCond.dependencyCount !== undefined &&
-    forecast.dependenciesAffected.length < forecastCond.dependencyCount
-  ) {
-    return false;
+  if (forecastCond.riskLevel && forecastCond.riskLevel.length > 0) {
+    values.riskLevel = { actual: forecast.riskLevel, required: forecastCond.riskLevel };
+    if (!forecastCond.riskLevel.includes(forecast.riskLevel)) {
+      return { matched: false, values };
+    }
   }
 
-  return true;
+  if (forecastCond.predictedFileCount !== undefined) {
+    values.predictedFileCount = {
+      actual: forecast.predictedFiles.length,
+      threshold: forecastCond.predictedFileCount,
+    };
+    if (forecast.predictedFiles.length < forecastCond.predictedFileCount) {
+      return { matched: false, values };
+    }
+  }
+
+  if (forecastCond.dependencyCount !== undefined) {
+    values.dependencyCount = {
+      actual: forecast.dependenciesAffected.length,
+      threshold: forecastCond.dependencyCount,
+    };
+    if (forecast.dependenciesAffected.length < forecastCond.dependencyCount) {
+      return { matched: false, values };
+    }
+  }
+
+  return { matched: true, values };
 }
 
 function matchConditions(
@@ -268,6 +299,7 @@ function matchConditions(
   let branchMatched: boolean | undefined;
   let personaMatched: boolean | undefined;
   let forecastMatched: boolean | undefined;
+  let forecastValues: ForecastMatchValues | undefined;
 
   if (conditions.limit !== undefined && intent.filesAffected !== undefined) {
     limitExceeded = intent.filesAffected > conditions.limit;
@@ -291,7 +323,9 @@ function matchConditions(
   }
 
   if (conditions.forecast) {
-    forecastMatched = matchForecastCondition(conditions.forecast, intent.forecast);
+    const forecastResult = matchForecastCondition(conditions.forecast, intent.forecast);
+    forecastMatched = forecastResult.matched;
+    forecastValues = forecastResult.values;
     if (!forecastMatched) {
       return {
         matched: false,
@@ -300,6 +334,7 @@ function matchConditions(
         branchMatched,
         personaMatched,
         forecastMatched,
+        forecastValues,
       };
     }
   }
@@ -311,6 +346,7 @@ function matchConditions(
     branchMatched,
     personaMatched,
     forecastMatched,
+    forecastValues,
   };
 }
 
@@ -340,6 +376,7 @@ function createRuleEval(
           branchMatched: conditionResult.branchMatched,
           personaMatched: conditionResult.personaMatched,
           forecastMatched: conditionResult.forecastMatched,
+          forecastValues: conditionResult.forecastValues,
         }
       : {},
     outcome,
