@@ -50,7 +50,7 @@
     "chokidar": "^5.0.0"
   },
   "optionalDependencies": {
-    "better-sqlite3": "^12.6.2"
+    "better-sqlite3": "^12.8.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0"
