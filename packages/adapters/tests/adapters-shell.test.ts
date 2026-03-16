@@ -5,7 +5,7 @@ vi.mock('node:child_process', () => ({
   exec: vi.fn(),
 }));
 
-import { shellAdapter } from '@red-codes/adapters';
+import { shellAdapter, createShellAdapter } from '@red-codes/adapters';
 import { exec } from 'node:child_process';
 import type { CanonicalAction } from '@red-codes/core';
 
@@ -34,10 +34,12 @@ describe('shellAdapter', () => {
     });
 
     const result = await shellAdapter(makeAction({ command: 'echo hello' }));
-    expect(result).toEqual({ stdout: 'output', stderr: '', exitCode: 0 });
+    expect(result.stdout).toBe('output');
+    expect(result.stderr).toBe('');
+    expect(result.exitCode).toBe(0);
     expect(exec).toHaveBeenCalledWith(
       'echo hello',
-      expect.objectContaining({ timeout: 30_000, maxBuffer: 1024 * 1024 }),
+      expect.objectContaining({ timeout: 30_000, maxBuffer: 1024 * 1024, env: expect.any(Object) }),
       expect.any(Function)
     );
   });
@@ -96,5 +98,32 @@ describe('shellAdapter', () => {
       expect.objectContaining({ cwd: '/tmp' }),
       expect.any(Function)
     );
+  });
+
+  it('passes sanitized env to exec (credential stripping)', async () => {
+    vi.mocked(exec).mockImplementation((_cmd, _opts, cb) => {
+      (cb as (...args: unknown[]) => void)(null, '', '');
+      return {} as ReturnType<typeof exec>;
+    });
+
+    await shellAdapter(makeAction({ command: 'echo test' }));
+    const callArgs = vi.mocked(exec).mock.calls[0];
+    const opts = callArgs[1] as Record<string, unknown>;
+    expect(opts).toHaveProperty('env');
+    expect(typeof opts.env).toBe('object');
+  });
+});
+
+describe('createShellAdapter', () => {
+  it('creates adapter with credential stripping disabled', async () => {
+    vi.mocked(exec).mockImplementation((_cmd, _opts, cb) => {
+      (cb as (...args: unknown[]) => void)(null, 'ok', '');
+      return {} as ReturnType<typeof exec>;
+    });
+
+    const adapter = createShellAdapter({ enabled: false });
+    const result = await adapter(makeAction({ command: 'echo test' }));
+    expect(result.stdout).toBe('ok');
+    expect(result.strippedCredentials).toBeUndefined();
   });
 });
