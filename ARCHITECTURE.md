@@ -44,13 +44,13 @@ This is a **pnpm monorepo** orchestrated by **Turbo**. Each workspace package ma
 ```
 packages/
 ├── core/          @red-codes/core — Shared utilities (types, actions, hash, execution-log)
-├── events/        @red-codes/events — Canonical event model (schema, bus, store, JSONL persistence)
+├── events/        @red-codes/events — Canonical event model (schema, bus, store)
 ├── policy/        @red-codes/policy — Policy system (composer, evaluator, loaders, pack loader)
-├── invariants/    @red-codes/invariants — Invariant system (17 built-in definitions, checker)
+├── invariants/    @red-codes/invariants — Invariant system (20 built-in definitions, checker)
 ├── kernel/        @red-codes/kernel — Governed action kernel (orchestrate, normalize, decide, escalate)
 ├── adapters/      @red-codes/adapters — Execution adapters (file, shell, git, claude-code)
 ├── analytics/     @red-codes/analytics — Cross-session violation analytics
-├── storage/       @red-codes/storage — SQLite and Firestore backends (opt-in)
+├── storage/       @red-codes/storage — SQLite storage backend (opt-in)
 ├── telemetry/     @red-codes/telemetry — Runtime telemetry and logging
 ├── plugins/       @red-codes/plugins — Plugin ecosystem (discovery, registry, validation, sandboxing)
 ├── renderers/     @red-codes/renderers — Renderer plugin system (registry, TUI renderer)

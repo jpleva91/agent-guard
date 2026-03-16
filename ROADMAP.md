@@ -59,9 +59,9 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Canonical Action Representation (23 types, 8 classes) | Implemented | `packages/core/src/actions.ts` |
 | Action Authorization Boundary (AAB) | Implemented (2 bypass vectors) | `packages/kernel/src/aab.ts` |
 | Policy Evaluator (two-phase deny/allow) | Implemented | `packages/policy/src/evaluator.ts` |
-| 17 Built-in Invariants | Fully Implemented | `packages/invariants/src/definitions.ts`, `packages/invariants/src/checker.ts` |
-| Event Model (49 event kinds) | Comprehensive | `packages/events/src/schema.ts` |
-| JSONL Persistence | Implemented | `packages/events/src/jsonl.ts` |
+| 20 Built-in Invariants | Fully Implemented | `packages/invariants/src/definitions.ts`, `packages/invariants/src/checker.ts` |
+| Event Model (50 event kinds) | Comprehensive | `packages/events/src/schema.ts` |
+| SQLite Persistence | Implemented | `packages/storage/src/sqlite-store.ts` |
 | Simulation Engine (3 simulators + impact forecast) | Fully Implemented | `packages/kernel/src/simulation/` |
 | Blast Radius Computation | Implemented | `packages/kernel/src/blast-radius.ts` |
 | Escalation State Machine (NORMAL → LOCKDOWN) | Implemented | `packages/kernel/src/monitor.ts` |
@@ -269,9 +269,9 @@ This is the architectural hinge. These changes transform the AAB from advisory i
 - [x] Governance self-modification invariant — agents must not modify `agentguard.yaml`, `.agentguard/`, or `policies/` (`no-governance-self-modification` invariant, severity 5)
 - [ ] Performance benchmark suite — formal latency measurement (p50/p95/p99) per action type for policy evaluation, invariant checking, and simulation overhead. Publish results as a marketing asset and regression gate in CI
 
-### Phase 6.5 — Invariant Expansion `IN PROGRESS`
+### Phase 6.5 — Invariant Expansion `STABLE`
 
-> **Theme:** Close invariant coverage gaps. Expanded from 10 to 17 built-in invariants; remaining items cover network egress, database migration safety, and transitive effect analysis.
+> **Theme:** Close invariant coverage gaps. Expanded from 10 to 20 built-in invariants.
 
 The `SystemState` interface in `packages/invariants/src/definitions.ts` is the bottleneck for invariant expansion — it needs to become a richer context object with action-specific fields.
 
@@ -321,7 +321,7 @@ Prior art: Kubernetes Capability Primitives (KCP), OS capability-based security 
 - [ ] Framework-specific adapters (LangGraph, CrewAI, AutoGen, OpenAI Agents SDK)
 - [ ] Agent SDK for programmatic governance integration
 - [ ] Generic MCP adapter
-- [ ] Session-aware context tracking (modified files, test results, deployment state)
+- [x] Session-aware context tracking (modified files, test results, deployment state) (#197)
 - [ ] Deep Claude Code integration (auto-install, configuration management)
 - [ ] Cursor integration
 
@@ -341,7 +341,7 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [x] ~~Aggregation queries for analytics~~ — Migrated to agentguard-cloud
 - [x] JSONL export compatibility — `agentguard export` still produces portable JSONL
 - [x] Storage location: `~/.agentguard/agentguard.db` (home directory, out of repo tree)
-- [x] Retain JSONL as optional fallback/streaming sink for real-time tailing
+- ~~Retain JSONL as optional fallback/streaming sink for real-time tailing~~ — JSONL storage backend removed (#503); SQLite is now the only backend
 - [x] ~~Firestore NoSQL storage backend for cross-session governance data sharing~~ — Migrated to agentguard-cloud
 - [x] ~~`agentguard init firestore` scaffold command~~ — Migrated to agentguard-cloud
 - [x] Wire up `sessions` table — insert on `RunStarted`, update on `RunEnded` (`packages/storage/src/sqlite-session.ts`)
@@ -414,7 +414,7 @@ The JSONL persistence layer was the right starting point — append-only, human-
 > **Theme:** Govern outcomes before execution
 
 - [x] Structured impact forecasts (predicted files changed, dependencies affected, test risk, blast radius score)
-- [ ] Predictive policy rules (`deny if predicted_test_failures > 0`)
+- [x] Predictive policy rules with forecast conditions (`deny if predicted_test_failures > 0`) (#501)
 - [ ] Plan-level simulation — simulate a sequence of actions as a batch, including plan-level threat assessment that analyzes the full action sequence for threat vectors (data exfiltration paths, privilege escalation chains, blast radius amplification) before any action executes
 - [ ] Simulator plugin interface — community-contributed simulators
 - [ ] Dependency graph simulation (transitive impact of package changes)
