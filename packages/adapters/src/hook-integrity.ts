@@ -1,9 +1,16 @@
 // Hook integrity verification for Claude Code settings.json.
 // Detects tampering of AgentGuard-owned hook entries using SHA-256 checksums.
 
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, existsSync, realpathSync } from 'node:fs';
 import { computeSHA256, loadTrustStore, saveTrustStore } from '@red-codes/core';
+
+function canonicalPath(filePath: string): string {
+  try {
+    return realpathSync(filePath);
+  } catch {
+    return filePath;
+  }
+}
 
 /** Hook types recognized by Claude Code and AgentGuard. */
 const HOOK_TYPES = ['Notification', 'PostToolUse', 'PreToolUse', 'SessionStart', 'Stop'] as const;
@@ -78,7 +85,7 @@ export function storeHookBaseline(settingsPath: string): void {
   const hash = computeHookHash(settingsPath);
   if (hash === null) return;
 
-  const canonical = resolve(settingsPath);
+  const canonical = canonicalPath(settingsPath);
   const key = `hook:${canonical}`;
   const store = loadTrustStore();
   store.entries[key] = {
@@ -106,7 +113,7 @@ export function verifyHookIntegrity(
   const currentHash = computeHookHash(settingsPath);
   if (currentHash === null) return 'hooks_missing';
 
-  const canonical = resolve(settingsPath);
+  const canonical = canonicalPath(settingsPath);
   const key = `hook:${canonical}`;
   const store = loadTrustStore();
   const entry = store.entries[key];

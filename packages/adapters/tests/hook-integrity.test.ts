@@ -175,6 +175,8 @@ describe('computeHookHash', () => {
     // Both should produce a hash (AgentGuard hooks present)
     expect(hashWithMixed).not.toBeNull();
     expect(hashWithOnly).not.toBeNull();
+    // The hashes must be equal — non-AgentGuard entries should not affect the hash
+    expect(hashWithMixed).toBe(hashWithOnly);
   });
 
   it('produces a deterministic hash regardless of hook key order in settings.json', async () => {
