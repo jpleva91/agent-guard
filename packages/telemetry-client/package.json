@@ -1,21 +1,25 @@
 {
   "name": "@red-codes/telemetry-client",
   "version": "0.1.0",
-  "description": "Telemetry client for AgentGuard cloud integration",
+  "description": "Privacy-first telemetry client SDK for AgentGuard",
   "type": "module",
+  "license": "Apache-2.0",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -b",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "ts:check": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "dependencies": {
     "@red-codes/core": "workspace:*"
-  },
-  "devDependencies": {
-    "typescript": "^5.6.0",
-    "vitest": "^2.0.0"
   }
 }
