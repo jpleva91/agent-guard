@@ -42,6 +42,7 @@ interface Settings {
 export async function claudeInit(args: string[] = []): Promise<void> {
   const isGlobal = args.includes('--global') || args.includes('-g');
   const isRemove = args.includes('--remove') || args.includes('--uninstall');
+  const isRefresh = args.includes('--refresh');
 
   // Parse --store flag for storage backend (embedded into hook commands)
   const storeIdx = args.findIndex((a) => a === '--store');
@@ -79,6 +80,15 @@ export async function claudeInit(args: string[] = []): Promise<void> {
       );
       settings = {};
     }
+  }
+
+  if (isRefresh && hasAgentGuardHook(settings)) {
+    const { storeHookBaseline } = await import('@red-codes/adapters');
+    storeHookBaseline(settingsPath);
+    process.stderr.write(
+      `  ${FG.green}✓${RESET}  Hook baseline refreshed for ${settingsLabel}\n\n`
+    );
+    return;
   }
 
   if (hasAgentGuardHook(settings)) {
@@ -168,6 +178,14 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   });
 
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+
+  // Store hook integrity baseline
+  try {
+    const { storeHookBaseline } = await import('@red-codes/adapters');
+    storeHookBaseline(settingsPath);
+  } catch {
+    // Non-fatal — integrity will report no_baseline
+  }
 
   process.stderr.write(
     `  ${FG.green}✓${RESET}  Hooks installed in ${FG.cyan}${settingsLabel}${RESET}\n`

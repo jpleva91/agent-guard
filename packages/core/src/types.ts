@@ -219,7 +219,17 @@ export type EventKind =
   | 'HeartbeatMissed'
   | 'AgentUnresponsive'
   // Token Optimization
-  | 'TokenOptimizationApplied';
+  | 'TokenOptimizationApplied'
+  // Integrity & Trust
+  | 'HookIntegrityVerified'
+  | 'HookIntegrityFailed'
+  | 'PolicyTrustVerified'
+  | 'PolicyTrustDenied'
+  // Adoption Analytics
+  | 'AdoptionAnalyzed'
+  | 'AdoptionAnalysisFailed'
+  // Denial Learning
+  | 'DenialPatternDetected';
 
 /** Event schema definition — required and optional field names */
 export interface EventSchema {

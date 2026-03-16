@@ -170,6 +170,50 @@ export function loadRunDecisions(db: Database.Database, rid: string): Governance
   return rows.map((r) => JSON.parse(r.data) as GovernanceDecisionRecord);
 }
 
+/**
+ * Query events of a specific kind across multiple runs.
+ * Used by adoption analytics and denial learning to analyze patterns across sessions.
+ *
+ * @param db - The SQLite database instance
+ * @param kind - The event kind to filter by (e.g. 'ActionDenied')
+ * @param options.sessionLimit - Restrict results to the N most recent sessions (by most recent event timestamp)
+ * @param options.since - ISO date string; only return events at or after this time
+ */
+export function queryEventsByKindAcrossRuns(
+  db: Database.Database,
+  kind: string,
+  options?: { sessionLimit?: number; since?: string }
+): Array<DomainEvent & { runId: string }> {
+  const conditions = ['kind = ?'];
+  const params: unknown[] = [kind];
+
+  if (options?.since) {
+    conditions.push('timestamp >= ?');
+    params.push(new Date(options.since).getTime());
+  }
+
+  if (options?.sessionLimit !== undefined && options.sessionLimit > 0) {
+    const recentRuns = db
+      .prepare(
+        'SELECT run_id FROM (SELECT run_id, MAX(timestamp) as max_ts FROM events GROUP BY run_id ORDER BY max_ts DESC LIMIT ?)'
+      )
+      .all(options.sessionLimit) as { run_id: string }[];
+
+    if (recentRuns.length === 0) return [];
+
+    const placeholders = recentRuns.map(() => '?').join(', ');
+    conditions.push(`run_id IN (${placeholders})`);
+    params.push(...recentRuns.map((r) => r.run_id));
+  }
+
+  const sql = `SELECT data, run_id FROM events WHERE ${conditions.join(' AND ')} ORDER BY timestamp DESC`;
+  const rows = db.prepare(sql).all(...params) as { data: string; run_id: string }[];
+  return rows.map((r) => ({
+    ...(JSON.parse(r.data) as DomainEvent),
+    runId: r.run_id,
+  }));
+}
+
 /** Extract run_id from event metadata if present */
 function extractRunId(event: DomainEvent): string | undefined {
   const meta = event.metadata as Record<string, unknown> | undefined;

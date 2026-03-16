@@ -18,6 +18,34 @@ const command = args[0];
 const wantsHelp = args.includes('--help') || args.includes('-h');
 
 const COMMANDS: Record<string, CommandHelp> = {
+  learn: {
+    name: 'agentguard learn',
+    description: 'Analyze denial patterns and suggest policy improvements',
+    usage: 'agentguard learn [flags]',
+    flags: [
+      { flag: '--write-rules', description: 'Write governance hints to .claude/rules/' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
+      { flag: '--db-path <path>', description: 'SQLite database path' },
+      { flag: '--json', description: 'Output as JSON' },
+    ],
+    examples: ['agentguard learn', 'agentguard learn --write-rules', 'agentguard learn --json'],
+  },
+  adoption: {
+    name: 'agentguard adoption',
+    description: 'Analyze what percentage of agent tool calls go through governance',
+    usage: 'agentguard adoption [flags]',
+    flags: [
+      { flag: '--session <path>', description: 'Path to Claude session JSONL file' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
+      { flag: '--db-path <path>', description: 'SQLite database path' },
+      { flag: '--json', description: 'Output as JSON' },
+    ],
+    examples: [
+      'agentguard adoption',
+      'agentguard adoption --session ~/.claude/projects/foo/session.jsonl',
+      'agentguard adoption --json',
+    ],
+  },
   analytics: {
     name: 'agentguard analytics',
     description: 'Analyze violation patterns across governance sessions',
@@ -377,6 +405,16 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard config keys',
     ],
   },
+  trust: {
+    name: 'agentguard trust',
+    description: 'Trust a project-local policy file after risk review',
+    usage: 'agentguard trust <policy-file> [flags]',
+    flags: [{ flag: '--yes, -y', description: 'Skip confirmation prompt' }],
+    examples: [
+      'agentguard trust agentguard.yaml',
+      'agentguard trust .agentguard/policy.yaml --yes',
+    ],
+  },
   'session-viewer': {
     name: 'agentguard session-viewer',
     description: 'Generate an interactive HTML visualization of a governance session',
@@ -420,6 +458,28 @@ const COMMANDS: Record<string, CommandHelp> = {
 
 async function main() {
   switch (command) {
+    case 'learn': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.learn));
+        break;
+      }
+      const { learn: learnCmd } = await import('./commands/learn.js');
+      const code = await learnCmd(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
+    case 'adoption': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.adoption));
+        break;
+      }
+      const { adoption: adoptionCmd } = await import('./commands/adoption.js');
+      const code = await adoptionCmd(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
     case 'analytics': {
       if (wantsHelp) {
         console.log(formatHelp(COMMANDS.analytics));
@@ -690,6 +750,17 @@ async function main() {
       break;
     }
 
+    case 'trust': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.trust));
+        break;
+      }
+      const { trust: trustCmd } = await import('./commands/trust.js');
+      const code = await trustCmd(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
     case 'demo': {
       const { demo: demoCmd } = await import('./commands/demo.js');
       const code = await demoCmd();
@@ -769,6 +840,8 @@ function printHelp(): void {
     agentguard inspect [runId]                Inspect action graph and decisions
     agentguard events [runId]                 Show raw event stream for a run
     agentguard analytics                      Analyze violation patterns across sessions
+    agentguard adoption                       Analyze % of tool calls going through governance
+    agentguard learn                          Analyze denial patterns and suggest policy improvements
 
   \x1b[1mTraces:\x1b[0m
     agentguard traces --last                  Show policy traces for most recent run
