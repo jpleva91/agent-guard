@@ -103,11 +103,25 @@ export function createEngine(config: EngineConfig = {}): Engine {
     },
 
     evaluate(rawAction, systemContext = {}) {
+      // Merge session-level state flags into rawAction.metadata so the policy
+      // evaluator can read them via intent.metadata (evaluator has no access
+      // to systemContext directly).
+      const enrichedAction = rawAction
+        ? {
+            ...rawAction,
+            metadata: {
+              ...rawAction.metadata,
+              testsPass: systemContext.testsPass ?? rawAction.metadata?.testsPass,
+              formatPass: systemContext.formatPass ?? rawAction.metadata?.formatPass,
+            },
+          }
+        : rawAction;
+
       const {
         intent,
         result: authResult,
         events: authEvents,
-      } = authorize(rawAction, policies, evaluateOptions);
+      } = authorize(enrichedAction, policies, evaluateOptions);
 
       // Emit policy evaluation trace if available
       if (authResult.trace) {

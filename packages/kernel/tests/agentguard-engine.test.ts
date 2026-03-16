@@ -108,4 +108,74 @@ describe('agentguard/core/engine', () => {
       expect(events.length).toBeGreaterThan(0);
     });
   });
+
+  describe('systemContext → intent.metadata bridge', () => {
+    it('bridges formatPass from systemContext into policy evaluation', () => {
+      const engine = createEngine({
+        policyDefs: [
+          {
+            id: 'format-gate',
+            name: 'Format Gate',
+            rules: [
+              {
+                action: 'git.commit',
+                effect: 'deny',
+                conditions: { requireFormat: true },
+                reason: 'Formatting required',
+              },
+              { action: 'git.commit', effect: 'allow', reason: 'Allow commits' },
+            ],
+          },
+        ],
+      });
+
+      // Without formatPass — should be denied
+      const denied = engine.evaluate(
+        { tool: 'Bash', command: 'git commit -m "test"' },
+        {}
+      );
+      expect(denied.allowed).toBe(false);
+
+      // With formatPass via systemContext — should be allowed
+      const allowed = engine.evaluate(
+        { tool: 'Bash', command: 'git commit -m "test"' },
+        { formatPass: true }
+      );
+      expect(allowed.allowed).toBe(true);
+    });
+
+    it('bridges testsPass from systemContext into policy evaluation', () => {
+      const engine = createEngine({
+        policyDefs: [
+          {
+            id: 'test-gate',
+            name: 'Test Gate',
+            rules: [
+              {
+                action: 'git.commit',
+                effect: 'deny',
+                conditions: { requireTests: true },
+                reason: 'Tests required',
+              },
+              { action: 'git.commit', effect: 'allow', reason: 'Allow commits' },
+            ],
+          },
+        ],
+      });
+
+      // Without testsPass — should be denied
+      const denied = engine.evaluate(
+        { tool: 'Bash', command: 'git commit -m "test"' },
+        {}
+      );
+      expect(denied.allowed).toBe(false);
+
+      // With testsPass via systemContext — should be allowed
+      const allowed = engine.evaluate(
+        { tool: 'Bash', command: 'git commit -m "test"' },
+        { testsPass: true }
+      );
+      expect(allowed.allowed).toBe(true);
+    });
+  });
 });

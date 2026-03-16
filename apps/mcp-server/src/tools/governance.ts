@@ -186,6 +186,7 @@ export function registerGovernanceTools(server: McpServer, config: McpConfig): v
       forcePush: z.boolean().optional().describe('Is this a force push?'),
       isPush: z.boolean().optional().describe('Is this a push operation?'),
       testsPass: z.boolean().optional().describe('Have tests passed?'),
+      formatPass: z.boolean().optional().describe('Has formatting (Prettier) passed?'),
       filesAffected: z.number().optional().describe('Number of files affected'),
       currentTarget: z.string().optional().describe('Current file target'),
       currentCommand: z.string().optional().describe('Current shell command'),

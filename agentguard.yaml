@@ -64,7 +64,7 @@ rules:
   # Code quality — require formatting before commit
   - action: git.commit
     effect: deny
-    requireTests: true
+    requireFormat: true
     reason: Run pnpm format:fix before committing — all files must pass Prettier
 
   # Defaults

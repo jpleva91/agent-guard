@@ -71,6 +71,9 @@ function parseFile(
           if (r.requireTests !== undefined) {
             rule.conditions = { ...(rule.conditions as object), requireTests: r.requireTests };
           }
+          if (r.requireFormat !== undefined) {
+            rule.conditions = { ...(rule.conditions as object), requireFormat: r.requireFormat };
+          }
           if (r.reason) rule.reason = r.reason;
           return rule;
         });

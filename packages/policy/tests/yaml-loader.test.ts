@@ -219,3 +219,21 @@ rules:
     expect(policy.rules[0].conditions?.branches).toEqual(['main', 'master']);
   });
 });
+
+describe('requireFormat parsing', () => {
+  it('parses requireFormat from YAML rule', () => {
+    const yaml = `
+id: format-policy
+name: Format Policy
+severity: 3
+rules:
+  - action: git.commit
+    effect: deny
+    requireFormat: true
+    reason: Formatting required
+`;
+    const result = parseYamlPolicy(yaml);
+    expect(result.rules).toHaveLength(1);
+    expect(result.rules![0].requireFormat).toBe(true);
+  });
+});

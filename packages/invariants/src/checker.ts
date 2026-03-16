@@ -67,6 +67,7 @@ export function buildSystemState(context: Record<string, unknown> = {}): SystemS
     forcePush: (context.forcePush as boolean) || false,
     isPush: (context.isPush as boolean) || false,
     testsPass: context.testsPass as boolean | undefined,
+    formatPass: context.formatPass as boolean | undefined,
     filesAffected:
       (context.filesAffected as number) || ((context.modifiedFiles as string[]) || []).length,
     blastRadiusLimit: (context.blastRadiusLimit as number) || 20,

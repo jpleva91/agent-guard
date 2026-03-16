@@ -291,6 +291,7 @@ export interface SystemState {
   forcePush?: boolean;
   isPush?: boolean;
   testsPass?: boolean;
+  formatPass?: boolean;
   filesAffected?: number;
   blastRadiusLimit?: number;
   protectedBranches?: string[];
@@ -418,8 +419,7 @@ rules:
   # Deny force-push to any branch
   - action: "git.push"
     effect: deny
-    conditions:
-      branches: ["*"]
+    branches: ["*"]
     reason: "Force push is not allowed"
 
   # Allow file reads in any scope
@@ -436,9 +436,14 @@ rules:
   # Deny deploy without test pass
   - action: "deploy.trigger"
     effect: deny
-    conditions:
-      requireTests: true
+    requireTests: true
     reason: "Tests must pass before deployment"
+
+  # Deny commit without format check
+  - action: "git.commit"
+    effect: deny
+    requireFormat: true
+    reason: "Formatting must pass before committing"
 `,
     },
     {

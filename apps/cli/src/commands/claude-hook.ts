@@ -218,7 +218,14 @@ async function handleNotification(cliArgs: string[]): Promise<void> {
 
     const cliParts = cli.split(' ');
     const cmd = cliParts[0];
-    const baseArgs = [...cliParts.slice(1), 'session-viewer', '--last', '--live', ...storeFlag, ...dbPathFlag];
+    const baseArgs = [
+      ...cliParts.slice(1),
+      'session-viewer',
+      '--last',
+      '--live',
+      ...storeFlag,
+      ...dbPathFlag,
+    ];
 
     const child = spawn(cmd, baseArgs, {
       detached: true,

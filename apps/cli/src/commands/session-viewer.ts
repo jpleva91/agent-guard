@@ -136,7 +136,10 @@ interface LiveServer {
   setHtml: (html: string) => void;
 }
 
-type PollDataLoader = (afterEvent: number, afterDecision: number) => {
+type PollDataLoader = (
+  afterEvent: number,
+  afterDecision: number
+) => {
   events: DomainEvent[];
   decisions: GovernanceDecisionRecord[];
   actions: unknown[];
@@ -452,9 +455,7 @@ export async function sessionViewer(
       decisionList.sort((a, b) => a.timestamp - b.timestamp);
 
       sessionLabel = `session_merged_${runsToMerge.length}_runs`;
-      process.stderr.write(
-        `  Merging ${runsToMerge.length} recent runs into a single view...\n`
-      );
+      process.stderr.write(`  Merging ${runsToMerge.length} recent runs into a single view...\n`);
     } else {
       // JSONL merge path
       const runs = listRunsJsonl();
@@ -476,9 +477,7 @@ export async function sessionViewer(
       decisionList.sort((a, b) => a.timestamp - b.timestamp);
 
       sessionLabel = `session_merged_${runsToMerge.length}_runs`;
-      process.stderr.write(
-        `  Merging ${runsToMerge.length} recent runs into a single view...\n`
-      );
+      process.stderr.write(`  Merging ${runsToMerge.length} recent runs into a single view...\n`);
     }
   } else {
     // Single run mode
@@ -566,9 +565,13 @@ export async function sessionViewer(
       const freshSummary = aggregateEvents(freshEvents);
 
       // Only return actions that are new (beyond what the client already has)
-      const existingActionCount = eventList.length > 0
-        ? buildReplaySession(sessionLabel, eventList.filter((e) => e.timestamp <= afterEvent)).actions.length
-        : 0;
+      const existingActionCount =
+        eventList.length > 0
+          ? buildReplaySession(
+              sessionLabel,
+              eventList.filter((e) => e.timestamp <= afterEvent)
+            ).actions.length
+          : 0;
       const newActions = freshSession.actions.slice(existingActionCount);
 
       return {
@@ -603,7 +606,9 @@ export async function sessionViewer(
       if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
       writeFileSync(outFile, liveHtml, 'utf8');
 
-      process.stderr.write(`\n  \x1b[32m✓\x1b[0m Live session viewer running at: \x1b[1m\x1b[36m${liveUrl}\x1b[0m\n`);
+      process.stderr.write(
+        `\n  \x1b[32m✓\x1b[0m Live session viewer running at: \x1b[1m\x1b[36m${liveUrl}\x1b[0m\n`
+      );
       process.stderr.write(`  Press Ctrl+C to stop.\n\n`);
 
       if (!noOpen) {

@@ -33,6 +33,7 @@ export interface SystemState {
   forcePush?: boolean;
   isPush?: boolean;
   testsPass?: boolean;
+  formatPass?: boolean;
   filesAffected?: number;
   blastRadiusLimit?: number;
   protectedBranches?: string[];
