@@ -42,7 +42,7 @@ export function loadTrustStore(): TrustStore {
     const raw = JSON.parse(readFileSync(storePath, 'utf8')) as Record<string, unknown>;
     if (raw.version !== CURRENT_VERSION) {
       process.stderr.write(
-        `Warning: Trust store version ${String(raw.version)} not recognized, treating as empty\n`,
+        `Warning: Trust store version ${String(raw.version)} not recognized, treating as empty\n`
       );
       return { version: CURRENT_VERSION, entries: {} };
     }
@@ -63,7 +63,7 @@ export async function computeFileHash(filePath: string): Promise<string> {
 }
 
 export async function verifyTrust(
-  filePath: string,
+  filePath: string
 ): Promise<'trusted' | 'untrusted' | 'content_changed'> {
   const canonical = canonicalPath(filePath);
   const store = loadTrustStore();

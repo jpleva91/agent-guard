@@ -85,7 +85,9 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   if (isRefresh && hasAgentGuardHook(settings)) {
     const { storeHookBaseline } = await import('@red-codes/adapters');
     storeHookBaseline(settingsPath);
-    process.stderr.write(`  ${FG.green}✓${RESET}  Hook baseline refreshed for ${settingsLabel}\n\n`);
+    process.stderr.write(
+      `  ${FG.green}✓${RESET}  Hook baseline refreshed for ${settingsLabel}\n\n`
+    );
     return;
   }
 

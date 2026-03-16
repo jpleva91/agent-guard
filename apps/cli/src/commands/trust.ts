@@ -40,9 +40,7 @@ export async function trust(args: string[]): Promise<number> {
   const absPath = resolve(policyPath);
 
   if (!existsSync(absPath)) {
-    process.stderr.write(
-      `\n  ${FG.red}Error: File not found: ${absPath}${RESET}\n\n`,
-    );
+    process.stderr.write(`\n  ${FG.red}Error: File not found: ${absPath}${RESET}\n\n`);
     return 1;
   }
 
@@ -52,7 +50,7 @@ export async function trust(args: string[]): Promise<number> {
     content = readFileSync(absPath, 'utf8');
   } catch (e) {
     process.stderr.write(
-      `\n  ${FG.red}Error: Cannot read file: ${e instanceof Error ? e.message : String(e)}${RESET}\n\n`,
+      `\n  ${FG.red}Error: Cannot read file: ${e instanceof Error ? e.message : String(e)}${RESET}\n\n`
     );
     return 1;
   }
@@ -70,9 +68,7 @@ export async function trust(args: string[]): Promise<number> {
   }
 
   if (truncated) {
-    process.stderr.write(
-      `  ${DIM}... (${lines.length - MAX_DISPLAY_LINES} more lines)${RESET}\n`,
-    );
+    process.stderr.write(`  ${DIM}... (${lines.length - MAX_DISPLAY_LINES} more lines)${RESET}\n`);
   }
 
   process.stderr.write(`  ${DIM}${'─'.repeat(60)}${RESET}\n\n`);
@@ -104,7 +100,7 @@ export async function trust(args: string[]): Promise<number> {
       }
 
       process.stderr.write(
-        `    ${colorCode}${icon} [${flag.level.toUpperCase()}] ${flag.message}${RESET}\n`,
+        `    ${colorCode}${icon} [${flag.level.toUpperCase()}] ${flag.message}${RESET}\n`
       );
       process.stderr.write(`      ${DIM}Pattern: ${flag.pattern}${RESET}\n`);
     }
@@ -115,7 +111,7 @@ export async function trust(args: string[]): Promise<number> {
   const isTTY = process.stdin.isTTY;
   if (!isTTY && !yes) {
     process.stderr.write(
-      `  ${FG.red}✗ Non-interactive environment detected. Use --yes to trust non-interactively.${RESET}\n\n`,
+      `  ${FG.red}✗ Non-interactive environment detected. Use --yes to trust non-interactively.${RESET}\n\n`
     );
     return 1;
   }
@@ -123,16 +119,14 @@ export async function trust(args: string[]): Promise<number> {
   // If danger risks without --yes, warn strongly
   if (hasDanger && !yes) {
     process.stderr.write(
-      `  ${FG.red}${BOLD}WARNING: This policy contains dangerous configurations.${RESET}\n`,
+      `  ${FG.red}${BOLD}WARNING: This policy contains dangerous configurations.${RESET}\n`
     );
-    process.stderr.write(
-      `  ${FG.red}You must explicitly confirm to trust it.${RESET}\n\n`,
-    );
+    process.stderr.write(`  ${FG.red}You must explicitly confirm to trust it.${RESET}\n\n`);
   }
 
   if (hasWarning && !hasDanger && !yes) {
     process.stderr.write(
-      `  ${FG.yellow}This policy contains warnings. Review carefully before trusting.${RESET}\n\n`,
+      `  ${FG.yellow}This policy contains warnings. Review carefully before trusting.${RESET}\n\n`
     );
   }
 
@@ -157,9 +151,7 @@ export async function trust(args: string[]): Promise<number> {
   const { trustFile } = await import('@red-codes/core');
   const entry = await trustFile(absPath);
 
-  process.stderr.write(
-    `  ${FG.green}✓ Policy trusted.${RESET}\n`,
-  );
+  process.stderr.write(`  ${FG.green}✓ Policy trusted.${RESET}\n`);
   process.stderr.write(`  ${DIM}Path:       ${entry.path}${RESET}\n`);
   process.stderr.write(`  ${DIM}Hash:       ${entry.hash}${RESET}\n`);
   process.stderr.write(`  ${DIM}Trusted at: ${entry.trustedAt}${RESET}\n\n`);

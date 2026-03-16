@@ -33,7 +33,9 @@ describe('trust-store', () => {
         join(tempDir, 'trust.json'),
         JSON.stringify({
           version: 1,
-          entries: { '/p': { path: '/p', hash: 'abc', trustedAt: '2026-01-01T00:00:00Z', trustedBy: 'user' } },
+          entries: {
+            '/p': { path: '/p', hash: 'abc', trustedAt: '2026-01-01T00:00:00Z', trustedBy: 'user' },
+          },
         })
       );
       const { loadTrustStore } = await load();
@@ -52,7 +54,9 @@ describe('trust-store', () => {
       const { saveTrustStore, loadTrustStore } = await load();
       saveTrustStore({
         version: 1,
-        entries: { '/t': { path: '/t', hash: 'xyz', trustedAt: '2026-01-01T00:00:00Z', trustedBy: 'user' } },
+        entries: {
+          '/t': { path: '/t', hash: 'xyz', trustedAt: '2026-01-01T00:00:00Z', trustedBy: 'user' },
+        },
       });
       expect(loadTrustStore().entries['/t'].hash).toBe('xyz');
     });
@@ -112,6 +116,14 @@ describe('trust-store', () => {
     });
 
     it('returns null when not in CI', async () => {
+      vi.stubEnv('GITHUB_ACTIONS', '');
+      vi.stubEnv('GITLAB_CI', '');
+      vi.stubEnv('JENKINS_URL', '');
+      vi.stubEnv('CIRCLECI', '');
+      vi.stubEnv('TRAVIS', '');
+      vi.stubEnv('BUILDKITE', '');
+      vi.stubEnv('CODEBUILD_BUILD_ID', '');
+      vi.stubEnv('TF_BUILD', '');
       const { detectCiPlatform } = await load();
       expect(detectCiPlatform()).toBeNull();
     });
@@ -127,6 +139,14 @@ describe('trust-store', () => {
 
     it('returns false when env var is set but no CI platform is detected', async () => {
       vi.stubEnv('AGENTGUARD_TRUST_PROJECT_POLICY', '1');
+      vi.stubEnv('GITHUB_ACTIONS', '');
+      vi.stubEnv('GITLAB_CI', '');
+      vi.stubEnv('JENKINS_URL', '');
+      vi.stubEnv('CIRCLECI', '');
+      vi.stubEnv('TRAVIS', '');
+      vi.stubEnv('BUILDKITE', '');
+      vi.stubEnv('CODEBUILD_BUILD_ID', '');
+      vi.stubEnv('TF_BUILD', '');
       const { isCiTrustOverride } = await load();
       expect(isCiTrustOverride()).toBe(false);
     });
@@ -138,6 +158,14 @@ describe('trust-store', () => {
     });
 
     it('returns false when neither env var nor CI platform is present', async () => {
+      vi.stubEnv('GITHUB_ACTIONS', '');
+      vi.stubEnv('GITLAB_CI', '');
+      vi.stubEnv('JENKINS_URL', '');
+      vi.stubEnv('CIRCLECI', '');
+      vi.stubEnv('TRAVIS', '');
+      vi.stubEnv('BUILDKITE', '');
+      vi.stubEnv('CODEBUILD_BUILD_ID', '');
+      vi.stubEnv('TF_BUILD', '');
       const { isCiTrustOverride } = await load();
       expect(isCiTrustOverride()).toBe(false);
     });

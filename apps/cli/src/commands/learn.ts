@@ -66,7 +66,7 @@ function suggestionTypeLabel(type: string): string {
 
 function generateGovernanceHints(
   patterns: import('@red-codes/storage').DenialPattern[],
-  suggestions: import('@red-codes/storage').PolicySuggestion[],
+  suggestions: import('@red-codes/storage').PolicySuggestion[]
 ): string {
   const lines: string[] = [
     '# AgentGuard Governance Hints',
@@ -87,7 +87,7 @@ function generateGovernanceHints(
     const sessionCount = pattern.sessions.length;
     lines.push(
       `- **${pattern.actionType}** denied for "${pattern.reason}" ` +
-        `(${pattern.occurrences} occurrences, ${sessionCount} session${sessionCount !== 1 ? 's' : ''})`,
+        `(${pattern.occurrences} occurrences, ${sessionCount} session${sessionCount !== 1 ? 's' : ''})`
     );
 
     if (pattern.suggestion) {
@@ -97,17 +97,17 @@ function generateGovernanceHints(
       switch (pattern.resolution) {
         case 'retried_differently':
           lines.push(
-            `  - Suggestion: Review the \`${pattern.actionType}\` deny rule — agents consistently retry with different parameters`,
+            `  - Suggestion: Review the \`${pattern.actionType}\` deny rule — agents consistently retry with different parameters`
           );
           break;
         case 'session_abandoned':
           lines.push(
-            `  - Note: Sessions end after this denial — policy may be working as intended or too restrictive`,
+            `  - Note: Sessions end after this denial — policy may be working as intended or too restrictive`
           );
           break;
         case 'escalation_granted':
           lines.push(
-            `  - Suggestion: Consider pre-authorizing \`${pattern.actionType}\` under specific conditions to reduce escalation overhead`,
+            `  - Suggestion: Consider pre-authorizing \`${pattern.actionType}\` under specific conditions to reduce escalation overhead`
           );
           break;
       }
@@ -137,7 +137,7 @@ function generateGovernanceHints(
 function renderLearningReport(
   patterns: import('@red-codes/storage').DenialPattern[],
   suggestions: import('@red-codes/storage').PolicySuggestion[],
-  sessionCount: number,
+  sessionCount: number
 ): void {
   process.stderr.write('\n');
   process.stderr.write(`  ${ANSI.bold}Denial Pattern Analysis${ANSI.reset}\n`);
@@ -146,14 +146,14 @@ function renderLearningReport(
 
   if (patterns.length === 0) {
     process.stderr.write(
-      `  ${ANSI.dim}No denial patterns found across ${sessionCount} session(s).${ANSI.reset}\n\n`,
+      `  ${ANSI.dim}No denial patterns found across ${sessionCount} session(s).${ANSI.reset}\n\n`
     );
     return;
   }
 
   process.stderr.write(
     `  ${ANSI.bold}${patterns.length} pattern(s)${ANSI.reset} detected across ` +
-      `${sessionCount} session(s)\n\n`,
+      `${sessionCount} session(s)\n\n`
   );
 
   process.stderr.write(`  ${ANSI.bold}Denied Patterns${ANSI.reset}\n`);
@@ -161,17 +161,16 @@ function renderLearningReport(
 
   for (const pattern of patterns) {
     const cc = confidenceColor(pattern.confidence);
-    const sessionLabel = pattern.sessions.length === 1 ? '1 session' : `${pattern.sessions.length} sessions`;
+    const sessionLabel =
+      pattern.sessions.length === 1 ? '1 session' : `${pattern.sessions.length} sessions`;
 
     process.stderr.write(
-      `\n  ${ANSI.bold}${pattern.actionType}${ANSI.reset} — ${ANSI.dim}"${pattern.reason}"${ANSI.reset}\n`,
+      `\n  ${ANSI.bold}${pattern.actionType}${ANSI.reset} — ${ANSI.dim}"${pattern.reason}"${ANSI.reset}\n`
     );
-    process.stderr.write(
-      `    Occurrences:  ${pattern.occurrences}  (${sessionLabel})\n`,
-    );
+    process.stderr.write(`    Occurrences:  ${pattern.occurrences}  (${sessionLabel})\n`);
     process.stderr.write(`    Resolution:   ${resolutionLabel(pattern.resolution)}\n`);
     process.stderr.write(
-      `    Confidence:   ${cc}${(pattern.confidence * 100).toFixed(0)}%${ANSI.reset}\n`,
+      `    Confidence:   ${cc}${(pattern.confidence * 100).toFixed(0)}%${ANSI.reset}\n`
     );
   }
 
@@ -184,18 +183,18 @@ function renderLearningReport(
     for (const suggestion of suggestions) {
       const cc = confidenceColor(suggestion.confidence);
       process.stderr.write(
-        `\n  ${ANSI.magenta}[${suggestion.actionType}]${ANSI.reset} ${suggestionTypeLabel(suggestion.type)}\n`,
+        `\n  ${ANSI.magenta}[${suggestion.actionType}]${ANSI.reset} ${suggestionTypeLabel(suggestion.type)}\n`
       );
       process.stderr.write(`    ${ANSI.dim}${suggestion.description}${ANSI.reset}\n`);
       process.stderr.write(
-        `    Confidence: ${cc}${(suggestion.confidence * 100).toFixed(0)}%${ANSI.reset}\n`,
+        `    Confidence: ${cc}${(suggestion.confidence * 100).toFixed(0)}%${ANSI.reset}\n`
       );
     }
 
     process.stderr.write('\n');
   } else {
     process.stderr.write(
-      `  ${ANSI.dim}No actionable suggestions at current confidence thresholds.${ANSI.reset}\n\n`,
+      `  ${ANSI.dim}No actionable suggestions at current confidence thresholds.${ANSI.reset}\n\n`
     );
   }
 }
@@ -220,11 +219,8 @@ export async function learn(args: string[]): Promise<number> {
   };
 
   // 1. Load ACTION_DENIED events and all events from SQLite
-  const {
-    createStorageBundle,
-    queryEventsByKindAcrossRuns,
-    analyzeDenialPatterns,
-  } = await import('@red-codes/storage');
+  const { createStorageBundle, queryEventsByKindAcrossRuns, analyzeDenialPatterns } =
+    await import('@red-codes/storage');
 
   let rawDeniedEvents: Array<{
     kind: string;
@@ -269,7 +265,9 @@ export async function learn(args: string[]): Promise<number> {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`  Error loading governance events: ${msg}\n`);
-    process.stderr.write('  Ensure AgentGuard has recorded governance sessions (--store sqlite).\n\n');
+    process.stderr.write(
+      '  Ensure AgentGuard has recorded governance sessions (--store sqlite).\n\n'
+    );
     return 1;
   }
 
@@ -298,7 +296,7 @@ export async function learn(args: string[]): Promise<number> {
   // 4. Output
   if (jsonOutput) {
     process.stdout.write(
-      JSON.stringify({ patterns, suggestions, sessionCount: distinctSessions }, null, 2) + '\n',
+      JSON.stringify({ patterns, suggestions, sessionCount: distinctSessions }, null, 2) + '\n'
     );
     return 0;
   }
@@ -322,7 +320,7 @@ export async function learn(args: string[]): Promise<number> {
   } else if (patterns.length > 0) {
     process.stderr.write(
       `  ${ANSI.dim}Tip: Run ${ANSI.reset}${ANSI.cyan}agentguard learn --write-rules${ANSI.reset}` +
-        `${ANSI.dim} to write governance hints to .claude/rules/governance-hints.md${ANSI.reset}\n\n`,
+        `${ANSI.dim} to write governance hints to .claude/rules/governance-hints.md${ANSI.reset}\n\n`
     );
   }
 

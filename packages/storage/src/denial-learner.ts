@@ -68,7 +68,7 @@ export function groupDenialsByPattern(events: DenialEvent[]): Map<string, Denial
  */
 export function classifyResolution(
   events: DenialEvent[],
-  allEvents: Array<{ kind: string; actionType?: string; timestamp?: number; runId?: string }>,
+  allEvents: Array<{ kind: string; actionType?: string; timestamp?: number; runId?: string }>
 ): DenialResolution {
   if (events.length === 0) return 'session_abandoned';
 
@@ -87,7 +87,7 @@ export function classifyResolution(
         e.kind === 'ActionEscalated' &&
         e.runId === runId &&
         e.timestamp !== undefined &&
-        e.timestamp > firstDenialTs,
+        e.timestamp > firstDenialTs
     );
 
     if (hasEscalation) return 'escalation_granted';
@@ -108,7 +108,7 @@ export function classifyResolution(
         e.runId === runId &&
         e.actionType === deniedActionType &&
         e.timestamp !== undefined &&
-        e.timestamp > lastDenialTs,
+        e.timestamp > lastDenialTs
     );
 
     if (hasSuccessAfter) return 'retried_differently';
@@ -241,7 +241,7 @@ export function suggestPolicyChanges(patterns: DenialPattern[]): PolicySuggestio
  */
 export function analyzeDenialPatterns(
   denialEvents: DenialEvent[],
-  allEvents: Array<{ kind: string; actionType?: string; timestamp?: number; runId?: string }>,
+  allEvents: Array<{ kind: string; actionType?: string; timestamp?: number; runId?: string }>
 ): { patterns: DenialPattern[]; suggestions: PolicySuggestion[] } {
   const grouped = groupDenialsByPattern(denialEvents);
   const patterns: DenialPattern[] = [];

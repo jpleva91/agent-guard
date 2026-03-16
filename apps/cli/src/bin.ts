@@ -28,11 +28,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--db-path <path>', description: 'SQLite database path' },
       { flag: '--json', description: 'Output as JSON' },
     ],
-    examples: [
-      'agentguard learn',
-      'agentguard learn --write-rules',
-      'agentguard learn --json',
-    ],
+    examples: ['agentguard learn', 'agentguard learn --write-rules', 'agentguard learn --json'],
   },
   adoption: {
     name: 'agentguard adoption',

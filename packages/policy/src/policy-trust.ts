@@ -43,7 +43,8 @@ const RISK_PATTERNS: RiskPattern[] = [
   },
   {
     level: 'danger',
-    regex: /(?:secret_exposure|protected_branches|blast_radius|test_before_push|no_force_push)\s*:\s*false/,
+    regex:
+      /(?:secret_exposure|protected_branches|blast_radius|test_before_push|no_force_push)\s*:\s*false/,
     message: 'Disabled security invariant detected',
     patternStr: '<invariant>: false',
   },
@@ -111,17 +112,13 @@ export function analyzePolicyRisk(content: string): RiskFlag[] {
  */
 export function classifyPolicyLocation(
   policyPath: string,
-  options?: { isExplicitCliFlag?: boolean },
+  options?: { isExplicitCliFlag?: boolean }
 ): TrustClass {
   if (options?.isExplicitCliFlag) return 'implicitly_trusted';
 
   const home = homedir();
 
-  if (
-    policyPath.startsWith('~') ||
-    policyPath.startsWith('$HOME') ||
-    policyPath.startsWith(home)
-  ) {
+  if (policyPath.startsWith('~') || policyPath.startsWith('$HOME') || policyPath.startsWith(home)) {
     return 'implicitly_trusted';
   }
 
@@ -142,7 +139,7 @@ export function classifyPolicyLocation(
  */
 export async function verifyPolicyTrust(
   policyPath: string,
-  options?: { isExplicitCliFlag?: boolean },
+  options?: { isExplicitCliFlag?: boolean }
 ): Promise<PolicyTrustResult> {
   const trustClass = classifyPolicyLocation(policyPath, options);
 

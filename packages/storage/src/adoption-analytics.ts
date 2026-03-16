@@ -68,14 +68,13 @@ export function parseSessionToolCalls(lines: string[]): ToolCallRecord[] {
 export function correlateWithGovernance(
   toolCalls: ToolCallRecord[],
   govEvents: Array<{ kind: string; actionType?: string; timestamp?: number }>,
-  options?: { windowMs?: number },
+  options?: { windowMs?: number }
 ): CorrelationResult {
   const windowMs = options?.windowMs ?? 5000;
 
   // Pre-filter governance events to only the relevant kinds
   const relevantEvents = govEvents.filter(
-    (e) =>
-      e.kind === 'ActionRequested' || e.kind === 'ActionAllowed' || e.kind === 'ActionDenied',
+    (e) => e.kind === 'ActionRequested' || e.kind === 'ActionAllowed' || e.kind === 'ActionDenied'
   );
 
   const byTool: Record<string, { total: number; governed: number }> = {};

@@ -79,7 +79,7 @@ function adoptionColor(pct: number): string {
 function renderAdoptionReport(
   result: import('@red-codes/storage').CorrelationResult,
   sessionPath: string,
-  jsonOutput: boolean,
+  jsonOutput: boolean
 ): void {
   if (jsonOutput) {
     process.stdout.write(JSON.stringify(result, null, 2) + '\n');
@@ -90,17 +90,17 @@ function renderAdoptionReport(
 
   process.stderr.write('\n');
   process.stderr.write(
-    `  ${ANSI.bold}Adoption Analytics${ANSI.reset}  ${ANSI.dim}(session: ${sessionPath})${ANSI.reset}\n`,
+    `  ${ANSI.bold}Adoption Analytics${ANSI.reset}  ${ANSI.dim}(session: ${sessionPath})${ANSI.reset}\n`
   );
   process.stderr.write(`  ${ANSI.dim}${'─'.repeat(60)}${ANSI.reset}\n`);
   process.stderr.write('\n');
   process.stderr.write(
-    `  ${ANSI.bold}Overall Adoption:${ANSI.reset}  ${color}${result.adoptionPct.toFixed(1)}%${ANSI.reset}\n`,
+    `  ${ANSI.bold}Overall Adoption:${ANSI.reset}  ${color}${result.adoptionPct.toFixed(1)}%${ANSI.reset}\n`
   );
   process.stderr.write(
     `  Total tool calls:   ${result.totalToolCalls}\n` +
       `  Governed:           ${ANSI.green}${result.governedActions}${ANSI.reset}\n` +
-      `  Ungoverned:         ${result.ungoverned > 0 ? ANSI.red : ANSI.dim}${result.ungoverned}${ANSI.reset}\n`,
+      `  Ungoverned:         ${result.ungoverned > 0 ? ANSI.red : ANSI.dim}${result.ungoverned}${ANSI.reset}\n`
   );
 
   const toolEntries = Object.entries(result.byTool);
@@ -117,7 +117,7 @@ function renderAdoptionReport(
       process.stderr.write(
         `  ${tool.padEnd(maxToolLen + 2)} ` +
           `${tc}${toolPct.toFixed(0).padStart(3)}%${ANSI.reset}` +
-          `  ${ANSI.dim}(${counts.governed}/${counts.total})${ANSI.reset}\n`,
+          `  ${ANSI.dim}(${counts.governed}/${counts.total})${ANSI.reset}\n`
       );
     }
   }
@@ -127,7 +127,7 @@ function renderAdoptionReport(
   if (result.adoptionPct < 100 && result.ungoverned > 0) {
     process.stderr.write(
       `  ${ANSI.dim}Tip: Run ${ANSI.reset}${ANSI.cyan}agentguard auto-setup${ANSI.reset}` +
-        `${ANSI.dim} to configure Claude Code hooks and improve adoption.${ANSI.reset}\n\n`,
+        `${ANSI.dim} to configure Claude Code hooks and improve adoption.${ANSI.reset}\n\n`
     );
   }
 }
@@ -153,7 +153,7 @@ export async function adoption(args: string[]): Promise<number> {
     process.stderr.write(
       '\n  No Claude session JSONL found.\n' +
         '  Provide one with: agentguard adoption --session <path>\n' +
-        '  Or ensure ~/.claude/projects/ exists with recorded sessions.\n\n',
+        '  Or ensure ~/.claude/projects/ exists with recorded sessions.\n\n'
     );
     return 1;
   }
@@ -174,7 +174,7 @@ export async function adoption(args: string[]): Promise<number> {
   if (toolCalls.length === 0) {
     process.stderr.write(
       `\n  No tool_use entries found in session file: ${sessionPath}\n` +
-        '  Ensure the session file contains Claude Code tool call records.\n\n',
+        '  Ensure the session file contains Claude Code tool call records.\n\n'
     );
     return 0;
   }
@@ -204,7 +204,7 @@ export async function adoption(args: string[]): Promise<number> {
     // SQLite not available or no data — continue with empty governance events
     process.stderr.write(
       '  Note: Could not load governance events from SQLite. Adoption will show 0%.\n' +
-        '  Ensure AgentGuard has recorded governance sessions.\n',
+        '  Ensure AgentGuard has recorded governance sessions.\n'
     );
   }
 

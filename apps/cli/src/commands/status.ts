@@ -56,7 +56,9 @@ export async function status(args: string[]): Promise<number> {
       : integrityCheck.result === 'tampered'
         ? `${FG.red}⚠${RESET}`
         : `${DIM}○${RESET}`;
-  process.stderr.write(`  ${integrityIcon}  Hook integrity ${DIM}${integrityCheck.detail}${RESET}\n`);
+  process.stderr.write(
+    `  ${integrityIcon}  Hook integrity ${DIM}${integrityCheck.detail}${RESET}\n`
+  );
 
   // Policy
   printCheck(checks.policy.ok, 'Policy file', checks.policy.detail);
@@ -65,14 +67,14 @@ export async function status(args: string[]): Promise<number> {
   const policyTrustCheck = await checkPolicyTrust();
   const policyTrustIcon = policyTrustCheck.ok ? `${FG.green}✓${RESET}` : `${DIM}○${RESET}`;
   process.stderr.write(
-    `  ${policyTrustIcon}  Policy trust ${DIM}${policyTrustCheck.detail}${RESET}\n`,
+    `  ${policyTrustIcon}  Policy trust ${DIM}${policyTrustCheck.detail}${RESET}\n`
   );
 
   // Denial insights (informational — does not affect exit code)
   const denialInsightsCheck = await checkDenialInsights();
   const denialInsightsIcon = `${DIM}○${RESET}`;
   process.stderr.write(
-    `  ${denialInsightsIcon}  Denial insights ${DIM}${denialInsightsCheck.detail}${RESET}\n`,
+    `  ${denialInsightsIcon}  Denial insights ${DIM}${denialInsightsCheck.detail}${RESET}\n`
   );
 
   // Directories

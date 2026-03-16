@@ -36,7 +36,7 @@ function isAgentGuardEntry(entry: HookEntry): boolean {
   return entry.hooks.some(
     (h) =>
       typeof h.command === 'string' &&
-      (h.command.includes('claude-hook') || h.command.includes('agentguard')),
+      (h.command.includes('claude-hook') || h.command.includes('agentguard'))
   );
 }
 
@@ -108,7 +108,7 @@ export function storeHookBaseline(settingsPath: string): void {
  *   - `'hooks_missing'` — no AgentGuard hooks found in the settings file
  */
 export function verifyHookIntegrity(
-  settingsPath: string,
+  settingsPath: string
 ): 'verified' | 'tampered' | 'no_baseline' | 'hooks_missing' {
   const currentHash = computeHookHash(settingsPath);
   if (currentHash === null) return 'hooks_missing';

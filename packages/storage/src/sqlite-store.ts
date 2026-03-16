@@ -182,7 +182,7 @@ export function loadRunDecisions(db: Database.Database, rid: string): Governance
 export function queryEventsByKindAcrossRuns(
   db: Database.Database,
   kind: string,
-  options?: { sessionLimit?: number; since?: string },
+  options?: { sessionLimit?: number; since?: string }
 ): Array<DomainEvent & { runId: string }> {
   const conditions = ['kind = ?'];
   const params: unknown[] = [kind];
@@ -195,7 +195,7 @@ export function queryEventsByKindAcrossRuns(
   if (options?.sessionLimit !== undefined && options.sessionLimit > 0) {
     const recentRuns = db
       .prepare(
-        'SELECT run_id FROM (SELECT run_id, MAX(timestamp) as max_ts FROM events GROUP BY run_id ORDER BY max_ts DESC LIMIT ?)',
+        'SELECT run_id FROM (SELECT run_id, MAX(timestamp) as max_ts FROM events GROUP BY run_id ORDER BY max_ts DESC LIMIT ?)'
       )
       .all(options.sessionLimit) as { run_id: string }[];
 
