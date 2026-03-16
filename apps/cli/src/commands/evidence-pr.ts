@@ -120,10 +120,7 @@ function postPrComment(prNumber: string, markdown: string): boolean {
   }
 }
 
-export async function evidencePr(
-  args: string[],
-  storageConfig?: StorageConfig
-): Promise<number> {
+export async function evidencePr(args: string[], storageConfig?: StorageConfig): Promise<number> {
   const parsed = parseArgs(args, {
     boolean: ['--dry-run', '--last', '--all'],
     string: ['--pr', '--run'],
