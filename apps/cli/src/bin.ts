@@ -109,6 +109,11 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--last, -l', description: 'Replay the most recent session' },
       { flag: '--step, -s', description: 'Step through events one at a time' },
       { flag: '--stats', description: 'Show session statistics only' },
+      { flag: '--ui', description: 'Open interactive HTML timeline viewer in browser' },
+      { flag: '--denied-only', description: 'Show only denied actions (with --ui)' },
+      { flag: '--output, -o <file>', description: 'Output HTML file path (with --ui)' },
+      { flag: '--no-open', description: 'Do not open browser automatically (with --ui)' },
+      { flag: '--run <runId>', description: 'Replay a specific governance run (with --ui)' },
       { flag: '--filter <kind>', description: 'Filter events by kind' },
       { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       {
@@ -116,7 +121,13 @@ const COMMANDS: Record<string, CommandHelp> = {
         description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
       },
     ],
-    examples: ['agentguard replay', 'agentguard replay --last', 'agentguard replay --last --step'],
+    examples: [
+      'agentguard replay',
+      'agentguard replay --last',
+      'agentguard replay --last --step',
+      'agentguard replay --last --ui',
+      'agentguard replay --last --ui --denied-only',
+    ],
   },
   export: {
     name: 'agentguard export',
@@ -786,6 +797,7 @@ function printHelp(): void {
     agentguard replay                         List recorded sessions
     agentguard replay --last                  Replay most recent session
     agentguard replay --last --step           Step through events interactively
+    agentguard replay --last --ui             Open interactive timeline viewer in browser
 
   \x1b[1mPolicy:\x1b[0m
     agentguard policy validate <file>        Validate a policy file (YAML/JSON)
