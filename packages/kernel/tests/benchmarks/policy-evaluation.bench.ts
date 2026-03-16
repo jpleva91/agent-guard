@@ -28,6 +28,8 @@ const samplePolicy: LoadedPolicy = {
       action: 'deploy.trigger',
       effect: 'deny',
       conditions: { requireTests: true },
+      // Note: requireTests gate means this deny fires when testsPass is not true
+      // in intent.metadata. Since bench intents don't set testsPass, this always denies.
       reason: 'Tests required before deploy',
     },
     { action: 'file.*', effect: 'allow', conditions: { scope: ['src/', 'tests/'] } },
