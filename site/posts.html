@@ -426,6 +426,215 @@
         });
       });
 
+      // ---- Post Rendering ----
+      var POSTS_URL = 'posts.json';
+      var postsContainer = document.getElementById('posts-container');
+
+      function formatDate(dateStr) {
+        var d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      }
+
+      function truncate(str, len) {
+        if (str.length <= len) return str;
+        return str.substring(0, len).replace(/\s+\S*$/, '') + '...';
+      }
+
+      function createPlaceholderSvg() {
+        var ns = 'http://www.w3.org/2000/svg';
+        var svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('class', 'w-10 h-10 text-cta opacity-30');
+        svg.setAttribute('viewBox', '0 0 64 64');
+        svg.setAttribute('fill', 'none');
+
+        var p1 = document.createElementNS(ns, 'polygon');
+        p1.setAttribute('points', '7.75,32 7.75,46 32,60 56.25,46 56.25,32');
+        p1.setAttribute('fill', 'currentColor');
+        p1.setAttribute('fill-opacity', '0.1');
+
+        var p2 = document.createElementNS(ns, 'polygon');
+        p2.setAttribute('points', '32,4 56.25,18 56.25,46 32,60 7.75,46 7.75,18');
+        p2.setAttribute('stroke', 'currentColor');
+        p2.setAttribute('stroke-width', '2.5');
+        p2.setAttribute('fill', 'none');
+
+        var pl = document.createElementNS(ns, 'polyline');
+        pl.setAttribute('points', '7.75,32 27,32 29,35 32,24 35,35 37,32 56.25,32');
+        pl.setAttribute('stroke', 'currentColor');
+        pl.setAttribute('stroke-width', '2');
+        pl.setAttribute('fill', 'none');
+
+        svg.appendChild(p1);
+        svg.appendChild(p2);
+        svg.appendChild(pl);
+        return svg;
+      }
+
+      function createArrowSvg(extraClass) {
+        var ns = 'http://www.w3.org/2000/svg';
+        var svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('class', 'w-4 h-4' + (extraClass ? ' ' + extraClass : ''));
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        var path = document.createElementNS(ns, 'path');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        path.setAttribute('d', 'M7 17L17 7M17 7H7M17 7v10');
+        svg.appendChild(path);
+        return svg;
+      }
+
+      function createImageEl(image, heightPx) {
+        if (image) {
+          var img = document.createElement('img');
+          img.setAttribute('src', image);
+          img.setAttribute('alt', '');
+          img.setAttribute('loading', 'lazy');
+          img.className = 'w-full h-full object-cover rounded-lg';
+          return img;
+        }
+        var placeholder = document.createElement('div');
+        placeholder.className = 'post-placeholder w-full h-full rounded-lg';
+        placeholder.style.minHeight = heightPx + 'px';
+        placeholder.appendChild(createPlaceholderSvg());
+        return placeholder;
+      }
+
+      function buildHeroCard(post) {
+        var a = document.createElement('a');
+        a.setAttribute('href', post.url);
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+        a.setAttribute('aria-label', 'Read: ' + post.title);
+        a.className = 'block post-card rounded-xl border border-cta bg-surface p-6 md:p-8 mb-10 reveal';
+
+        var flex = document.createElement('div');
+        flex.className = 'flex flex-col md:flex-row gap-6';
+
+        var imgCol = document.createElement('div');
+        imgCol.className = 'md:w-48 md:h-36 flex-shrink-0';
+        imgCol.appendChild(createImageEl(post.image, 144));
+        flex.appendChild(imgCol);
+
+        var content = document.createElement('div');
+        content.className = 'flex-1';
+
+        var badge = document.createElement('span');
+        badge.className = 'inline-block font-mono text-xs font-semibold text-cta bg-cta/10 px-2 py-1 rounded mb-3';
+        badge.textContent = 'LATEST';
+        content.appendChild(badge);
+
+        var h2 = document.createElement('h2');
+        h2.className = 'font-sans font-bold text-xl md:text-2xl text-text mb-3';
+        h2.textContent = post.title;
+        content.appendChild(h2);
+
+        var excerpt = document.createElement('p');
+        excerpt.className = 'text-muted text-sm mb-4 leading-relaxed';
+        excerpt.textContent = post.excerpt;
+        content.appendChild(excerpt);
+
+        var bottom = document.createElement('div');
+        bottom.className = 'flex items-center justify-between';
+
+        var time = document.createElement('time');
+        time.className = 'text-muted text-xs font-mono';
+        time.setAttribute('datetime', post.date);
+        time.textContent = formatDate(post.date);
+        bottom.appendChild(time);
+
+        var cta = document.createElement('span');
+        cta.className = 'inline-flex items-center gap-1 text-cta text-sm font-medium';
+        cta.textContent = 'Read on LinkedIn ';
+        cta.appendChild(createArrowSvg(''));
+        bottom.appendChild(cta);
+
+        content.appendChild(bottom);
+        flex.appendChild(content);
+        a.appendChild(flex);
+        return a;
+      }
+
+      function buildGridCard(post) {
+        var a = document.createElement('a');
+        a.setAttribute('href', post.url);
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+        a.setAttribute('aria-label', 'Read: ' + post.title);
+        a.className = 'block post-card rounded-xl border border-surface-light bg-surface p-5 reveal';
+
+        var imgWrap = document.createElement('div');
+        imgWrap.className = 'h-32 mb-4';
+        imgWrap.appendChild(createImageEl(post.image, 128));
+        a.appendChild(imgWrap);
+
+        var h3 = document.createElement('h3');
+        h3.className = 'font-sans font-semibold text-base text-text mb-2';
+        h3.textContent = post.title;
+        a.appendChild(h3);
+
+        var excerpt = document.createElement('p');
+        excerpt.className = 'text-muted text-sm mb-3 leading-relaxed';
+        excerpt.textContent = truncate(post.excerpt, 100);
+        a.appendChild(excerpt);
+
+        var bottom = document.createElement('div');
+        bottom.className = 'flex items-center justify-between';
+
+        var time = document.createElement('time');
+        time.className = 'text-muted text-xs font-mono';
+        time.setAttribute('datetime', post.date);
+        time.textContent = formatDate(post.date);
+        bottom.appendChild(time);
+
+        bottom.appendChild(createArrowSvg('text-muted'));
+        a.appendChild(bottom);
+        return a;
+      }
+
+      function renderEmptyState() {
+        postsContainer.replaceChildren();
+        var wrap = document.createElement('div');
+        wrap.className = 'flex items-center justify-center py-20 reveal';
+        var p = document.createElement('p');
+        p.className = 'text-muted text-lg';
+        p.textContent = 'No posts yet \u2014 check back soon.';
+        wrap.appendChild(p);
+        postsContainer.appendChild(wrap);
+        document.querySelectorAll('.reveal:not(.visible)').forEach(function (el) { revealObserver.observe(el); });
+      }
+
+      function renderPosts(posts) {
+        var sorted = posts.slice().sort(function (a, b) { return b.date.localeCompare(a.date); });
+
+        if (sorted.length === 0) {
+          renderEmptyState();
+          return;
+        }
+
+        postsContainer.replaceChildren();
+
+        postsContainer.appendChild(buildHeroCard(sorted[0]));
+
+        if (sorted.length > 1) {
+          var grid = document.createElement('div');
+          grid.className = 'grid md:grid-cols-2 gap-6 reveal-stagger';
+          for (var i = 1; i < sorted.length; i++) {
+            grid.appendChild(buildGridCard(sorted[i]));
+          }
+          postsContainer.appendChild(grid);
+        }
+
+        document.querySelectorAll('.reveal:not(.visible)').forEach(function (el) { revealObserver.observe(el); });
+      }
+
+      fetch(POSTS_URL)
+        .then(function (r) { return r.json(); })
+        .then(function (data) { renderPosts(data.posts); })
+        .catch(function () { renderEmptyState(); });
+
     }());
   </script>
 </body>
