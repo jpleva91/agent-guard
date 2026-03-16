@@ -35,6 +35,7 @@ interface YamlRule {
   reason?: string;
   limit?: number;
   requireTests?: boolean;
+  requireFormat?: boolean;
   persona?: PersonaCondition;
 }
 
@@ -359,6 +360,9 @@ function applyRuleField(rule: YamlRule, key: string, val: string): void {
     case 'requireTests':
       rule.requireTests = val === 'true';
       break;
+    case 'requireFormat':
+      rule.requireFormat = val === 'true';
+      break;
     case 'branches': {
       const arr = parseInlineArray(val);
       if (arr.length > 0) rule.branches = arr;
@@ -388,6 +392,11 @@ function convertRule(yamlRule: YamlRule): PolicyRule {
 
   if (yamlRule.requireTests !== undefined) {
     conditions.requireTests = yamlRule.requireTests;
+    hasConditions = true;
+  }
+
+  if (yamlRule.requireFormat !== undefined) {
+    conditions.requireFormat = yamlRule.requireFormat;
     hasConditions = true;
   }
 
