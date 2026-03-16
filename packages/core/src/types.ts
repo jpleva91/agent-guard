@@ -842,6 +842,7 @@ export interface SystemState {
   readonly forcePush?: boolean;
   readonly isPush?: boolean;
   readonly testsPass?: boolean;
+  readonly formatPass?: boolean;
   readonly blastRadiusLimit?: number;
   /** File path targeted by the current action */
   readonly currentTarget?: string;
