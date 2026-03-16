@@ -121,6 +121,14 @@ action.yml (composite)
   Step 8: Upload session artifact
 ```
 
+### Shell security requirements for `run.sh`
+
+The orchestration script uses `set -euo pipefail`. All user-supplied inputs (`session-file`, `policy`, `agentguard-version`) arrive as environment variables (`$INPUT_SESSION_FILE`, `$INPUT_POLICY`, `$INPUT_AGENTGUARD_VERSION`). Implementation requirements:
+
+- **Double-quote all interpolated inputs**: `"$INPUT_SESSION_FILE"`, `"$INPUT_POLICY"`, `"$INPUT_AGENTGUARD_VERSION"`
+- **Use `--` to terminate option parsing** before positional arguments: `agentguard ci-check -- "$INPUT_SESSION_FILE"`
+- Avoids shell injection via whitespace splitting and glob expansion in input values
+
 ### Error handling
 
 The orchestration script uses `set -euo pipefail`. Step-level behavior:
@@ -143,9 +151,17 @@ export function computeSessionRiskLevel(summary: EvidenceSummary): 'low' | 'medi
   if (summary.actionsDenied > 2 || summary.blastRadiusExceeded > 0 || summary.maxEscalationLevel === 'HIGH') return 'medium';
   return 'low';
 }
+// Threshold rationale: actionsDenied > 2 is the medium threshold because 1-2 denials is normal
+// (policy working as intended), while 3+ suggests the agent is repeatedly probing boundaries.
+// This threshold is intentionally not configurable in v1 — add to GitHubReportOptions if
+// callers need different sensitivity.
 ```
 
 Risk level emoji mapping: LOW=green, MEDIUM=yellow, HIGH=red.
+
+### `EvidenceSummary` location
+
+`EvidenceSummary` lives in `apps/cli/src/evidence-summary.ts` (not in `@red-codes/events` or `@red-codes/core`). This is appropriate for v1: the action interacts via CLI JSON output, so no consumer outside `apps/cli` needs the type directly. If a future JS action or external consumer needs it, migration to `@red-codes/core` is the path.
 
 ### `formatGitHubReport()` function signature
 
@@ -274,10 +290,14 @@ The duplicated PR comment logic across `ci-check.ts` and `evidence-pr.ts` (detec
 // apps/cli/src/pr-comment.ts
 export const COMMENT_MARKER = '<!-- agentguard-evidence-report -->';
 
-export function detectPrNumber(): number | null;
-export function postPrComment(prNumber: number, body: string): boolean;
-export function replacePrComment(prNumber: number, body: string, marker: string): boolean;
+export function detectPrNumber(): string | null;
+export function postPrComment(prNumber: string, body: string): boolean;
+export function replacePrComment(prNumber: string, body: string, marker: string): boolean;
 ```
+
+Note: PR numbers are `string` throughout the existing codebase (`ci-check.ts:190`, `evidence-pr.ts:25`, `evidence-pr.ts:39`). They are validated with `/^\d+$/` and interpolated directly into `gh` CLI commands — using `number` would require `.toString()` conversions at every call site.
+
+`replacePrComment` is the **primary API** (marker-based upsert: find existing comment by marker → delete → repost). `postPrComment` is the low-level helper used internally by `replacePrComment`. Existing callers in `ci-check.ts` and `evidence-pr.ts` both do the delete-then-repost pattern; `replacePrComment` canonicalizes that behavior.
 
 Note: The existing codebase uses `execSync` for `gh` CLI calls. The `pr-comment.ts` utility follows this pattern. The security hook recommends `execFileNoThrow` for user-controlled input, but these calls use only internally-constructed arguments (PR numbers, static markers). Implementation should use `execFileSync` where feasible for defense-in-depth.
 
@@ -360,7 +380,8 @@ jobs:
           git tag "${{ steps.version.outputs.version }}"
           git tag -f v1
           git push origin main
-          git push origin --tags --force
+          git push origin "${{ steps.version.outputs.version }}"  # immutable semver tag — never force
+          git push origin v1 --force                              # floating major tag only
 ```
 
 ### Requirements
