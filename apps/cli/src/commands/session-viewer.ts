@@ -2,13 +2,7 @@
 // of a governance session and open it in the default browser.
 // Uses SQLite storage backend.
 
-import {
-  readFileSync,
-  existsSync,
-  writeFileSync,
-  mkdirSync,
-  unlinkSync,
-} from 'node:fs';
+import { readFileSync, existsSync, writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { execFileSync } from 'node:child_process';

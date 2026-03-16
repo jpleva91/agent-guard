@@ -142,10 +142,10 @@ export function createShellAdapter(
     optionsOrCredentials &&
     ('credentials' in optionsOrCredentials || 'rtkEnabled' in optionsOrCredentials);
   const credentialOptions = isNewOptions
-    ? (optionsOrCredentials as ShellAdapterOptions).credentials ?? {}
-    : (optionsOrCredentials as CredentialStrippingOptions) ?? {};
+    ? ((optionsOrCredentials as ShellAdapterOptions).credentials ?? {})
+    : ((optionsOrCredentials as CredentialStrippingOptions) ?? {});
   const rtkEnabled = isNewOptions
-    ? (optionsOrCredentials as ShellAdapterOptions).rtkEnabled ?? false
+    ? ((optionsOrCredentials as ShellAdapterOptions).rtkEnabled ?? false)
     : false;
 
   return async (action: CanonicalAction): Promise<ShellResult> => {

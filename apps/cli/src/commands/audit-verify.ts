@@ -44,10 +44,7 @@ async function getLastRunId(storageConfig?: StorageConfig): Promise<string | nul
   return runId;
 }
 
-export async function auditVerify(
-  args: string[],
-  storageConfig?: StorageConfig
-): Promise<number> {
+export async function auditVerify(args: string[], storageConfig?: StorageConfig): Promise<number> {
   const wantsJson = args.includes('--json');
   const wantsList = args.includes('--list');
   const wantsLast = args.includes('--last');
