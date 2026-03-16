@@ -20,11 +20,29 @@ vi.mock('../src/evidence-summary.js', () => ({
   formatEvidenceMarkdown: vi.fn(),
 }));
 
+vi.mock('@red-codes/storage', () => {
+  const db = {};
+  const close = vi.fn();
+  return {
+    createStorageBundle: vi.fn().mockResolvedValue({ db, close }),
+    listRunIds: vi.fn(),
+    getLatestRunId: vi.fn(),
+    loadRunEvents: vi.fn(),
+  };
+});
+
 import { evidencePr } from '../src/commands/evidence-pr.js';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { parseArgs } from '../src/args.js';
 import { aggregateEvents, formatEvidenceMarkdown } from '../src/evidence-summary.js';
+import {
+  createStorageBundle,
+  listRunIds,
+  getLatestRunId,
+  loadRunEvents as sqliteLoadRunEvents,
+} from '@red-codes/storage';
+import type { StorageConfig } from '@red-codes/storage';
 
 const mockSummary = {
   totalEvents: 5,
@@ -299,6 +317,86 @@ describe('evidencePr CLI', () => {
       expect(code).toBe(0);
       expect(stderrOutput.join('')).toContain('Evidence report posted to PR #55');
       expect(stderrOutput.join('')).toContain('Events analyzed');
+    });
+  });
+
+  describe('SQLite backend', () => {
+    const sqliteConfig: StorageConfig = { backend: 'sqlite' };
+    const mockEvent = { id: 'evt_1', kind: 'ActionAllowed', timestamp: 1700000000000 };
+
+    it('loads events from SQLite for --run flag', async () => {
+      mockParsed({ run: 'run_sqlite', 'dry-run': true });
+      vi.mocked(sqliteLoadRunEvents).mockReturnValue([mockEvent] as never);
+      mockEvidencePipeline('# SQLite Evidence');
+
+      const code = await evidencePr([], sqliteConfig);
+
+      expect(code).toBe(0);
+      expect(createStorageBundle).toHaveBeenCalledWith(sqliteConfig);
+      expect(sqliteLoadRunEvents).toHaveBeenCalledWith(expect.anything(), 'run_sqlite');
+      expect(readFileSync).not.toHaveBeenCalled();
+      expect(stdoutOutput.join('')).toContain('# SQLite Evidence');
+    });
+
+    it('returns 1 when --run finds no events in SQLite', async () => {
+      mockParsed({ run: 'run_empty_sq' });
+      vi.mocked(sqliteLoadRunEvents).mockReturnValue([]);
+
+      const code = await evidencePr([], sqliteConfig);
+
+      expect(code).toBe(1);
+      expect(stderrOutput.join('')).toContain('run_empty_sq');
+      expect(stderrOutput.join('')).toContain('no events');
+    });
+
+    it('loads latest run from SQLite for --last flag', async () => {
+      mockParsed({ last: true, 'dry-run': true });
+      vi.mocked(getLatestRunId).mockReturnValue('run_latest_sq');
+      vi.mocked(sqliteLoadRunEvents).mockReturnValue([mockEvent] as never);
+      mockEvidencePipeline();
+
+      const code = await evidencePr([], sqliteConfig);
+
+      expect(code).toBe(0);
+      expect(getLatestRunId).toHaveBeenCalledWith(expect.anything());
+      expect(sqliteLoadRunEvents).toHaveBeenCalledWith(expect.anything(), 'run_latest_sq');
+      expect(readdirSync).not.toHaveBeenCalled();
+    });
+
+    it('returns 1 when --last finds no runs in SQLite', async () => {
+      mockParsed({ last: true });
+      vi.mocked(getLatestRunId).mockReturnValue(null);
+
+      const code = await evidencePr([], sqliteConfig);
+
+      expect(code).toBe(1);
+      expect(stderrOutput.join('')).toContain('No governance runs');
+    });
+
+    it('aggregates all runs from SQLite in default mode', async () => {
+      mockParsed({ 'dry-run': true });
+      vi.mocked(listRunIds).mockReturnValue(['run_a', 'run_b']);
+      vi.mocked(sqliteLoadRunEvents)
+        .mockReturnValueOnce([mockEvent] as never)
+        .mockReturnValueOnce([{ ...mockEvent, id: 'evt_2' }] as never);
+      mockEvidencePipeline();
+
+      const code = await evidencePr([], sqliteConfig);
+
+      expect(code).toBe(0);
+      expect(listRunIds).toHaveBeenCalledWith(expect.anything());
+      expect(sqliteLoadRunEvents).toHaveBeenCalledTimes(2);
+      expect(aggregateEvents).toHaveBeenCalledWith(expect.arrayContaining([mockEvent]));
+    });
+
+    it('returns 1 when no events found across all SQLite runs', async () => {
+      mockParsed({});
+      vi.mocked(listRunIds).mockReturnValue([]);
+
+      const code = await evidencePr([], sqliteConfig);
+
+      expect(code).toBe(1);
+      expect(stderrOutput.join('')).toContain('No governance events found');
     });
   });
 });

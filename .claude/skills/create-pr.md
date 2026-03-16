@@ -48,27 +48,16 @@ If push fails due to remote rejection, diagnose and report. Do NOT force push.
 
 ### 4. Collect Governance Telemetry
 
-Read governance event data from this session:
+Use the evidence-pr command in dry-run mode to collect and format governance telemetry:
 
 ```bash
-ls -la .agentguard/events/ 2>/dev/null
+node apps/cli/dist/bin.js evidence-pr --last --dry-run --store sqlite 2>/dev/null
 ```
 
-For each `.jsonl` file in `.agentguard/events/`, count event types:
+If the command fails or returns no output, fall back to JSONL mode:
 
 ```bash
-cat .agentguard/events/*.jsonl 2>/dev/null | wc -l
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -c "ActionAllowed" || echo 0
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -c "ActionDenied" || echo 0
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -c "PolicyDenied" || echo 0
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -c "InvariantViolation" || echo 0
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -c "ActionEscalated" || echo 0
-```
-
-Also check the runtime telemetry log:
-
-```bash
-cat logs/runtime-events.jsonl 2>/dev/null | wc -l
+node apps/cli/dist/bin.js evidence-pr --last --dry-run 2>/dev/null
 ```
 
 If no telemetry files exist, note "No governance telemetry recorded" — still proceed with PR creation.

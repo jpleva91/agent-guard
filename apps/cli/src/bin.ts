@@ -299,12 +299,15 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--run, -r <runId>', description: 'Use events from a specific run' },
       { flag: '--last', description: 'Use events from the most recent run only' },
       { flag: '--dry-run', description: 'Print markdown without posting to GitHub' },
+      { flag: '--store <backend>', description: 'Storage backend: jsonl or sqlite (default: jsonl)' },
+      { flag: '--db-path <path>', description: 'Path to SQLite database file' },
     ],
     examples: [
       'agentguard evidence-pr',
       'agentguard evidence-pr --pr 42',
       'agentguard evidence-pr --last --dry-run',
       'agentguard evidence-pr --run run_1234567890_abc',
+      'agentguard evidence-pr --last --store sqlite',
     ],
   },
   'audit-verify': {
@@ -538,7 +541,7 @@ async function main() {
         break;
       }
       const { evidencePr } = await import('./commands/evidence-pr.js');
-      const code = await evidencePr(args.slice(1));
+      const code = await evidencePr(args.slice(1), resolveStorageConfig(args.slice(1)));
       process.exit(code);
       break;
     }
