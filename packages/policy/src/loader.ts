@@ -63,6 +63,39 @@ function validateRule(rule: unknown): ValidationResult {
     if (conds.limit !== undefined && typeof conds.limit !== 'number') {
       errors.push('Condition "limit" must be a number');
     }
+    if (conds.forecast !== undefined) {
+      if (typeof conds.forecast !== 'object' || conds.forecast === null) {
+        errors.push('Condition "forecast" must be an object');
+      } else {
+        const fc = conds.forecast as Record<string, unknown>;
+        if (fc.testRiskScore !== undefined && typeof fc.testRiskScore !== 'number') {
+          errors.push('Forecast condition "testRiskScore" must be a number');
+        }
+        if (fc.blastRadiusScore !== undefined && typeof fc.blastRadiusScore !== 'number') {
+          errors.push('Forecast condition "blastRadiusScore" must be a number');
+        }
+        if (fc.predictedFileCount !== undefined && typeof fc.predictedFileCount !== 'number') {
+          errors.push('Forecast condition "predictedFileCount" must be a number');
+        }
+        if (fc.dependencyCount !== undefined && typeof fc.dependencyCount !== 'number') {
+          errors.push('Forecast condition "dependencyCount" must be a number');
+        }
+        if (fc.riskLevel !== undefined) {
+          const validLevels = new Set(['low', 'medium', 'high']);
+          if (!Array.isArray(fc.riskLevel)) {
+            errors.push('Forecast condition "riskLevel" must be an array');
+          } else {
+            for (const level of fc.riskLevel) {
+              if (!validLevels.has(level as string)) {
+                errors.push(
+                  `Forecast condition "riskLevel" contains invalid value: ${level}. Must be "low", "medium", or "high"`
+                );
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   return { valid: errors.length === 0, errors };

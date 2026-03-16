@@ -2,7 +2,7 @@
 // Supports the subset of YAML needed for AgentGuard policy definitions.
 // No external dependencies — minimal line-based parser for constrained format.
 
-import type { PolicyRule, LoadedPolicy, PersonaCondition } from './evaluator.js';
+import type { PolicyRule, LoadedPolicy, PersonaCondition, ForecastCondition } from './evaluator.js';
 import type { AgentPersona } from '@red-codes/core';
 
 export interface YamlPersonaDef {
@@ -37,6 +37,7 @@ interface YamlRule {
   requireTests?: boolean;
   requireFormat?: boolean;
   persona?: PersonaCondition;
+  forecast?: ForecastCondition;
 }
 
 function trimQuotes(s: string): string {
@@ -106,6 +107,47 @@ function applyPersonaField(persona: PersonaCondition, key: string, val: string):
   }
 }
 
+function applyForecastField(forecast: ForecastCondition, key: string, val: string): void {
+  switch (key) {
+    case 'testRiskScore': {
+      const n = parseValue(val);
+      if (typeof n === 'number') forecast.testRiskScore = n;
+      break;
+    }
+    case 'blastRadiusScore': {
+      const n = parseValue(val);
+      if (typeof n === 'number') forecast.blastRadiusScore = n;
+      break;
+    }
+    case 'predictedFileCount': {
+      const n = parseValue(val);
+      if (typeof n === 'number') forecast.predictedFileCount = n;
+      break;
+    }
+    case 'dependencyCount': {
+      const n = parseValue(val);
+      if (typeof n === 'number') forecast.dependencyCount = n;
+      break;
+    }
+    case 'riskLevel': {
+      const VALID_RISK_LEVELS: Array<'low' | 'medium' | 'high'> = ['low', 'medium', 'high'];
+      const arr = parseInlineArray(val);
+      if (arr.length > 0) {
+        const filtered = arr.filter((v) =>
+          VALID_RISK_LEVELS.includes(v as 'low' | 'medium' | 'high')
+        ) as Array<'low' | 'medium' | 'high'>;
+        if (filtered.length > 0) forecast.riskLevel = filtered;
+      } else if (val) {
+        const trimmed = trimQuotes(val);
+        if (VALID_RISK_LEVELS.includes(trimmed as 'low' | 'medium' | 'high')) {
+          forecast.riskLevel = [trimmed as 'low' | 'medium' | 'high'];
+        }
+      }
+      break;
+    }
+  }
+}
+
 function applyTopLevelPersonaField(persona: YamlPersonaDef, key: string, val: string): void {
   switch (key) {
     case 'model':
@@ -152,6 +194,7 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
   let inExtends = false;
   let inTopLevelPersona = false;
   let inRulePersona = false;
+  let inRuleForecast = false;
   let ruleStartIndent = 0;
 
   for (const rawLine of lines) {
@@ -255,6 +298,7 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
         currentRule = {};
         inBranches = false;
         inRulePersona = false;
+        inRuleForecast = false;
         ruleStartIndent = indent;
 
         const rest = trimmed.slice(2).trim();
@@ -286,6 +330,18 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
         continue;
       }
 
+      // Inside rule-level forecast block
+      if (inRuleForecast && currentRule) {
+        const colonIdx = trimmed.indexOf(':');
+        if (colonIdx !== -1) {
+          const key = trimmed.slice(0, colonIdx).trim();
+          const val = trimmed.slice(colonIdx + 1).trim();
+          currentRule.forecast = currentRule.forecast || {};
+          applyForecastField(currentRule.forecast, key, val);
+        }
+        continue;
+      }
+
       // Continuation of branches array
       if (inBranches && trimmed.startsWith('- ') && currentRule) {
         currentRule.branches = currentRule.branches || [];
@@ -297,6 +353,7 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
       if (currentRule) {
         inBranches = false;
         inActionArray = false;
+        inRuleForecast = false;
         const colonIdx = trimmed.indexOf(':');
         if (colonIdx !== -1) {
           const key = trimmed.slice(0, colonIdx).trim();
@@ -317,6 +374,13 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
           if (key === 'persona' && !val) {
             inRulePersona = true;
             currentRule.persona = {};
+            continue;
+          }
+
+          if (key === 'forecast' && !val) {
+            inRuleForecast = true;
+            inRulePersona = false;
+            currentRule.forecast = {};
             continue;
           }
 
@@ -402,6 +466,11 @@ function convertRule(yamlRule: YamlRule): PolicyRule {
 
   if (yamlRule.persona) {
     conditions.persona = yamlRule.persona;
+    hasConditions = true;
+  }
+
+  if (yamlRule.forecast) {
+    conditions.forecast = yamlRule.forecast;
     hasConditions = true;
   }
 
