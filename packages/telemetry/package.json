@@ -1,0 +1,22 @@
+{
+  "name": "@red-codes/telemetry",
+  "version": "0.1.0",
+  "description": "Runtime telemetry, tracing, and cloud sink for AgentGuard",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@red-codes/core": "workspace:*",
+    "@red-codes/telemetry-client": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0"
+  }
+}
