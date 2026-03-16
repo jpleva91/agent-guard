@@ -28,11 +28,14 @@ import {
   ACTION_REQUESTED,
   ACTION_ALLOWED,
   ACTION_DENIED,
+  ACTION_ESCALATED,
   ACTION_EXECUTED,
   ACTION_FAILED,
   DECISION_RECORDED,
   SIMULATION_COMPLETED,
 } from '@red-codes/events';
+import { INTERVENTION } from './decision.js';
+import type { InterventionType } from './decision.js';
 import type { GovernanceDecisionRecord, DecisionSink } from './decisions/types.js';
 import { buildDecisionRecord } from './decisions/factory.js';
 import { checkAllInvariants, buildSystemState } from '@red-codes/invariants';
@@ -60,6 +63,33 @@ export interface KernelResult {
   runId: string;
   /** Governance decision record (additive — not present in older results) */
   decisionRecord?: GovernanceDecisionRecord;
+  /** Intervention type that was applied (null if allowed without intervention) */
+  intervention?: InterventionType | null;
+  /** True if the action was paused and awaiting human approval */
+  paused?: boolean;
+  /** True if the action was executed then rolled back */
+  rolledBack?: boolean;
+}
+
+/**
+ * Pause handler callback — invoked when the kernel encounters a PAUSE intervention.
+ * Receives the action details and must return whether to approve or reject.
+ * If not provided, PAUSE interventions auto-deny.
+ */
+export type PauseHandler = (context: {
+  action: CanonicalAction | null;
+  intent: MonitorDecision['intent'];
+  reason: string;
+  runId: string;
+}) => Promise<{ approved: boolean; reason?: string }>;
+
+/**
+ * Snapshot provider — captures and restores pre-execution state for ROLLBACK support.
+ * The kernel calls `capture()` before execution and `restore()` if rollback is needed.
+ */
+export interface SnapshotProvider {
+  capture(action: CanonicalAction): Promise<{ snapshotId: string }>;
+  restore(snapshotId: string): Promise<{ success: boolean; error?: string }>;
 }
 
 export interface KernelConfig extends MonitorConfig {
@@ -84,6 +114,12 @@ export interface KernelConfig extends MonitorConfig {
   proposalTimeoutMs?: number;
   /** Optional tracer for kernel-level tracing. Spans are sent to registered backends. */
   tracer?: Tracer;
+  /** Callback for PAUSE interventions. If not provided, PAUSE auto-denies. */
+  pauseHandler?: PauseHandler;
+  /** Timeout (ms) for PAUSE interventions before auto-deny. Default: 30000 */
+  pauseTimeoutMs?: number;
+  /** Snapshot provider for ROLLBACK interventions. If not provided, rollback is best-effort. */
+  snapshotProvider?: SnapshotProvider;
 }
 
 export interface Kernel {
@@ -113,6 +149,9 @@ export function createKernel(config: KernelConfig = {}): Kernel {
   const simulators = config.simulators || null;
   const blastRadiusThreshold = config.simulationBlastRadiusThreshold ?? 50;
   const proposalTimeoutMs = config.proposalTimeoutMs ?? 30_000;
+  const pauseHandler = config.pauseHandler ?? null;
+  const pauseTimeoutMs = config.pauseTimeoutMs ?? 30_000;
+  const snapshotProvider = config.snapshotProvider ?? null;
   const tracer = config.tracer ?? null;
   const actionLog: KernelResult[] = [];
   let eventCount = 0;
@@ -164,7 +203,8 @@ export function createKernel(config: KernelConfig = {}): Kernel {
         allEvents.push(requestedEvent);
 
         // 2. Evaluate via monitor (AAB → policy → invariants → evidence)
-        const decision = monitor.process(rawAction, systemContext);
+        // `let` because the PAUSE-approved path reassigns: decision = { ...decision, allowed: true }
+        let decision = monitor.process(rawAction, systemContext);
 
         // 3. Create canonical action object for execution
         let action: CanonicalAction | null = null;
@@ -186,53 +226,309 @@ export function createKernel(config: KernelConfig = {}): Kernel {
         sinkEvents(decision.events);
 
         if (!decision.allowed) {
-          // 5a. DENIED — emit denial event, build decision record
-          const deniedEvent = createEvent(ACTION_DENIED, {
-            actionType: decision.intent.action,
-            target: decision.intent.target,
-            reason: decision.decision.reason,
-            actionId: action?.id,
-            policyHash: decision.decision.matchedPolicy?.id,
-            metadata: {
+          const interventionType = decision.intervention;
+
+          // PAUSE/ROLLBACK only apply when there's an explicit policy denial or
+          // invariant violation — not for default-deny (no matching rule).
+          const hasExplicitDenial =
+            decision.decision.matchedPolicy !== null || decision.violations.length > 0;
+
+          // 5a-i. PAUSE intervention — escalate for human approval
+          if (hasExplicitDenial && interventionType === INTERVENTION.PAUSE) {
+            const escalatedEvent = createEvent(ACTION_ESCALATED, {
+              actionType: decision.intent.action,
+              target: decision.intent.target,
+              reason: `PAUSE intervention: ${decision.decision.reason}`,
+              actionId: action?.id,
+              policyHash: decision.decision.matchedPolicy?.id,
+              metadata: {
+                runId,
+                intervention: interventionType,
+                violations: decision.violations,
+                pauseTimeoutMs,
+              },
+            });
+            allEvents.push(escalatedEvent);
+            // escalatedEvent flushed via sinkEvents(allEvents) at path end
+
+            let pauseApproved = false;
+            let pauseReason = 'No pause handler — auto-denied';
+
+            if (pauseHandler) {
+              try {
+                let timer: ReturnType<typeof setTimeout> | undefined;
+                const timeoutPromise = new Promise<{ approved: false; reason: string }>(
+                  (resolve) => {
+                    timer = setTimeout(
+                      () =>
+                        resolve({
+                          approved: false,
+                          reason: `PAUSE timed out after ${pauseTimeoutMs}ms`,
+                        }),
+                      pauseTimeoutMs
+                    );
+                  }
+                );
+                const handlerPromise = pauseHandler({
+                  action,
+                  intent: decision.intent,
+                  reason: decision.decision.reason,
+                  runId,
+                });
+                const pauseResult = await Promise.race([handlerPromise, timeoutPromise]);
+                clearTimeout(timer!);
+                pauseApproved = pauseResult.approved;
+                pauseReason =
+                  pauseResult.reason || (pauseApproved ? 'Human approved' : 'Human rejected');
+              } catch (err) {
+                pauseApproved = false;
+                pauseReason = `Pause handler error: ${err instanceof Error ? err.message : String(err)}`;
+              }
+            }
+
+            if (pauseApproved) {
+              // Human approved — override decision to allowed and fall through to execution
+              decision = { ...decision, allowed: true };
+              // Continue to the ALLOWED path below (no return here)
+            } else {
+              // Denied (timeout, rejection, or no handler)
+              const deniedEvent = createEvent(ACTION_DENIED, {
+                actionType: decision.intent.action,
+                target: decision.intent.target,
+                reason: pauseReason,
+                actionId: action?.id,
+                policyHash: decision.decision.matchedPolicy?.id,
+                metadata: { runId, intervention: interventionType, paused: true },
+              });
+              allEvents.push(deniedEvent);
+              sinkEvents(allEvents);
+
+              const decisionRecord = buildDecisionRecord({
+                runId,
+                decision,
+                execution: null,
+                executionDurationMs: null,
+                simulation: null,
+              });
+              sinkDecision(decisionRecord);
+
+              const decisionEvent = createEvent(DECISION_RECORDED, {
+                recordId: decisionRecord.recordId,
+                outcome: decisionRecord.outcome,
+                actionType: decisionRecord.action.type,
+                target: decisionRecord.action.target,
+                reason: decisionRecord.reason,
+              });
+              sinkEvent(decisionEvent);
+
+              const result: KernelResult = {
+                allowed: false,
+                executed: false,
+                decision,
+                execution: null,
+                action,
+                events: allEvents,
+                runId,
+                decisionRecord,
+                intervention: interventionType,
+                paused: true,
+              };
+              actionLog.push(result);
+              return result;
+            }
+          }
+          // 5a-ii. ROLLBACK intervention — execute with snapshot safety net
+          else if (hasExplicitDenial && interventionType === INTERVENTION.ROLLBACK) {
+            // ROLLBACK: allow execution but capture pre-execution snapshot for undo
+            const escalatedEvent = createEvent(ACTION_ESCALATED, {
+              actionType: decision.intent.action,
+              target: decision.intent.target,
+              reason: `ROLLBACK intervention: ${decision.decision.reason}`,
+              actionId: action?.id,
+              policyHash: decision.decision.matchedPolicy?.id,
+              metadata: {
+                runId,
+                intervention: interventionType,
+                violations: decision.violations,
+              },
+            });
+            allEvents.push(escalatedEvent);
+            // escalatedEvent flushed via sinkEvents(allEvents) at path end
+
+            // Capture pre-execution snapshot
+            let snapshotId: string | null = null;
+            if (snapshotProvider && action) {
+              try {
+                const snap = await snapshotProvider.capture(action);
+                snapshotId = snap.snapshotId;
+              } catch {
+                // Snapshot capture failure is non-fatal — proceed without rollback capability
+              }
+            }
+
+            // Execute the action (override the denied decision for execution)
+            let execution: ExecutionResult | null = null;
+            let executionDurationMs: number | null = null;
+            let rolledBack = false;
+
+            if (!dryRun && action) {
+              const actionClass = getActionClass(action.type);
+              if (actionClass && adapters.has(actionClass)) {
+                const adapterDecisionRecord: DecisionRecord = {
+                  actionId: action.id,
+                  decision: 'allow',
+                  reason: `ROLLBACK intervention — executing with rollback safety net`,
+                  timestamp: Date.now(),
+                  policyHash: decision.decision.matchedPolicy?.id || 'none',
+                };
+
+                const startTime = Date.now();
+                try {
+                  execution = await adapters.execute(action, adapterDecisionRecord);
+                  executionDurationMs = Date.now() - startTime;
+
+                  if (!execution.success && snapshotId && snapshotProvider) {
+                    // Execution failed — attempt rollback
+                    try {
+                      const rollbackResult = await snapshotProvider.restore(snapshotId);
+                      rolledBack = rollbackResult.success;
+                      if (!rollbackResult.success) {
+                        // Rollback failed — escalate to LOCKDOWN
+                        monitor.process(
+                          { tool: 'kernel.rollback-failed', agent: rawAction.agent || 'kernel' },
+                          { ...systemContext, forceEscalation: 'LOCKDOWN' }
+                        );
+                      }
+                    } catch {
+                      rolledBack = false;
+                    }
+                  }
+                } catch (err) {
+                  executionDurationMs = Date.now() - startTime;
+                  execution = { success: false, error: (err as Error).message };
+
+                  // Attempt rollback on exception
+                  if (snapshotId && snapshotProvider) {
+                    try {
+                      const rollbackResult = await snapshotProvider.restore(snapshotId);
+                      rolledBack = rollbackResult.success;
+                    } catch {
+                      rolledBack = false;
+                    }
+                  }
+                }
+              }
+            }
+
+            const executedEvent = execution?.success
+              ? createEvent(ACTION_EXECUTED, {
+                  actionType: decision.intent.action,
+                  target: decision.intent.target,
+                  result: 'success',
+                  actionId: action?.id,
+                  duration: executionDurationMs,
+                  metadata: { runId, intervention: interventionType, snapshotId },
+                })
+              : createEvent(ACTION_FAILED, {
+                  actionType: decision.intent.action,
+                  target: decision.intent.target,
+                  error: execution?.error || 'Execution skipped (no adapter or dry-run)',
+                  actionId: action?.id,
+                  duration: executionDurationMs,
+                  metadata: { runId, intervention: interventionType, rolledBack, snapshotId },
+                });
+            allEvents.push(executedEvent);
+            sinkEvents(allEvents);
+
+            const decisionRecord = {
+              ...buildDecisionRecord({
+                runId,
+                decision,
+                execution,
+                executionDurationMs,
+                simulation: null,
+              }),
+              // Use 'rollback' outcome so audit consumers reading decision records
+              // directly from JSONL/SQLite see the correct governance disposition —
+              // the policy denied this action; it executed under rollback safety net.
+              outcome: 'rollback' as const,
+            };
+            sinkDecision(decisionRecord);
+
+            const decisionEvent = createEvent(DECISION_RECORDED, {
+              recordId: decisionRecord.recordId,
+              outcome: rolledBack ? 'deny' : decisionRecord.outcome,
+              actionType: decisionRecord.action.type,
+              target: decisionRecord.action.target,
+              reason: rolledBack ? 'Executed then rolled back' : decisionRecord.reason,
+            });
+            sinkEvent(decisionEvent);
+
+            const result: KernelResult = {
+              allowed: true,
+              executed: execution !== null,
+              decision: { ...decision, allowed: true },
+              execution,
+              action,
+              events: allEvents,
               runId,
-              intervention: decision.intervention,
-              violations: decision.violations,
-            },
-          });
-          allEvents.push(deniedEvent);
-          sinkEvents(allEvents);
+              decisionRecord,
+              intervention: interventionType,
+              rolledBack,
+            };
+            actionLog.push(result);
+            return result;
+          }
+          // 5a-iii. DENY (or TEST_ONLY) — standard denial path
+          else {
+            const deniedEvent = createEvent(ACTION_DENIED, {
+              actionType: decision.intent.action,
+              target: decision.intent.target,
+              reason: decision.decision.reason,
+              actionId: action?.id,
+              policyHash: decision.decision.matchedPolicy?.id,
+              metadata: {
+                runId,
+                intervention: decision.intervention,
+                violations: decision.violations,
+              },
+            });
+            allEvents.push(deniedEvent);
+            sinkEvents(allEvents);
 
-          const decisionRecord = buildDecisionRecord({
-            runId,
-            decision,
-            execution: null,
-            executionDurationMs: null,
-            simulation: null,
-          });
-          sinkDecision(decisionRecord);
+            const decisionRecord = buildDecisionRecord({
+              runId,
+              decision,
+              execution: null,
+              executionDurationMs: null,
+              simulation: null,
+            });
+            sinkDecision(decisionRecord);
 
-          // Emit DECISION_RECORDED event
-          const decisionEvent = createEvent(DECISION_RECORDED, {
-            recordId: decisionRecord.recordId,
-            outcome: decisionRecord.outcome,
-            actionType: decisionRecord.action.type,
-            target: decisionRecord.action.target,
-            reason: decisionRecord.reason,
-          });
-          sinkEvent(decisionEvent);
+            // Emit DECISION_RECORDED event
+            const decisionEvent = createEvent(DECISION_RECORDED, {
+              recordId: decisionRecord.recordId,
+              outcome: decisionRecord.outcome,
+              actionType: decisionRecord.action.type,
+              target: decisionRecord.action.target,
+              reason: decisionRecord.reason,
+            });
+            sinkEvent(decisionEvent);
 
-          const result: KernelResult = {
-            allowed: false,
-            executed: false,
-            decision,
-            execution: null,
-            action,
-            events: allEvents,
-            runId,
-            decisionRecord,
-          };
-          actionLog.push(result);
-          return result;
+            const result: KernelResult = {
+              allowed: false,
+              executed: false,
+              decision,
+              execution: null,
+              action,
+              events: allEvents,
+              runId,
+              decisionRecord,
+              intervention: interventionType,
+            };
+            actionLog.push(result);
+            return result;
+          }
         }
 
         // 5b. ALLOWED — run simulation if available, then re-check

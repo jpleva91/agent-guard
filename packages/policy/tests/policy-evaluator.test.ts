@@ -336,4 +336,40 @@ describe('evaluate', () => {
     const result = evaluate(makeIntent(), [policy]);
     expect(result.severity).toBe(0);
   });
+
+  describe('policy intervention field', () => {
+    it('passes through intervention from deny rule', () => {
+      const policy = makePolicy({
+        rules: [
+          { action: 'git.push', effect: 'deny', reason: 'Needs review', intervention: 'pause' },
+        ],
+      });
+      const result = evaluate(makeIntent({ action: 'git.push' }), [policy]);
+      expect(result.allowed).toBe(false);
+      expect(result.policyIntervention).toBe('pause');
+    });
+
+    it('passes through rollback intervention', () => {
+      const policy = makePolicy({
+        rules: [
+          {
+            action: 'file.write',
+            effect: 'deny',
+            reason: 'Rollback safety',
+            intervention: 'rollback',
+          },
+        ],
+      });
+      const result = evaluate(makeIntent({ action: 'file.write' }), [policy]);
+      expect(result.policyIntervention).toBe('rollback');
+    });
+
+    it('policyIntervention is undefined when rule has no intervention', () => {
+      const policy = makePolicy({
+        rules: [{ action: 'git.push', effect: 'deny', reason: 'Blocked' }],
+      });
+      const result = evaluate(makeIntent({ action: 'git.push' }), [policy]);
+      expect(result.policyIntervention).toBeUndefined();
+    });
+  });
 });

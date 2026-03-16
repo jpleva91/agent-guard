@@ -64,6 +64,19 @@ export interface Engine {
 }
 
 function selectIntervention(decision: EvalResult, violations: InvariantCheck[]): InterventionType {
+  // If the matched policy rule explicitly specifies an intervention, use it
+  if (decision.policyIntervention) {
+    const mapped: Record<string, InterventionType> = {
+      deny: INTERVENTION.DENY,
+      pause: INTERVENTION.PAUSE,
+      rollback: INTERVENTION.ROLLBACK,
+    };
+    if (mapped[decision.policyIntervention]) {
+      return mapped[decision.policyIntervention];
+    }
+  }
+
+  // Fall back to severity-based selection
   const maxSeverity = Math.max(
     decision.severity || 0,
     ...violations.map((v) => v.invariant?.severity || 0)

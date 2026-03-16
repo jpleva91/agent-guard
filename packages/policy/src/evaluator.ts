@@ -23,6 +23,9 @@ export interface PolicyRule {
     persona?: PersonaCondition;
   };
   reason?: string;
+  /** Optional intervention type override for deny rules. When set, the kernel uses this
+   *  instead of the severity-based default (e.g., `intervention: 'pause'` or `'rollback'`). */
+  intervention?: 'pause' | 'rollback' | 'deny';
 }
 
 export interface LoadedPolicy {
@@ -80,6 +83,8 @@ export interface EvalResult {
   severity: number;
   /** Detailed evaluation trace — which rules were checked, which matched, and why */
   trace?: PolicyEvaluationTrace;
+  /** Policy-specified intervention override (from the matched deny rule, if any) */
+  policyIntervention?: 'pause' | 'rollback' | 'deny';
 }
 
 /** Options for the policy evaluator */
@@ -297,6 +302,7 @@ export function evaluate(
           matchedPolicy: policy,
           reason: rule.reason || `Denied by policy "${policy.name}"`,
           severity: policy.severity,
+          policyIntervention: rule.intervention,
           trace: {
             rulesEvaluated,
             totalRulesChecked: rulesEvaluated.length,

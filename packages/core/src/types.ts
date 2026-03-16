@@ -1035,7 +1035,7 @@ export interface GovernanceDecisionRecord {
     persona?: AgentPersona;
   };
   /** Final governance outcome */
-  outcome: 'allow' | 'deny';
+  outcome: 'allow' | 'deny' | 'pause' | 'rollback';
   /** Human-readable reason for the outcome */
   reason: string;
   /** Intervention type if denied */

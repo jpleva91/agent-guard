@@ -8,7 +8,7 @@ export interface TelemetryEvent {
   syscall: string; // e.g., 'file.write', 'git.push'
   target: string;
   capability: string; // matched policy ID or 'default-allow'
-  policy_result: 'allow' | 'deny';
+  policy_result: 'allow' | 'deny' | 'pause' | 'rollback';
   invariant_result: 'pass' | 'fail';
   issue_id?: number;
   diff_size?: number;

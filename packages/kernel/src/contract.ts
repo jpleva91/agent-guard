@@ -9,7 +9,13 @@
 // Consumers who only need the contract can import from this file.
 
 export type { RawAgentAction, AuthorizationResult, DestructivePattern } from './aab.js';
-export type { KernelResult, KernelConfig, Kernel } from './kernel.js';
+export type {
+  KernelResult,
+  KernelConfig,
+  Kernel,
+  PauseHandler,
+  SnapshotProvider,
+} from './kernel.js';
 export type { EngineDecision, EngineConfig, Engine, InterventionType } from './decision.js';
 export { INTERVENTION } from './decision.js';
 export type { MonitorDecision, MonitorConfig, Monitor, EscalationLevel } from './monitor.js';
