@@ -331,6 +331,41 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard audit-verify run_1234567890_abc',
     ],
   },
+  'auto-setup': {
+    name: 'agentguard auto-setup',
+    description: 'Auto-detect AgentGuard in project and configure Claude Code hooks',
+    usage: 'agentguard auto-setup [flags]',
+    flags: [
+      { flag: '--quiet, -q', description: 'Machine-readable output (no banner)' },
+      { flag: '--dry-run', description: 'Detect without installing' },
+      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--db-path <path>', description: 'SQLite database path' },
+    ],
+    examples: [
+      'agentguard auto-setup',
+      'agentguard auto-setup --dry-run',
+      'agentguard auto-setup --store sqlite',
+      'agentguard auto-setup --quiet',
+    ],
+  },
+  config: {
+    name: 'agentguard config',
+    description: 'Manage AgentGuard configuration (show, get, set)',
+    usage: 'agentguard config <subcommand> [options]',
+    flags: [
+      { flag: '--json', description: 'Output as JSON (for show subcommand)' },
+      { flag: '--global, -g', description: 'Target user-level config (for set subcommand)' },
+    ],
+    examples: [
+      'agentguard config show',
+      'agentguard config show --json',
+      'agentguard config get storage',
+      'agentguard config set storage sqlite',
+      'agentguard config set autoSetup false --global',
+      'agentguard config path',
+      'agentguard config keys',
+    ],
+  },
   'session-viewer': {
     name: 'agentguard session-viewer',
     description: 'Generate an interactive HTML visualization of a governance session',
@@ -663,6 +698,27 @@ async function main() {
       break;
     }
 
+    case 'auto-setup': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS['auto-setup']));
+        break;
+      }
+      const { autoSetup } = await import('./commands/auto-setup.js');
+      await autoSetup(args.slice(1));
+      break;
+    }
+
+    case 'config': {
+      const { config: configCmd } = await import('./commands/config.js');
+      if (wantsHelp) {
+        await configCmd(['help']);
+        break;
+      }
+      const code = await configCmd(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
     case '--version':
     case '-v': {
       const { readFileSync } = await import('node:fs');
@@ -776,10 +832,20 @@ function printHelp(): void {
 
   \x1b[1mIntegration:\x1b[0m
     agentguard claude-init                    Set up Claude Code hook integration
+    agentguard auto-setup                     Auto-detect and configure hooks
+    agentguard auto-setup --dry-run           Detect without installing
     agentguard claude-hook                    PreToolUse/PostToolUse hook handler (internal)
     agentguard status                         Check governance readiness (hooks, policy, dirs)
     agentguard status --quiet                 Machine-readable check (exit code only)
     agentguard demo                           See governance in action (interactive showcase)
+
+  \x1b[1mConfiguration:\x1b[0m
+    agentguard config show                    Display resolved configuration
+    agentguard config get <key>               Get a specific config value
+    agentguard config set <key> <value>       Set a project-level config value
+    agentguard config set <key> <value> -g    Set a user-level config value
+    agentguard config path                    Show config file locations
+    agentguard config keys                    List available config keys
 
   \x1b[1mMeta:\x1b[0m
     agentguard --version                      Show version
