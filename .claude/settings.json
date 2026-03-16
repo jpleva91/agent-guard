@@ -26,6 +26,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "test -d node_modules || pnpm install --frozen-lockfile",
+            "timeout": 120000,
+            "blocking": true
+          },
+          {
+            "type": "command",
             "command": "test -f apps/cli/dist/bin.js || pnpm build",
             "timeout": 120000,
             "blocking": true
