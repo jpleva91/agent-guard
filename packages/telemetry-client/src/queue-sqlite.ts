@@ -16,7 +16,6 @@ export async function createSqliteQueue(path?: string): Promise<TelemetryQueue> 
   try {
     // Dynamic import to avoid compile-time resolution — better-sqlite3 is optional
     const moduleName = 'better-sqlite3';
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = await (Function('m', 'return import(m)')(moduleName) as Promise<
       Record<string, unknown>
     >);

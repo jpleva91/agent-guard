@@ -147,7 +147,7 @@ export async function adoption(args: string[]): Promise<number> {
   const dbPathFlag = parsed.flags['db-path'] as string | undefined;
 
   // 1. Resolve session JSONL path
-  let sessionPath: string | null = sessionFlag ? resolve(sessionFlag) : autoDetectSession();
+  const sessionPath: string | null = sessionFlag ? resolve(sessionFlag) : autoDetectSession();
 
   if (!sessionPath) {
     process.stderr.write(
