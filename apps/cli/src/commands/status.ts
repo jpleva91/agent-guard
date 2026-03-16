@@ -48,6 +48,16 @@ export async function status(args: string[]): Promise<number> {
   // Hooks
   printCheck(checks.hooks.ok, 'Claude Code hooks', checks.hooks.detail);
 
+  // Hook integrity (informational — does not affect exit code)
+  const integrityCheck = await checkHookIntegrity();
+  const integrityIcon =
+    integrityCheck.result === 'verified'
+      ? `${FG.green}🛡${RESET}`
+      : integrityCheck.result === 'tampered'
+        ? `${FG.red}⚠${RESET}`
+        : `${DIM}○${RESET}`;
+  process.stderr.write(`  ${integrityIcon}  Hook integrity ${DIM}${integrityCheck.detail}${RESET}\n`);
+
   // Policy
   printCheck(checks.policy.ok, 'Policy file', checks.policy.detail);
 
@@ -128,6 +138,44 @@ function checkRtkInstalled(): { ok: boolean; detail: string } {
     // Detection failure is non-fatal
   }
   return { ok: false, detail: '(optional — brew install rtk)' };
+}
+
+async function checkHookIntegrity(): Promise<{
+  result: 'verified' | 'tampered' | 'no_baseline' | 'hooks_missing';
+  detail: string;
+}> {
+  // Find the same settings.json as checkHooksInstalled — local first, then global
+  const localPath = join(process.cwd(), '.claude', 'settings.json');
+  const globalPath = join(homedir(), '.claude', 'settings.json');
+
+  let settingsPath: string | null = null;
+  for (const candidate of [localPath, globalPath]) {
+    if (existsSync(candidate)) {
+      settingsPath = candidate;
+      break;
+    }
+  }
+
+  if (settingsPath === null) {
+    return { result: 'hooks_missing', detail: '(hooks not found)' };
+  }
+
+  try {
+    const { verifyHookIntegrity } = await import('@red-codes/adapters');
+    const result = verifyHookIntegrity(settingsPath);
+    switch (result) {
+      case 'verified':
+        return { result, detail: '(verified — settings.json matches baseline)' };
+      case 'tampered':
+        return { result, detail: '(TAMPERED — run "agentguard claude-init --refresh")' };
+      case 'no_baseline':
+        return { result, detail: '(no baseline — run "agentguard claude-init --refresh")' };
+      case 'hooks_missing':
+        return { result, detail: '(hooks not found)' };
+    }
+  } catch {
+    return { result: 'no_baseline', detail: '(integrity check unavailable)' };
+  }
 }
 
 function checkDirsExist(): { ok: boolean; detail: string } {
