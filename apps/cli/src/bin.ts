@@ -18,6 +18,22 @@ const command = args[0];
 const wantsHelp = args.includes('--help') || args.includes('-h');
 
 const COMMANDS: Record<string, CommandHelp> = {
+  adoption: {
+    name: 'agentguard adoption',
+    description: 'Analyze what percentage of agent tool calls go through governance',
+    usage: 'agentguard adoption [flags]',
+    flags: [
+      { flag: '--session <path>', description: 'Path to Claude session JSONL file' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
+      { flag: '--db-path <path>', description: 'SQLite database path' },
+      { flag: '--json', description: 'Output as JSON' },
+    ],
+    examples: [
+      'agentguard adoption',
+      'agentguard adoption --session ~/.claude/projects/foo/session.jsonl',
+      'agentguard adoption --json',
+    ],
+  },
   analytics: {
     name: 'agentguard analytics',
     description: 'Analyze violation patterns across governance sessions',
@@ -419,6 +435,17 @@ const COMMANDS: Record<string, CommandHelp> = {
 
 async function main() {
   switch (command) {
+    case 'adoption': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.adoption));
+        break;
+      }
+      const { adoption: adoptionCmd } = await import('./commands/adoption.js');
+      const code = await adoptionCmd(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
     case 'analytics': {
       if (wantsHelp) {
         console.log(formatHelp(COMMANDS.analytics));
@@ -779,6 +806,7 @@ function printHelp(): void {
     agentguard inspect [runId]                Inspect action graph and decisions
     agentguard events [runId]                 Show raw event stream for a run
     agentguard analytics                      Analyze violation patterns across sessions
+    agentguard adoption                       Analyze % of tool calls going through governance
 
   \x1b[1mTraces:\x1b[0m
     agentguard traces --last                  Show policy traces for most recent run

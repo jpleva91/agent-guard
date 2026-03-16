@@ -4,3 +4,4 @@ export * from './migrations.js';
 export * from './sqlite-session.js';
 export * from './sqlite-sink.js';
 export * from './sqlite-store.js';
+export * from './adoption-analytics.js';
