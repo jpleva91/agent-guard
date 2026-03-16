@@ -119,7 +119,10 @@ function checkRtkInstalled(): { ok: boolean; detail: string } {
   try {
     const rtk = detectRtk();
     if (rtk.available) {
-      return { ok: true, detail: `rtk${rtk.version ? ` v${rtk.version}` : ''} (60-90% token savings)` };
+      return {
+        ok: true,
+        detail: `rtk${rtk.version ? ` v${rtk.version}` : ''} (60-90% token savings)`,
+      };
     }
   } catch {
     // Detection failure is non-fatal

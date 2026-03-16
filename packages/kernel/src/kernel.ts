@@ -429,11 +429,16 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                       const modifiedActionType = decision.intent.action;
                       const modifiedTarget = decision.intent.target;
                       if (modifiedActionType !== 'unknown') {
-                        action = createAction(modifiedActionType, modifiedTarget, 'kernel-modified', {
-                          command: modifiedRawAction.command,
-                          agent: modifiedRawAction.agent,
-                          runId,
-                        });
+                        action = createAction(
+                          modifiedActionType,
+                          modifiedTarget,
+                          'kernel-modified',
+                          {
+                            command: modifiedRawAction.command,
+                            agent: modifiedRawAction.agent,
+                            runId,
+                          }
+                        );
                       }
                     } catch {
                       // Action creation may fail — continue with original action
@@ -445,8 +450,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                   }
                 } else {
                   modifyApplied = false;
-                  modifyReason =
-                    modifyResult.reason || 'Modify handler declined to modify';
+                  modifyReason = modifyResult.reason || 'Modify handler declined to modify';
                 }
               } catch (err) {
                 modifyApplied = false;

@@ -424,7 +424,10 @@ function generateStarterPolicy(): boolean {
   return true;
 }
 
-function showProtectionSummary(policyGenerated: boolean, rtkStatus?: { available: boolean; version?: string }): void {
+function showProtectionSummary(
+  policyGenerated: boolean,
+  rtkStatus?: { available: boolean; version?: string }
+): void {
   process.stderr.write('\n');
   process.stderr.write(`  ${FG.green}${BOLD}AgentGuard is active.${RESET}\n\n`);
 
