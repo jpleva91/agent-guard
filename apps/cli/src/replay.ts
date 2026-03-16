@@ -4,8 +4,14 @@
 // DONE(roadmap): Phase 4 — Replay comparator: see src/kernel/replay-comparator.ts
 // DONE(roadmap): Phase 4 — Replay processor plugin interface: see src/kernel/replay-processor.ts
 
+import { existsSync, writeFileSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { execFileSync } from 'node:child_process';
 import { loadSession, listSessions } from './session-store.js';
 import { color, bold, dim } from './colors.js';
+import { buildReplaySession } from '@red-codes/kernel';
+import { generateTimelineHtml } from './replay-timeline-html.js';
 
 interface EventDisplay {
   icon: string;
@@ -72,16 +78,45 @@ export async function replay(args: string[]): Promise<void> {
   const wantsStep = args.includes('--step') || args.includes('-s');
   const wantsStats = args.includes('--stats');
   const wantsLast = args.includes('--last') || args.includes('-l');
+  const wantsUi = args.includes('--ui');
+  const noOpen = args.includes('--no-open');
+  const deniedOnly = args.includes('--denied-only');
 
   const filterIdx = args.indexOf('--filter');
   const filterKind = filterIdx !== -1 ? args[filterIdx + 1] : null;
 
+  // Parse --output / -o flag
+  let outputPath: string | undefined;
+  for (let i = 0; i < args.length; i++) {
+    if ((args[i] === '--output' || args[i] === '-o') && args[i + 1]) {
+      outputPath = args[i + 1];
+      break;
+    }
+  }
+
+  // Parse --run <runId> flag for explicit governance run ID
+  const runIdx = args.indexOf('--run');
+  const explicitRunId = runIdx !== -1 ? args[runIdx + 1] : undefined;
+
   let sessionId: string | null = null;
   for (const arg of args) {
-    if (!arg.startsWith('-') && arg !== filterKind) {
+    if (!arg.startsWith('-') && arg !== filterKind && arg !== outputPath && arg !== explicitRunId) {
       sessionId = arg;
       break;
     }
+  }
+
+  // --- UI mode: interactive HTML timeline viewer ---
+  if (wantsUi) {
+    await replayUi({
+      last: wantsLast,
+      runId: explicitRunId,
+      noOpen,
+      outputPath,
+      deniedOnly,
+      filterKind,
+    });
+    return;
   }
 
   if (wantsLast && !sessionId) {
@@ -119,6 +154,86 @@ export async function replay(args: string[]): Promise<void> {
   }
 
   replayTimeline(session, filterKind);
+}
+
+// ---------------------------------------------------------------------------
+// UI mode — generate interactive HTML timeline viewer
+// ---------------------------------------------------------------------------
+
+interface ReplayUiOptions {
+  last?: boolean;
+  runId?: string;
+  noOpen?: boolean;
+  outputPath?: string;
+  deniedOnly?: boolean;
+  filterKind?: string | null;
+}
+
+async function replayUi(options: ReplayUiOptions): Promise<void> {
+  const { createStorageBundle } = await import('@red-codes/storage');
+  const { getLatestRunId, loadRunEvents } = await import('@red-codes/storage');
+
+  const config = { backend: 'sqlite' as const };
+  const storage = await createStorageBundle(config);
+  if (!storage.db) {
+    process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
+    return;
+  }
+  const db = storage.db as import('better-sqlite3').Database;
+
+  const targetRunId = options.runId || (options.last ? getLatestRunId(db) : getLatestRunId(db));
+  if (!targetRunId) {
+    storage.close();
+    process.stderr.write(
+      '\n  No governance runs found.\n  Run "agentguard guard" first to generate events.\n\n'
+    );
+    return;
+  }
+
+  const events = loadRunEvents(db, targetRunId);
+  storage.close();
+
+  if (events.length === 0) {
+    process.stderr.write(`\n  Run "${targetRunId}" has no events.\n\n`);
+    return;
+  }
+
+  const session = buildReplaySession(targetRunId, events);
+  const html = generateTimelineHtml(session, events, {
+    deniedOnly: options.deniedOnly,
+    filterKind: options.filterKind ?? undefined,
+  });
+
+  const viewsDir = join(homedir(), '.agentguard', 'views');
+  const outFile = options.outputPath || join(viewsDir, `timeline_${targetRunId}.html`);
+  const outDir = options.outputPath ? join(outFile, '..') : viewsDir;
+  if (!existsSync(outDir)) {
+    mkdirSync(outDir, { recursive: true });
+  }
+  writeFileSync(outFile, html, 'utf8');
+
+  process.stderr.write(`\n  \x1b[32m+\x1b[0m Timeline viewer written to: ${outFile}\n`);
+
+  if (!options.noOpen) {
+    process.stderr.write('  Opening in browser...\n\n');
+    openInBrowser(outFile);
+  } else {
+    process.stderr.write('\n');
+  }
+}
+
+function openInBrowser(target: string): void {
+  try {
+    if (process.platform === 'win32') {
+      execFileSync('cmd.exe', ['/c', 'start', '', target], { stdio: 'ignore' });
+    } else if (process.platform === 'darwin') {
+      execFileSync('open', [target], { stdio: 'ignore' });
+    } else {
+      execFileSync('xdg-open', [target], { stdio: 'ignore' });
+    }
+  } catch {
+    process.stderr.write(`  Could not open browser. Open manually: ${target}\n`);
+  }
 }
 
 function renderSessionList(): void {
