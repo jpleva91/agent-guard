@@ -19,6 +19,7 @@ export interface PolicyRule {
     limit?: number;
     branches?: string[];
     requireTests?: boolean;
+    requireFormat?: boolean;
     persona?: PersonaCondition;
   };
   reason?: string;
@@ -159,6 +160,16 @@ function matchConditions(
   intent: NormalizedIntent
 ): ConditionMatchResult {
   if (!conditions) return { matched: true };
+
+  // Gate conditions: skip this rule when the required flag is satisfied.
+  // For deny rules, this means the deny is bypassed when the condition passes.
+  if (conditions.requireTests && intent.metadata?.testsPass === true) {
+    return { matched: false };
+  }
+
+  if (conditions.requireFormat && intent.metadata?.formatPass === true) {
+    return { matched: false };
+  }
 
   if (conditions.scope && !matchScope(conditions.scope, intent.target)) {
     return { matched: false, scopeMatched: false };
