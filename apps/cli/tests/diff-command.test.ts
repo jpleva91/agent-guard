@@ -2,33 +2,20 @@
 // terminal and JSON output, and error handling.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import Database from 'better-sqlite3';
+import { runMigrations, createSqliteEventSink } from '@red-codes/storage';
+import type { StorageConfig } from '@red-codes/storage';
 import type { DomainEvent } from '@red-codes/core';
 
 // ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
 
-const TEST_BASE_DIR = join('.agentguard-test-diff');
-const TEST_EVENTS_DIR = join(TEST_BASE_DIR, 'events');
-
-function ensureTestDir(): void {
-  mkdirSync(TEST_EVENTS_DIR, { recursive: true });
-}
-
-function cleanTestDir(): void {
-  if (existsSync(TEST_BASE_DIR)) {
-    rmSync(TEST_BASE_DIR, { recursive: true, force: true });
-  }
-}
-
-function writeTestJsonl(runId: string, events: DomainEvent[]): void {
-  ensureTestDir();
-  const filePath = join(TEST_EVENTS_DIR, `${runId}.jsonl`);
-  const content = events.map((e) => JSON.stringify(e)).join('\n') + '\n';
-  writeFileSync(filePath, content, 'utf8');
-}
+let tmpDir: string;
+let storageConfig: StorageConfig;
 
 function testEvent(
   kind: string,
@@ -73,6 +60,17 @@ function createDeniedActionEvents(
   ];
 }
 
+function seedEvents(runId: string, events: DomainEvent[]): void {
+  const db = new Database(storageConfig.dbPath!);
+  const sink = createSqliteEventSink(db, runId);
+  for (const e of events) {
+    // Clone with unique ID to avoid INSERT OR IGNORE conflicts across runs
+    const cloned = { ...e, id: `${e.id}_${runId}` };
+    sink.write(cloned);
+  }
+  db.close();
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -83,8 +81,12 @@ describe('diff command', () => {
   let originalExitCode: number | undefined;
 
   beforeEach(() => {
-    cleanTestDir();
-    ensureTestDir();
+    tmpDir = mkdtempSync(join(tmpdir(), 'ag-diff-test-'));
+    storageConfig = { backend: 'sqlite', dbPath: join(tmpDir, 'test.db') };
+    const db = new Database(storageConfig.dbPath!);
+    runMigrations(db);
+    db.close();
+
     stderrOutput = '';
     stdoutOutput = '';
     originalExitCode = process.exitCode;
@@ -100,7 +102,7 @@ describe('diff command', () => {
   });
 
   afterEach(() => {
-    cleanTestDir();
+    rmSync(tmpDir, { recursive: true, force: true });
     vi.restoreAllMocks();
     process.exitCode = originalExitCode;
   });
@@ -109,7 +111,7 @@ describe('diff command', () => {
 
   async function runDiff(args: string[]): Promise<void> {
     const { diff } = await import('../src/commands/diff.js');
-    await diff(args);
+    await diff(args, storageConfig);
   }
 
   // ── Usage / Error Cases ──
@@ -129,7 +131,7 @@ describe('diff command', () => {
     });
 
     it('reports error when sessions cannot be loaded', async () => {
-      await runDiff(['nonexistent-a', 'nonexistent-b', '--dir', TEST_BASE_DIR]);
+      await runDiff(['nonexistent-a', 'nonexistent-b']);
       expect(stderrOutput).toContain('Error:');
       expect(stderrOutput).toContain('nonexistent-a');
       expect(stderrOutput).toContain('nonexistent-b');
@@ -137,8 +139,8 @@ describe('diff command', () => {
     });
 
     it('reports error for --last with fewer than 2 runs', async () => {
-      writeTestJsonl('only-one', createAllowedActionEvents('file.write', 'a.ts', 1000));
-      await runDiff(['--last', '--dir', TEST_BASE_DIR]);
+      seedEvents('only-one', createAllowedActionEvents('file.write', 'a.ts', 1000));
+      await runDiff(['--last']);
       expect(stderrOutput).toContain('Need at least 2');
       expect(process.exitCode).toBe(1);
     });
@@ -149,10 +151,10 @@ describe('diff command', () => {
   describe('identical sessions', () => {
     it('reports identical sessions with zero exit code', async () => {
       const events = createAllowedActionEvents('file.write', 'a.ts', 1000);
-      writeTestJsonl('run-a', events);
-      writeTestJsonl('run-b', events);
+      seedEvents('run-a', events);
+      seedEvents('run-b', events);
 
-      await runDiff(['run-a', 'run-b', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-a', 'run-b']);
       expect(stderrOutput).toContain('IDENTICAL');
       expect(stderrOutput).toContain('run-a');
       expect(stderrOutput).toContain('run-b');
@@ -168,10 +170,10 @@ describe('diff command', () => {
       const origEvents = createAllowedActionEvents('git.push', 'main', 1000);
       const replayEvents = createDeniedActionEvents('git.push', 'main', 'Protected branch', 1000);
 
-      writeTestJsonl('run-orig', origEvents);
-      writeTestJsonl('run-changed', replayEvents);
+      seedEvents('run-orig', origEvents);
+      seedEvents('run-changed', replayEvents);
 
-      await runDiff(['run-orig', 'run-changed', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-orig', 'run-changed']);
       expect(stderrOutput).toContain('DIVERGENT');
       expect(stderrOutput).toContain('git.push');
       expect(process.exitCode).toBe(1);
@@ -181,10 +183,10 @@ describe('diff command', () => {
       const origEvents = createAllowedActionEvents('file.delete', 'config.ts', 1000);
       const replayEvents = createDeniedActionEvents('file.delete', 'config.ts', 'Blocked', 1000);
 
-      writeTestJsonl('run-a', origEvents);
-      writeTestJsonl('run-b', replayEvents);
+      seedEvents('run-a', origEvents);
+      seedEvents('run-b', replayEvents);
 
-      await runDiff(['run-a', 'run-b', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-a', 'run-b']);
       expect(stderrOutput).toContain('allowed');
     });
   });
@@ -194,10 +196,10 @@ describe('diff command', () => {
   describe('JSON output', () => {
     it('outputs valid JSON with --json flag', async () => {
       const events = createAllowedActionEvents('file.write', 'a.ts', 1000);
-      writeTestJsonl('run-a', events);
-      writeTestJsonl('run-b', events);
+      seedEvents('run-a', events);
+      seedEvents('run-b', events);
 
-      await runDiff(['run-a', 'run-b', '--json', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-a', 'run-b', '--json']);
 
       const parsed = JSON.parse(stdoutOutput);
       expect(parsed.originalRunId).toBe('run-a');
@@ -210,10 +212,10 @@ describe('diff command', () => {
       const origEvents = createAllowedActionEvents('git.push', 'main', 1000);
       const replayEvents = createDeniedActionEvents('git.push', 'main', 'Blocked', 1000);
 
-      writeTestJsonl('run-a', origEvents);
-      writeTestJsonl('run-b', replayEvents);
+      seedEvents('run-a', origEvents);
+      seedEvents('run-b', replayEvents);
 
-      await runDiff(['run-a', 'run-b', '--json', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-a', 'run-b', '--json']);
 
       const parsed = JSON.parse(stdoutOutput);
       expect(parsed.identical).toBe(false);
@@ -227,14 +229,13 @@ describe('diff command', () => {
 
   describe('--last flag', () => {
     it('compares the two most recent runs', async () => {
-      // Create runs with names that sort chronologically
       const eventsA = createAllowedActionEvents('file.write', 'a.ts', 1000);
       const eventsB = createDeniedActionEvents('file.write', 'a.ts', 'Blocked', 1000);
 
-      writeTestJsonl('run-001-earlier', eventsA);
-      writeTestJsonl('run-002-latest', eventsB);
+      seedEvents('run-001-earlier', eventsA);
+      seedEvents('run-002-latest', eventsB);
 
-      await runDiff(['--last', '--dir', TEST_BASE_DIR]);
+      await runDiff(['--last']);
       // Should compare the two runs (second-most-recent vs most-recent)
       expect(stderrOutput).toContain('run-001-earlier');
       expect(stderrOutput).toContain('run-002-latest');
@@ -251,10 +252,10 @@ describe('diff command', () => {
       ];
       const replayEvents = createAllowedActionEvents('file.write', 'a.ts', 1000);
 
-      writeTestJsonl('run-a', origEvents);
-      writeTestJsonl('run-b', replayEvents);
+      seedEvents('run-a', origEvents);
+      seedEvents('run-b', replayEvents);
 
-      await runDiff(['run-a', 'run-b', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-a', 'run-b']);
       expect(stderrOutput).toContain('MISSING');
       expect(stderrOutput).toContain('Only in Session A');
     });
@@ -266,10 +267,10 @@ describe('diff command', () => {
         ...createAllowedActionEvents('file.write', 'b.ts', 2000),
       ];
 
-      writeTestJsonl('run-a', origEvents);
-      writeTestJsonl('run-b', replayEvents);
+      seedEvents('run-a', origEvents);
+      seedEvents('run-b', replayEvents);
 
-      await runDiff(['run-a', 'run-b', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-a', 'run-b']);
       expect(stderrOutput).toContain('EXTRA');
       expect(stderrOutput).toContain('Only in Session B');
     });
@@ -288,10 +289,10 @@ describe('diff command', () => {
         ...createDeniedActionEvents('file.write', 'b.ts', 'Blocked', 2000),
       ];
 
-      writeTestJsonl('run-a', origEvents);
-      writeTestJsonl('run-b', replayEvents);
+      seedEvents('run-a', origEvents);
+      seedEvents('run-b', replayEvents);
 
-      await runDiff(['run-a', 'run-b', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-a', 'run-b']);
       expect(stderrOutput).toContain('Summary Differences');
     });
   });
@@ -324,10 +325,10 @@ describe('diff command', () => {
         ),
       ];
 
-      writeTestJsonl('run-a', origEvents);
-      writeTestJsonl('run-b', replayEvents);
+      seedEvents('run-a', origEvents);
+      seedEvents('run-b', replayEvents);
 
-      await runDiff(['run-a', 'run-b', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-a', 'run-b']);
       expect(stderrOutput).toContain('Escalation Levels');
       expect(stderrOutput).toContain('NORMAL');
       expect(stderrOutput).toContain('ELEVATED');
@@ -335,10 +336,10 @@ describe('diff command', () => {
 
     it('does not show escalation section when levels are the same', async () => {
       const events = createAllowedActionEvents('file.write', 'a.ts', 1000);
-      writeTestJsonl('run-a', events);
-      writeTestJsonl('run-b', events);
+      seedEvents('run-a', events);
+      seedEvents('run-b', events);
 
-      await runDiff(['run-a', 'run-b', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-a', 'run-b']);
       expect(stderrOutput).not.toContain('Escalation Levels');
     });
   });
@@ -366,10 +367,10 @@ describe('diff command', () => {
         ),
       ];
 
-      writeTestJsonl('run-a', origEvents);
-      writeTestJsonl('run-b', replayEvents);
+      seedEvents('run-a', origEvents);
+      seedEvents('run-b', replayEvents);
 
-      await runDiff(['run-a', 'run-b', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-a', 'run-b']);
       expect(stderrOutput).toContain('Invariant Violations');
       expect(stderrOutput).toContain('secret-exposure');
     });
@@ -394,10 +395,10 @@ describe('diff command', () => {
         ),
       ];
 
-      writeTestJsonl('run-a', origEvents);
-      writeTestJsonl('run-b', replayEvents);
+      seedEvents('run-a', origEvents);
+      seedEvents('run-b', replayEvents);
 
-      await runDiff(['run-a', 'run-b', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-a', 'run-b']);
       expect(stderrOutput).toContain('violation: blast-radius');
     });
   });
@@ -430,10 +431,10 @@ describe('diff command', () => {
         ),
       ];
 
-      writeTestJsonl('run-a', origEvents);
-      writeTestJsonl('run-b', replayEvents);
+      seedEvents('run-a', origEvents);
+      seedEvents('run-b', replayEvents);
 
-      await runDiff(['run-a', 'run-b', '--json', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-a', 'run-b', '--json']);
       const parsed = JSON.parse(stdoutOutput);
       expect(parsed.escalation).toBeDefined();
       expect(parsed.escalation.sessionA).toBe('NORMAL');
@@ -461,10 +462,10 @@ describe('diff command', () => {
         ),
       ];
 
-      writeTestJsonl('run-a', origEvents);
-      writeTestJsonl('run-b', replayEvents);
+      seedEvents('run-a', origEvents);
+      seedEvents('run-b', replayEvents);
 
-      await runDiff(['run-a', 'run-b', '--json', '--dir', TEST_BASE_DIR]);
+      await runDiff(['run-a', 'run-b', '--json']);
       const parsed = JSON.parse(stdoutOutput);
       expect(parsed.invariantViolations).toBeDefined();
       expect(parsed.invariantViolations.sessionA).toEqual({});

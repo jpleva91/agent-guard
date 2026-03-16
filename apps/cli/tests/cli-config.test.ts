@@ -39,7 +39,7 @@ describe('resolveConfig', () => {
     vi.mocked(existsSync).mockReturnValue(false);
 
     const cfg = resolveConfig('/mock-cwd');
-    expect(cfg.storage).toBe('jsonl');
+    expect(cfg.storage).toBe('sqlite');
     expect(cfg.autoSetup).toBe(true);
     expect(cfg.viewer?.autoOpen).toBe(true);
   });
@@ -65,13 +65,13 @@ describe('resolveConfig', () => {
         return 'storage: sqlite\n';
       }
       if (path.includes('.agentguard')) {
-        return 'storage: jsonl\n';
+        return 'storage: sqlite\n';
       }
       return '';
     });
 
     const cfg = resolveConfig('/mock-cwd');
-    expect(cfg.storage).toBe('jsonl');
+    expect(cfg.storage).toBe('sqlite');
   });
 });
 
@@ -195,7 +195,7 @@ describe('config command', () => {
     expect(console.log).toHaveBeenCalled();
     const output = vi.mocked(console.log).mock.calls[0][0] as string;
     const parsed = JSON.parse(output);
-    expect(parsed.storage).toBe('jsonl');
+    expect(parsed.storage).toBe('sqlite');
   });
 
   it('config get returns value', async () => {
@@ -203,7 +203,7 @@ describe('config command', () => {
 
     const code = await config(['get', 'storage']);
     expect(code).toBe(0);
-    expect(console.log).toHaveBeenCalledWith('jsonl');
+    expect(console.log).toHaveBeenCalledWith('sqlite');
   });
 
   it('config get rejects unknown key', async () => {

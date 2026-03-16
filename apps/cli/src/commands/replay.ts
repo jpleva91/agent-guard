@@ -36,7 +36,7 @@ export function registerReplayCommand(program: Command): void {
     .option('--summary', 'Show session summary only')
     .option('--denied-only', 'Show only denied actions')
     .option('--base-dir <dir>', 'Base directory for event storage', '.agentguard')
-    .option('--store <backend>', 'Storage backend: jsonl (default) or sqlite')
+    .option('--store <backend>', 'Storage backend (sqlite)')
     .action(
       async (
         file: string | undefined,

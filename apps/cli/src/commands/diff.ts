@@ -2,12 +2,12 @@
 //
 // Loads two sessions by run ID, compares action sequences, policy decisions,
 // escalation levels, invariant violations, and outputs a structured diff report.
-// Supports both JSONL (default) and SQLite storage backends via --store flag.
+// Uses SQLite storage backend.
 
 import { parseArgs } from '../args.js';
 import { BOLD, RESET, DIM, FG, bold, dim, color, padVis } from '../colors.js';
-import { compareRunIds, compareReplaySessions } from '@red-codes/kernel';
-import { listRunIds, loadReplaySession, buildReplaySession } from '@red-codes/kernel';
+import { compareReplaySessions } from '@red-codes/kernel';
+import { buildReplaySession } from '@red-codes/kernel';
 import type { ReplaySession, ReplayAction } from '@red-codes/kernel';
 import type { ComparisonReport, ActionComparison } from '@red-codes/kernel';
 import type { StorageConfig } from '@red-codes/storage';
@@ -317,9 +317,8 @@ export async function diff(args: string[], storageConfig?: StorageConfig): Promi
 
   const baseDir = (parsed.flags.dir as string) || undefined;
   const wantJson = !!parsed.flags.json;
-  const useSqlite = storageConfig?.backend === 'sqlite' || parsed.flags.store === 'sqlite';
   const resolvedConfig: StorageConfig = storageConfig || {
-    backend: useSqlite ? 'sqlite' : 'jsonl',
+    backend: 'sqlite',
     baseDir,
   };
 
@@ -329,7 +328,7 @@ export async function diff(args: string[], storageConfig?: StorageConfig): Promi
 
   if (parsed.flags.last) {
     // --last: compare the two most recent runs
-    const runs = useSqlite ? await listRunIdsSqlite(resolvedConfig) : listRunIds(baseDir);
+    const runs = await listRunIdsSqlite(resolvedConfig);
     if (runs.length < 2) {
       process.stderr.write(
         `\n  ${FG.red}Error:${RESET} Need at least 2 recorded runs for --last comparison.\n`
@@ -354,7 +353,7 @@ export async function diff(args: string[], storageConfig?: StorageConfig): Promi
     --json          Output as JSON
     --last          Compare the two most recent runs
     --dir, -d       Base directory for event data
-    --store         Storage backend: jsonl (default) or sqlite
+    --store         Storage backend (sqlite)
 
   ${BOLD}Examples:${RESET}
     agentguard diff run_abc123 run_def456
@@ -371,18 +370,12 @@ export async function diff(args: string[], storageConfig?: StorageConfig): Promi
   let sessionA: ReplaySession | null = null;
   let sessionB: ReplaySession | null = null;
 
-  if (useSqlite) {
-    sessionA = await loadSessionSqlite(runIdA, resolvedConfig);
-    sessionB = await loadSessionSqlite(runIdB, resolvedConfig);
-    if (sessionA && sessionB) {
-      report = compareReplaySessions(sessionA, sessionB);
-    } else {
-      report = null;
-    }
+  sessionA = await loadSessionSqlite(runIdA, resolvedConfig);
+  sessionB = await loadSessionSqlite(runIdB, resolvedConfig);
+  if (sessionA && sessionB) {
+    report = compareReplaySessions(sessionA, sessionB);
   } else {
-    sessionA = loadReplaySession(runIdA, { baseDir });
-    sessionB = loadReplaySession(runIdB, { baseDir });
-    report = compareRunIds(runIdA, runIdB, { baseDir });
+    report = null;
   }
 
   if (!report) {

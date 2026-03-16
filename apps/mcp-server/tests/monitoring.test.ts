@@ -1,46 +1,42 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { DomainEvent, GovernanceDecisionRecord } from '@red-codes/core';
+
+// Mock @red-codes/storage to avoid requiring better-sqlite3
+const mockEvents: Record<string, DomainEvent[]> = {};
+const mockDecisions: Record<string, GovernanceDecisionRecord[]> = {};
+const mockRunIds: string[] = [];
+const mockDb = {};
+const mockClose = vi.fn();
+
+vi.mock('@red-codes/storage', () => ({
+  createStorageBundle: vi.fn().mockResolvedValue({ db: mockDb, close: mockClose }),
+  listRunIds: vi.fn(() => mockRunIds),
+  loadRunEvents: vi.fn((_, runId: string) => mockEvents[runId] || []),
+  loadRunDecisions: vi.fn((_, runId: string) => mockDecisions[runId] || []),
+}));
+
 import { createLocalDataSource } from '../src/backends/local.js';
 import type { McpConfig } from '../src/config.js';
-
-const TEST_DIR = '/tmp/agentguard-mcp-test';
-const EVENTS_DIR = join(TEST_DIR, 'events');
-const DECISIONS_DIR = join(TEST_DIR, 'decisions');
 
 function makeConfig(): McpConfig {
   return {
     backend: 'local',
-    localStore: 'jsonl',
-    baseDir: TEST_DIR,
+    localStore: 'sqlite',
+    baseDir: '/tmp/test',
   };
 }
 
-function writeEvents(runId: string, events: object[]): void {
-  const content = events.map((e) => JSON.stringify(e)).join('\n') + '\n';
-  writeFileSync(join(EVENTS_DIR, `${runId}.jsonl`), content);
-}
-
-function writeDecisions(runId: string, decisions: object[]): void {
-  const content = decisions.map((d) => JSON.stringify(d)).join('\n') + '\n';
-  writeFileSync(join(DECISIONS_DIR, `${runId}.jsonl`), content);
-}
-
 beforeEach(() => {
-  mkdirSync(EVENTS_DIR, { recursive: true });
-  mkdirSync(DECISIONS_DIR, { recursive: true });
-});
-
-afterEach(() => {
-  if (existsSync(TEST_DIR)) {
-    rmSync(TEST_DIR, { recursive: true });
-  }
+  vi.clearAllMocks();
+  // Reset mock data
+  for (const key of Object.keys(mockEvents)) delete mockEvents[key];
+  for (const key of Object.keys(mockDecisions)) delete mockDecisions[key];
+  mockRunIds.length = 0;
 });
 
 describe('Local data source - monitoring', () => {
-  it('lists runs from events directory', async () => {
-    writeEvents('run_001', [{ kind: 'RunStarted', timestamp: 1000 }]);
-    writeEvents('run_002', [{ kind: 'RunStarted', timestamp: 2000 }]);
+  it('lists runs from SQLite database', async () => {
+    mockRunIds.push('run_001', 'run_002');
 
     const ds = createLocalDataSource(makeConfig());
     const runs = await ds.listRuns();
@@ -50,9 +46,7 @@ describe('Local data source - monitoring', () => {
   });
 
   it('respects limit on listRuns', async () => {
-    writeEvents('run_001', [{ kind: 'RunStarted', timestamp: 1000 }]);
-    writeEvents('run_002', [{ kind: 'RunStarted', timestamp: 2000 }]);
-    writeEvents('run_003', [{ kind: 'RunStarted', timestamp: 3000 }]);
+    mockRunIds.push('run_001', 'run_002', 'run_003');
 
     const ds = createLocalDataSource(makeConfig());
     const runs = await ds.listRuns(2);
@@ -60,12 +54,11 @@ describe('Local data source - monitoring', () => {
   });
 
   it('loads events for a run', async () => {
-    const events = [
-      { kind: 'RunStarted', timestamp: 1000 },
-      { kind: 'ActionRequested', timestamp: 1001 },
-      { kind: 'ActionAllowed', timestamp: 1002 },
-    ];
-    writeEvents('run_001', events);
+    mockEvents['run_001'] = [
+      { id: 'e1', kind: 'RunStarted', timestamp: 1000, fingerprint: 'fp1' },
+      { id: 'e2', kind: 'ActionRequested', timestamp: 1001, fingerprint: 'fp2' },
+      { id: 'e3', kind: 'ActionAllowed', timestamp: 1002, fingerprint: 'fp3' },
+    ] as DomainEvent[];
 
     const ds = createLocalDataSource(makeConfig());
     const loaded = await ds.loadEvents('run_001');
@@ -81,15 +74,16 @@ describe('Local data source - monitoring', () => {
   });
 
   it('loads decisions for a run', async () => {
-    const decisions = [
+    mockDecisions['run_001'] = [
       {
         recordId: 'dec_001',
+        runId: 'run_001',
+        timestamp: 1000,
         outcome: 'allow',
         action: { type: 'file.read', target: 'foo.ts' },
         reason: 'Allowed by policy',
       },
-    ];
-    writeDecisions('run_001', decisions);
+    ] as unknown as GovernanceDecisionRecord[];
 
     const ds = createLocalDataSource(makeConfig());
     const loaded = await ds.loadDecisions('run_001');
@@ -98,12 +92,12 @@ describe('Local data source - monitoring', () => {
   });
 
   it('queries events by kind', async () => {
-    const events = [
-      { kind: 'ActionRequested', timestamp: 1000 },
-      { kind: 'PolicyDenied', timestamp: 1001 },
-      { kind: 'ActionRequested', timestamp: 1002 },
-    ];
-    writeEvents('run_001', events);
+    mockEvents['run_001'] = [
+      { id: 'e1', kind: 'ActionRequested', timestamp: 1000, fingerprint: 'fp1' },
+      { id: 'e2', kind: 'PolicyDenied', timestamp: 1001, fingerprint: 'fp2' },
+      { id: 'e3', kind: 'ActionRequested', timestamp: 1002, fingerprint: 'fp3' },
+    ] as DomainEvent[];
+    mockRunIds.push('run_001');
 
     const ds = createLocalDataSource(makeConfig());
     const filtered = await ds.queryEvents({ runId: 'run_001', kind: 'PolicyDenied' });
@@ -112,11 +106,13 @@ describe('Local data source - monitoring', () => {
   });
 
   it('queries events with limit', async () => {
-    const events = Array.from({ length: 10 }, (_, i) => ({
+    mockEvents['run_001'] = Array.from({ length: 10 }, (_, i) => ({
+      id: `e${i}`,
       kind: 'ActionRequested',
       timestamp: 1000 + i,
-    }));
-    writeEvents('run_001', events);
+      fingerprint: `fp${i}`,
+    })) as DomainEvent[];
+    mockRunIds.push('run_001');
 
     const ds = createLocalDataSource(makeConfig());
     const limited = await ds.queryEvents({ runId: 'run_001', limit: 3 });

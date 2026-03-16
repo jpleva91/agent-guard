@@ -24,10 +24,10 @@ describe('resolveStorageConfig', () => {
     delete process.env.AGENTGUARD_DB_PATH;
   });
 
-  it('defaults to jsonl', () => {
+  it('defaults to sqlite', () => {
     delete process.env.AGENTGUARD_STORE;
     const config = resolveStorageConfig([]);
-    expect(config.backend).toBe('jsonl');
+    expect(config.backend).toBe('sqlite');
   });
 
   it('parses --store sqlite flag', () => {
@@ -41,16 +41,10 @@ describe('resolveStorageConfig', () => {
     expect(config.backend).toBe('sqlite');
   });
 
-  it('CLI flag takes precedence over env var', () => {
-    process.env.AGENTGUARD_STORE = 'jsonl';
-    const config = resolveStorageConfig(['--store', 'sqlite']);
-    expect(config.backend).toBe('sqlite');
-  });
-
-  it('CLI --store jsonl overrides AGENTGUARD_STORE=sqlite', () => {
+  it('always resolves to sqlite regardless of env var', () => {
     process.env.AGENTGUARD_STORE = 'sqlite';
-    const config = resolveStorageConfig(['--store', 'jsonl']);
-    expect(config.backend).toBe('jsonl');
+    const config = resolveStorageConfig([]);
+    expect(config.backend).toBe('sqlite');
   });
 
   it('parses --dir flag as baseDir', () => {
@@ -147,17 +141,17 @@ describe('createStorageBundle', () => {
     }
   });
 
-  it('creates a jsonl bundle by default', async () => {
+  it('creates a sqlite bundle by default', async () => {
     tmpDir = mkdtempSync(join(tmpdir(), 'ag-test-'));
-    const bundle = await createStorageBundle({ backend: 'jsonl', baseDir: tmpDir });
+    const dbPath = join(tmpDir, 'default.db');
+    const bundle = await createStorageBundle({ backend: 'sqlite', dbPath });
 
-    expect(bundle.db).toBeUndefined();
+    expect(bundle.db).toBeTruthy();
     expect(typeof bundle.createEventSink).toBe('function');
     expect(typeof bundle.createDecisionSink).toBe('function');
     expect(typeof bundle.close).toBe('function');
 
-    // close is a no-op for jsonl
-    expect(() => bundle.close()).not.toThrow();
+    bundle.close();
   });
 
   it('creates a sqlite bundle with database', async () => {

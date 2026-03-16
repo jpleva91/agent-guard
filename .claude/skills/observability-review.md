@@ -26,10 +26,10 @@ Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is a
 
 ### 2. Collect Cross-Session Analytics
 
-Use the AgentGuard analytics engine for aggregated cross-session data:
+Use the AgentGuard analytics engine for aggregated cross-session data (SQLite backend):
 
 ```bash
-node apps/cli/dist/bin.js analytics --format json 2>/dev/null | head -200
+node apps/cli/dist/bin.js analytics --format json --store sqlite 2>/dev/null | head -200
 ```
 
 Extract:
@@ -42,42 +42,42 @@ If analytics is not available, fall back to manual aggregation in Step 3.
 
 ### 3. Collect Governance Telemetry
 
-Read the runtime telemetry log:
+Fetch governance events from the SQLite store using the CLI:
 
 ```bash
-cat logs/runtime-events.jsonl 2>/dev/null | tail -500
+for runId in $(node apps/cli/dist/bin.js inspect --list --store sqlite 2>/dev/null | grep -oP '^\s+\S+' | head -20); do
+  node apps/cli/dist/bin.js events "$runId" --store sqlite 2>/dev/null
+done > /tmp/ag-telemetry.json 2>/dev/null
+tail -500 /tmp/ag-telemetry.json
 ```
 
-Parse each line as JSON with schema:
-```
-{timestamp, agent, run_id, syscall, target, capability, policy_result, invariant_result}
-```
-
-If the file does not exist or is empty, note "No telemetry data available" and continue with other data sources.
+Parse each line as JSON domain event. If no events are available, note "No telemetry data available" and continue with other data sources.
 
 Aggregate:
-- **Total events** in the log
+- **Total events** across sessions
 - **Events in last 24 hours**: Filter by timestamp
 - **Events in last 7 days**: Filter by timestamp
-- **Action type distribution**: Count by `syscall` (file.read, file.write, git.push, etc.)
+- **Action type distribution**: Count by action type (file.read, file.write, git.push, etc.)
 - **Policy result distribution**: Count of allow vs. deny
 - **Invariant result distribution**: Count of pass vs. fail
-- **Agent distribution**: Count by `agent` field
+- **Agent distribution**: Count by agent field
 - **Denial rate**: deny / total as percentage (last 24h and 7d)
 - **Invariant failure rate**: fail / total as percentage (last 24h and 7d)
 
 ### 4. Analyze Decision Records and Risk Scores
 
-List available decision log files:
+List available runs and inspect their decisions using the CLI:
 
 ```bash
-ls -la .agentguard/decisions/ 2>/dev/null | tail -20
+node apps/cli/dist/bin.js inspect --list --store sqlite 2>/dev/null
 ```
 
-Read the most recent decision logs (up to 5 files, most recent first):
+Read decision records for the most recent runs (up to 5):
 
 ```bash
-for f in $(ls -t .agentguard/decisions/*.jsonl 2>/dev/null | head -5); do cat "$f"; done
+for runId in $(node apps/cli/dist/bin.js inspect --list --store sqlite 2>/dev/null | grep -oP '^\s+\S+' | head -5); do
+  node apps/cli/dist/bin.js inspect "$runId" --decisions --store sqlite 2>/dev/null
+done
 ```
 
 Parse each `GovernanceDecisionRecord` and aggregate:
@@ -93,10 +93,10 @@ Parse each `GovernanceDecisionRecord` and aggregate:
 
 ### 5. Check Tracepoint Data
 
-Look for kernel-level tracepoint data for performance and pipeline health:
+Look for kernel-level tracepoint data for performance and pipeline health via the CLI:
 
 ```bash
-grep "tracepoint\|trace_kind" logs/runtime-events.jsonl 2>/dev/null | tail -50
+node apps/cli/dist/bin.js traces --last --store sqlite 2>/dev/null | tail -50
 ```
 
 If tracepoint data is available, extract:

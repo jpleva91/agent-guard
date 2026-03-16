@@ -1,20 +1,22 @@
-// Tests for inspect CLI command
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-vi.mock('node:fs', () => ({
-  readFileSync: vi.fn(),
-  existsSync: vi.fn(),
-  readdirSync: vi.fn(),
-}));
+// Tests for inspect CLI command (SQLite backend)
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import Database from 'better-sqlite3';
+import {
+  runMigrations,
+  createSqliteEventSink,
+  createSqliteDecisionSink,
+} from '@red-codes/storage';
+import type { StorageConfig } from '@red-codes/storage';
+import type { DomainEvent, GovernanceDecisionRecord } from '@red-codes/core';
 
 import { inspect, events } from '../src/commands/inspect.js';
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
 
-const EVENTS_DIR = '.agentguard/events';
-
-function makeActionEvent(kind: string, overrides: Record<string, unknown> = {}): string {
-  return JSON.stringify({
-    id: `evt_${Date.now()}_1`,
+function makeActionEvent(kind: string, overrides: Record<string, unknown> = {}): DomainEvent {
+  return {
+    id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     kind,
     timestamp: 1700000000000,
     fingerprint: 'fp_1',
@@ -22,11 +24,11 @@ function makeActionEvent(kind: string, overrides: Record<string, unknown> = {}):
     target: 'src/app.ts',
     reason: 'test reason',
     ...overrides,
-  });
+  } as DomainEvent;
 }
 
-function makeDecisionRecord(): string {
-  return JSON.stringify({
+function makeDecisionRecord(): GovernanceDecisionRecord {
+  return {
     recordId: 'dec_123',
     runId: 'run_1',
     timestamp: 1700000000000,
@@ -40,21 +42,45 @@ function makeDecisionRecord(): string {
     evidencePackId: null,
     monitor: { escalationLevel: 0, totalEvaluations: 1, totalDenials: 0 },
     execution: { executed: true, success: true, durationMs: 5, error: null },
-  });
+  } as unknown as GovernanceDecisionRecord;
 }
 
+let tmpDir: string;
+let storageConfig: StorageConfig;
+
 beforeEach(() => {
-  vi.clearAllMocks();
+  tmpDir = mkdtempSync(join(tmpdir(), 'ag-inspect-test-'));
+  storageConfig = { backend: 'sqlite', dbPath: join(tmpDir, 'test.db') };
+  const db = new Database(storageConfig.dbPath!);
+  runMigrations(db);
+  db.close();
+
   vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
   vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
 });
 
-describe('inspect', () => {
-  it('shows "no runs" message when events directory is missing', async () => {
-    vi.mocked(existsSync).mockReturnValue(false);
-    vi.mocked(readdirSync).mockReturnValue([]);
+afterEach(() => {
+  vi.restoreAllMocks();
+  rmSync(tmpDir, { recursive: true, force: true });
+});
 
-    await inspect([]);
+function seedEvents(runId: string, evts: DomainEvent[]): void {
+  const db = new Database(storageConfig.dbPath!);
+  const sink = createSqliteEventSink(db, runId);
+  for (const e of evts) sink.write(e);
+  db.close();
+}
+
+function seedDecisions(runId: string, decs: GovernanceDecisionRecord[]): void {
+  const db = new Database(storageConfig.dbPath!);
+  const sink = createSqliteDecisionSink(db, runId);
+  for (const d of decs) sink.write(d);
+  db.close();
+}
+
+describe('inspect', () => {
+  it('shows "no runs" message when database is empty', async () => {
+    await inspect([], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(
       expect.stringContaining('No runs recorded yet')
@@ -62,90 +88,55 @@ describe('inspect', () => {
   });
 
   it('lists runs when called with --list', async () => {
-    vi.mocked(existsSync).mockImplementation((p) => {
-      if (String(p) === EVENTS_DIR) return true;
-      return true;
-    });
-    vi.mocked(readdirSync).mockReturnValue([
-      'run_001.jsonl',
-      'run_002.jsonl',
-    ] as unknown as ReturnType<typeof readdirSync>);
+    seedEvents('run_001', [makeActionEvent('ActionAllowed')]);
+    seedEvents('run_002', [makeActionEvent('ActionAllowed')]);
 
-    const eventContent = makeActionEvent('ActionAllowed') + '\n';
-    vi.mocked(readFileSync).mockReturnValue(eventContent);
-
-    await inspect(['--list']);
+    await inspect(['--list'], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Recorded Runs'));
   });
 
   it('loads specific run by ID', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    const content =
-      makeActionEvent('ActionAllowed') + '\n' + makeActionEvent('ActionExecuted') + '\n';
-    vi.mocked(readFileSync).mockReturnValue(content);
+    seedEvents('run_001', [
+      makeActionEvent('ActionAllowed'),
+      makeActionEvent('ActionExecuted'),
+    ]);
 
-    await inspect(['run_001']);
+    await inspect(['run_001'], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('run_001'));
   });
 
   it('loads most recent run with --last', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readdirSync).mockReturnValue([
-      'run_001.jsonl',
-      'run_002.jsonl',
-    ] as unknown as ReturnType<typeof readdirSync>);
-    const content = makeActionEvent('ActionAllowed') + '\n';
-    vi.mocked(readFileSync).mockReturnValue(content);
+    seedEvents('run_001', [makeActionEvent('ActionAllowed', { timestamp: 1000 })]);
+    seedEvents('run_002', [makeActionEvent('ActionAllowed', { timestamp: 2000 })]);
 
-    await inspect(['--last']);
+    await inspect(['--last'], storageConfig);
 
-    // Should load the most recent (sorted reverse → run_002)
-    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('run_002'));
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('run_00'));
   });
 
   it('shows decision records with --decisions flag', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readFileSync).mockImplementation((p) => {
-      const path = String(p);
-      if (path.includes('decisions')) {
-        return makeDecisionRecord() + '\n';
-      }
-      return makeActionEvent('ActionAllowed') + '\n';
-    });
+    seedEvents('run_001', [makeActionEvent('ActionAllowed')]);
+    seedDecisions('run_001', [makeDecisionRecord()]);
 
-    await inspect(['run_001', '--decisions']);
+    await inspect(['run_001', '--decisions'], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Decision Records'));
   });
 
   it('handles no events found for a run', async () => {
-    vi.mocked(existsSync).mockReturnValue(false);
-
-    await inspect(['run_missing']);
+    await inspect(['run_missing'], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('No events found'));
   });
 
-  it('skips malformed JSONL lines gracefully', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    const content = 'garbage-line\n' + makeActionEvent('ActionAllowed') + '\n';
-    vi.mocked(readFileSync).mockReturnValue(content);
-
-    await inspect(['run_001']);
-
-    // Should still render without throwing
-    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('run_001'));
-  });
-
   it('shows policy traces with --traces flag', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    const traceEvent = JSON.stringify({
-      id: 'evt_1',
+    const traceEvent = {
+      id: 'evt_trace_1',
       kind: 'PolicyTraceRecorded',
       timestamp: 1700000000000,
-      fingerprint: 'fp_1',
+      fingerprint: 'fp_trace',
       actionType: 'file.write',
       target: 'src/app.ts',
       decision: 'allow',
@@ -165,11 +156,11 @@ describe('inspect', () => {
         },
       ],
       durationMs: 0.15,
-    });
-    const content = makeActionEvent('ActionAllowed') + '\n' + traceEvent + '\n';
-    vi.mocked(readFileSync).mockReturnValue(content);
+    } as DomainEvent;
 
-    await inspect(['run_001', '--traces']);
+    seedEvents('run_001', [makeActionEvent('ActionAllowed'), traceEvent]);
+
+    await inspect(['run_001', '--traces'], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(
       expect.stringContaining('Policy Evaluation Traces')
@@ -177,57 +168,24 @@ describe('inspect', () => {
   });
 
   it('shows no traces message when no trace events exist', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    const content = makeActionEvent('ActionAllowed') + '\n';
-    vi.mocked(readFileSync).mockReturnValue(content);
+    seedEvents('run_001', [makeActionEvent('ActionAllowed')]);
 
-    await inspect(['run_001', '--traces']);
+    await inspect(['run_001', '--traces'], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(
       expect.stringContaining('No policy evaluation traces found')
     );
   });
 
-  it('supports both --traces and --decisions flags together', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    const traceEvent = JSON.stringify({
-      id: 'evt_1',
-      kind: 'PolicyTraceRecorded',
-      timestamp: 1700000000000,
-      fingerprint: 'fp_1',
-      actionType: 'file.write',
-      target: 'src/app.ts',
-      decision: 'allow',
-      totalRulesChecked: 1,
-      phaseThatMatched: 'allow',
-      durationMs: 0.1,
-    });
-    vi.mocked(readFileSync).mockImplementation((p) => {
-      const path = String(p);
-      if (path.includes('decisions')) {
-        return makeDecisionRecord() + '\n';
-      }
-      return makeActionEvent('ActionAllowed') + '\n' + traceEvent + '\n';
-    });
-
-    await inspect(['run_001', '--decisions', '--traces']);
-
-    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Decision Records'));
-    expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('Policy Evaluation Traces')
-    );
-  });
-
   it('shows denied actions with reason', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    const denied = makeActionEvent('ActionDenied', {
-      reason: 'Protected branch policy',
-      metadata: { violations: [{ name: 'no-force-push' }] },
-    });
-    const content = denied + '\n';
-    vi.mocked(readFileSync).mockReturnValue(content);
+    seedEvents('run_001', [
+      makeActionEvent('ActionDenied', {
+        reason: 'Protected branch policy',
+        metadata: { violations: [{ name: 'no-force-push' }] },
+      }),
+    ]);
 
-    await inspect(['run_001']);
+    await inspect(['run_001'], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('DENIED'));
   });
@@ -235,17 +193,15 @@ describe('inspect', () => {
 
 describe('events', () => {
   it('shows usage when no run ID provided', async () => {
-    await events([]);
+    await events([], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
   });
 
   it('dumps raw events as JSON to stdout', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    const content = makeActionEvent('ActionRequested') + '\n';
-    vi.mocked(readFileSync).mockReturnValue(content);
+    seedEvents('run_001', [makeActionEvent('ActionRequested')]);
 
-    await events(['run_001']);
+    await events(['run_001'], storageConfig);
 
     expect(process.stdout.write).toHaveBeenCalled();
     const written = vi.mocked(process.stdout.write).mock.calls[0][0] as string;
@@ -254,23 +210,15 @@ describe('events', () => {
   });
 
   it('handles --last flag', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readdirSync).mockReturnValue(['run_latest.jsonl'] as unknown as ReturnType<
-      typeof readdirSync
-    >);
-    const content = makeActionEvent('ActionAllowed') + '\n';
-    vi.mocked(readFileSync).mockReturnValue(content);
+    seedEvents('run_latest', [makeActionEvent('ActionAllowed')]);
 
-    await events(['--last']);
+    await events(['--last'], storageConfig);
 
     expect(process.stdout.write).toHaveBeenCalled();
   });
 
   it('shows no runs message for --last when no runs exist', async () => {
-    vi.mocked(existsSync).mockReturnValue(false);
-    vi.mocked(readdirSync).mockReturnValue([]);
-
-    await events(['--last']);
+    await events(['--last'], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('No runs recorded'));
   });

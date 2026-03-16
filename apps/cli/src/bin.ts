@@ -28,7 +28,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--markdown, --md', description: 'Output as Markdown' },
       { flag: '--dir, -d <path>', description: 'Base directory for event data' },
       { flag: '--min-cluster <n>', description: 'Minimum cluster size (default: 2)' },
-      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       {
         flag: '--db-path <path>',
         description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
@@ -53,7 +53,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--dry-run', description: 'Evaluate without executing actions' },
       { flag: '--verbose, -v', description: 'Show detailed output' },
       { flag: '--trace, -t', description: 'Show policy evaluation traces inline' },
-      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       {
         flag: '--db-path <path>',
         description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
@@ -75,7 +75,7 @@ const COMMANDS: Record<string, CommandHelp> = {
     flags: [
       { flag: '--list', description: 'List all recorded runs' },
       { flag: '--last', description: 'Inspect the most recent run' },
-      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       {
         flag: '--db-path <path>',
         description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
@@ -93,7 +93,7 @@ const COMMANDS: Record<string, CommandHelp> = {
     description: 'Show the raw event stream for a run',
     usage: 'agentguard events <runId>',
     flags: [
-      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       {
         flag: '--db-path <path>',
         description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
@@ -110,7 +110,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--step, -s', description: 'Step through events one at a time' },
       { flag: '--stats', description: 'Show session statistics only' },
       { flag: '--filter <kind>', description: 'Filter events by kind' },
-      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       {
         flag: '--db-path <path>',
         description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
@@ -125,7 +125,7 @@ const COMMANDS: Record<string, CommandHelp> = {
     flags: [
       { flag: '--output, -o <file>', description: 'Output file path' },
       { flag: '--last', description: 'Export the most recent run' },
-      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       {
         flag: '--db-path <path>',
         description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
@@ -144,7 +144,7 @@ const COMMANDS: Record<string, CommandHelp> = {
     usage: 'agentguard import <file> [flags]',
     flags: [
       { flag: '--as <runId>', description: 'Import as a different run ID' },
-      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       {
         flag: '--db-path <path>',
         description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
@@ -169,7 +169,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--pr, -n <number>', description: 'Target PR number (auto-detected if omitted)' },
       { flag: '--artifact-url <url>', description: 'Link to full session artifact' },
       { flag: '--base-dir, -d <dir>', description: 'Base directory for event storage' },
-      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       {
         flag: '--db-path <path>',
         description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
@@ -228,7 +228,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--json', description: 'Output as JSON' },
       { flag: '--last', description: 'Compare the two most recent runs' },
       { flag: '--dir, -d <path>', description: 'Base directory for event data' },
-      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
     ],
     examples: [
       'agentguard diff run_abc123 run_def456',
@@ -270,7 +270,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       },
       { flag: '--summary, -s', description: 'Show summary statistics only' },
       { flag: '--json', description: 'Output as JSON' },
-      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
     ],
     examples: [
       'agentguard traces --last',
@@ -301,7 +301,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--dry-run', description: 'Print markdown without posting to GitHub' },
       {
         flag: '--store <backend>',
-        description: 'Storage backend: jsonl or sqlite (default: jsonl)',
+        description: 'Storage backend (sqlite)',
       },
       { flag: '--db-path <path>', description: 'Path to SQLite database file' },
     ],
@@ -338,7 +338,7 @@ const COMMANDS: Record<string, CommandHelp> = {
     flags: [
       { flag: '--quiet, -q', description: 'Machine-readable output (no banner)' },
       { flag: '--dry-run', description: 'Detect without installing' },
-      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       { flag: '--db-path <path>', description: 'SQLite database path' },
     ],
     examples: [
@@ -392,7 +392,7 @@ const COMMANDS: Record<string, CommandHelp> = {
         flag: '--api-key <key>',
         description: 'API key for server auth (default: AGENTGUARD_API_KEY env)',
       },
-      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       { flag: '--db-path <path>', description: 'SQLite database path' },
     ],
     examples: [

@@ -23,22 +23,22 @@ Run `start-governance-runtime` first. All scheduled skills must operate under go
 
 Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is active and intercepting all tool calls. If governance cannot be activated, STOP — do not proceed without governance.
 
-### 2. Locate Log Files
+### 2. List Available Runs
+
+Use the AgentGuard CLI to list governance sessions from the SQLite store:
 
 ```bash
-ls -la .agentguard/events/*.jsonl 2>/dev/null
-ls -la .agentguard/decisions/*.jsonl 2>/dev/null
-ls -la logs/runtime-events.jsonl 2>/dev/null
+node apps/cli/dist/bin.js inspect --list --store sqlite 2>/dev/null
 ```
 
-If no log files exist, report "No governance logs found — nothing to audit" and STOP.
+If no runs are recorded, report "No governance logs found — nothing to audit" and STOP.
 
 ### 3. Run Cross-Session Analytics
 
 Use the AgentGuard analytics engine for aggregated cross-session data:
 
 ```bash
-node apps/cli/dist/bin.js analytics --format json 2>/dev/null | head -200
+node apps/cli/dist/bin.js analytics --format json --store sqlite 2>/dev/null | head -200
 ```
 
 Extract:
@@ -52,31 +52,41 @@ If the analytics command is not available, fall back to manual counting in Step 
 
 ### 4. Count Events by Type
 
-Count each governance event type across all log files:
+Use the CLI events command to fetch raw events from the SQLite store, then count by type:
 
 ```bash
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -c "ActionRequested" || echo 0
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -c "ActionAllowed" || echo 0
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -c "ActionDenied" || echo 0
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -c "PolicyDenied" || echo 0
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -c "InvariantViolation" || echo 0
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -c "ActionEscalated" || echo 0
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -c "BlastRadiusExceeded" || echo 0
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -c "MergeGuardFailure" || echo 0
+node apps/cli/dist/bin.js events --last --store sqlite 2>/dev/null | grep -c "ActionRequested" || echo 0
+node apps/cli/dist/bin.js events --last --store sqlite 2>/dev/null | grep -c "ActionAllowed" || echo 0
+node apps/cli/dist/bin.js events --last --store sqlite 2>/dev/null | grep -c "ActionDenied" || echo 0
+node apps/cli/dist/bin.js events --last --store sqlite 2>/dev/null | grep -c "PolicyDenied" || echo 0
+node apps/cli/dist/bin.js events --last --store sqlite 2>/dev/null | grep -c "InvariantViolation" || echo 0
+node apps/cli/dist/bin.js events --last --store sqlite 2>/dev/null | grep -c "ActionEscalated" || echo 0
+node apps/cli/dist/bin.js events --last --store sqlite 2>/dev/null | grep -c "BlastRadiusExceeded" || echo 0
+node apps/cli/dist/bin.js events --last --store sqlite 2>/dev/null | grep -c "MergeGuardFailure" || echo 0
 ```
 
-Also count total events:
+For cross-session totals, iterate over recent runs:
 
 ```bash
-cat .agentguard/events/*.jsonl 2>/dev/null | wc -l
+for runId in $(node apps/cli/dist/bin.js inspect --list --store sqlite 2>/dev/null | grep -oP '^\s+\S+' | head -10); do
+  node apps/cli/dist/bin.js events "$runId" --store sqlite 2>/dev/null
+done | wc -l
 ```
 
 ### 5. Analyze Decision Records
 
-Read decision records for richer outcome analysis:
+Use the CLI inspect command with --decisions to get decision records from SQLite:
 
 ```bash
-cat .agentguard/decisions/*.jsonl 2>/dev/null | head -200
+node apps/cli/dist/bin.js inspect --last --decisions --store sqlite 2>/dev/null
+```
+
+For multi-session analysis, iterate over recent runs:
+
+```bash
+for runId in $(node apps/cli/dist/bin.js inspect --list --store sqlite 2>/dev/null | grep -oP '^\s+\S+' | head -5); do
+  node apps/cli/dist/bin.js inspect "$runId" --decisions --store sqlite 2>/dev/null
+done
 ```
 
 Parse each `GovernanceDecisionRecord` and aggregate:
@@ -107,10 +117,12 @@ Flag these thresholds:
 
 ### 7. Analyze Per-Agent Compliance
 
-Group events by agent identity (extract from event metadata):
+Group events by agent identity using the CLI events command:
 
 ```bash
-cat .agentguard/events/*.jsonl 2>/dev/null | grep "ActionDenied\|PolicyDenied" | head -100
+for runId in $(node apps/cli/dist/bin.js inspect --list --store sqlite 2>/dev/null | grep -oP '^\s+\S+' | head -10); do
+  node apps/cli/dist/bin.js events "$runId" --store sqlite 2>/dev/null
+done | grep "ActionDenied\|PolicyDenied" | head -100
 ```
 
 For each agent:
@@ -126,10 +138,10 @@ Identify:
 
 ### 8. Analyze Cross-Session Trends
 
-If multiple log files exist (each representing a session), compare across sessions:
+List recent sessions from the SQLite store:
 
 ```bash
-ls -lt .agentguard/events/*.jsonl 2>/dev/null | head -10
+node apps/cli/dist/bin.js inspect --list --store sqlite 2>/dev/null
 ```
 
 For the last 5 sessions, compute:
@@ -146,10 +158,12 @@ Look for:
 
 ### 9. Check Escalation History
 
-Read all escalation-related events across sessions:
+Query escalation-related events across sessions via the CLI:
 
 ```bash
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -i "escalat\|lockdown" | tail -20
+for runId in $(node apps/cli/dist/bin.js inspect --list --store sqlite 2>/dev/null | grep -oP '^\s+\S+' | head -10); do
+  node apps/cli/dist/bin.js events "$runId" --store sqlite 2>/dev/null
+done | grep -i "escalat\|lockdown" | tail -20
 ```
 
 Build an escalation timeline:

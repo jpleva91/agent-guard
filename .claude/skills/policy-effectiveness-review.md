@@ -75,10 +75,12 @@ Extract the 8 built-in invariant names and their trigger conditions:
 
 ### 5. Analyze Policy Rule Usage
 
-Read governance logs to determine which rules are actually triggered:
+Query governance events from the SQLite store to determine which rules are actually triggered:
 
 ```bash
-cat .agentguard/events/*.jsonl 2>/dev/null | grep "PolicyDenied\|ActionAllowed\|ActionDenied" | head -200
+for runId in $(node apps/cli/dist/bin.js inspect --list --store sqlite 2>/dev/null | grep -oP '^\s+\S+' | head -10); do
+  node apps/cli/dist/bin.js events "$runId" --store sqlite 2>/dev/null
+done | grep "PolicyDenied\|ActionAllowed\|ActionDenied" | head -200
 ```
 
 For each policy rule:
@@ -90,10 +92,12 @@ For each policy rule:
 
 ### 6. Analyze Invariant Effectiveness
 
-From governance logs:
+Query invariant violation events from the SQLite store:
 
 ```bash
-cat .agentguard/events/*.jsonl 2>/dev/null | grep "InvariantViolation" | head -100
+for runId in $(node apps/cli/dist/bin.js inspect --list --store sqlite 2>/dev/null | grep -oP '^\s+\S+' | head -10); do
+  node apps/cli/dist/bin.js events "$runId" --store sqlite 2>/dev/null
+done | grep "InvariantViolation" | head -100
 ```
 
 For each of the 8 invariants:
@@ -107,7 +111,9 @@ For each of the 8 invariants:
 Analyze action patterns that pass all policy checks but might be concerning:
 
 ```bash
-cat .agentguard/events/*.jsonl 2>/dev/null | grep "ActionAllowed" | head -100
+for runId in $(node apps/cli/dist/bin.js inspect --list --store sqlite 2>/dev/null | grep -oP '^\s+\S+' | head -10); do
+  node apps/cli/dist/bin.js events "$runId" --store sqlite 2>/dev/null
+done | grep "ActionAllowed" | head -100
 ```
 
 Look for:

@@ -1,17 +1,12 @@
 // CLI command: agentguard export — export a governance session to a portable JSONL file.
-// Supports both JSONL (default) and SQLite storage backends.
+// Uses SQLite storage backend.
 
-import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { parseArgs } from '../args.js';
-import { getEventFilePath } from '@red-codes/events';
-import { getDecisionFilePath } from '@red-codes/events';
 import type { DomainEvent } from '@red-codes/core';
 import type { GovernanceDecisionRecord } from '@red-codes/core';
 import type { StorageConfig } from '@red-codes/storage';
-
-const BASE_DIR = '.agentguard';
-const EVENTS_DIR = join(BASE_DIR, 'events');
 
 /**
  * Current schema version for the event/decision data shape.
@@ -31,56 +26,7 @@ export interface GovernanceExportHeader {
   readonly eventCount: number;
   readonly decisionCount: number;
   /** Storage backend the session was exported from */
-  readonly sourceBackend?: 'jsonl' | 'sqlite';
-}
-
-// ---------------------------------------------------------------------------
-// JSONL helpers
-// ---------------------------------------------------------------------------
-
-function listRunsJsonl(): string[] {
-  if (!existsSync(EVENTS_DIR)) return [];
-  return readdirSync(EVENTS_DIR)
-    .filter((f) => f.endsWith('.jsonl'))
-    .map((f) => f.replace('.jsonl', ''))
-    .sort()
-    .reverse();
-}
-
-function loadRunEventsJsonl(runId: string): DomainEvent[] {
-  const filePath = getEventFilePath(runId);
-  if (!existsSync(filePath)) return [];
-
-  const events: DomainEvent[] = [];
-  const content = readFileSync(filePath, 'utf8');
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    try {
-      events.push(JSON.parse(trimmed) as DomainEvent);
-    } catch {
-      // Skip malformed lines
-    }
-  }
-  return events;
-}
-
-function loadRunDecisionsJsonl(runId: string): GovernanceDecisionRecord[] {
-  const filePath = getDecisionFilePath(runId);
-  if (!existsSync(filePath)) return [];
-
-  const records: GovernanceDecisionRecord[] = [];
-  const content = readFileSync(filePath, 'utf8');
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    try {
-      records.push(JSON.parse(trimmed) as GovernanceDecisionRecord);
-    } catch {
-      // Skip malformed lines
-    }
-  }
-  return records;
+  readonly sourceBackend?: 'sqlite';
 }
 
 // ---------------------------------------------------------------------------
@@ -94,27 +40,23 @@ export async function exportSession(args: string[], storageConfig?: StorageConfi
     alias: { '-o': '--output' },
   });
 
-  const useSqlite = storageConfig?.backend === 'sqlite';
+  const config = storageConfig ?? { backend: 'sqlite' as const };
 
   // Resolve runId
   let runId: string | undefined;
   if (parsed.flags.last) {
-    if (useSqlite) {
-      const { createStorageBundle } = await import('@red-codes/storage');
-      const storage = await createStorageBundle(storageConfig);
-      if (!storage.db) {
-        process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
-        process.exitCode = 1;
-        return;
-      }
-      const { getLatestRunId } = await import('@red-codes/storage');
-      const db = storage.db as import('better-sqlite3').Database;
-      runId = getLatestRunId(db) ?? undefined;
-      storage.close();
-    } else {
-      const runs = listRunsJsonl();
-      runId = runs[0];
+    const { createStorageBundle } = await import('@red-codes/storage');
+    const storage = await createStorageBundle(config);
+    if (!storage.db) {
+      process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
+      process.exitCode = 1;
+      return;
     }
+    const { getLatestRunId } = await import('@red-codes/storage');
+    const db = storage.db as import('better-sqlite3').Database;
+    runId = getLatestRunId(db) ?? undefined;
+    storage.close();
+
     if (!runId) {
       process.stderr.write('\n  \x1b[31mError:\x1b[0m No runs recorded yet.\n\n');
       process.exitCode = 1;
@@ -131,33 +73,25 @@ export async function exportSession(args: string[], storageConfig?: StorageConfi
     return;
   }
 
-  // Load events and decisions
+  // Load events and decisions from SQLite
   let events: DomainEvent[];
   let decisions: GovernanceDecisionRecord[];
 
-  if (useSqlite) {
-    const { createStorageBundle } = await import('@red-codes/storage');
-    const storage = await createStorageBundle(storageConfig);
-    if (!storage.db) {
-      process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
-      process.exitCode = 1;
-      return;
-    }
-    const { loadRunEvents, loadRunDecisions } = await import('@red-codes/storage');
-    const db = storage.db as import('better-sqlite3').Database;
-    events = loadRunEvents(db, runId);
-    decisions = loadRunDecisions(db, runId);
-    storage.close();
-  } else {
-    events = loadRunEventsJsonl(runId);
-    decisions = loadRunDecisionsJsonl(runId);
+  const { createStorageBundle } = await import('@red-codes/storage');
+  const storage = await createStorageBundle(config);
+  if (!storage.db) {
+    process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
+    process.exitCode = 1;
+    return;
   }
+  const { loadRunEvents, loadRunDecisions } = await import('@red-codes/storage');
+  const db = storage.db as import('better-sqlite3').Database;
+  events = loadRunEvents(db, runId);
+  decisions = loadRunDecisions(db, runId);
+  storage.close();
 
   if (events.length === 0) {
-    process.stderr.write(`\n  \x1b[31mError:\x1b[0m Run "${runId}" has no events to export.\n`);
-    if (!useSqlite) {
-      process.stderr.write(`  Expected file: ${getEventFilePath(runId)}\n\n`);
-    }
+    process.stderr.write(`\n  \x1b[31mError:\x1b[0m Run "${runId}" has no events to export.\n\n`);
     process.exitCode = 1;
     return;
   }
@@ -174,7 +108,7 @@ export async function exportSession(args: string[], storageConfig?: StorageConfi
     exportedAt: Date.now(),
     eventCount: events.length,
     decisionCount: decisions.length,
-    sourceBackend: useSqlite ? 'sqlite' : 'jsonl',
+    sourceBackend: 'sqlite',
   };
 
   const lines = [

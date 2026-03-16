@@ -9,7 +9,7 @@ import { detectExistingHooks } from './auto-setup.js';
 
 /** AgentGuard configuration schema. */
 export interface AgentGuardConfig {
-  storage?: 'jsonl' | 'sqlite';
+  storage?: 'sqlite';
   dbPath?: string;
   policy?: string;
   autoSetup?: boolean;
@@ -20,7 +20,7 @@ export interface AgentGuardConfig {
 
 const CONFIG_FILENAME = 'config.yaml';
 const DEFAULT_CONFIG: AgentGuardConfig = {
-  storage: 'jsonl',
+  storage: 'sqlite',
   autoSetup: true,
   viewer: { autoOpen: true },
 };
@@ -119,7 +119,7 @@ export function setConfigValue(config: AgentGuardConfig, key: string, value: str
 
 /** Valid top-level config keys and their descriptions. */
 const CONFIG_KEYS: Record<string, string> = {
-  storage: 'Storage backend: jsonl or sqlite',
+  storage: 'Storage backend (sqlite)',
   dbPath: 'SQLite database file path',
   policy: 'Default policy file path',
   autoSetup: 'Auto-detect and configure hooks on session start',
@@ -178,7 +178,7 @@ function showConfig(args: string[]): number {
   process.stderr.write(`  ${BOLD}AgentGuard Configuration${RESET}\n\n`);
 
   process.stderr.write(`  ${BOLD}Settings${RESET}\n`);
-  process.stderr.write(`  ${DIM}storage${RESET}          ${resolved.storage ?? 'jsonl'}\n`);
+  process.stderr.write(`  ${DIM}storage${RESET}          ${resolved.storage ?? 'sqlite'}\n`);
   process.stderr.write(
     `  ${DIM}dbPath${RESET}           ${resolved.dbPath ?? '~/.agentguard/agentguard.db (default)'}\n`
   );
@@ -253,9 +253,9 @@ function setConfig(args: string[]): number {
   }
 
   // Validate storage values
-  if (key === 'storage' && value !== 'jsonl' && value !== 'sqlite') {
+  if (key === 'storage' && value !== 'sqlite') {
     process.stderr.write(
-      `  ${FG.red}Error:${RESET} Invalid storage backend: ${value}. Must be "jsonl" or "sqlite".\n`
+      `  ${FG.red}Error:${RESET} Invalid storage backend: ${value}. Must be "sqlite".\n`
     );
     return 1;
   }

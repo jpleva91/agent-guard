@@ -1,52 +1,15 @@
 // CLI command: agentguard traces — display policy evaluation traces for a run.
 // Supports filtering by action type and decision, summary statistics, and JSON output.
-// Works with both JSONL (default) and SQLite storage backends.
+// Uses SQLite storage backend.
 
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
 import { parseArgs } from '../args.js';
 import { renderPolicyTraces } from '../tui.js';
 import type { PolicyTraceEvent } from '../tui.js';
-import { getEventFilePath } from '@red-codes/events';
 import type { DomainEvent } from '@red-codes/core';
 import type { StorageConfig } from '@red-codes/storage';
 
-const BASE_DIR = '.agentguard';
-const EVENTS_DIR = join(BASE_DIR, 'events');
-
 function isPolicyTraceEvent(e: DomainEvent): e is PolicyTraceEvent & DomainEvent {
   return e.kind === 'PolicyTraceRecorded';
-}
-
-// ---------------------------------------------------------------------------
-// JSONL helpers
-// ---------------------------------------------------------------------------
-
-function loadEventsJsonl(runId: string): DomainEvent[] {
-  const filePath = getEventFilePath(runId);
-  if (!existsSync(filePath)) return [];
-
-  const content = readFileSync(filePath, 'utf8');
-  const events: DomainEvent[] = [];
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    try {
-      events.push(JSON.parse(trimmed) as DomainEvent);
-    } catch {
-      // Skip malformed lines
-    }
-  }
-  return events;
-}
-
-function listRunsJsonl(): string[] {
-  if (!existsSync(EVENTS_DIR)) return [];
-  return readdirSync(EVENTS_DIR)
-    .filter((f) => f.endsWith('.jsonl'))
-    .map((f) => f.replace('.jsonl', ''))
-    .sort()
-    .reverse();
 }
 
 // ---------------------------------------------------------------------------
@@ -280,26 +243,20 @@ export async function traces(args: string[], storageConfig?: StorageConfig): Pro
   const decisionFilter = parsed.flags['decision'] as string | undefined;
   const targetArg = parsed.positional[0];
 
-  const useSqlite = storageConfig?.backend === 'sqlite';
+  const config = storageConfig ?? { backend: 'sqlite' as const };
 
   // List runs
   if (showList || (!targetArg && !showLast)) {
-    let runs: string[];
-
-    if (useSqlite) {
-      const { createStorageBundle } = await import('@red-codes/storage');
-      const storage = await createStorageBundle(storageConfig!);
-      if (!storage.db) {
-        process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
-        return 1;
-      }
-      const { listRunIds } = await import('@red-codes/storage');
-      const db = storage.db as import('better-sqlite3').Database;
-      runs = listRunIds(db);
-      storage.close();
-    } else {
-      runs = listRunsJsonl();
+    const { createStorageBundle } = await import('@red-codes/storage');
+    const storage = await createStorageBundle(config);
+    if (!storage.db) {
+      process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
+      return 1;
     }
+    const { listRunIds } = await import('@red-codes/storage');
+    const db = storage.db as import('better-sqlite3').Database;
+    const runs = listRunIds(db);
+    storage.close();
 
     if (runs.length === 0) {
       process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
@@ -319,20 +276,16 @@ export async function traces(args: string[], storageConfig?: StorageConfig): Pro
   // Resolve run ID
   let runId: string | undefined;
   if (showLast) {
-    if (useSqlite) {
-      const { createStorageBundle } = await import('@red-codes/storage');
-      const storage = await createStorageBundle(storageConfig!);
-      if (!storage.db) {
-        process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
-        return 1;
-      }
-      const { getLatestRunId } = await import('@red-codes/storage');
-      const db = storage.db as import('better-sqlite3').Database;
-      runId = getLatestRunId(db) ?? undefined;
-      storage.close();
-    } else {
-      runId = listRunsJsonl()[0];
+    const { createStorageBundle } = await import('@red-codes/storage');
+    const storage = await createStorageBundle(config);
+    if (!storage.db) {
+      process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
+      return 1;
     }
+    const { getLatestRunId } = await import('@red-codes/storage');
+    const db = storage.db as import('better-sqlite3').Database;
+    runId = getLatestRunId(db) ?? undefined;
+    storage.close();
   } else {
     runId = targetArg;
   }
@@ -343,21 +296,16 @@ export async function traces(args: string[], storageConfig?: StorageConfig): Pro
   }
 
   // Load events
-  let eventList: DomainEvent[];
-  if (useSqlite) {
-    const { createStorageBundle } = await import('@red-codes/storage');
-    const storage = await createStorageBundle(storageConfig!);
-    if (!storage.db) {
-      process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
-      return 1;
-    }
-    const { loadRunEvents } = await import('@red-codes/storage');
-    const db = storage.db as import('better-sqlite3').Database;
-    eventList = loadRunEvents(db, runId);
-    storage.close();
-  } else {
-    eventList = loadEventsJsonl(runId);
+  const { createStorageBundle } = await import('@red-codes/storage');
+  const storage = await createStorageBundle(config);
+  if (!storage.db) {
+    process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
+    return 1;
   }
+  const { loadRunEvents } = await import('@red-codes/storage');
+  const db = storage.db as import('better-sqlite3').Database;
+  const eventList = loadRunEvents(db, runId);
+  storage.close();
 
   // Extract and filter traces
   let traceEvents: PolicyTraceEvent[] = eventList.filter(isPolicyTraceEvent);

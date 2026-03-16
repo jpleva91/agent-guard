@@ -1,49 +1,29 @@
 // Storage backend factory — produces the correct storage objects based on config.
-// Dynamic import of better-sqlite3 ensures it's only loaded for SQLite backend.
+// Dynamic import of better-sqlite3 ensures it's only loaded when needed.
 
-import { join, dirname } from 'node:path';
+import { dirname } from 'node:path';
 import { existsSync, mkdirSync } from 'node:fs';
-import { createJsonlSink } from '@red-codes/events';
-import { createDecisionJsonlSink } from '@red-codes/events';
 import type { EventSink } from '@red-codes/core';
 import type { DecisionSink } from '@red-codes/core';
 import type { StorageConfig } from './types.js';
 import { DEFAULT_BASE_DIR, DEFAULT_DB_FILENAME, DEFAULT_SQLITE_DB_PATH } from './types.js';
+import { join } from 'node:path';
 
 /** Bundled storage objects returned by the factory */
 export interface StorageBundle {
   createEventSink(runId: string): EventSink;
   createDecisionSink(runId: string): DecisionSink;
-  /** Close the underlying database (no-op for JSONL) */
+  /** Close the underlying database */
   close(): void;
-  /** The raw better-sqlite3 Database instance, if using SQLite. Cast to Database.Database to use. */
+  /** The raw better-sqlite3 Database instance. Cast to Database.Database to use. */
   readonly db?: unknown;
-  /** Session lifecycle tracker (SQLite only — undefined for JSONL) */
+  /** Session lifecycle tracker */
   readonly sessions?: import('./sqlite-session.js').SessionTracker;
 }
 
 /** Create a storage bundle based on configuration */
 export async function createStorageBundle(config: StorageConfig): Promise<StorageBundle> {
-  if (config.backend === 'sqlite') {
-    return createSqliteBundle(config);
-  }
-  return createJsonlBundle(config);
-}
-
-function createJsonlBundle(config: StorageConfig): StorageBundle {
-  const baseDir = config.baseDir ?? DEFAULT_BASE_DIR;
-
-  return {
-    createEventSink(runId: string): EventSink {
-      return createJsonlSink({ runId, baseDir });
-    },
-    createDecisionSink(runId: string): DecisionSink {
-      return createDecisionJsonlSink({ runId, baseDir });
-    },
-    close(): void {
-      // No-op for JSONL
-    },
-  };
+  return createSqliteBundle(config);
 }
 
 async function createSqliteBundle(config: StorageConfig): Promise<StorageBundle> {
@@ -125,13 +105,6 @@ export function resolveSqlitePath(config: StorageConfig): string {
 
 /** Resolve storage config from CLI args and environment */
 export function resolveStorageConfig(args: string[]): StorageConfig {
-  const storeIdx = args.findIndex((a) => a === '--store');
-  const storeArg = storeIdx !== -1 ? args[storeIdx + 1] : undefined;
-  const envStore = process.env.AGENTGUARD_STORE;
-
-  const raw = storeArg !== undefined ? storeArg : envStore;
-  const backend = raw === 'sqlite' ? 'sqlite' : 'jsonl';
-
   const dirIdx = args.findIndex((a) => a === '--dir' || a === '-d');
   const baseDir = dirIdx !== -1 ? args[dirIdx + 1] : undefined;
 
@@ -140,5 +113,5 @@ export function resolveStorageConfig(args: string[]): StorageConfig {
   const dbPathArg = dbPathIdx !== -1 ? args[dbPathIdx + 1] : undefined;
   const dbPath = dbPathArg ?? process.env.AGENTGUARD_DB_PATH ?? undefined;
 
-  return { backend, baseDir, dbPath };
+  return { backend: 'sqlite', baseDir, dbPath };
 }

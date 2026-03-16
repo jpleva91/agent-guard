@@ -308,7 +308,7 @@ export async function ciCheck(args: string[], storageConfig?: StorageConfig): Pr
     process.stderr.write('    --artifact-url <url>     Link to full session artifact\n');
     process.stderr.write('    --base-dir, -d <dir>     Base directory for events\n');
     process.stderr.write(
-      '    --store <backend>        Storage backend: jsonl (default) or sqlite\n\n'
+      '    --store <backend>        Storage backend (sqlite)\n\n'
     );
     return 1;
   }

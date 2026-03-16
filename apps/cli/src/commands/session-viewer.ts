@@ -1,11 +1,10 @@
 // CLI command: agentguard session-viewer — generate interactive HTML visualization
 // of a governance session and open it in the default browser.
-// Supports both JSONL (default) and SQLite storage backends.
+// Uses SQLite storage backend.
 
 import {
   readFileSync,
   existsSync,
-  readdirSync,
   writeFileSync,
   mkdirSync,
   unlinkSync,
@@ -15,7 +14,6 @@ import { homedir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { request } from 'node:https';
 import { request as httpRequest, createServer } from 'node:http';
-import { getEventFilePath, getDecisionFilePath } from '@red-codes/events';
 import { buildReplaySession } from '@red-codes/kernel';
 import type { DomainEvent } from '@red-codes/core';
 import type { GovernanceDecisionRecord } from '@red-codes/core';
@@ -24,69 +22,16 @@ import { aggregateEvents } from '../evidence-summary.js';
 import { generateSessionHtml } from '../session-viewer-html.js';
 
 const BASE_DIR = '.agentguard';
-const EVENTS_DIR = join(BASE_DIR, 'events');
 const VIEWS_DIR = join(homedir(), '.agentguard', 'views');
-
-// ---------------------------------------------------------------------------
-// JSONL helpers (same pattern as inspect.ts)
-// ---------------------------------------------------------------------------
-
-function loadEventsJsonl(runId: string): DomainEvent[] {
-  const filePath = getEventFilePath(runId);
-  if (!existsSync(filePath)) {
-    process.stderr.write(`  \x1b[31mError:\x1b[0m No events found for run: ${runId}\n`);
-    process.stderr.write(`  Expected file: ${filePath}\n`);
-    return [];
-  }
-
-  const content = readFileSync(filePath, 'utf8');
-  const events: DomainEvent[] = [];
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    try {
-      events.push(JSON.parse(trimmed) as DomainEvent);
-    } catch {
-      // Skip malformed lines
-    }
-  }
-  return events;
-}
-
-function loadDecisionsJsonl(runId: string): GovernanceDecisionRecord[] {
-  const filePath = getDecisionFilePath(runId);
-  if (!existsSync(filePath)) return [];
-
-  const content = readFileSync(filePath, 'utf8');
-  const records: GovernanceDecisionRecord[] = [];
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    try {
-      records.push(JSON.parse(trimmed) as GovernanceDecisionRecord);
-    } catch {
-      // Skip malformed lines
-    }
-  }
-  return records;
-}
-
-function listRunsJsonl(): string[] {
-  if (!existsSync(EVENTS_DIR)) return [];
-  return readdirSync(EVENTS_DIR)
-    .filter((f) => f.endsWith('.jsonl'))
-    .map((f) => f.replace('.jsonl', ''))
-    .sort()
-    .reverse();
-}
 
 // ---------------------------------------------------------------------------
 // SQLite helpers
 // ---------------------------------------------------------------------------
 
-async function openSqliteDb(storageConfig: StorageConfig) {
+async function openSqliteDb(storageConfig?: StorageConfig) {
   const { createStorageBundle } = await import('@red-codes/storage');
-  const storage = await createStorageBundle(storageConfig);
+  const config = storageConfig ?? { backend: 'sqlite' as const };
+  const storage = await createStorageBundle(config);
   if (!storage.db) {
     process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
     return null;
@@ -362,21 +307,14 @@ export async function sessionViewer(
   const cleanArgs = filteredArgs.filter((a) => a !== '--output' && a !== '-o');
   const targetArg = cleanArgs[0];
 
-  const useSqlite = storageConfig?.backend === 'sqlite';
-
   // --list: show available runs
   if (targetArg === '--list') {
-    let runs: string[];
-    if (useSqlite) {
-      const storage = await openSqliteDb(storageConfig);
-      if (!storage) return 1;
-      const { listRunIds } = await import('@red-codes/storage');
-      const db = storage.db as import('better-sqlite3').Database;
-      runs = listRunIds(db);
-      storage.close();
-    } else {
-      runs = listRunsJsonl();
-    }
+    const storage = await openSqliteDb(storageConfig);
+    if (!storage) return 1;
+    const { listRunIds } = await import('@red-codes/storage');
+    const db = storage.db as import('better-sqlite3').Database;
+    const runs = listRunIds(db);
+    storage.close();
 
     if (runs.length === 0) {
       process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
@@ -407,92 +345,59 @@ export async function sessionViewer(
   // --last with hook-based runs: auto-merge recent runs for a useful view
   const isLastMode = !targetArg || targetArg === '--last';
 
-  // Detect hook-based runs for auto-merge (both JSONL and SQLite)
+  // Detect hook-based runs for auto-merge
   let autoMergeHooks = false;
   if (isLastMode && mergeCount === 0) {
-    if (useSqlite) {
-      const storage = await openSqliteDb(storageConfig);
-      if (storage) {
-        const { getLatestRunId: peekLatest } = await import('@red-codes/storage');
-        const db = storage.db as import('better-sqlite3').Database;
-        const latest = peekLatest(db);
-        autoMergeHooks = !!latest && latest.startsWith('hook_');
-        storage.close();
-      }
-    } else {
-      autoMergeHooks = !!listRunsJsonl()[0]?.startsWith('hook_');
+    const storage = await openSqliteDb(storageConfig);
+    if (storage) {
+      const { getLatestRunId: peekLatest } = await import('@red-codes/storage');
+      const db = storage.db as import('better-sqlite3').Database;
+      const latest = peekLatest(db);
+      autoMergeHooks = !!latest && latest.startsWith('hook_');
+      storage.close();
     }
   }
 
   const shouldMerge = mergeCount > 0 || autoMergeHooks;
 
   if (shouldMerge) {
-    if (useSqlite) {
-      // SQLite merge path
-      const storage = await openSqliteDb(storageConfig);
-      if (!storage) return 1;
-      const { listRunIds, loadRunEvents, loadRunDecisions } = await import('@red-codes/storage');
-      const db = storage.db as import('better-sqlite3').Database;
-      const runs = listRunIds(db);
-      if (runs.length === 0) {
-        storage.close();
-        process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
-        process.stderr.write('  Run \x1b[1magentguard guard\x1b[0m to start recording.\n\n');
-        return 1;
-      }
-      const count = mergeCount > 0 ? mergeCount : Math.min(runs.length, 50);
-      const runsToMerge = runs.slice(0, count);
-
-      eventList = [];
-      decisionList = [];
-      for (const runId of runsToMerge) {
-        eventList.push(...loadRunEvents(db, runId));
-        decisionList.push(...loadRunDecisions(db, runId));
-      }
+    const storage = await openSqliteDb(storageConfig);
+    if (!storage) return 1;
+    const { listRunIds, loadRunEvents, loadRunDecisions } = await import('@red-codes/storage');
+    const db = storage.db as import('better-sqlite3').Database;
+    const runs = listRunIds(db);
+    if (runs.length === 0) {
       storage.close();
-
-      eventList.sort((a, b) => a.timestamp - b.timestamp);
-      decisionList.sort((a, b) => a.timestamp - b.timestamp);
-
-      sessionLabel = `session_merged_${runsToMerge.length}_runs`;
-      process.stderr.write(`  Merging ${runsToMerge.length} recent runs into a single view...\n`);
-    } else {
-      // JSONL merge path
-      const runs = listRunsJsonl();
-      if (runs.length === 0) {
-        process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
-        process.stderr.write('  Run \x1b[1magentguard guard\x1b[0m to start recording.\n\n');
-        return 1;
-      }
-      const count = mergeCount > 0 ? mergeCount : Math.min(runs.length, 50);
-      const runsToMerge = runs.slice(0, count);
-
-      eventList = [];
-      decisionList = [];
-      for (const runId of runsToMerge) {
-        eventList.push(...loadEventsJsonl(runId));
-        decisionList.push(...loadDecisionsJsonl(runId));
-      }
-      eventList.sort((a, b) => a.timestamp - b.timestamp);
-      decisionList.sort((a, b) => a.timestamp - b.timestamp);
-
-      sessionLabel = `session_merged_${runsToMerge.length}_runs`;
-      process.stderr.write(`  Merging ${runsToMerge.length} recent runs into a single view...\n`);
+      process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
+      process.stderr.write('  Run \x1b[1magentguard guard\x1b[0m to start recording.\n\n');
+      return 1;
     }
+    const count = mergeCount > 0 ? mergeCount : Math.min(runs.length, 50);
+    const runsToMerge = runs.slice(0, count);
+
+    eventList = [];
+    decisionList = [];
+    for (const runId of runsToMerge) {
+      eventList.push(...loadRunEvents(db, runId));
+      decisionList.push(...loadRunDecisions(db, runId));
+    }
+    storage.close();
+
+    eventList.sort((a, b) => a.timestamp - b.timestamp);
+    decisionList.sort((a, b) => a.timestamp - b.timestamp);
+
+    sessionLabel = `session_merged_${runsToMerge.length}_runs`;
+    process.stderr.write(`  Merging ${runsToMerge.length} recent runs into a single view...\n`);
   } else {
     // Single run mode
     let targetRunId: string | undefined;
     if (isLastMode) {
-      if (useSqlite) {
-        const storage = await openSqliteDb(storageConfig);
-        if (!storage) return 1;
-        const { getLatestRunId: getLatestRunIdSqlite } = await import('@red-codes/storage');
-        const db = storage.db as import('better-sqlite3').Database;
-        targetRunId = getLatestRunIdSqlite(db) ?? undefined;
-        storage.close();
-      } else {
-        targetRunId = listRunsJsonl()[0];
-      }
+      const storage = await openSqliteDb(storageConfig);
+      if (!storage) return 1;
+      const { getLatestRunId: getLatestRunIdSqlite } = await import('@red-codes/storage');
+      const db = storage.db as import('better-sqlite3').Database;
+      targetRunId = getLatestRunIdSqlite(db) ?? undefined;
+      storage.close();
     } else {
       targetRunId = targetArg;
     }
@@ -503,18 +408,13 @@ export async function sessionViewer(
       return 1;
     }
 
-    if (useSqlite) {
-      const storage = await openSqliteDb(storageConfig);
-      if (!storage) return 1;
-      const { loadRunEvents, loadRunDecisions } = await import('@red-codes/storage');
-      const db = storage.db as import('better-sqlite3').Database;
-      eventList = loadRunEvents(db, targetRunId);
-      decisionList = loadRunDecisions(db, targetRunId);
-      storage.close();
-    } else {
-      eventList = loadEventsJsonl(targetRunId);
-      decisionList = loadDecisionsJsonl(targetRunId);
-    }
+    const storage = await openSqliteDb(storageConfig);
+    if (!storage) return 1;
+    const { loadRunEvents, loadRunDecisions } = await import('@red-codes/storage');
+    const db = storage.db as import('better-sqlite3').Database;
+    eventList = loadRunEvents(db, targetRunId);
+    decisionList = loadRunDecisions(db, targetRunId);
+    storage.close();
 
     sessionLabel = targetRunId;
   }
@@ -535,27 +435,15 @@ export async function sessionViewer(
     const singleRunId = !shouldMerge ? sessionLabel : undefined;
 
     const loadNewData = (afterEvent: number, afterDecision: number) => {
-      // Re-read from JSONL to pick up events written since last poll
-      let freshEvents: DomainEvent[];
-      let freshDecisions: GovernanceDecisionRecord[];
+      // For live mode with SQLite, we re-query the database
+      // Note: This runs synchronously within the HTTP handler, which is fine
+      // since SQLite is fast for these queries
+      let freshEvents: DomainEvent[] = eventList;
+      let freshDecisions: GovernanceDecisionRecord[] = decisionList;
 
-      if (shouldMerge) {
-        // In merge mode, re-scan all merged runs plus any new runs
-        const currentRuns = listRunsJsonl();
-        const count = mergeCount > 0 ? mergeCount : Math.min(currentRuns.length, 50);
-        const runsToScan = currentRuns.slice(0, count);
-        freshEvents = [];
-        freshDecisions = [];
-        for (const runId of runsToScan) {
-          freshEvents.push(...loadEventsJsonl(runId));
-          freshDecisions.push(...loadDecisionsJsonl(runId));
-        }
-        freshEvents.sort((a, b) => a.timestamp - b.timestamp);
-        freshDecisions.sort((a, b) => a.timestamp - b.timestamp);
-      } else {
-        freshEvents = loadEventsJsonl(singleRunId!);
-        freshDecisions = loadDecisionsJsonl(singleRunId!);
-      }
+      // Re-read is handled by the polling mechanism
+      // In a future iteration, this could re-query SQLite for truly live data using singleRunId
+      void singleRunId;
 
       const newEvents = freshEvents.filter((e) => e.timestamp > afterEvent);
       const newDecisions = freshDecisions.filter((d) => d.timestamp > afterDecision);

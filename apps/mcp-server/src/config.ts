@@ -1,7 +1,7 @@
 // MCP server configuration — resolved from environment variables.
 
 export type BackendType = 'local' | 'remote';
-export type LocalStoreType = 'jsonl' | 'sqlite';
+export type LocalStoreType = 'sqlite';
 
 export interface McpConfig {
   backend: BackendType;
@@ -16,7 +16,7 @@ export interface McpConfig {
 export function resolveConfig(): McpConfig {
   return {
     backend: (process.env.AGENTGUARD_MCP_BACKEND as BackendType) || 'local',
-    localStore: (process.env.AGENTGUARD_STORE as LocalStoreType) || 'jsonl',
+    localStore: (process.env.AGENTGUARD_STORE as LocalStoreType) || 'sqlite',
     baseDir: process.env.AGENTGUARD_DIR || '.agentguard',
     dbPath: process.env.AGENTGUARD_DB_PATH,
     remoteUrl: process.env.AGENTGUARD_REMOTE_URL,

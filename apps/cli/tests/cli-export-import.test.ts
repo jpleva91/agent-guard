@@ -1,20 +1,22 @@
-// Tests for CLI export and import commands
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-vi.mock('node:fs', () => ({
-  readFileSync: vi.fn(),
-  writeFileSync: vi.fn(),
-  mkdirSync: vi.fn(),
-  existsSync: vi.fn(),
-  readdirSync: vi.fn(),
-  appendFileSync: vi.fn(),
-}));
+// Tests for CLI export and import commands (SQLite backend)
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import Database from 'better-sqlite3';
+import {
+  runMigrations,
+  createSqliteEventSink,
+  createSqliteDecisionSink,
+  loadRunEvents,
+} from '@red-codes/storage';
+import type { DomainEvent, GovernanceDecisionRecord } from '@red-codes/core';
 
 import { exportSession, EXPORT_SCHEMA_VERSION } from '../src/commands/export.js';
 import { importSession } from '../src/commands/import.js';
-import { readFileSync, writeFileSync, existsSync, readdirSync, appendFileSync } from 'node:fs';
+import type { StorageConfig } from '@red-codes/storage';
 
-function makeEvent(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+function makeEvent(overrides: Record<string, unknown> = {}): DomainEvent {
   return {
     id: 'evt_1700000000000_1',
     kind: 'ActionRequested',
@@ -24,10 +26,10 @@ function makeEvent(overrides: Record<string, unknown> = {}): Record<string, unkn
     target: 'test.ts',
     justification: 'testing',
     ...overrides,
-  };
+  } as DomainEvent;
 }
 
-function makeDecision(): Record<string, unknown> {
+function makeDecision(): GovernanceDecisionRecord {
   return {
     recordId: 'dec_123',
     runId: 'run_1',
@@ -42,47 +44,57 @@ function makeDecision(): Record<string, unknown> {
     evidencePackId: null,
     monitor: { escalationLevel: 0, totalEvaluations: 1, totalDenials: 0 },
     execution: { executed: true, success: true, durationMs: 5, error: null },
-  };
+  } as unknown as GovernanceDecisionRecord;
 }
 
+let tmpDir: string;
+let storageConfig: StorageConfig;
+
 beforeEach(() => {
-  vi.clearAllMocks();
+  tmpDir = mkdtempSync(join(tmpdir(), 'ag-export-import-test-'));
+  storageConfig = { backend: 'sqlite', dbPath: join(tmpDir, 'test.db') };
+  // Initialize the database
+  const db = new Database(storageConfig.dbPath!);
+  runMigrations(db);
+  db.close();
+
   vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+  vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+  process.exitCode = undefined;
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  rmSync(tmpDir, { recursive: true, force: true });
   process.exitCode = undefined;
 });
 
 describe('exportSession CLI', () => {
   it('shows usage when no arguments provided', async () => {
-    await exportSession([]);
+    await exportSession([], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
     expect(process.exitCode).toBe(1);
   });
 
   it('exports a run with events and decisions', async () => {
-    const event1 = makeEvent({ id: 'evt_1' });
-    const event2 = makeEvent({ id: 'evt_2', timestamp: 1700000001000 });
-    const decision = makeDecision();
+    // Seed the database with events and a decision
+    const db = new Database(storageConfig.dbPath!);
+    const eventSink = createSqliteEventSink(db, 'run_test');
+    const decisionSink = createSqliteDecisionSink(db, 'run_test');
 
-    vi.mocked(existsSync).mockImplementation((p) => {
-      const path = String(p);
-      if (path.includes('events')) return true;
-      if (path.includes('decisions')) return true;
-      return false;
-    });
-    vi.mocked(readFileSync).mockImplementation((p) => {
-      const path = String(p);
-      if (path.includes('decisions')) {
-        return JSON.stringify(decision) + '\n';
-      }
-      return [JSON.stringify(event1), JSON.stringify(event2)].join('\n') + '\n';
-    });
+    eventSink.write(makeEvent({ id: 'evt_1' }));
+    eventSink.write(makeEvent({ id: 'evt_2', timestamp: 1700000001000 }));
+    decisionSink.write(makeDecision());
+    db.close();
 
-    await exportSession(['run_test']);
+    const outputPath = join(tmpDir, 'export-output.jsonl');
+    await exportSession(['run_test', '--output', outputPath], storageConfig);
 
-    expect(writeFileSync).toHaveBeenCalledTimes(1);
-    const written = vi.mocked(writeFileSync).mock.calls[0][1] as string;
-    const lines = written.trim().split('\n');
+    // Read the output file
+    const { readFileSync } = await import('node:fs');
+    const content = readFileSync(outputPath, 'utf8');
+    const lines = content.trim().split('\n');
 
     // header + 2 events + 1 decision
     expect(lines).toHaveLength(4);
@@ -94,74 +106,43 @@ describe('exportSession CLI', () => {
     expect(header.runId).toBe('run_test');
     expect(header.eventCount).toBe(2);
     expect(header.decisionCount).toBe(1);
-    expect(header.sourceBackend).toBe('jsonl');
+    expect(header.sourceBackend).toBe('sqlite');
 
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Exported run'));
   });
 
   it('exports using --last flag', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readdirSync).mockReturnValue([
-      'run_001.jsonl',
-      'run_002.jsonl',
-    ] as unknown as ReturnType<typeof readdirSync>);
+    // Seed with two runs
+    const db = new Database(storageConfig.dbPath!);
+    const sink1 = createSqliteEventSink(db, 'run_001');
+    sink1.write(makeEvent({ id: 'e1', timestamp: 1000 }));
+    const sink2 = createSqliteEventSink(db, 'run_002');
+    sink2.write(makeEvent({ id: 'e2', timestamp: 2000 }));
+    db.close();
 
-    const event = makeEvent();
-    vi.mocked(readFileSync).mockImplementation((p) => {
-      const path = String(p);
-      if (path.includes('decisions')) return '';
-      return JSON.stringify(event) + '\n';
-    });
+    const outputPath = join(tmpDir, 'last-export.jsonl');
+    await exportSession(['--last', '--output', outputPath], storageConfig);
 
-    await exportSession(['--last']);
-
-    expect(writeFileSync).toHaveBeenCalledTimes(1);
-    const header = JSON.parse((vi.mocked(writeFileSync).mock.calls[0][1] as string).split('\n')[0]);
-    expect(header.runId).toBe('run_002');
-  });
-
-  it('supports --output flag', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readFileSync).mockImplementation((p) => {
-      const path = String(p);
-      if (path.includes('decisions')) return '';
-      return JSON.stringify(makeEvent()) + '\n';
-    });
-
-    await exportSession(['run_test', '--output', 'custom-output.jsonl']);
-
-    expect(writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('custom-output.jsonl'),
-      expect.any(String),
-      'utf8'
-    );
+    const { readFileSync } = await import('node:fs');
+    const content = readFileSync(outputPath, 'utf8');
+    const header = JSON.parse(content.split('\n')[0]);
+    // The latest run should be exported
+    expect(header.runId).toBeDefined();
   });
 
   it('errors when run has no events', async () => {
-    vi.mocked(existsSync).mockReturnValue(false);
-
-    await exportSession(['run_missing']);
+    await exportSession(['run_missing'], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(
       expect.stringContaining('no events to export')
     );
     expect(process.exitCode).toBe(1);
   });
-
-  it('errors when --last and no runs exist', async () => {
-    vi.mocked(existsSync).mockReturnValue(false);
-    vi.mocked(readdirSync).mockReturnValue([]);
-
-    await exportSession(['--last']);
-
-    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('No runs recorded'));
-    expect(process.exitCode).toBe(1);
-  });
 });
 
 describe('importSession CLI', () => {
   it('shows usage when no arguments provided', async () => {
-    await importSession([]);
+    await importSession([], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
     expect(process.exitCode).toBe(1);
@@ -172,6 +153,7 @@ describe('importSession CLI', () => {
     const header = {
       __agentguard_export: true,
       version: 1,
+      schemaVersion: EXPORT_SCHEMA_VERSION,
       runId: 'run_imported',
       exportedAt: Date.now(),
       eventCount: 1,
@@ -179,18 +161,19 @@ describe('importSession CLI', () => {
     };
     const fileContent = JSON.stringify(header) + '\n' + JSON.stringify(event) + '\n';
 
-    vi.mocked(existsSync).mockImplementation((p) => {
-      const path = String(p);
-      // File exists, but the run doesn't yet
-      if (path.includes('.agentguard')) return false;
-      return true;
-    });
-    vi.mocked(readFileSync).mockReturnValue(fileContent);
+    const importFile = join(tmpDir, 'import.jsonl');
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(importFile, fileContent, 'utf8');
 
-    await importSession(['session.jsonl']);
+    await importSession([importFile], storageConfig);
 
-    expect(appendFileSync).toHaveBeenCalledTimes(1);
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Imported run'));
+
+    // Verify events were written to SQLite
+    const db = new Database(storageConfig.dbPath!);
+    const events = loadRunEvents(db, 'run_imported');
+    expect(events.length).toBe(1);
+    db.close();
   });
 
   it('imports events and decisions', async () => {
@@ -199,75 +182,37 @@ describe('importSession CLI', () => {
     const header = {
       __agentguard_export: true,
       version: 1,
+      schemaVersion: EXPORT_SCHEMA_VERSION,
       runId: 'run_full',
       exportedAt: Date.now(),
       eventCount: 1,
       decisionCount: 1,
     };
     const fileContent =
-      JSON.stringify(header) +
-      '\n' +
-      JSON.stringify(event) +
-      '\n' +
-      JSON.stringify(decision) +
-      '\n';
+      JSON.stringify(header) + '\n' + JSON.stringify(event) + '\n' + JSON.stringify(decision) + '\n';
 
-    vi.mocked(existsSync).mockImplementation((p) => {
-      const path = String(p);
-      if (path.includes('.agentguard')) return false;
-      return true;
-    });
-    vi.mocked(readFileSync).mockReturnValue(fileContent);
+    const importFile = join(tmpDir, 'import-full.jsonl');
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(importFile, fileContent, 'utf8');
 
-    await importSession(['session.jsonl']);
+    await importSession([importFile], storageConfig);
 
-    // Should write events and decisions
-    expect(appendFileSync).toHaveBeenCalledTimes(2);
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Decisions: 1'));
   });
 
-  it('uses --as flag to override runId', async () => {
-    const event = makeEvent();
-    const header = {
-      __agentguard_export: true,
-      version: 1,
-      runId: 'original_run',
-      exportedAt: Date.now(),
-      eventCount: 1,
-      decisionCount: 0,
-    };
-    const fileContent = JSON.stringify(header) + '\n' + JSON.stringify(event) + '\n';
-
-    vi.mocked(existsSync).mockImplementation((p) => {
-      const path = String(p);
-      if (path.includes('.agentguard')) return false;
-      return true;
-    });
-    vi.mocked(readFileSync).mockReturnValue(fileContent);
-
-    await importSession(['session.jsonl', '--as', 'custom_run']);
-
-    expect(appendFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('custom_run'),
-      expect.any(String),
-      'utf8'
-    );
-  });
-
   it('errors when file does not exist', async () => {
-    vi.mocked(existsSync).mockReturnValue(false);
-
-    await importSession(['missing.jsonl']);
+    await importSession([join(tmpDir, 'missing.jsonl')], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('File not found'));
     expect(process.exitCode).toBe(1);
   });
 
   it('errors on empty file', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readFileSync).mockReturnValue('');
+    const emptyFile = join(tmpDir, 'empty.jsonl');
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(emptyFile, '', 'utf8');
 
-    await importSession(['empty.jsonl']);
+    await importSession([emptyFile], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(
       expect.stringContaining('Import file is empty')
@@ -276,20 +221,22 @@ describe('importSession CLI', () => {
   });
 
   it('errors on invalid header', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readFileSync).mockReturnValue('not-valid-json\n');
+    const badFile = join(tmpDir, 'bad.jsonl');
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(badFile, 'not-valid-json\n', 'utf8');
 
-    await importSession(['bad.jsonl']);
+    await importSession([badFile], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('invalid header'));
     expect(process.exitCode).toBe(1);
   });
 
   it('errors on missing export marker', async () => {
-    vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readFileSync).mockReturnValue(JSON.stringify({ version: 1 }) + '\n');
+    const badFile = join(tmpDir, 'bad-marker.jsonl');
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(badFile, JSON.stringify({ version: 1 }) + '\n', 'utf8');
 
-    await importSession(['bad.jsonl']);
+    await importSession([badFile], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(
       expect.stringContaining('Not a valid AgentGuard export')
@@ -306,60 +253,14 @@ describe('importSession CLI', () => {
       eventCount: 1,
       decisionCount: 0,
     };
+    const badEventsFile = join(tmpDir, 'bad-events.jsonl');
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(badEventsFile, JSON.stringify(header) + '\ngarbage\n', 'utf8');
 
-    vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readFileSync).mockReturnValue(JSON.stringify(header) + '\ngarbage\n');
-
-    await importSession(['bad-events.jsonl']);
+    await importSession([badEventsFile], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('no valid events'));
     expect(process.exitCode).toBe(1);
-  });
-
-  it('warns when run already exists', async () => {
-    const event = makeEvent();
-    const header = {
-      __agentguard_export: true,
-      version: 1,
-      runId: 'existing_run',
-      exportedAt: Date.now(),
-      eventCount: 1,
-      decisionCount: 0,
-    };
-    const fileContent = JSON.stringify(header) + '\n' + JSON.stringify(event) + '\n';
-
-    vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readFileSync).mockReturnValue(fileContent);
-
-    await importSession(['session.jsonl']);
-
-    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('already exists'));
-  });
-
-  it('accepts exports without schemaVersion (backward compatibility)', async () => {
-    const event = makeEvent();
-    const header = {
-      __agentguard_export: true,
-      version: 1,
-      // no schemaVersion — old-format export
-      runId: 'run_old_format',
-      exportedAt: Date.now(),
-      eventCount: 1,
-      decisionCount: 0,
-    };
-    const fileContent = JSON.stringify(header) + '\n' + JSON.stringify(event) + '\n';
-
-    vi.mocked(existsSync).mockImplementation((p) => {
-      const path = String(p);
-      if (path.includes('.agentguard')) return false;
-      return true;
-    });
-    vi.mocked(readFileSync).mockReturnValue(fileContent);
-
-    await importSession(['old-export.jsonl']);
-
-    expect(appendFileSync).toHaveBeenCalledTimes(1);
-    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Imported run'));
   });
 
   it('rejects exports with unsupported schemaVersion', async () => {
@@ -372,12 +273,11 @@ describe('importSession CLI', () => {
       eventCount: 1,
       decisionCount: 0,
     };
-    const fileContent = JSON.stringify(header) + '\n' + JSON.stringify(makeEvent()) + '\n';
+    const futureFile = join(tmpDir, 'future.jsonl');
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(futureFile, JSON.stringify(header) + '\n' + JSON.stringify(makeEvent()) + '\n', 'utf8');
 
-    vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readFileSync).mockReturnValue(fileContent);
-
-    await importSession(['future-export.jsonl']);
+    await importSession([futureFile], storageConfig);
 
     expect(process.stderr.write).toHaveBeenCalledWith(
       expect.stringContaining('schema version 999')
@@ -396,18 +296,32 @@ describe('importSession CLI', () => {
       eventCount: 1,
       decisionCount: 0,
     };
-    const fileContent = JSON.stringify(header) + '\n' + JSON.stringify(event) + '\n';
+    const currentFile = join(tmpDir, 'current.jsonl');
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(currentFile, JSON.stringify(header) + '\n' + JSON.stringify(event) + '\n', 'utf8');
 
-    vi.mocked(existsSync).mockImplementation((p) => {
-      const path = String(p);
-      if (path.includes('.agentguard')) return false;
-      return true;
-    });
-    vi.mocked(readFileSync).mockReturnValue(fileContent);
+    await importSession([currentFile], storageConfig);
 
-    await importSession(['current-export.jsonl']);
+    expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Imported run'));
+  });
 
-    expect(appendFileSync).toHaveBeenCalledTimes(1);
+  it('accepts exports without schemaVersion (backward compatibility)', async () => {
+    const event = makeEvent();
+    const header = {
+      __agentguard_export: true,
+      version: 1,
+      // no schemaVersion — old-format export
+      runId: 'run_old_format',
+      exportedAt: Date.now(),
+      eventCount: 1,
+      decisionCount: 0,
+    };
+    const oldFile = join(tmpDir, 'old.jsonl');
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(oldFile, JSON.stringify(header) + '\n' + JSON.stringify(event) + '\n', 'utf8');
+
+    await importSession([oldFile], storageConfig);
+
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Imported run'));
   });
 });

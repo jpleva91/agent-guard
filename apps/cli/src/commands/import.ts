@@ -1,25 +1,15 @@
 // CLI command: agentguard import — import a governance session from a portable JSONL file.
-// Supports both JSONL (default) and SQLite storage backends.
+// Uses SQLite storage backend.
 
-import { readFileSync, appendFileSync, existsSync, mkdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { parseArgs } from '../args.js';
-import { getEventFilePath } from '@red-codes/events';
-import { getDecisionFilePath } from '@red-codes/events';
 import { validateEvent } from '@red-codes/events';
 import type { DomainEvent, ValidationResult } from '@red-codes/core';
 import type { GovernanceDecisionRecord } from '@red-codes/core';
 import { EXPORT_SCHEMA_VERSION } from './export.js';
 import type { GovernanceExportHeader } from './export.js';
 import type { StorageConfig } from '@red-codes/storage';
-
-const BASE_DIR = '.agentguard';
-
-function ensureDir(dirPath: string): void {
-  if (!existsSync(dirPath)) {
-    mkdirSync(dirPath, { recursive: true });
-  }
-}
 
 export async function importSession(args: string[], storageConfig?: StorageConfig): Promise<void> {
   const parsed = parseArgs(args, {
@@ -125,45 +115,21 @@ export async function importSession(args: string[], storageConfig?: StorageConfi
     return;
   }
 
-  const useSqlite = storageConfig?.backend === 'sqlite';
+  // Write to SQLite via storage sinks
+  const config = storageConfig ?? { backend: 'sqlite' as const };
+  const { createStorageBundle } = await import('@red-codes/storage');
+  const storage = await createStorageBundle(config);
+  const eventSink = storage.createEventSink(runId);
+  const decisionSink = storage.createDecisionSink(runId);
 
-  if (useSqlite) {
-    // Write to SQLite via storage sinks
-    const { createStorageBundle } = await import('@red-codes/storage');
-    const storage = await createStorageBundle(storageConfig);
-    const eventSink = storage.createEventSink(runId);
-    const decisionSink = storage.createDecisionSink(runId);
-
-    for (const event of events) {
-      eventSink.write(event);
-    }
-    for (const decision of decisions) {
-      decisionSink.write(decision);
-    }
-
-    storage.close();
-  } else {
-    // Check if run already exists (JSONL)
-    const eventFilePath = getEventFilePath(runId);
-    if (existsSync(eventFilePath)) {
-      process.stderr.write(
-        `\n  \x1b[33m\u26A0\x1b[0m Run "${runId}" already exists. Events will be appended.\n`
-      );
-    }
-
-    // Write events
-    ensureDir(join(BASE_DIR, 'events'));
-    const eventData = events.map((e) => JSON.stringify(e)).join('\n') + '\n';
-    appendFileSync(eventFilePath, eventData, 'utf8');
-
-    // Write decisions (if any)
-    if (decisions.length > 0) {
-      ensureDir(join(BASE_DIR, 'decisions'));
-      const decisionFilePath = getDecisionFilePath(runId);
-      const decisionData = decisions.map((d) => JSON.stringify(d)).join('\n') + '\n';
-      appendFileSync(decisionFilePath, decisionData, 'utf8');
-    }
+  for (const event of events) {
+    eventSink.write(event);
   }
+  for (const decision of decisions) {
+    decisionSink.write(decision);
+  }
+
+  storage.close();
 
   process.stderr.write(`\n  \x1b[32m\u2713\x1b[0m Imported run \x1b[1m${runId}\x1b[0m\n`);
   process.stderr.write(`    Events:    ${events.length}\n`);

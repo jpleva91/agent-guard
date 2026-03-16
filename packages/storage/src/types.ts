@@ -4,15 +4,15 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 /** Supported storage backends */
-export type StorageBackend = 'jsonl' | 'sqlite';
+export type StorageBackend = 'sqlite';
 
 /** Configuration for the storage layer */
 export interface StorageConfig {
-  /** Which backend to use. Default: 'jsonl' */
+  /** Which backend to use. Default: 'sqlite' */
   readonly backend: StorageBackend;
-  /** For sqlite: path to the .db file. Default: ~/.agentguard/agentguard.db */
+  /** Path to the .db file. Default: ~/.agentguard/agentguard.db */
   readonly dbPath?: string;
-  /** Base directory for JSONL event data. Default: .agentguard (repo-local) */
+  /** Base directory for storage data. Default: .agentguard (repo-local) */
   readonly baseDir?: string;
 }
 

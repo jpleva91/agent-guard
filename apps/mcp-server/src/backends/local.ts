@@ -1,51 +1,52 @@
-// Local data source — reads governance data from JSONL files or SQLite.
+// Local data source — reads governance data from SQLite via @red-codes/storage.
 
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
 import type { DomainEvent, GovernanceDecisionRecord } from '@red-codes/core';
-import { getEventFilePath, getDecisionFilePath } from '@red-codes/events';
 import type { DataSource } from './types.js';
 import type { McpConfig } from '../config.js';
-
-function parseJsonlFile<T>(filePath: string): T[] {
-  if (!existsSync(filePath)) return [];
-  const content = readFileSync(filePath, 'utf8');
-  const items: T[] = [];
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    try {
-      items.push(JSON.parse(trimmed) as T);
-    } catch {
-      // Skip malformed lines
-    }
-  }
-  return items;
-}
+import type { StorageBundle } from '@red-codes/storage';
 
 export function createLocalDataSource(config: McpConfig): DataSource {
-  const baseDir = config.baseDir;
-  const eventsDir = join(baseDir, 'events');
+  // Lazy-load storage to avoid requiring better-sqlite3 at import time
+  let storagePromise: Promise<StorageBundle> | null = null;
+
+  async function getStorage(): Promise<StorageBundle> {
+    if (!storagePromise) {
+      storagePromise = (async () => {
+        const { createStorageBundle } = await import('@red-codes/storage');
+        const storage = await createStorageBundle({
+          backend: 'sqlite',
+          baseDir: config.baseDir,
+        });
+        if (!storage.db) {
+          throw new Error('SQLite storage backend did not initialize database.');
+        }
+        return storage;
+      })();
+    }
+    return storagePromise;
+  }
 
   return {
     async listRuns(limit?: number): Promise<string[]> {
-      if (!existsSync(eventsDir)) return [];
-      const files = readdirSync(eventsDir)
-        .filter((f) => f.endsWith('.jsonl'))
-        .map((f) => f.replace('.jsonl', ''))
-        .sort()
-        .reverse();
-      return limit ? files.slice(0, limit) : files;
+      const storage = await getStorage();
+      const { listRunIds } = await import('@red-codes/storage');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const runs = listRunIds(storage.db as any);
+      return limit ? runs.slice(0, limit) : runs;
     },
 
     async loadEvents(runId: string): Promise<DomainEvent[]> {
-      const filePath = getEventFilePath(runId, baseDir);
-      return parseJsonlFile<DomainEvent>(filePath);
+      const storage = await getStorage();
+      const { loadRunEvents } = await import('@red-codes/storage');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return loadRunEvents(storage.db as any, runId);
     },
 
     async loadDecisions(runId: string): Promise<GovernanceDecisionRecord[]> {
-      const filePath = getDecisionFilePath(runId, baseDir);
-      return parseJsonlFile<GovernanceDecisionRecord>(filePath);
+      const storage = await getStorage();
+      const { loadRunDecisions } = await import('@red-codes/storage');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return loadRunDecisions(storage.db as any, runId);
     },
 
     async queryEvents(opts: {

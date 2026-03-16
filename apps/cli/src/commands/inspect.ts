@@ -1,90 +1,24 @@
 // CLI command: agentguard inspect — show action graph and events for a run.
 // Also handles: agentguard events <runId>
-// Supports both JSONL (default) and SQLite storage backends.
+// Uses SQLite storage backend.
 
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
 import { renderEventStream, renderDecisionTable, renderPolicyTraces } from '../tui.js';
 import type { PolicyTraceEvent } from '../tui.js';
-import { getEventFilePath } from '@red-codes/events';
-import { getDecisionFilePath } from '@red-codes/events';
 import type { DomainEvent } from '@red-codes/core';
-import type { GovernanceDecisionRecord } from '@red-codes/core';
 import type { StorageConfig } from '@red-codes/storage';
-
-const BASE_DIR = '.agentguard';
-const EVENTS_DIR = join(BASE_DIR, 'events');
 
 function isPolicyTraceEvent(e: DomainEvent): e is PolicyTraceEvent & DomainEvent {
   return e.kind === 'PolicyTraceRecorded';
 }
 
 // ---------------------------------------------------------------------------
-// JSONL helpers (default backend)
-// ---------------------------------------------------------------------------
-
-function loadEventsJsonl(runId: string): DomainEvent[] {
-  const filePath = getEventFilePath(runId);
-  if (!existsSync(filePath)) {
-    process.stderr.write(`  \x1b[31mError:\x1b[0m No events found for run: ${runId}\n`);
-    process.stderr.write(`  Expected file: ${filePath}\n`);
-    return [];
-  }
-
-  const content = readFileSync(filePath, 'utf8');
-  const events: DomainEvent[] = [];
-
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    try {
-      events.push(JSON.parse(trimmed) as DomainEvent);
-    } catch {
-      // Skip malformed lines
-    }
-  }
-
-  return events;
-}
-
-function loadDecisionsJsonl(runId: string): GovernanceDecisionRecord[] {
-  const filePath = getDecisionFilePath(runId);
-  if (!existsSync(filePath)) {
-    return [];
-  }
-
-  const content = readFileSync(filePath, 'utf8');
-  const records: GovernanceDecisionRecord[] = [];
-
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    try {
-      records.push(JSON.parse(trimmed) as GovernanceDecisionRecord);
-    } catch {
-      // Skip malformed lines
-    }
-  }
-
-  return records;
-}
-
-function listRunsJsonl(): string[] {
-  if (!existsSync(EVENTS_DIR)) return [];
-  return readdirSync(EVENTS_DIR)
-    .filter((f) => f.endsWith('.jsonl'))
-    .map((f) => f.replace('.jsonl', ''))
-    .sort()
-    .reverse();
-}
-
-// ---------------------------------------------------------------------------
 // SQLite helpers
 // ---------------------------------------------------------------------------
 
-async function openSqliteDb(storageConfig: StorageConfig) {
+async function openSqliteDb(storageConfig?: StorageConfig) {
   const { createStorageBundle } = await import('@red-codes/storage');
-  const storage = await createStorageBundle(storageConfig);
+  const config = storageConfig ?? { backend: 'sqlite' as const };
+  const storage = await createStorageBundle(config);
   if (!storage.db) {
     process.stderr.write('  Error: SQLite storage backend did not initialize database.\n');
     return null;
@@ -105,21 +39,13 @@ export async function inspect(args: string[], storageConfig?: StorageConfig): Pr
   );
   const targetArg = filteredArgs[0];
 
-  const useSqlite = storageConfig?.backend === 'sqlite';
-
   if (!targetArg || targetArg === '--list') {
-    let runs: string[];
-
-    if (useSqlite) {
-      const storage = await openSqliteDb(storageConfig);
-      if (!storage) return;
-      const { listRunIds } = await import('@red-codes/storage');
-      const db = storage.db as import('better-sqlite3').Database;
-      runs = listRunIds(db);
-      storage.close();
-    } else {
-      runs = listRunsJsonl();
-    }
+    const storage = await openSqliteDb(storageConfig);
+    if (!storage) return;
+    const { listRunIds } = await import('@red-codes/storage');
+    const db = storage.db as import('better-sqlite3').Database;
+    const runs = listRunIds(db);
+    storage.close();
 
     if (runs.length === 0) {
       process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
@@ -130,22 +56,16 @@ export async function inspect(args: string[], storageConfig?: StorageConfig): Pr
     process.stderr.write('\n  \x1b[1mRecorded Runs\x1b[0m\n');
     process.stderr.write(`  ${'\x1b[2m'}${'─'.repeat(50)}${'\x1b[0m'}\n`);
 
-    if (useSqlite) {
-      const storage = await openSqliteDb(storageConfig);
-      if (!storage) return;
-      const { loadRunEvents } = await import('@red-codes/storage');
-      const db = storage.db as import('better-sqlite3').Database;
-      for (const id of runs.slice(0, 20)) {
-        const events = loadRunEvents(db, id);
-        process.stderr.write(`  ${id}  ${'\x1b[2m'}(${events.length} events)${'\x1b[0m'}\n`);
-      }
-      storage.close();
-    } else {
-      for (const id of runs.slice(0, 20)) {
-        const events = loadEventsJsonl(id);
-        process.stderr.write(`  ${id}  ${'\x1b[2m'}(${events.length} events)${'\x1b[0m'}\n`);
-      }
+    const storage2 = await openSqliteDb(storageConfig);
+    if (!storage2) return;
+    const { loadRunEvents } = await import('@red-codes/storage');
+    const db2 = storage2.db as import('better-sqlite3').Database;
+    for (const id of runs.slice(0, 20)) {
+      const events = loadRunEvents(db2, id);
+      process.stderr.write(`  ${id}  ${'\x1b[2m'}(${events.length} events)${'\x1b[0m'}\n`);
     }
+    storage2.close();
+
     process.stderr.write('\n');
     return;
   }
@@ -153,16 +73,12 @@ export async function inspect(args: string[], storageConfig?: StorageConfig): Pr
   // Check for --last flag
   let targetRunId: string | undefined;
   if (targetArg === '--last') {
-    if (useSqlite) {
-      const storage = await openSqliteDb(storageConfig);
-      if (!storage) return;
-      const { getLatestRunId } = await import('@red-codes/storage');
-      const db = storage.db as import('better-sqlite3').Database;
-      targetRunId = getLatestRunId(db) ?? undefined;
-      storage.close();
-    } else {
-      targetRunId = listRunsJsonl()[0];
-    }
+    const storage = await openSqliteDb(storageConfig);
+    if (!storage) return;
+    const { getLatestRunId } = await import('@red-codes/storage');
+    const db = storage.db as import('better-sqlite3').Database;
+    targetRunId = getLatestRunId(db) ?? undefined;
+    storage.close();
   } else {
     targetRunId = targetArg;
   }
@@ -173,46 +89,30 @@ export async function inspect(args: string[], storageConfig?: StorageConfig): Pr
   }
 
   // Load events
-  let eventList: DomainEvent[];
-  if (useSqlite) {
-    const storage = await openSqliteDb(storageConfig);
-    if (!storage) return;
-    const { loadRunEvents } = await import('@red-codes/storage');
-    const db = storage.db as import('better-sqlite3').Database;
-    eventList = loadRunEvents(db, targetRunId);
-    if (eventList.length === 0) {
-      process.stderr.write(`  \x1b[31mError:\x1b[0m No events found for run: ${targetRunId}\n`);
-    }
+  const storage = await openSqliteDb(storageConfig);
+  if (!storage) return;
+  const { loadRunEvents, loadRunDecisions } = await import('@red-codes/storage');
+  const db = storage.db as import('better-sqlite3').Database;
+  const eventList = loadRunEvents(db, targetRunId);
 
-    // Show decision records if --decisions flag is present
-    if (showDecisions) {
-      const { loadRunDecisions } = await import('@red-codes/storage');
-      const decisions = loadRunDecisions(db, targetRunId);
-      process.stderr.write(`\n  \x1b[1mRun:\x1b[0m ${targetRunId}\n`);
-      if (decisions.length > 0) {
-        process.stderr.write(renderDecisionTable(decisions));
-      } else {
-        process.stderr.write('\n  \x1b[2mNo decision records found for this run.\x1b[0m\n');
-      }
-    }
-    storage.close();
-  } else {
-    eventList = loadEventsJsonl(targetRunId);
-    if (eventList.length === 0 && !showDecisions && !showTraces) return;
+  if (eventList.length === 0) {
+    process.stderr.write(`  \x1b[31mError:\x1b[0m No events found for run: ${targetRunId}\n`);
+  }
 
+  // Show decision records if --decisions flag is present
+  if (showDecisions) {
+    const decisions = loadRunDecisions(db, targetRunId);
     process.stderr.write(`\n  \x1b[1mRun:\x1b[0m ${targetRunId}\n`);
-
-    if (showDecisions) {
-      const decisions = loadDecisionsJsonl(targetRunId);
-      if (decisions.length > 0) {
-        process.stderr.write(renderDecisionTable(decisions));
-      } else {
-        process.stderr.write('\n  \x1b[2mNo decision records found for this run.\x1b[0m\n');
-      }
+    if (decisions.length > 0) {
+      process.stderr.write(renderDecisionTable(decisions));
+    } else {
+      process.stderr.write('\n  \x1b[2mNo decision records found for this run.\x1b[0m\n');
     }
   }
 
-  if (!useSqlite || !showDecisions) {
+  storage.close();
+
+  if (!showDecisions) {
     process.stderr.write(`\n  \x1b[1mRun:\x1b[0m ${targetRunId}\n`);
   }
 
@@ -315,20 +215,14 @@ export async function events(args: string[], storageConfig?: StorageConfig): Pro
     return;
   }
 
-  const useSqlite = storageConfig?.backend === 'sqlite';
-
   let targetRunId: string | undefined;
   if (runId === '--last') {
-    if (useSqlite) {
-      const storage = await openSqliteDb(storageConfig);
-      if (!storage) return;
-      const { getLatestRunId } = await import('@red-codes/storage');
-      const db = storage.db as import('better-sqlite3').Database;
-      targetRunId = getLatestRunId(db) ?? undefined;
-      storage.close();
-    } else {
-      targetRunId = listRunsJsonl()[0];
-    }
+    const storage = await openSqliteDb(storageConfig);
+    if (!storage) return;
+    const { getLatestRunId } = await import('@red-codes/storage');
+    const db = storage.db as import('better-sqlite3').Database;
+    targetRunId = getLatestRunId(db) ?? undefined;
+    storage.close();
   } else {
     targetRunId = runId;
   }
@@ -338,17 +232,12 @@ export async function events(args: string[], storageConfig?: StorageConfig): Pro
     return;
   }
 
-  let eventList: DomainEvent[];
-  if (useSqlite) {
-    const storage = await openSqliteDb(storageConfig);
-    if (!storage) return;
-    const { loadRunEvents } = await import('@red-codes/storage');
-    const db = storage.db as import('better-sqlite3').Database;
-    eventList = loadRunEvents(db, targetRunId);
-    storage.close();
-  } else {
-    eventList = loadEventsJsonl(targetRunId);
-  }
+  const storage = await openSqliteDb(storageConfig);
+  if (!storage) return;
+  const { loadRunEvents } = await import('@red-codes/storage');
+  const db = storage.db as import('better-sqlite3').Database;
+  const eventList = loadRunEvents(db, targetRunId);
+  storage.close();
 
   if (eventList.length === 0) return;
 

@@ -53,7 +53,7 @@ function buildExportFile(
   runId: string,
   events: DomainEvent[],
   decisions: GovernanceDecisionRecord[],
-  sourceBackend: 'jsonl' | 'sqlite' = 'jsonl'
+  sourceBackend: 'sqlite' = 'sqlite'
 ): string {
   const header: GovernanceExportHeader = {
     __agentguard_export: true,
@@ -82,9 +82,9 @@ function buildExportFile(
 describe('Export/Import Round-Trip', () => {
   const RUN_ID = 'roundtrip_run';
 
-  describe('JSONL → export → import to JSONL → verify identical', () => {
+  describe('SQLite → export → import → verify identical', () => {
     it('preserves event order and content through export→import cycle', () => {
-      // 1. Write events to JSONL (simulating kernel output)
+      // 1. Create events (simulating kernel output)
       const events = [
         makeEvent('evt_1', 'ActionRequested', 1000),
         makeEvent('evt_2', 'ActionAllowed', 2000),
@@ -212,7 +212,7 @@ describe('Export/Import Round-Trip', () => {
     });
   });
 
-  describe('Cross-backend: SQLite → export → import to JSONL → export → import to SQLite', () => {
+  describe('Cross-format: SQLite → export → parse → re-export → import to SQLite', () => {
     let db: Database.Database;
 
     beforeEach(() => {
@@ -224,7 +224,7 @@ describe('Export/Import Round-Trip', () => {
       db.close();
     });
 
-    it('preserves data integrity across backend transitions', () => {
+    it('preserves data integrity across export/import transitions', () => {
       // 1. Populate SQLite
       const eventSink = createSqliteEventSink(db, RUN_ID);
       const decisionSink = createSqliteDecisionSink(db, RUN_ID);
@@ -246,18 +246,18 @@ describe('Export/Import Round-Trip', () => {
       const sqliteDecisions = loadRunDecisions(db, RUN_ID);
       const export1 = buildExportFile(RUN_ID, sqliteEvents, sqliteDecisions, 'sqlite');
 
-      // 3. Parse export (simulates JSONL import)
+      // 3. Parse export (simulates portable file handling)
       const lines1 = export1.trim().split('\n');
       const header1 = JSON.parse(lines1[0]) as GovernanceExportHeader;
-      const jsonlEvents = lines1
+      const parsedEvents = lines1
         .slice(1, 1 + header1.eventCount)
         .map((l) => JSON.parse(l) as DomainEvent);
-      const jsonlDecisions = lines1
+      const parsedDecisions = lines1
         .slice(1 + header1.eventCount)
         .map((l) => JSON.parse(l) as GovernanceDecisionRecord);
 
-      // 4. Re-export from "JSONL" (same data, different backend label)
-      const export2 = buildExportFile(RUN_ID, jsonlEvents, jsonlDecisions, 'jsonl');
+      // 4. Re-export (same data, verifying round-trip stability)
+      const export2 = buildExportFile(RUN_ID, parsedEvents, parsedDecisions);
 
       // 5. Import back to SQLite
       const db2 = new Database(':memory:');
@@ -307,13 +307,10 @@ describe('Export/Import Round-Trip', () => {
     it('export header includes sourceBackend', () => {
       const events = [makeEvent('evt_b1')];
 
-      const jsonlExport = buildExportFile('run_jb', events, [], 'jsonl');
-      const sqliteExport = buildExportFile('run_sb', events, [], 'sqlite');
+      const sqliteExport = buildExportFile('run_sb', events, []);
 
-      const jsonlHeader = JSON.parse(jsonlExport.split('\n')[0]);
       const sqliteHeader = JSON.parse(sqliteExport.split('\n')[0]);
 
-      expect(jsonlHeader.sourceBackend).toBe('jsonl');
       expect(sqliteHeader.sourceBackend).toBe('sqlite');
     });
 
