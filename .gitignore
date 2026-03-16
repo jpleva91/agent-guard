@@ -27,3 +27,8 @@ logs/*
 # Benchmark output (uploaded as CI artifact, not tracked in git)
 **/bench-results.json
 .claude/worktrees/
+
+# Environment
+.env
+.env.local
+.env.*.local
