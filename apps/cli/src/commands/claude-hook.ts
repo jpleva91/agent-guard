@@ -171,8 +171,13 @@ function handlePostToolUse(data: Record<string, unknown>, cliArgs: string[] = []
     process.stdout.write('\n');
   }
 
-  // Detect PR creation — suggest opening the session viewer
+  // Track rtk-optimized commands (informational — for session viewer visibility)
   const toolInput = (data.tool_input || data.command || '') as string;
+  if (toolInput.startsWith('rtk ') || toolInput.includes('/rtk ')) {
+    process.stderr.write(`  \x1b[36m\u26A1\x1b[0m rtk: token-optimized output\n`);
+  }
+
+  // Detect PR creation — suggest opening the session viewer
   const isPrCreate = toolInput.includes('gh pr create') || toolInput.includes('gh pr merge');
   if (isPrCreate && exitCode === 0 && stdout.trim()) {
     generateSessionViewerQuietly(cliArgs);

@@ -217,7 +217,9 @@ export type EventKind =
   // Agent Liveness
   | 'HeartbeatEmitted'
   | 'HeartbeatMissed'
-  | 'AgentUnresponsive';
+  | 'AgentUnresponsive'
+  // Token Optimization
+  | 'TokenOptimizationApplied';
 
 /** Event schema definition — required and optional field names */
 export interface EventSchema {

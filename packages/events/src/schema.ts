@@ -76,6 +76,9 @@ export const CODE_REVIEWED: EventKind = 'CodeReviewed';
 export const DEPLOY_COMPLETED: EventKind = 'DeployCompleted';
 export const LINT_COMPLETED: EventKind = 'LintCompleted';
 
+// Token Optimization
+export const TOKEN_OPTIMIZATION_APPLIED: EventKind = 'TokenOptimizationApplied';
+
 // Agent Liveness
 export const HEARTBEAT_EMITTED: EventKind = 'HeartbeatEmitted';
 export const HEARTBEAT_MISSED: EventKind = 'HeartbeatMissed';
@@ -272,6 +275,10 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   [LINT_COMPLETED]: {
     required: ['result'],
     optional: ['tool', 'errors', 'warnings', 'fixed'],
+  },
+  [TOKEN_OPTIMIZATION_APPLIED]: {
+    required: ['tool', 'command'],
+    optional: ['originalCommand', 'rewrittenCommand', 'optimizer', 'metadata'],
   },
   [HEARTBEAT_EMITTED]: {
     required: ['agentId'],

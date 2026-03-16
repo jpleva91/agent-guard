@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { RESET, BOLD, DIM, FG } from '../colors.js';
 import { findDefaultPolicy } from '../policy-resolver.js';
+import { detectRtk } from '@red-codes/core';
 
 interface HookEntry {
   hooks?: Array<{ type?: string; command?: string }>;
@@ -52,6 +53,11 @@ export async function status(args: string[]): Promise<number> {
 
   // Directories
   printCheck(checks.dirs.ok, 'Event directories', checks.dirs.detail);
+
+  // Token optimization (optional — does not affect exit code)
+  const rtkCheck = checkRtkInstalled();
+  const rtkIcon = rtkCheck.ok ? `${FG.cyan}⚡${RESET}` : `${DIM}○${RESET}`;
+  process.stderr.write(`  ${rtkIcon}  Token optimization ${DIM}${rtkCheck.detail}${RESET}\n`);
 
   process.stderr.write('\n');
 
@@ -107,6 +113,18 @@ function checkPolicyFound(): { ok: boolean; detail: string } {
     return { ok: true, detail: `(${policyPath})` };
   }
   return { ok: false, detail: '(no agentguard.yaml found)' };
+}
+
+function checkRtkInstalled(): { ok: boolean; detail: string } {
+  try {
+    const rtk = detectRtk();
+    if (rtk.available) {
+      return { ok: true, detail: `rtk${rtk.version ? ` v${rtk.version}` : ''} (60-90% token savings)` };
+    }
+  } catch {
+    // Detection failure is non-fatal
+  }
+  return { ok: false, detail: '(optional — brew install rtk)' };
 }
 
 function checkDirsExist(): { ok: boolean; detail: string } {

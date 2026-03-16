@@ -217,8 +217,26 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   // Auto-generate starter policy if none exists
   const policyGenerated = generateStarterPolicy();
 
+  // Detect rtk for token optimization status
+  let rtkStatus: { available: boolean; version?: string } = { available: false };
+  try {
+    const { detectRtk } = await import('@red-codes/core');
+    rtkStatus = detectRtk();
+  } catch {
+    // rtk detection is non-fatal
+  }
+
+  if (rtkStatus.available) {
+    process.stderr.write(
+      `  ${FG.green}✓${RESET}  rtk detected${rtkStatus.version ? ` (v${rtkStatus.version})` : ''} — token optimization active\n`
+    );
+    process.stderr.write(
+      `  ${DIM}   Run "rtk init -g" if rtk hooks are not yet configured.${RESET}\n`
+    );
+  }
+
   // Show what protections are active
-  showProtectionSummary(policyGenerated);
+  showProtectionSummary(policyGenerated, rtkStatus);
 }
 
 function removeHook(settingsPath: string, settingsLabel: string): void {
@@ -406,7 +424,7 @@ function generateStarterPolicy(): boolean {
   return true;
 }
 
-function showProtectionSummary(policyGenerated: boolean): void {
+function showProtectionSummary(policyGenerated: boolean, rtkStatus?: { available: boolean; version?: string }): void {
   process.stderr.write('\n');
   process.stderr.write(`  ${FG.green}${BOLD}AgentGuard is active.${RESET}\n\n`);
 
@@ -422,6 +440,18 @@ function showProtectionSummary(policyGenerated: boolean): void {
     `  ${FG.green}■${RESET} ${DIM}Allow${RESET} file reads, file writes (non-sensitive)\n`
   );
   process.stderr.write(`  ${FG.blue}■${RESET} ${DIM}Track${RESET} all actions with audit trail\n`);
+
+  // Token optimization status (optional)
+  if (rtkStatus?.available) {
+    const ver = rtkStatus.version ? ` v${rtkStatus.version}` : '';
+    process.stderr.write(
+      `  ${FG.cyan}■${RESET} ${DIM}Optimize${RESET} token usage via rtk${ver} (60-90% savings)\n`
+    );
+  } else {
+    process.stderr.write(
+      `  ${DIM}○ Token optimization  rtk not installed (optional — brew install rtk)${RESET}\n`
+    );
+  }
   process.stderr.write('\n');
 
   process.stderr.write(`  ${BOLD}Next steps:${RESET}\n`);

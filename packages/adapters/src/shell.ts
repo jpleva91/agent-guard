@@ -59,6 +59,14 @@ export const DEFAULT_STRIPPED_CREDENTIALS: readonly string[] = [
   'REDIS_PASSWORD',
 ];
 
+/** Configuration for the shell adapter. */
+export interface ShellAdapterOptions {
+  /** Credential stripping configuration. */
+  credentials?: CredentialStrippingOptions;
+  /** When true, route commands through rtk for token-optimized output. */
+  rtkEnabled?: boolean;
+}
+
 /** Configuration for credential stripping behavior. */
 export interface CredentialStrippingOptions {
   /** Whether credential stripping is enabled. Defaults to true. */
@@ -75,6 +83,8 @@ export interface ShellResult {
   exitCode: number;
   /** Names of environment variables that were stripped before execution. */
   strippedCredentials?: string[];
+  /** The original command before rtk rewrite (present only when rtk rewrote the command). */
+  originalCommand?: string;
 }
 
 /**
@@ -120,16 +130,26 @@ export function sanitizeEnvironment(
 }
 
 /**
- * Create a shell adapter with configurable credential stripping.
+ * Create a shell adapter with configurable credential stripping and optional rtk integration.
  * The returned adapter strips sensitive env vars before spawning child processes.
+ * When rtkEnabled is true, commands are routed through rtk for token-optimized output.
  */
 export function createShellAdapter(
-  credentialOptions?: CredentialStrippingOptions
+  optionsOrCredentials?: ShellAdapterOptions | CredentialStrippingOptions
 ): (action: CanonicalAction) => Promise<ShellResult> {
-  const options = credentialOptions ?? {};
+  // Support both old (CredentialStrippingOptions) and new (ShellAdapterOptions) signatures
+  const isNewOptions =
+    optionsOrCredentials &&
+    ('credentials' in optionsOrCredentials || 'rtkEnabled' in optionsOrCredentials);
+  const credentialOptions = isNewOptions
+    ? (optionsOrCredentials as ShellAdapterOptions).credentials ?? {}
+    : (optionsOrCredentials as CredentialStrippingOptions) ?? {};
+  const rtkEnabled = isNewOptions
+    ? (optionsOrCredentials as ShellAdapterOptions).rtkEnabled ?? false
+    : false;
 
   return async (action: CanonicalAction): Promise<ShellResult> => {
-    const command = (action as Record<string, unknown>).command as string | undefined;
+    let command = (action as Record<string, unknown>).command as string | undefined;
     if (!command) {
       throw new Error('shell.exec requires a command');
     }
@@ -138,9 +158,25 @@ export function createShellAdapter(
       ((action as Record<string, unknown>).timeout as number | undefined) || DEFAULT_TIMEOUT;
     const cwd = (action as Record<string, unknown>).cwd as string | undefined;
 
+    // Optionally rewrite the command through rtk for token-optimized output.
+    // This happens AFTER governance approval — the kernel evaluated the original command.
+    let originalCommand: string | undefined;
+    if (rtkEnabled) {
+      try {
+        const { rtkRewrite } = await import('@red-codes/core');
+        const result = rtkRewrite(command);
+        if (result.rewritten) {
+          originalCommand = command;
+          command = result.command;
+        }
+      } catch {
+        // rtk rewrite failure is non-fatal — execute original command
+      }
+    }
+
     const { env: sanitizedEnv, stripped } = sanitizeEnvironment(
       process.env as Record<string, string | undefined>,
-      options
+      credentialOptions
     );
 
     return new Promise((resolve, reject) => {
@@ -158,6 +194,7 @@ export function createShellAdapter(
             stderr: stderr.toString(),
             exitCode: error ? (error.code ?? 1) : 0,
             strippedCredentials: stripped.length > 0 ? stripped : undefined,
+            originalCommand,
           });
         }
       );
