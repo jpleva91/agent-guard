@@ -25,6 +25,9 @@ import { createStorageBundle } from '@red-codes/storage';
 import type { StorageBundle } from '@red-codes/storage';
 import type { StorageConfig } from '@red-codes/storage';
 import type { PolicyTracePayload } from '@red-codes/renderers';
+import { createCloudSinks } from '@red-codes/telemetry';
+import type { CloudSinkBundle } from '@red-codes/telemetry';
+import { loadIdentity, resolveMode } from '@red-codes/telemetry-client';
 
 export interface GuardOptions {
   /** Single policy path (backwards compatible) */
@@ -98,6 +101,36 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
   const eventSink = storage.createEventSink(runId);
   const decisionSink = storage.createDecisionSink(runId);
 
+  // Cloud telemetry — opt-in, defaults to off
+  const identity = loadIdentity();
+  const telemetryMode = resolveMode(identity);
+  const cloudSinks = await createCloudSinks({
+    mode: telemetryMode,
+    serverUrl: process.env.AGENTGUARD_TELEMETRY_URL
+      ?? identity?.server_url
+      ?? 'https://agentguard-cloud.vercel.app',
+    runId,
+    agentId: 'cli',
+    installId: identity?.install_id,
+  });
+
+  // First-run telemetry notice
+  if (telemetryMode === 'off') {
+    try {
+      if (!identity || !identity.noticed) {
+        process.stderr.write(
+          '\n  \x1b[2mAgentGuard can send anonymous usage data to improve the project.\n' +
+          '  Run `agentguard telemetry on` to opt in, or set AGENTGUARD_TELEMETRY=off to suppress this message.\x1b[0m\n\n'
+        );
+        const { saveIdentity: save, generateIdentity: gen } = await import('@red-codes/telemetry-client');
+        const updated = identity ?? gen('off');
+        save({ ...updated, mode: 'off', noticed: true });
+      }
+    } catch {
+      // Non-fatal
+    }
+  }
+
   // Build kernel config
   const kernelConfig: KernelConfig = {
     runId,
@@ -105,12 +138,13 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     policyDefs,
     dryRun: options.dryRun ?? false,
     adapters: options.dryRun ? undefined : createLiveRegistry(),
-    sinks: [eventSink],
-    decisionSinks: [decisionSink],
+    sinks: [eventSink, cloudSinks.eventSink],
+    decisionSinks: [decisionSink, cloudSinks.decisionSink],
     simulators: simulators.all().length > 0 ? simulators : undefined,
   };
 
   const kernel = createKernel(kernelConfig);
+  cloudSinks.registerRun();
 
   // Emit PolicyComposed event when multiple policies are composed
   if (useComposition) {
@@ -165,7 +199,7 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     process.stderr.write(`  ${'\x1b[2m'}Press Ctrl+C to stop.${'\x1b[0m'}\n\n`);
   }
 
-  return processStdin(kernel, renderers, storage, {
+  return processStdin(kernel, renderers, storage, cloudSinks, {
     noOpen: options.noOpen,
     storeConfig,
   });
@@ -175,6 +209,7 @@ async function processStdin(
   kernel: ReturnType<typeof createKernel>,
   renderers: RendererRegistry,
   storage: StorageBundle,
+  cloudSinks: CloudSinkBundle,
   viewerOpts: { noOpen?: boolean; storeConfig: StorageConfig }
 ): Promise<number> {
   const startTime = Date.now();
@@ -262,6 +297,8 @@ async function processStdin(
         durationMs: Date.now() - startTime,
       });
       renderers.disposeAll();
+      await cloudSinks.flush();
+      cloudSinks.stop();
       storage.close();
     };
 

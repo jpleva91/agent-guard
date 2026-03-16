@@ -74,6 +74,12 @@ importers:
       '@red-codes/swarm':
         specifier: workspace:*
         version: link:../../packages/swarm
+      '@red-codes/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
+      '@red-codes/telemetry-client':
+        specifier: workspace:*
+        version: link:../../packages/telemetry-client
       chokidar:
         specifier: ^5.0.0
         version: 5.0.0
