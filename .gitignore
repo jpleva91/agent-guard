@@ -26,3 +26,4 @@ logs/*
 .events.json
 # Benchmark output (uploaded as CI artifact, not tracked in git)
 **/bench-results.json
+.claude/worktrees/
