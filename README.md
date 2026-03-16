@@ -51,8 +51,8 @@ AI coding agents execute file writes, shell commands, and git operations autonom
 AgentGuard adds a **deterministic decision point** between proposal and execution:
 
 - **Safety policies** — declare what agents can and cannot do in YAML
-- **Invariant enforcement** — 17 built-in checks (secrets, protected branches, blast radius, skill/task protection, package script injection, lockfile integrity, CI/CD config, permission escalation, governance self-modification, container config, environment variables, recursive operations, large file writes) run on every action
-- **Audit trail** — every decision is recorded as structured JSONL, inspectable after the fact
+- **Invariant enforcement** — 20 built-in checks (secrets, protected branches, blast radius, skill/task protection, package script injection, lockfile integrity, CI/CD config, permission escalation, governance self-modification, container config, environment variables, recursive operations, large file writes, network egress, destructive migrations, transitive effect analysis) run on every action
+- **Audit trail** — every decision is recorded in structured SQLite, inspectable after the fact
 - **Session debugging** — replay any agent session to see exactly what happened and why
 
 ## How It Works
@@ -61,15 +61,15 @@ AgentGuard evaluates every agent action through a **governed action kernel**:
 
 1. **Normalize** — Claude Code tool calls (Bash, Write, Edit, Read) are mapped to canonical action types (shell.exec, file.write, file.read)
 2. **Evaluate** — policies match against the action (deny git.push to main, deny destructive commands, enforce scope limits)
-3. **Check invariants** — 17 built-in safety checks run on every action
+3. **Check invariants** — 20 built-in safety checks run on every action
 4. **Execute** — if allowed, the action runs via adapters (file, shell, git handlers)
-5. **Emit events** — full lifecycle events sunk to JSONL for audit trail
+5. **Emit events** — full lifecycle events sunk to SQLite for audit trail
 
 ### Example Output
 
 ```
   AgentGuard Runtime Active
-  policy: agentguard.yaml | invariants: 17 active
+  policy: agentguard.yaml | invariants: 20 active
 
   ✓ file.write src/auth/service.ts
   ✓ shell.exec npm test
@@ -109,7 +109,7 @@ Drop an `agentguard.yaml` in your repo root — the CLI picks it up automaticall
 
 ## Built-in Invariants
 
-17 safety invariants run on every action evaluation:
+20 safety invariants run on every action evaluation:
 
 | Invariant | Severity | Description |
 |-----------|----------|-------------|
@@ -128,6 +128,9 @@ Drop an `agentguard.yaml` in your repo root — the CLI picks it up automaticall
 | **large-file-write** | 3 (medium) | Enforces per-file size limit to prevent data dumps |
 | **no-container-config-modification** | 3 (medium) | Protects Dockerfile, docker-compose.yml, .dockerignore |
 | **no-env-var-modification** | 3 (medium) | Detects attempts to modify environment variables or shell profile files |
+| **no-destructive-migration** | 3 (medium) | Flags writes to migration directories containing destructive DDL |
+| **no-network-egress** | 4 (high) | Denies HTTP requests to non-allowlisted domains |
+| **transitive-effect-analysis** | 4 (high) | Analyzes written files for downstream effects that would violate policy |
 | **recursive-operation-guard** | 2 (low) | Flags find -exec, xargs combined with write/delete operations |
 | **lockfile-integrity** | 2 (low) | Ensures package.json changes sync with lockfiles |
 
@@ -302,13 +305,13 @@ This is a **pnpm monorepo** orchestrated by **Turbo**. Workspace packages live i
 ```
 packages/
 ├── core/src/               # @red-codes/core — Shared types, actions, hash, rng, execution-log
-├── events/src/             # @red-codes/events — Canonical event model (schema, bus, store, JSONL)
+├── events/src/             # @red-codes/events — Canonical event model (schema, bus, store)
 ├── policy/src/             # @red-codes/policy — Policy evaluation, YAML/JSON loaders, composition
-├── invariants/src/         # @red-codes/invariants — 17 built-in invariant definitions + checker
+├── invariants/src/         # @red-codes/invariants — 20 built-in invariant definitions + checker
 ├── kernel/src/             # @red-codes/kernel — Governed action kernel (orchestrator, AAB, decisions, simulation)
 ├── adapters/src/           # @red-codes/adapters — Execution adapters (file, shell, git, claude-code)
 ├── analytics/src/          # @red-codes/analytics — Cross-session violation analytics
-├── storage/src/            # @red-codes/storage — SQLite + Firestore backends (opt-in)
+├── storage/src/            # @red-codes/storage — SQLite storage backend (opt-in)
 ├── telemetry/src/          # @red-codes/telemetry — Runtime telemetry and logging
 ├── plugins/src/            # @red-codes/plugins — Plugin ecosystem (discovery, registry, sandboxing)
 ├── renderers/src/          # @red-codes/renderers — Renderer plugin system (TUI renderer)
