@@ -4,7 +4,7 @@
 
 import { exec } from 'node:child_process';
 import type { CanonicalAction } from '@red-codes/core';
-import { INVARIANT_IDE_SOCKET_ENV_VARS } from '@red-codes/core';
+import { INVARIANT_IDE_CONTEXT_ENV_VARS } from '@red-codes/core';
 
 const DEFAULT_TIMEOUT = 30_000;
 const MAX_BUFFER = 1024 * 1024; // 1MB
@@ -50,7 +50,7 @@ export const DEFAULT_STRIPPED_CREDENTIALS: readonly string[] = [
   'NPM_TOKEN',
   'NPM_AUTH_TOKEN',
   // IDE IPC sockets — prevent governance escape via host IDE manipulation
-  ...INVARIANT_IDE_SOCKET_ENV_VARS,
+  ...INVARIANT_IDE_CONTEXT_ENV_VARS,
   // Generic secrets
   'API_KEY',
   'SECRET_KEY',
@@ -67,7 +67,7 @@ export const DEFAULT_STRIPPED_CREDENTIALS: readonly string[] = [
  * These represent IPC paths that agents should not have access to in governed sessions.
  * Sourced from @red-codes/core governance data (invariant-patterns.json).
  */
-export const DEFAULT_STRIPPED_IDE_SOCKETS: readonly string[] = INVARIANT_IDE_SOCKET_ENV_VARS;
+export const DEFAULT_STRIPPED_IDE_SOCKETS: readonly string[] = INVARIANT_IDE_CONTEXT_ENV_VARS;
 
 /** Configuration for the shell adapter. */
 export interface ShellAdapterOptions {
@@ -114,7 +114,7 @@ export function sanitizeEnvironment(
   }
 
   const preserveSet = new Set(preserve.map((v) => v.toUpperCase()));
-  const ideSocketSet = new Set(INVARIANT_IDE_SOCKET_ENV_VARS.map((v) => v.toUpperCase()));
+  const ideSocketSet = new Set(INVARIANT_IDE_CONTEXT_ENV_VARS.map((v) => v.toUpperCase()));
   const toStrip = new Set<string>();
 
   for (const name of DEFAULT_STRIPPED_CREDENTIALS) {

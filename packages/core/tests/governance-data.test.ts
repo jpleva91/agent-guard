@@ -21,7 +21,7 @@ import {
   INVARIANT_LIFECYCLE_SCRIPTS,
   INVARIANT_ENV_FILE_REGEX_SOURCE,
   INVARIANT_DOCKERFILE_SUFFIX_REGEX_SOURCE,
-  INVARIANT_IDE_SOCKET_ENV_VARS,
+  INVARIANT_IDE_CONTEXT_ENV_VARS,
   INVARIANT_IDE_SOCKET_PATH_PATTERNS,
   INVARIANT_METADATA,
 } from '../src/governance-data.js';
@@ -162,9 +162,9 @@ describe('governance-data loader', () => {
     });
 
     it('exports IDE socket env vars', () => {
-      expect(Array.isArray(INVARIANT_IDE_SOCKET_ENV_VARS)).toBe(true);
-      expect(INVARIANT_IDE_SOCKET_ENV_VARS.length).toBeGreaterThan(0);
-      expect(INVARIANT_IDE_SOCKET_ENV_VARS).toContain('VSCODE_IPC_HOOK');
+      expect(Array.isArray(INVARIANT_IDE_CONTEXT_ENV_VARS)).toBe(true);
+      expect(INVARIANT_IDE_CONTEXT_ENV_VARS.length).toBeGreaterThan(0);
+      expect(INVARIANT_IDE_CONTEXT_ENV_VARS).toContain('VSCODE_IPC_HOOK');
     });
 
     it('exports IDE socket path patterns', () => {

@@ -22,7 +22,7 @@
     "preinstall", "postinstall", "prepare", "prepublishOnly",
     "prepack", "postpack", "install"
   ],
-  "ideSocketEnvVars": [
+  "ideContextEnvVars": [
     "VSCODE_IPC_HOOK", "VSCODE_IPC_HOOK_CLI", "VSCODE_IPC_HOOK_EXTHOST",
     "VSCODE_SERVER_IPC", "VSCODE_GIT_IPC_HANDLE",
     "IDEA_INITIAL_DIRECTORY", "TERMINAL_EMULATOR",
@@ -32,8 +32,7 @@
     "vscode-ipc-", ".vscode-server/ipc-",
     "jetbrains_", "intellij_", "idea_",
     "cursor-ipc-",
-    "/tmp/clion", "/tmp/pycharm", "/tmp/webstorm", "/tmp/goland", "/tmp/rider",
-    ".sock"
+    "/tmp/clion", "/tmp/pycharm", "/tmp/webstorm", "/tmp/goland", "/tmp/rider"
   ],
   "envFileRegex": "(?:^|[\\\\/])\\.env(?:\\.\\w+)?$",
   "dockerfileSuffixRegex": "\\.dockerfile$",
