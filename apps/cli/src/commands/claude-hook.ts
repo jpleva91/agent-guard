@@ -59,17 +59,20 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
       const sessionId =
         (data.session_id as string | undefined) || process.env.CLAUDE_SESSION_ID || undefined;
       const payload = { ...data, session_id: sessionId } as unknown as ClaudeCodeHookPayload;
-      await handlePreToolUse(payload, extraArgs);
+      const denied = await handlePreToolUse(payload, extraArgs);
+      // Exit code 2 tells Claude Code to block the action
+      process.exit(denied ? 2 : 0);
     } else {
       handlePostToolUse(data, extraArgs);
     }
   } catch {
-    // Swallow all errors — hooks must never fail
+    // Swallow all errors — hooks must never fail (fail-open)
   }
   process.exit(0);
 }
 
-async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[]): Promise<void> {
+/** Returns true if the action was denied. */
+async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[]): Promise<boolean> {
   const { processClaudeCodeHook, formatHookResponse } = await import('@red-codes/adapters');
   const { createKernel } = await import('@red-codes/kernel');
   const { loadPolicyDefs } = await import('../policy-resolver.js');
@@ -148,13 +151,15 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[
     }
   }
 
-  // If denied, output to stdout — this tells Claude Code to block the action
+  // If denied, output reason to stdout and signal the caller to exit with code 2
   if (!result.allowed) {
     const response = formatHookResponse(result);
     if (response) {
       process.stdout.write(response);
     }
+    return true;
   }
+  return false;
 }
 
 function handlePostToolUse(data: Record<string, unknown>, cliArgs: string[] = []): void {
