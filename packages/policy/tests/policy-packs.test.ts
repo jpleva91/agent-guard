@@ -1,12 +1,14 @@
 // Tests for prebuilt policy packs — verifies all seven packs load correctly,
 // have valid structure, and produce expected governance decisions.
 import { describe, it, expect } from 'vitest';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { resolvePackPath, loadPackFile } from '@red-codes/policy';
 import { evaluate } from '@red-codes/policy';
 import type { LoadedPolicy, NormalizedIntent } from '@red-codes/policy';
 
-const POLICIES_DIR = resolve('../../policies');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const POLICIES_DIR = resolve(__dirname, '../../../policies');
 
 /** Helper to load a pack from the policies directory */
 function loadPack(name: string): LoadedPolicy {
@@ -493,7 +495,10 @@ describe('hipaa pack — governance decisions', () => {
   });
 
   it('denies file deletion (164.312(c)(1) — data integrity)', () => {
-    const result = evaluate(intent({ action: 'file.delete', target: 'data/records.csv' }), policies);
+    const result = evaluate(
+      intent({ action: 'file.delete', target: 'data/records.csv' }),
+      policies
+    );
     expect(result.allowed).toBe(false);
   });
 
@@ -513,10 +518,7 @@ describe('hipaa pack — governance decisions', () => {
   });
 
   it('allows push to feature branch', () => {
-    const result = evaluate(
-      intent({ action: 'git.push', branch: 'feature/hipaa-fix' }),
-      policies
-    );
+    const result = evaluate(intent({ action: 'git.push', branch: 'feature/hipaa-fix' }), policies);
     expect(result.allowed).toBe(true);
   });
 
@@ -646,7 +648,7 @@ describe('engineering-standards pack — governance decisions', () => {
 
 describe('policy packs — extends integration', () => {
   it('can be loaded as extends references from project root', () => {
-    const projectRoot = resolve('../..');
+    const projectRoot = resolve(__dirname, '../../..');
     const packPath = resolvePackPath('./policies/strict', projectRoot);
     expect(packPath).not.toBeNull();
     const pack = loadPackFile(packPath!);
@@ -687,7 +689,7 @@ describe('policy packs — extends integration', () => {
   it.each(['soc2', 'hipaa', 'engineering-standards'])(
     'compliance pack %s can be loaded from project root',
     (name) => {
-      const projectRoot = resolve('../..');
+      const projectRoot = resolve(__dirname, '../../..');
       const packPath = resolvePackPath(`./policies/${name}`, projectRoot);
       expect(packPath).not.toBeNull();
       const pack = loadPackFile(packPath!);
