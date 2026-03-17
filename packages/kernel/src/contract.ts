@@ -27,6 +27,8 @@ export type {
   ExplainableEvidencePack,
   EvaluationStep,
   ProvenanceEntry,
+  ReasoningMode,
+  ExplanationChain,
 } from './evidence.js';
 export type {
   SimulatorRegistry,

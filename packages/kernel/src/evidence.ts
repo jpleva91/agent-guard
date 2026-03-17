@@ -10,7 +10,7 @@ import type { InvariantCheck } from '@red-codes/invariants';
 // ---------------------------------------------------------------------------
 // Schema version for the explainable evidence pack format
 // ---------------------------------------------------------------------------
-export const EVIDENCE_PACK_SCHEMA_VERSION = '1.0.0';
+export const EVIDENCE_PACK_SCHEMA_VERSION = '1.1.0';
 
 // ---------------------------------------------------------------------------
 // Core Evidence Pack (unchanged for backward compatibility)
@@ -46,6 +46,13 @@ export interface EvaluationStep {
   durationMs?: number;
 }
 
+/**
+ * Classification of reasoning used to produce a piece of evidence.
+ * - `deterministic`: Binary outcome derived from rules or checks (policy match, invariant hold/fail)
+ * - `probabilistic`: Predicted outcome with inherent uncertainty (simulation, AI-based assessment)
+ */
+export type ReasoningMode = 'deterministic' | 'probabilistic';
+
 /** Links a piece of evidence to its authoritative source */
 export interface ProvenanceEntry {
   sourceType: 'policy-rule' | 'invariant' | 'simulation' | 'default';
@@ -53,6 +60,28 @@ export interface ProvenanceEntry {
   sourceName: string;
   contribution: 'allow' | 'deny' | 'neutral';
   evidence: string;
+  /** Whether this evidence was produced by deterministic rules or probabilistic prediction */
+  reasoningMode: ReasoningMode;
+  /** Confidence score (0.0–1.0). Always 1.0 for deterministic; variable for probabilistic. */
+  confidenceScore: number;
+}
+
+/**
+ * Structured explanation that formally separates deterministic adjudication
+ * from probabilistic advice. This is the primary interface for formal
+ * verification tools (e.g., SMT solvers) to reason about governance decisions.
+ */
+export interface ExplanationChain {
+  /** Evidence from deterministic sources (policy rules, invariants, defaults) */
+  deterministicInputs: ProvenanceEntry[];
+  /** Evidence from probabilistic sources (simulations, AI predictions) */
+  probabilisticInputs: ProvenanceEntry[];
+  /** The final allow/deny verdict */
+  verdict: 'allow' | 'deny';
+  /** How the verdict was derived — currently always deterministic */
+  verdictBasis: 'deterministic';
+  /** Human-readable derivation explaining how inputs combined to reach the verdict */
+  derivation: string;
 }
 
 /** Explainable evidence pack — extends EvidencePack with decision explanation */
@@ -62,6 +91,8 @@ export interface ExplainableEvidencePack extends EvidencePack {
   provenance: ProvenanceEntry[];
   verdictType: 'deterministic';
   confidence: number;
+  /** Formal separation of probabilistic advice from deterministic adjudication */
+  explanationChain: ExplanationChain;
 }
 
 /** Serialized form suitable for JSON export and long-term archival */
@@ -86,6 +117,7 @@ export interface SerializedEvidencePack {
   };
   evaluationPath: EvaluationStep[];
   provenance: ProvenanceEntry[];
+  explanationChain: ExplanationChain;
   violations: Array<{
     invariantId: string;
     name: string;
@@ -278,6 +310,20 @@ function buildEvaluationPath(
   return steps;
 }
 
+/** Map simulation risk level to a confidence score for probabilistic entries */
+function simulationConfidence(riskLevel: string): number {
+  switch (riskLevel) {
+    case 'high':
+      return 0.9;
+    case 'medium':
+      return 0.7;
+    case 'low':
+      return 0.5;
+    default:
+      return 0.5;
+  }
+}
+
 function buildProvenance(
   decision: EvalResult,
   violations: InvariantCheck[],
@@ -285,7 +331,7 @@ function buildProvenance(
 ): ProvenanceEntry[] {
   const entries: ProvenanceEntry[] = [];
 
-  // Provenance from matched policy rule
+  // Provenance from matched policy rule (deterministic)
   if (decision.matchedPolicy && decision.matchedRule) {
     entries.push({
       sourceType: 'policy-rule',
@@ -293,10 +339,12 @@ function buildProvenance(
       sourceName: decision.matchedPolicy.name,
       contribution: decision.decision === 'deny' ? 'deny' : 'allow',
       evidence: decision.reason,
+      reasoningMode: 'deterministic',
+      confidenceScore: 1.0,
     });
   }
 
-  // Provenance from default (no rule matched)
+  // Provenance from default (no rule matched — deterministic)
   if (!decision.matchedPolicy && !decision.matchedRule) {
     entries.push({
       sourceType: 'default',
@@ -304,10 +352,12 @@ function buildProvenance(
       sourceName: 'Default policy (no matching rule)',
       contribution: 'allow',
       evidence: decision.reason,
+      reasoningMode: 'deterministic',
+      confidenceScore: 1.0,
     });
   }
 
-  // Provenance from invariant violations
+  // Provenance from invariant violations (deterministic)
   for (const v of violations) {
     entries.push({
       sourceType: 'invariant',
@@ -315,10 +365,12 @@ function buildProvenance(
       sourceName: v.invariant.name,
       contribution: 'deny',
       evidence: `Expected: ${v.result.expected}. Actual: ${v.result.actual}`,
+      reasoningMode: 'deterministic',
+      confidenceScore: 1.0,
     });
   }
 
-  // Provenance from simulation
+  // Provenance from simulation (probabilistic — predictions carry uncertainty)
   if (simulation) {
     entries.push({
       sourceType: 'simulation',
@@ -328,10 +380,55 @@ function buildProvenance(
       evidence:
         `Risk: ${simulation.riskLevel}, blast radius: ${simulation.blastRadius}, ` +
         `predicted changes: ${simulation.predictedChanges.length}`,
+      reasoningMode: 'probabilistic',
+      confidenceScore: simulationConfidence(simulation.riskLevel),
     });
   }
 
   return entries;
+}
+
+function buildExplanationChain(
+  decision: EvalResult,
+  provenance: ProvenanceEntry[]
+): ExplanationChain {
+  const deterministicInputs = provenance.filter((p) => p.reasoningMode === 'deterministic');
+  const probabilisticInputs = provenance.filter((p) => p.reasoningMode === 'probabilistic');
+
+  const verdict: 'allow' | 'deny' = decision.decision === 'deny' ? 'deny' : 'allow';
+
+  // Build human-readable derivation
+  const parts: string[] = [];
+
+  if (deterministicInputs.length > 0) {
+    const denyingSources = deterministicInputs.filter((p) => p.contribution === 'deny');
+    const allowingSources = deterministicInputs.filter((p) => p.contribution === 'allow');
+
+    if (denyingSources.length > 0) {
+      parts.push(`Deterministic deny from: ${denyingSources.map((s) => s.sourceName).join(', ')}`);
+    } else if (allowingSources.length > 0) {
+      parts.push(
+        `Deterministic allow from: ${allowingSources.map((s) => s.sourceName).join(', ')}`
+      );
+    }
+  }
+
+  if (probabilisticInputs.length > 0) {
+    const advisories = probabilisticInputs.map(
+      (p) => `${p.sourceName} (confidence: ${p.confidenceScore.toFixed(1)}, ${p.contribution})`
+    );
+    parts.push(`Probabilistic advisory: ${advisories.join('; ')}`);
+  }
+
+  parts.push(`Verdict: ${verdict.toUpperCase()} (basis: deterministic)`);
+
+  return {
+    deterministicInputs,
+    probabilisticInputs,
+    verdict,
+    verdictBasis: 'deterministic',
+    derivation: parts.join('. '),
+  };
 }
 
 export function createExplainableEvidencePack(params: {
@@ -352,6 +449,7 @@ export function createExplainableEvidencePack(params: {
     simulation
   );
   const provenance = buildProvenance(params.decision, violations, simulation);
+  const explanationChain = buildExplanationChain(params.decision, provenance);
 
   const pack: ExplainableEvidencePack = {
     ...basePack,
@@ -360,6 +458,7 @@ export function createExplainableEvidencePack(params: {
     provenance,
     verdictType: 'deterministic',
     confidence: 1.0,
+    explanationChain,
   };
 
   return { pack, event };
@@ -391,6 +490,7 @@ export function serializeEvidencePack(pack: ExplainableEvidencePack): Serialized
     },
     evaluationPath: pack.evaluationPath,
     provenance: pack.provenance,
+    explanationChain: pack.explanationChain,
     violations: pack.violations,
     relatedEventIds: pack.events,
     summary: pack.summary,
