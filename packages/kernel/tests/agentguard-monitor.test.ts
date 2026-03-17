@@ -450,4 +450,263 @@ describe('agentguard/monitor', () => {
       expect(evt.denialThreshold).toBe(4);
     });
   });
+
+  describe('sliding-window escalation decay', () => {
+    it('decays escalation when denials expire outside the time window', () => {
+      let time = 1000;
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 2,
+        windowSize: 5000, // 5 second window
+        now: () => time,
+      });
+
+      // 1 denial at t=1000 → ELEVATED
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      expect(monitor.getStatus().escalationLevel).toBe(ESCALATION.ELEVATED);
+
+      // 2 denials at t=1000 → HIGH
+      monitor.process({ tool: 'Write', file: 'src/b.ts' });
+      expect(monitor.getStatus().escalationLevel).toBe(ESCALATION.HIGH);
+
+      // Advance time past the window
+      time = 7000; // 6 seconds later — both denials expired
+
+      // Next evaluation (allowed action) triggers prune → decays to NORMAL
+      const result = monitor.process({ tool: 'Write', file: 'src/c.ts' });
+      // This new denial is the only one in the window
+      expect(result.monitor.escalationLevel).toBe(ESCALATION.ELEVATED);
+      expect(result.monitor.windowedDenials).toBe(1);
+      expect(result.monitor.totalDenials).toBe(3); // cumulative total preserved
+    });
+
+    it('decays fully to NORMAL when all events expire', () => {
+      let time = 1000;
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'allow-reads',
+            name: 'Allow Reads',
+            rules: [{ action: 'file.read', effect: 'allow' }],
+          },
+          {
+            id: 'deny-writes',
+            name: 'Deny Writes',
+            rules: [{ action: 'file.write', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 2,
+        windowSize: 5000,
+        now: () => time,
+      });
+
+      // Drive to HIGH with write denials at t=1000
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/b.ts' });
+      expect(monitor.getStatus().escalationLevel).toBe(ESCALATION.HIGH);
+
+      // Advance past window — denials at t=1000 expire (cutoff = 7000-5000 = 2000)
+      time = 7000;
+
+      // Process allowed read — recalculates with empty window
+      const result = monitor.process({ tool: 'Read', file: 'src/a.ts' });
+      expect(result.monitor.escalationLevel).toBe(ESCALATION.NORMAL);
+      expect(result.monitor.windowedDenials).toBe(0);
+    });
+
+    it('emits StateChanged when escalation decays', () => {
+      let time = 1000;
+      const stateEvents: DomainEvent[] = [];
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'allow-reads',
+            name: 'Allow Reads',
+            rules: [{ action: 'file.read', effect: 'allow' }],
+          },
+          {
+            id: 'deny-writes',
+            name: 'Deny Writes',
+            rules: [{ action: 'file.write', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 2,
+        windowSize: 5000,
+        now: () => time,
+      });
+
+      monitor.bus.on(STATE_CHANGED, (event) => {
+        stateEvents.push(event as unknown as DomainEvent);
+      });
+
+      // Drive to HIGH
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/b.ts' });
+      expect(stateEvents).toHaveLength(2); // NORMAL→ELEVATED, ELEVATED→HIGH
+
+      // Advance past window
+      time = 7000;
+
+      // Process allowed action — triggers decay
+      monitor.process({ tool: 'Read', file: 'src/a.ts' });
+
+      // Should have emitted HIGH→NORMAL
+      expect(stateEvents).toHaveLength(3);
+      const decayEvent = stateEvents[2] as unknown as Record<string, unknown>;
+      expect(decayEvent.from).toBe('HIGH');
+      expect(decayEvent.to).toBe('NORMAL');
+    });
+
+    it('partial decay: some events expire, others remain', () => {
+      let time = 1000;
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 3,
+        windowSize: 5000,
+        now: () => time,
+      });
+
+      // 3 denials at t=1000 → HIGH
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/b.ts' });
+      monitor.process({ tool: 'Write', file: 'src/c.ts' });
+      expect(monitor.getStatus().escalationLevel).toBe(ESCALATION.HIGH);
+
+      // Advance time so first 3 denials expire, then add 1 new denial
+      time = 7000;
+      monitor.process({ tool: 'Write', file: 'src/d.ts' });
+
+      // Only 1 denial in window — not enough for ELEVATED (ceil(3/2) = 2)
+      const status = monitor.getStatus();
+      expect(status.escalationLevel).toBe(ESCALATION.NORMAL);
+      expect(status.windowedDenials).toBe(1);
+      expect(status.totalDenials).toBe(4); // cumulative
+    });
+
+    it('getStatus reflects windowed state after time passes', () => {
+      let time = 1000;
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 2,
+        windowSize: 5000,
+        now: () => time,
+      });
+
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      expect(monitor.getStatus().windowedDenials).toBe(1);
+
+      time = 7000;
+      const status = monitor.getStatus();
+      expect(status.windowedDenials).toBe(0);
+      expect(status.totalDenials).toBe(1);
+    });
+
+    it('windowed counts are reported in MonitorDecision', () => {
+      let time = 1000;
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 5,
+        windowSize: 5000,
+        now: () => time,
+      });
+
+      const r1 = monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      expect(r1.monitor.windowedDenials).toBe(1);
+      expect(r1.monitor.totalDenials).toBe(1);
+
+      time = 7000; // first denial expires
+      const r2 = monitor.process({ tool: 'Write', file: 'src/b.ts' });
+      expect(r2.monitor.windowedDenials).toBe(1); // only the new one
+      expect(r2.monitor.totalDenials).toBe(2); // cumulative
+    });
+
+    it('lockdown decays when denials expire outside window', () => {
+      let time = 1000;
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 2,
+        windowSize: 5000,
+        now: () => time,
+      });
+
+      // Drive to LOCKDOWN: 4 denials (2 * denialThreshold)
+      for (let i = 0; i < 4; i++) {
+        monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      }
+      expect(monitor.getStatus().escalationLevel).toBe(ESCALATION.LOCKDOWN);
+
+      // In LOCKDOWN, all actions are denied without evaluation
+      const lockedResult = monitor.process({ tool: 'Read', file: 'src/a.ts' });
+      expect(lockedResult.allowed).toBe(false);
+
+      // Advance time past window — but LOCKDOWN blocks re-evaluation
+      time = 7000;
+
+      // Still in LOCKDOWN because process() short-circuits
+      const stillLocked = monitor.process({ tool: 'Read', file: 'src/a.ts' });
+      expect(stillLocked.monitor.escalationLevel).toBe(ESCALATION.LOCKDOWN);
+
+      // Manual reset is still required to exit LOCKDOWN
+      monitor.resetEscalation();
+      expect(monitor.getStatus().escalationLevel).toBe(ESCALATION.NORMAL);
+    });
+
+    it('StateChanged event includes windowed counts', () => {
+      let time = 1000;
+      const stateEvents: DomainEvent[] = [];
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 2,
+        windowSize: 5000,
+        now: () => time,
+      });
+
+      monitor.bus.on(STATE_CHANGED, (event) => {
+        stateEvents.push(event as unknown as DomainEvent);
+      });
+
+      // Trigger escalation
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+
+      const evt = stateEvents[0] as unknown as Record<string, unknown>;
+      expect(evt.windowedDenials).toBe(1);
+      expect(evt.windowedViolations).toBe(0);
+    });
+  });
 });

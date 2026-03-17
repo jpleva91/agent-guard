@@ -30,6 +30,8 @@ interface MonitorState {
   totalEvaluations: number;
   totalDenials: number;
   totalViolations: number;
+  windowedDenials: number;
+  windowedViolations: number;
 }
 
 export interface MonitorDecision extends EngineDecision {
@@ -39,13 +41,21 @@ export interface MonitorDecision extends EngineDecision {
 export interface MonitorConfig extends EngineConfig {
   denialThreshold?: number;
   violationThreshold?: number;
+  /** Time window in milliseconds for sliding-window escalation counting (default: 300000 = 5 min) */
   windowSize?: number;
+  /** Injectable clock for testing (default: Date.now) */
+  now?: () => number;
 }
 
 interface RecentDenial {
   timestamp: number;
   action: string;
   reason: string;
+}
+
+interface RecentViolation {
+  timestamp: number;
+  invariantId: string;
 }
 
 export interface Monitor {
@@ -77,6 +87,7 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
   const denialThreshold = config.denialThreshold ?? ESCALATION_DEFAULTS.denialThreshold;
   const violationThreshold = config.violationThreshold ?? ESCALATION_DEFAULTS.violationThreshold;
   const windowSize = config.windowSize ?? ESCALATION_DEFAULTS.windowSize;
+  const clock = config.now ?? Date.now;
 
   let totalEvaluations = 0;
   let totalDenials = 0;
@@ -84,17 +95,37 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
   const denialsByAgent = new Map<string, number>();
   const violationsByInvariant = new Map<string, number>();
   const recentDenials: RecentDenial[] = [];
+  const recentViolations: RecentViolation[] = [];
   let escalationLevel: EscalationLevel = ESCALATION.NORMAL;
-  const sessionStartTime = Date.now();
+  const sessionStartTime = clock();
+
+  function pruneExpired(): void {
+    const cutoff = clock() - windowSize;
+    while (recentDenials.length > 0 && recentDenials[0].timestamp <= cutoff) {
+      recentDenials.shift();
+    }
+    while (recentViolations.length > 0 && recentViolations[0].timestamp <= cutoff) {
+      recentViolations.shift();
+    }
+  }
 
   function updateEscalation(triggerAction?: string): DomainEvent | null {
+    pruneExpired();
+    const windowedDenialCount = recentDenials.length;
+    const windowedViolationCount = recentViolations.length;
     const previousLevel = escalationLevel;
 
-    if (totalDenials >= denialThreshold * 2 || totalViolations >= violationThreshold * 2) {
+    if (
+      windowedDenialCount >= denialThreshold * 2 ||
+      windowedViolationCount >= violationThreshold * 2
+    ) {
       escalationLevel = ESCALATION.LOCKDOWN;
-    } else if (totalDenials >= denialThreshold || totalViolations >= violationThreshold) {
+    } else if (
+      windowedDenialCount >= denialThreshold ||
+      windowedViolationCount >= violationThreshold
+    ) {
       escalationLevel = ESCALATION.HIGH;
-    } else if (totalDenials >= Math.ceil(denialThreshold / 2)) {
+    } else if (windowedDenialCount >= Math.ceil(denialThreshold / 2)) {
       escalationLevel = ESCALATION.ELEVATED;
     } else {
       escalationLevel = ESCALATION.NORMAL;
@@ -109,6 +140,8 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
         trigger: triggerAction || 'unknown',
         totalDenials,
         totalViolations,
+        windowedDenials: windowedDenialCount,
+        windowedViolations: windowedViolationCount,
         denialThreshold,
         violationThreshold,
       });
@@ -153,6 +186,8 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
             totalEvaluations,
             totalDenials,
             totalViolations,
+            windowedDenials: recentDenials.length,
+            windowedViolations: recentViolations.length,
           },
         };
         bus.emit('lockdown-denial', lockedResult as unknown as Record<string, unknown>);
@@ -168,20 +203,20 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
         denialsByAgent.set(agent, (denialsByAgent.get(agent) || 0) + 1);
 
         recentDenials.push({
-          timestamp: Date.now(),
+          timestamp: clock(),
           action: result.intent.action,
           reason: result.decision.reason,
         });
-
-        while (recentDenials.length > windowSize) {
-          recentDenials.shift();
-        }
       }
 
       for (const v of result.violations) {
         totalViolations++;
         const id = v.invariantId;
         violationsByInvariant.set(id, (violationsByInvariant.get(id) || 0) + 1);
+        recentViolations.push({
+          timestamp: clock(),
+          invariantId: id,
+        });
       }
 
       const stateChangedEvent = updateEscalation(result.intent.action);
@@ -196,21 +231,26 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
           totalEvaluations,
           totalDenials,
           totalViolations,
+          windowedDenials: recentDenials.length,
+          windowedViolations: recentViolations.length,
         },
       };
     },
 
     getStatus() {
+      pruneExpired();
       return {
         escalationLevel,
         totalEvaluations,
         totalDenials,
         totalViolations,
+        windowedDenials: recentDenials.length,
+        windowedViolations: recentViolations.length,
         denialsByAgent: Object.fromEntries(denialsByAgent),
         violationsByInvariant: Object.fromEntries(violationsByInvariant),
         recentDenials: [...recentDenials],
         eventCount: store.count(),
-        uptime: Date.now() - sessionStartTime,
+        uptime: clock() - sessionStartTime,
         policyCount: engine.getPolicyCount(),
         invariantCount: engine.getInvariantCount(),
         policyErrors: engine.getPolicyErrors(),
@@ -225,6 +265,7 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
       denialsByAgent.clear();
       violationsByInvariant.clear();
       recentDenials.length = 0;
+      recentViolations.length = 0;
       bus.emit('escalation-reset', { level: ESCALATION.NORMAL });
 
       if (previousLevel !== ESCALATION.NORMAL) {

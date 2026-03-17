@@ -8,6 +8,6 @@
   "defaults": {
     "denialThreshold": 5,
     "violationThreshold": 3,
-    "windowSize": 10
+    "windowSize": 300000
   }
 }
