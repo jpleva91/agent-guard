@@ -284,7 +284,7 @@ describe('hook type detection edge cases', () => {
     await claudeHook('pre');
     const output = getStdoutOutput();
     // Should be denied through PreToolUse kernel path
-    expect(output).toContain('DENIED');
+    expect(JSON.parse(output).hookSpecificOutput.permissionDecision).toBe('deny');
   });
 
   it('treats payload with tool_output but hookType=pre as PreToolUse', async () => {
@@ -299,7 +299,7 @@ describe('hook type detection edge cases', () => {
     await claudeHook('pre');
     const output = getStdoutOutput();
     // Should be denied — pre takes precedence
-    expect(output).toContain('DENIED');
+    expect(JSON.parse(output).hookSpecificOutput.permissionDecision).toBe('deny');
   });
 });
 
@@ -375,8 +375,8 @@ describe('formatHookResponse integration', () => {
     // Must be valid JSON that Claude Code can parse
     expect(() => JSON.parse(output)).not.toThrow();
     const parsed = JSON.parse(output);
-    expect(parsed.error).toBeDefined();
-    expect(typeof parsed.error).toBe('string');
+    expect(parsed.hookSpecificOutput).toBeDefined();
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe('deny');
   });
 
   it('outputs valid JSON for denied chmod 777', async () => {
@@ -406,7 +406,7 @@ describe('formatHookResponse integration', () => {
     const output = getStdoutOutput();
     expect(output).toBeTruthy();
     const parsed = JSON.parse(output);
-    expect(parsed.error).toContain('DENIED');
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe('deny');
   });
 });
 
@@ -459,6 +459,6 @@ describe('concurrent and timing resilience', () => {
       })
     );
     await claudeHook('pre');
-    expect(getStdoutOutput()).toContain('DENIED');
+    expect(JSON.parse(getStdoutOutput()).hookSpecificOutput.permissionDecision).toBe('deny');
   });
 });
