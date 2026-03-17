@@ -238,25 +238,46 @@ If any WARNING or CRITICAL findings exist, check for an existing audit issue:
 gh issue list --state open --label "source:governance-audit" --json number,title --limit 1
 ```
 
+Apply the `report-routing` protocol:
+
+**If CRITICAL findings** (LOCKDOWN events, escalation trending toward critical, sustained high denial rate >20%) → **ALERT tier**:
+
 Ensure the label exists:
 
 ```bash
 gh label create "source:governance-audit" --color "D93F0B" --description "Auto-created by Governance Log Audit skill" 2>/dev/null || true
 ```
 
-If an existing issue is open, comment on it with the new report:
-
-```bash
-gh issue comment <ISSUE_NUMBER> --body "<audit report>"
-```
-
-If no existing issue is open, create one:
-
 ```bash
 gh issue create \
-  --title "governance-audit: <summary of top finding>" \
-  --body "<full audit report>" \
-  --label "source:governance-audit" --label "<%= labels.high %>"
+  --title "ALERT: governance-audit — <summary of critical finding>" \
+  --body "<critical findings with evidence>" \
+  --label "source:governance-audit" --label "<%= labels.critical %>"
+```
+
+**If actionable findings but not critical → REPORT tier** (write to local file):
+
+```bash
+mkdir -p .agentguard/reports
+cat > .agentguard/reports/governance-audit-$(date +%Y-%m-%d).md <<'REPORT_EOF'
+<full audit report>
+REPORT_EOF
+```
+
+Close any previous governance audit issues that are not critical:
+
+```bash
+PREV=$(gh issue list --state open --label "source:governance-audit" --json number,labels --jq '[.[] | select(.labels | map(.name) | index("<%= labels.critical %>") | not)] | .[].number' 2>/dev/null)
+for num in $PREV; do
+  gh issue close "$num" --comment "Superseded — audit reports now written to .agentguard/reports/" 2>/dev/null || true
+done
+```
+
+**If all metrics nominal → LOG tier**:
+
+```bash
+mkdir -p .agentguard/logs
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [governance-audit] Governance logs nominal. Denial rate: N%. Violations: N." >> .agentguard/logs/swarm.log
 ```
 
 ### 12. Summary
@@ -267,14 +288,15 @@ Report the audit findings to the console, including:
 - Key metrics (denial rate, violation rate, average risk score)
 - Number of warnings and critical findings
 - Risk score trend direction
-- Issue created or updated (if any)
+- Output routed to: ALERT / REPORT / LOG
 - "Governance logs nominal" if no actionable findings
 
 ## Rules
 
+- **Routine audit reports go to `.agentguard/reports/`, NOT GitHub issues** — follow the report-routing protocol
+- Create a maximum of **1 alert issue per run** — only for CRITICAL findings
 - **Read-only on log files** — never modify, truncate, or delete governance logs
-- **Never close existing audit issues** — only create new ones or comment on existing open ones
 - If no log files exist, report cleanly and STOP — do not error
-- If all metrics are within thresholds, report "Governance logs nominal" and STOP — do not create an issue
+- If all metrics are within thresholds, log and STOP — do not create an issue or report file
 - Cap pattern analysis at 20 events per type to avoid excessive processing
 - If `gh` CLI is not authenticated, still generate the report to console but skip issue creation

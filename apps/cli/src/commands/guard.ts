@@ -110,7 +110,7 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     serverUrl:
       process.env.AGENTGUARD_TELEMETRY_URL ??
       identity?.server_url ??
-      'https://agentguard-cloud.vercel.app',
+      'https://telemetry.agentguard.dev',
     runId,
     agentId: 'cli',
     installId: identity?.install_id,

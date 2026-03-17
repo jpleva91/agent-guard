@@ -33,28 +33,42 @@ grep -n "\- \[ \]" <%= paths.roadmap %>
 
 For each match, extract the item description and its parent section (Phase name).
 
-### 3. Fetch Open Issues
+### 3. Fetch Issues for Deduplication
 
-Retrieve all open issues to use as a deduplication reference:
-
-```bash
-gh issue list --state open --limit 100 --json number,title,body,labels
-```
-
-Also check for issues previously created by this skill:
+Retrieve ALL open issues (any source agent) as the deduplication reference:
 
 ```bash
-gh issue list --state open --label "source:backlog-steward" --json number,title
+gh issue list --state open --limit 200 --json number,title,body,labels
 ```
 
-### 4. Deduplicate
+Also retrieve recently closed issues (last 30 days) to avoid re-filing resolved work:
 
-For each discovered annotation or ROADMAP item, check whether an open issue already covers it:
+```bash
+gh issue list --state closed --limit 100 --json number,title,labels,closedAt
+```
 
-- Compare the ROADMAP item description against each open issue title and body
-- A match exists if the issue title or body contains the key phrase from the ROADMAP item (case-insensitive substring match)
-- Also match if the ROADMAP checkbox text appears in any open issue title
-- If a match is found, skip the item — do NOT create a duplicate
+Filter closed issues to only those closed within the last 30 days.
+
+### 4. Deduplicate (Strict Multi-Signal Matching)
+
+For each ROADMAP item, check whether an existing issue (open OR recently closed) already covers it. Use ALL of the following matching signals — a match on ANY signal means SKIP:
+
+**Signal 1 — Substring match**: The ROADMAP checkbox text appears as a substring in any issue title (case-insensitive).
+
+**Signal 2 — Keyword overlap**: Extract the 3-5 most distinctive keywords from the ROADMAP item (nouns and verbs, excluding common words like "add", "implement", "support", "the", "for", "with"). Extract the same from each issue title. If ≥60% of the ROADMAP item's keywords appear in an issue title, it is a match.
+
+**Signal 3 — Cross-agent label check**: Check issues with ANY `source:*` label, not just `source:backlog-steward`. Issues created by `source:roadmap-agent`, `source:planning-agent`, `source:test-agent`, or any other agent count as existing coverage.
+
+**Signal 4 — Closed issue recency**: If an issue matching Signals 1-3 was closed in the last 30 days, treat it as covered. Do NOT re-file work that was recently completed or intentionally closed.
+
+### 4b. Batch Dedup Verification
+
+Before creating ANY issues, compile the full list of proposed new issues (titles only). Review them as a batch and remove any that:
+- Are semantically equivalent to each other (two proposed issues covering the same work)
+- Are semantically equivalent to any existing open or recently-closed issue identified in Step 4
+- Describe work that is clearly a subset of an existing open issue
+
+Only the de-duplicated list proceeds to Step 5.
 
 ### 5. Create Issues for New Items
 

@@ -139,6 +139,8 @@ function renderTemplate(content: string, config: SwarmConfig): string {
     'paths.roadmap': paths.roadmap,
     'paths.swarmState': paths.swarmState,
     'paths.logs': paths.logs,
+    'paths.reports': paths.reports,
+    'paths.swarmLogs': paths.swarmLogs,
     'paths.cli': paths.cli,
     'labels.pending': labels.pending,
     'labels.inProgress': labels.inProgress,

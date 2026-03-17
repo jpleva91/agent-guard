@@ -224,11 +224,7 @@ Compare policy coverage against the architectural layers:
 6. New invariants to consider
 ```
 
-### 11. Create or Update Issue (if recommendations exist)
-
-```bash
-gh issue list --state open --label "source:governance-agent" --json number,title --limit 1
-```
+### 11. Route Output (Report Routing Protocol)
 
 Ensure label exists:
 
@@ -236,32 +232,58 @@ Ensure label exists:
 gh label create "source:governance-agent" --color "5319E7" --description "Auto-created by Governance Agent" 2>/dev/null || true
 ```
 
-If actionable recommendations exist, create or update an issue:
+**If critical policy gaps or validation errors found → ALERT tier**:
 
 ```bash
 gh issue create \
-  --title "governance: policy effectiveness review — <N> recommendations" \
-  --body "<full effectiveness report>" \
-  --label "source:governance-agent" --label "<%= labels.medium %>"
+  --title "ALERT: governance policy issues — <N> critical findings" \
+  --body "<critical policy findings>" \
+  --label "source:governance-agent" --label "<%= labels.critical %>"
+```
+
+**If actionable recommendations exist (but not critical) → REPORT tier**:
+
+```bash
+mkdir -p .agentguard/reports
+cat > .agentguard/reports/governance-agent-$(date +%Y-%m-%d).md <<'REPORT_EOF'
+<full effectiveness report with recommendations>
+REPORT_EOF
+```
+
+Close any previous non-critical governance review issues:
+
+```bash
+PREV=$(gh issue list --state open --label "source:governance-agent" --json number,labels --jq '[.[] | select(.labels | map(.name) | index("<%= labels.critical %>") | not)] | .[].number' 2>/dev/null)
+for num in $PREV; do
+  gh issue close "$num" --comment "Superseded — policy reviews now written to .agentguard/reports/" 2>/dev/null || true
+done
+```
+
+**If all policies effective → LOG tier**:
+
+```bash
+mkdir -p .agentguard/logs
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [governance-agent] Policies effective. N rules analyzed, N active, 0 gaps." >> .agentguard/logs/swarm.log
 ```
 
 ### 12. Summary
 
 Report:
 - **Rules analyzed**: N total, N active, N dead
-- **Invariants**: N of 8 active, N dormant
+- **Invariants**: N of 20 active, N dormant
 - **Policy validation**: pass / N errors / N warnings
 - **Policy gaps**: N detected
 - **Policy pack recommendations**: N packs suggested
 - **Recommendations**: N governance evolution items
-- **Issue**: created/updated/none needed
+- **Output routed to**: ALERT / REPORT / LOG
 - If all healthy: "Governance policies effective — no changes recommended"
 
 ## Rules
 
+- **Routine policy reviews go to `.agentguard/reports/`, NOT GitHub issues** — follow the report-routing protocol
+- Create a maximum of **1 alert issue per run** — only for critical policy gaps or validation errors
 - **Never modify policy files** — only analyze and recommend.
 - **Never modify invariant definitions** — only assess effectiveness.
-- **Never close existing governance issues** — only create or comment.
 - This skill focuses on **policy quality** — leave operational metrics to the Observability Agent.
 - If no governance logs exist, analyze the policy file statically (rules without usage data) and note the limitation.
 - If `gh` CLI is not authenticated, still generate the report to console but skip issue creation.

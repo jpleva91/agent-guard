@@ -218,25 +218,33 @@ Update:
 
 Preserve all other fields.
 
-### 8. Generate Risk Report
+### 8. Route Risk Report (Report Routing Protocol)
 
-Check if a previous risk report exists (not an alert — the routine report):
+The escalation alert (Step 6) already follows ALERT tier — it only fires at HIGH/CRITICAL.
+
+**For the routine risk report → REPORT tier** (write to local file):
 
 ```bash
-gh issue list --state open --label "source:risk-escalation" --json number,labels --jq '[.[] | select(.labels | map(.name) | contains(["<%= labels.critical %>"]) | not)] | .[0].number' 2>/dev/null
+mkdir -p .agentguard/reports
+cat > .agentguard/reports/risk-escalation-$(date +%Y-%m-%d).md <<'REPORT_EOF'
+<risk report markdown with score, breakdown, and recommendations>
+REPORT_EOF
 ```
 
-If previous routine report exists, close it:
+Close any previous routine risk report issues that are still open (never close alert issues):
+
 ```bash
-gh issue close <PREV_NUMBER> --comment "Superseded by new risk assessment."
+PREV=$(gh issue list --state open --label "source:risk-escalation" --json number,labels --jq '[.[] | select(.labels | map(.name) | index("<%= labels.critical %>") | not)] | .[].number' 2>/dev/null)
+for num in $PREV; do
+  gh issue close "$num" --comment "Superseded — routine risk reports now written to .agentguard/reports/" 2>/dev/null || true
+done
 ```
 
-Create new report:
+**If risk is NORMAL and no gating actions taken → LOG tier**:
+
 ```bash
-gh issue create \
-  --title "Risk Assessment — $(date +%Y-%m-%d) — Score: $(risk_score)/100" \
-  --body "<risk report markdown>" \
-  --label "source:risk-escalation" --label "<%= labels.pending %>"
+mkdir -p .agentguard/logs
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [risk-escalation] Risk: $(risk_score)/100 (NORMAL). No actions taken." >> .agentguard/logs/swarm.log
 ```
 
 ### 9. Summary
@@ -252,8 +260,8 @@ Report:
 
 ## Rules
 
-- Create a maximum of **1 risk report per run**
-- Create a maximum of **1 escalation alert per run**
+- **Routine risk reports go to `.agentguard/reports/`, NOT GitHub issues** — follow the report-routing protocol
+- Create a maximum of **1 escalation alert per run** — only at HIGH/CRITICAL risk levels
 - Apply a maximum of **3 labels per run** (needs:careful-review)
 - Apply a maximum of **2 gate actions per run** (do-not-merge)
 - **NEVER merge or close PRs** — only label them and comment

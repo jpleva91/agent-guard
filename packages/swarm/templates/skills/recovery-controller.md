@@ -223,24 +223,40 @@ mkdir -p .agentguard
 
 ### 11. Generate Recovery Report
 
-If any remediation actions were taken OR any WARNING/CRITICAL conditions detected, create a brief report:
+If any remediation actions were taken OR any WARNING/CRITICAL conditions detected, route the output using the `report-routing` protocol:
 
-Check if a previous recovery report exists:
+**If remediation actions were taken or CRITICAL conditions exist → write REPORT file AND create ALERT if critical**:
+
 ```bash
-gh issue list --state open --label "source:recovery-controller" --label "<%= labels.pending %>" --json number --jq '.[0].number' 2>/dev/null
+mkdir -p .agentguard/reports
+cat > .agentguard/reports/recovery-controller-$(date +%Y-%m-%d).md <<'REPORT_EOF'
+<recovery report markdown>
+REPORT_EOF
 ```
 
-If a previous report exists (not an alert — only the report), close it:
-```bash
-gh issue close <PREV_NUMBER> --comment "Superseded by new recovery report."
-```
+Only create an ALERT issue if CRITICAL conditions required human attention (e.g., system entered `safe` mode, or remediation failed):
 
-Create the new report:
 ```bash
 gh issue create \
-  --title "Recovery Report — $(date +%Y-%m-%d)" \
-  --body "<recovery report markdown>" \
-  --label "source:recovery-controller" --label "<%= labels.pending %>"
+  --title "ALERT: Recovery action required — $(date +%Y-%m-%d)" \
+  --body "<critical recovery details>" \
+  --label "source:recovery-controller" --label "<%= labels.critical %>" --label "<%= labels.pending %>"
+```
+
+Close any previous routine recovery report issues:
+
+```bash
+PREV=$(gh issue list --state open --label "source:recovery-controller" --json number,labels --jq '[.[] | select(.labels | map(.name) | index("<%= labels.critical %>") | not)] | .[].number' 2>/dev/null)
+for num in $PREV; do
+  gh issue close "$num" --comment "Superseded — recovery reports now written to .agentguard/reports/" 2>/dev/null || true
+done
+```
+
+**If all health checks passed and no remediation needed → LOG tier**:
+
+```bash
+mkdir -p .agentguard/logs
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [recovery-controller] All healthy. Mode: $(mode). No remediation needed." >> .agentguard/logs/swarm.log
 ```
 
 **Report format:**
@@ -286,8 +302,8 @@ Report:
 
 ## Rules
 
-- Create a maximum of **1 recovery report per run**
-- Create a maximum of **1 alert issue per run** (separate from the report)
+- **Routine recovery reports go to `.agentguard/reports/`, NOT GitHub issues** — follow the report-routing protocol
+- Create a maximum of **1 alert issue per run** — only for CRITICAL conditions requiring human attention
 - Close a maximum of **2 stale/stuck PRs per run**
 - Close a maximum of **2 cascade PRs per run**
 - **NEVER close PRs with `do-not-merge` label**

@@ -20,6 +20,8 @@ export interface SwarmPaths {
   readonly roadmap: string;
   readonly swarmState: string;
   readonly logs: string;
+  readonly reports: string;
+  readonly swarmLogs: string;
   readonly cli: string;
 }
 

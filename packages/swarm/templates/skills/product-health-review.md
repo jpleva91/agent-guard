@@ -180,27 +180,40 @@ The top 5 product-level actions that would improve roadmap delivery. Focus on:
 4. Phase blockers to unblock
 5. Quality improvements
 
-### 10. Publish Product Health Report
+### 10. Route Output (Report Routing Protocol)
 
-Check if a previous product health report exists:
+Apply the `report-routing` protocol to determine where output goes:
 
-```bash
-gh issue list --state open --label "source:product-agent" --json number --jq '.[0].number'
-```
+**Assess severity**: Check if ANY of the following critical conditions exist:
+- Significant value drift detected (alignment score <50%)
+- Current phase progress stalled (<10% change over 7 days with active issues)
+- Multiple critical feature gaps identified
 
-If a previous report exists, close it with a forward reference:
-
-```bash
-gh issue close <PREV_NUMBER> --comment "Superseded by new product health report."
-```
-
-Create the new report issue:
+**If critical conditions exist → ALERT tier**:
 
 ```bash
 gh issue create \
-  --title "Product Health Report — $(date +%Y-%m-%d)" \
-  --body "<product health report markdown>" \
-  --label "source:product-agent" --label "<%= labels.pending %>"
+  --title "ALERT: Product health concern — $(date +%Y-%m-%d)" \
+  --body "<critical findings with evidence>" \
+  --label "source:product-agent" --label "<%= labels.critical %>" --label "<%= labels.pending %>"
+```
+
+**Otherwise → REPORT tier** (write to local file):
+
+```bash
+mkdir -p .agentguard/reports
+cat > .agentguard/reports/product-agent-$(date +%Y-%m-%d).md <<'REPORT_EOF'
+<product health report markdown>
+REPORT_EOF
+```
+
+Close any previous product health report issues that are still open:
+
+```bash
+PREV=$(gh issue list --state open --label "source:product-agent" --json number --jq '.[].number' 2>/dev/null)
+for num in $PREV; do
+  gh issue close "$num" --comment "Superseded — reports now written to .agentguard/reports/" 2>/dev/null || true
+done
 ```
 
 ### 11. Apply Quality Labels
@@ -231,9 +244,10 @@ Report:
 
 ## Rules
 
-- Create a maximum of **1 product health report issue per run**
+- **Routine reports go to `.agentguard/reports/`, NOT GitHub issues** — follow the report-routing protocol
+- Create a maximum of **1 alert issue per run** — only for critical product health concerns
 - Apply a maximum of **5 quality labels per run**
-- **Never close issues** — only close previous product health report issues labeled `source:product-agent`
+- **Never close issues** — except previous product health report issues labeled `source:product-agent` (cleanup)
 - **Never modify issue bodies** — only add labels
 - **Never create work issues** — that is the Backlog Steward's job. Only create the report issue.
 - **Never assign issues** — that is the Coder Agent's job via `claim-issue`

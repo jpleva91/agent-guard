@@ -219,27 +219,35 @@ Show phase-level dependencies and any cross-issue dependency chains.
 - CI health: last 5 runs pass/fail
 - Governance risk score and escalation level
 
-### 11. Publish Sprint Plan
+### 11. Route Output (Report Routing Protocol)
 
-Check if a previous sprint plan issue exists:
+Apply the `report-routing` protocol. Sprint plans are normally REPORT-tier (routine scheduled output).
 
-```bash
-gh issue list --state open --label "source:planning-agent" --json number --jq '.[0].number'
-```
-
-If a previous plan exists, close it with a forward reference:
+**Write the sprint plan to a local file**:
 
 ```bash
-gh issue close <PREV_NUMBER> --comment "Superseded by new sprint plan."
+mkdir -p .agentguard/reports
+cat > .agentguard/reports/planning-agent-$(date +%Y-%m-%d).md <<'REPORT_EOF'
+<sprint plan markdown>
+REPORT_EOF
 ```
 
-Create the new sprint plan issue:
+**If critical blockers detected** (e.g., all work blocked, no actionable issues, system in LOCKDOWN) → also create an ALERT issue:
 
 ```bash
 gh issue create \
-  --title "Sprint Plan — $(date +%Y-%m-%d)" \
-  --body "<sprint plan markdown>" \
-  --label "source:planning-agent" --label "<%= labels.pending %>"
+  --title "ALERT: Sprint blocked — $(date +%Y-%m-%d)" \
+  --body "<blocker details>" \
+  --label "source:planning-agent" --label "<%= labels.critical %>" --label "<%= labels.pending %>"
+```
+
+Close any previous sprint plan issues that are still open:
+
+```bash
+PREV=$(gh issue list --state open --label "source:planning-agent" --json number --jq '.[].number' 2>/dev/null)
+for num in $PREV; do
+  gh issue close "$num" --comment "Superseded — sprint plans now written to .agentguard/reports/" 2>/dev/null || true
+done
 ```
 
 ### 12. Update Swarm State
@@ -278,7 +286,8 @@ Report:
 
 ## Rules
 
-- Create a maximum of **1 sprint plan issue per run**
+- **Sprint plans go to `.agentguard/reports/`, NOT GitHub issues** — follow the report-routing protocol
+- Create a maximum of **1 alert issue per run** — only when sprint is critically blocked
 - Apply a maximum of **10 priority labels per run**
 - Add a maximum of **3 staleness comments per run**
 - **Never close issues** — only comment with recommendations and close previous sprint plan issues

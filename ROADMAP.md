@@ -73,7 +73,6 @@ A comprehensive codebase audit assessed the current system against the strategic
 
 | Component | Status | Key Files |
 |-----------|--------|-----------|
-| Cross-session Analytics (aggregation, clustering, trends) | Migrated to agentguard-cloud | — |
 | Plugin Ecosystem (discovery, registry, validation) | Implemented | `packages/plugins/src/` |
 | Renderer Plugin System | Implemented | `packages/renderers/src/` |
 | CLI (guard, inspect, events, replay, export, import, simulate, ci-check, plugin, policy, policy-verify, claude-hook, claude-init, init, diff, evidence-pr, traces, session-viewer, status) | Implemented | `apps/cli/src/` |
@@ -93,7 +92,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Multi-Agent Identity & Capability Tokens | Aspirational | Types defined but never used. Basic session ID hashing exists |
 | Shared State Contract & Heartbeat | Not Started | Would require architectural redesign |
 | Formal Verification (Z3/SMT) | Not Started | No dependencies, no symbolic analysis |
-| Automated Invariant Learning | Not Started | Analytics foundation migrated to agentguard-cloud; no synthesis/feedback loop |
+| Automated Invariant Learning | Not Started | Analytics foundation removed; no synthesis/feedback loop |
 
 ---
 
@@ -108,7 +107,6 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Event Model (49 kinds) | Comprehensive | Production |
 | Simulation & Forecasting | Fully Implemented | Production |
 | Escalation State Machine | Implemented | Functional (events persisted as StateChanged) |
-| Cross-session Analytics | Migrated to agentguard-cloud | Cloud-native implementation |
 | Plugin Sandbox | Implemented | Application-level only |
 | Project Azazel (eBPF) | Not Started | Aspirational |
 | OS-Level Sandboxing | Not Started | Aspirational |
@@ -231,24 +229,6 @@ Monitor escalation state transitions are now persisted as `StateChanged` DomainE
 - [ ] JetBrains plugin (IntelliJ/WebStorm)
 - [ ] Claude Code deep integration (full governance kernel in hook pipeline)
 
-### Cloud Migration — agentguard-cloud
-
-> **Theme:** Cloud-native analytics, telemetry, and storage capabilities have migrated to the private `agentguard-cloud` repository.
-
-The following packages and capabilities were migrated from the public repo to `agentguard-cloud`:
-
-- **packages/analytics/** — Cross-session violation analytics (aggregation, clustering, trends, risk scoring, reporting)
-- **packages/telemetry/** — Runtime telemetry and logging
-- **packages/telemetry-client/** — Telemetry client (identity, signing, queue, sender)
-- **packages/adapter-openclaw/** — OpenClaw adapter
-- **packages/sentinel01/** — Robotics/edge module
-- **apps/telemetry-server/** — Telemetry ingestion server (Express, Lambda, Vercel)
-- **apps/agentguardhq/** — Digital office visualization
-- **packages/storage/** (partial) — Firestore backends, SQLite analytics, webhook sink
-- **apps/cli/** (partial) — `telemetry` command removed; `analytics` command simplified
-
-The public repo retains the core governance kernel, policy engine, invariant system, event model, plugin ecosystem, SQLite storage (event/decision persistence and session tracking), and CLI.
-
 ---
 
 ## Active Roadmap
@@ -332,24 +312,16 @@ Prior art: Kubernetes Capability Primitives (KCP), OS capability-based security 
 The JSONL persistence layer was the right starting point — append-only, human-readable, zero dependencies. But it doesn't scale: every query requires filesystem enumeration + full file parsing, and hundreds of `.jsonl` files accumulate in `.agentguard/`.
 
 - [x] SQLite storage adapter implementing existing `EventStore` interface
-- [x] ~~Firestore storage adapter for cloud-native deployments~~ — Migrated to agentguard-cloud
-- [x] ~~`agentguard init firestore` scaffolding~~ — Migrated to agentguard-cloud
 - [x] Schema design: `events`, `decisions`, `sessions` tables with JSON payload columns
 - [x] Indexed columns: `kind`, `timestamp`, `runId`, `actionType`, `fingerprint`
 - [ ] Migration utility: bulk-import existing `.jsonl` files into SQLite (`agentguard migrate`)
 - [x] Query API: filter by time range, event kind, action type, run ID without loading all events
-- [x] ~~Aggregation queries for analytics~~ — Migrated to agentguard-cloud
 - [x] JSONL export compatibility — `agentguard export` still produces portable JSONL
 - [x] Storage location: `~/.agentguard/agentguard.db` (home directory, out of repo tree)
-- ~~Retain JSONL as optional fallback/streaming sink for real-time tailing~~ — JSONL storage backend removed (#503); SQLite is now the only backend
-- [x] ~~Firestore NoSQL storage backend for cross-session governance data sharing~~ — Migrated to agentguard-cloud
-- [x] ~~`agentguard init firestore` scaffold command~~ — Migrated to agentguard-cloud
 - [x] Wire up `sessions` table — insert on `RunStarted`, update on `RunEnded` (`packages/storage/src/sqlite-session.ts`)
 - [ ] Migration v2: add `action_type` column to `events` table, `severity` column to `decisions` table
 - [ ] Add composite index `(kind, timestamp)` on events for covering index scans
 - [ ] Add standalone index on `decisions.action_type` for filtered queries
-- [ ] ~~Built-in SQL analytics queries~~ — Migrated to agentguard-cloud
-- [ ] ~~Replace `loadAllEventsSqlite` full table scan with SQL-native aggregation~~ — Migrated to agentguard-cloud
 - [x] Prepared statement caching for `EventStore.query()` hot paths (`packages/storage/src/sqlite-store.ts`)
 
 ### Phase 11 — Runtime Tracing & Observability `PLANNED`
@@ -357,13 +329,9 @@ The JSONL persistence layer was the right starting point — append-only, human-
 > **Theme:** Close the trust gap between application-level logging and actual system behavior. Governance cost should scale with risk, not activity.
 
 - [ ] Adaptive governance depth — tiered evaluation pipeline where known-safe patterns get cached fast-path allow (sub-ms), normal actions get full policy evaluation (~1ms), and high-risk actions get simulation + deep invariant checks (~10-50ms). Reduces throughput impact for typical workflows while maintaining deep analysis where it matters
-- [ ] ~~Enhanced telemetry beyond current flat event logging~~ — Migrated to agentguard-cloud
 - [x] Run comparison and diff (`agentguard diff <run1> <run2>`) (`apps/cli/src/commands/diff.ts`)
-- [x] ~~Risk scoring per agent run~~ — Migrated to agentguard-cloud
-- [x] ~~Failure clustering and trend detection~~ — Migrated to agentguard-cloud
 - [ ] Timeline viewer for governance sessions (`agentguard replay --ui`)
 - [x] Policy evaluation traces CLI (`agentguard traces`)
-- [ ] ~~Metrics export (Prometheus / OpenTelemetry)~~ — Migrated to agentguard-cloud
 - [x] Foundation for kernel-level tracing (define tracepoint interface)
 - [ ] Application-level process and network monitoring (Node.js-based, pre-eBPF)
 
@@ -439,7 +407,6 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [ ] Multi-repo governance (single policy across repositories)
 - [ ] Team policy management dashboard
 
-> **Note:** Centralized event ingestion and remote governance capabilities are partially addressed by `agentguard-cloud`, which provides cloud-native storage (Firestore), telemetry ingestion, and cross-session analytics.
 
 ### Ongoing — Documentation & White Paper `CONTINUOUS`
 

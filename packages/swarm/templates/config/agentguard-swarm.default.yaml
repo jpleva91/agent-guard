@@ -26,6 +26,8 @@ swarm:
     roadmap: ROADMAP.md
     swarmState: .agentguard/swarm-state.json
     logs: logs/runtime-events.jsonl
+    reports: .agentguard/reports
+    swarmLogs: .agentguard/logs/swarm.log
     cli: node apps/cli/dist/bin.js
 
   # GitHub label scheme used by the swarm for issue/PR management.

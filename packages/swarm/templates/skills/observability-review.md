@@ -293,32 +293,21 @@ Top 5 operational actions prioritized by severity:
 4. Policy gaps to address
 5. Infrastructure improvements
 
-### 12. Publish Observability Report
+### 12. Route Output (Report Routing Protocol)
 
-Check if a previous observability report exists:
+Apply the `report-routing` protocol to determine where output goes:
 
-```bash
-gh issue list --state open --label "source:observability-agent" --json number --jq '.[0].number'
-```
+**Assess severity**: Check if ANY of the following critical conditions exist:
+- LOCKDOWN event detected
+- CRITICAL anomalies found
+- CI completely broken (0% pass rate)
+- Risk score >50
+- Sustained denial rate >20%
+- Deadlock or livelock detected
 
-If a previous report exists, close it with a forward reference:
+**If critical conditions exist → ALERT tier**:
 
-```bash
-gh issue close <PREV_NUMBER> --comment "Superseded by new observability report."
-```
-
-Create the new report issue:
-
-```bash
-gh issue create \
-  --title "Observability Report — $(date +%Y-%m-%d)" \
-  --body "<observability report markdown>" \
-  --label "source:observability-agent" --label "<%= labels.pending %>"
-```
-
-### 13. Raise Alerts for Critical Anomalies
-
-If any CRITICAL anomalies were detected (LOCKDOWN events, sustained high denial rate, CI completely broken, critical risk score), create an alert issue:
+Check for existing alert from this agent:
 
 ```bash
 gh issue list --state open --label "source:observability-agent" --label "<%= labels.critical %>" --json number,title
@@ -333,7 +322,32 @@ gh issue create \
   --label "source:observability-agent" --label "<%= labels.critical %>" --label "<%= labels.pending %>"
 ```
 
-Cap at **1 alert issue per run**.
+Cap at **1 alert issue per run**. Do NOT create a separate "Observability Report" issue.
+
+**Always write the full report to REPORT tier** (regardless of alert):
+
+```bash
+mkdir -p .agentguard/reports
+cat > .agentguard/reports/observability-agent-$(date +%Y-%m-%d).md <<'REPORT_EOF'
+<full observability report markdown>
+REPORT_EOF
+```
+
+Close any previous observability report issues that are still open:
+
+```bash
+PREV=$(gh issue list --state open --label "source:observability-agent" --json number --jq '[.[] | select(.labels | map(.name) | index("<%= labels.critical %>") | not)] | .[].number' 2>/dev/null)
+for num in $PREV; do
+  gh issue close "$num" --comment "Superseded — reports now written to .agentguard/reports/" 2>/dev/null || true
+done
+```
+
+**If no anomalies detected → LOG tier** (in addition to REPORT file):
+
+```bash
+mkdir -p .agentguard/logs
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [observability-agent] No anomalies. Denial rate: N%. CI pass rate: N%. Risk: N/100." >> .agentguard/logs/swarm.log
+```
 
 ### 14. Swarm Health Check
 
@@ -452,8 +466,8 @@ Report:
 
 ## Rules
 
-- Create a maximum of **1 observability report issue per run**
-- Create a maximum of **1 alert issue per run**
+- **Routine reports go to `.agentguard/reports/`, NOT GitHub issues** — follow the report-routing protocol
+- Create a maximum of **1 alert issue per run** — only for CRITICAL anomalies
 - **Never modify governance logs** — this agent is strictly read-only on telemetry data
 - **Never modify source code or tests** — only report findings
 - **Never close issues** — only close previous observability report issues labeled `source:observability-agent`

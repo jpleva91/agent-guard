@@ -50,13 +50,26 @@ For each feature in active phases, extract:
 - Role (becomes role label for agent discovery)
 - Notes (becomes context section in issue body)
 
-### 4. Fetch Existing Issues
+### 4. Fetch Existing Issues (Comprehensive Dedup)
+
+Retrieve all open issues regardless of source agent:
 
 ```bash
 gh issue list --state open --json number,title,labels --limit 200
 ```
 
-Build a lookup map of existing issue titles to avoid creating duplicates.
+Also retrieve recently closed issues (last 30 days) to avoid re-filing resolved work:
+
+```bash
+gh issue list --state closed --limit 100 --json number,title,labels,closedAt
+```
+
+Build a lookup map of existing issue titles to avoid creating duplicates. Include issues from ALL `source:*` labels (not just `source:roadmap-agent`) — issues created by `source:backlog-steward`, `source:planning-agent`, `source:test-agent`, or any other agent count as existing coverage.
+
+**Matching rules** (match on ANY signal → skip):
+- **Substring match**: Feature name appears as substring in issue title (case-insensitive)
+- **Keyword overlap**: Extract 3-5 key terms from feature name; if ≥60% appear in an issue title, it is a match
+- **Closed recency**: If a matching issue was closed in the last 30 days, treat it as covered — do NOT re-create
 
 ### 5. Ensure Labels Exist
 

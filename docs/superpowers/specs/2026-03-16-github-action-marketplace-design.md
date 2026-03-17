@@ -18,9 +18,7 @@ AgentGuard has a fully-featured governance runtime, CI check command, and eviden
 - **JS action:** Native Check Runs API, inline PR comments — but duplicates CLI logic, heavier maintenance. Future upgrade path.
 - **Docker:** Hermetic but slow cold start (~30s), Linux-only. Overkill.
 
-## OSS vs Cloud Boundary
-
-### OSS repo (`agent-guard`)
+## Scope
 
 - GitHub Action (`apps/github-action/`)
 - Enhanced PR comment report (markdown generation, risk scoring)
@@ -29,18 +27,6 @@ AgentGuard has a fully-featured governance runtime, CI check command, and eviden
 - Session export/import (JSONL)
 - Reusable workflow
 - Static repo badge
-
-### Cloud repo (`agentguard-cloud`)
-
-- GitHub App (OAuth, webhooks, org-wide installation)
-- Cross-repo governance dashboard
-- Org-level policy management & central reporting
-- AI usage audit analytics
-- Dynamic badge service (server-rendered)
-- Telemetry aggregation
-- Billing/licensing
-
-**Principle:** What runs in your CI and produces a local report = OSS. What aggregates, dashboards, and manages at org scale = cloud/paid.
 
 ## User-Facing API
 
@@ -411,14 +397,7 @@ Major version tag (`v1`) that floats, plus pinnable semver tags (`v1.0.0`, `v1.1
 |------|------|------|-------|
 | Copilot CLI safety wrapper | `agent-guard` (OSS) | Tier 1 follow-up | |
 | Inline PR review comments on specific lines | `agent-guard` (OSS) -- JS action upgrade | Tier 2 | |
-| GitHub App with OAuth, webhooks, org install | `agentguard-cloud` | Tier 2 | `[cloud-repo]` |
 | Check Runs API integration | `agent-guard` (OSS) -- JS action upgrade | Tier 2 | |
-| Cross-repo governance dashboard | `agentguard-cloud` | Tier 2 | `[cloud-repo]` |
-| Org-level policy management & central reporting | `agentguard-cloud` | Tier 2 | `[cloud-repo]` |
-| Dynamic badge service (server-rendered) | `agentguard-cloud` | Tier 3 | `[cloud-repo]` |
-| AI usage audit report ("82% AI-generated") | `agentguard-cloud` | Tier 3 | `[cloud-repo]` |
-| Telemetry aggregation | `agentguard-cloud` | Tier 3 | `[cloud-repo]` |
-| Billing/licensing | `agentguard-cloud` | Tier 3 | `[cloud-repo]` |
 
 ## Success Criteria
 

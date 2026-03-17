@@ -17,7 +17,7 @@ The system has one architectural spine: the **canonical event model**. All syste
 - Each package compiles independently via `tsc`; CLI bundle via `esbuild` in `apps/cli`
 - Scoped npm packages: `@red-codes/*` for workspace modules, `@red-codes/agentguard` for published CLI
 - CLI has runtime dependencies (`chokidar`, `commander`, `pino`); optional `better-sqlite3` for SQLite storage backend
-- Cloud-native features (analytics, telemetry, Firestore) have migrated to the private `agentguard-cloud` repository
+- Analytics, telemetry, and Firestore packages have been removed from this repo (out of scope for the OSS kernel)
 - Build tooling: Turbo + tsc + esbuild + vitest (dev dependencies only)
 
 ## Quick Start
