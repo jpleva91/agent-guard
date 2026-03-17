@@ -72,7 +72,10 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
 }
 
 /** Returns true if the action was denied. */
-async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[]): Promise<boolean> {
+async function handlePreToolUse(
+  payload: ClaudeCodeHookPayload,
+  cliArgs: string[]
+): Promise<boolean> {
   const { processClaudeCodeHook, formatHookResponse } = await import('@red-codes/adapters');
   const { createKernel } = await import('@red-codes/kernel');
   const { loadPolicyDefs } = await import('../policy-resolver.js');
