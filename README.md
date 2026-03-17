@@ -20,18 +20,29 @@ agent proposes action  →  policy evaluated  →  invariants checked  →  allo
 
 ## Quick Start
 
-**Install from npm and see it work in 30 seconds:**
+**Install and activate governance in 30 seconds:**
 
 ```bash
-# 1. Install globally
+# 1. Install AgentGuard
 npm install -g @red-codes/agentguard
 
-# 2. Set up Claude Code hooks
+# 2. (Optional) Install RTK for 60-90% token savings
+# macOS/Linux:
+curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/main/install.sh | bash
+# Or via Homebrew:
+brew install rtk-ai/tap/rtk
+
+# 3. Set up Claude Code hooks
 agentguard claude-init
 
-# 3. Check governance status
+# 4. Check governance status
 agentguard status
+# ✓ Claude Code hooks
+# ✓ Policy file (agentguard.yaml)
+# ⚡ Token optimization  rtk v0.30.0 (60-90% token savings)
 ```
+
+That's it. Start a Claude Code session and every tool call is now governed. Dangerous actions (push to main, write to .env, rm -rf, force push) are **blocked before execution**.
 
 **Try it on your own repo:**
 
