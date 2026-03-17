@@ -33,6 +33,7 @@ import {
   ACTION_FAILED,
   DECISION_RECORDED,
   SIMULATION_COMPLETED,
+  INTENT_DRIFT_DETECTED,
 } from '@red-codes/events';
 import { INTERVENTION } from './decision.js';
 import type { InterventionType } from './decision.js';
@@ -42,6 +43,8 @@ import { checkAllInvariants, buildSystemState } from '@red-codes/invariants';
 import { DEFAULT_INVARIANTS } from '@red-codes/invariants';
 import type { SimulatorRegistry, ImpactForecast } from './simulation/types.js';
 import { buildImpactForecast } from './simulation/forecast.js';
+import type { IntentSpec, IntentDriftResult } from './intent.js';
+import { checkIntentAlignment } from './intent.js';
 /** Minimal tracer interface (previously from @red-codes/telemetry, now inlined). */
 interface TraceSpan {
   setAttribute(key: string, value: string | number | boolean): void;
@@ -71,6 +74,8 @@ export interface KernelResult {
   rolledBack?: boolean;
   /** True if the action was modified by a MODIFY intervention and re-evaluated successfully */
   modified?: boolean;
+  /** Intent drift results (advisory — present when an IntentSpec is configured) */
+  intentDrift?: IntentDriftResult;
 }
 
 /**
@@ -138,6 +143,13 @@ export interface KernelConfig extends MonitorConfig {
   modifyHandler?: ModifyHandler;
   /** Timeout (ms) for MODIFY interventions before auto-deny. Default: 30000 */
   modifyTimeoutMs?: number;
+  /**
+   * Intent specification — declares what the agent is allowed to do.
+   * When provided, the kernel compares each action against this spec and emits
+   * IntentDriftDetected events for actions that fall outside declared intent.
+   * Advisory mode only — does not block execution.
+   */
+  intentSpec?: IntentSpec;
 }
 
 export interface Kernel {
@@ -173,8 +185,10 @@ export function createKernel(config: KernelConfig = {}): Kernel {
   const modifyHandler = config.modifyHandler ?? null;
   const modifyTimeoutMs = config.modifyTimeoutMs ?? 30_000;
   const tracer = config.tracer ?? null;
+  const intentSpec = config.intentSpec ?? null;
   const actionLog: KernelResult[] = [];
   let eventCount = 0;
+  let filesModifiedCount = 0;
 
   const monitor = createMonitor({
     policyDefs: config.policyDefs,
@@ -868,6 +882,41 @@ export function createKernel(config: KernelConfig = {}): Kernel {
         });
         allEvents.push(allowedEvent);
 
+        // 5c. Intent drift check (advisory — does not block execution)
+        let intentDrift: IntentDriftResult | undefined;
+        if (intentSpec) {
+          intentDrift = checkIntentAlignment(decision.intent, intentSpec, {
+            filesModified: filesModifiedCount,
+          });
+
+          if (!intentDrift.aligned) {
+            for (const drift of intentDrift.drifts) {
+              const driftEvent = createEvent(INTENT_DRIFT_DETECTED, {
+                actionType: decision.intent.action,
+                target: decision.intent.target,
+                driftType: drift.driftType,
+                reason: drift.reason,
+                severity: 'advisory',
+                metadata: {
+                  runId,
+                  intentDescription: intentSpec.description,
+                },
+              });
+              allEvents.push(driftEvent);
+              sinkEvent(driftEvent);
+            }
+          }
+
+          // Track file modifications for scope limit checking
+          if (
+            decision.intent.action === 'file.write' ||
+            decision.intent.action === 'file.delete' ||
+            decision.intent.action === 'file.move'
+          ) {
+            filesModifiedCount++;
+          }
+        }
+
         // 6. Execute via adapter (unless dry-run)
         let execution: ExecutionResult | null = null;
         let executionDurationMs: number | null = null;
@@ -1045,6 +1094,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
           runId,
           decisionRecord,
           ...(wasModified ? { modified: true, intervention: INTERVENTION.MODIFY } : {}),
+          ...(intentDrift ? { intentDrift } : {}),
         };
         actionLog.push(result);
         return result;

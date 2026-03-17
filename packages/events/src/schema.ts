@@ -79,6 +79,9 @@ export const ADOPTION_ANALYSIS_FAILED: EventKind = 'AdoptionAnalysisFailed';
 // Denial Learning
 export const DENIAL_PATTERN_DETECTED: EventKind = 'DenialPatternDetected';
 
+// Intent Drift
+export const INTENT_DRIFT_DETECTED: EventKind = 'IntentDriftDetected';
+
 // Environmental Enforcement
 // TODO(issue-225): Reserved for future direct emission from the shell adapter when IDE
 // context variables are stripped. Currently the kernel emits InvariantViolation when the
@@ -269,6 +272,10 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   [DENIAL_PATTERN_DETECTED]: {
     required: ['actionType', 'occurrences', 'confidence'],
     optional: ['invariant', 'policyRule', 'suggestion', 'resolution'],
+  },
+  [INTENT_DRIFT_DETECTED]: {
+    required: ['actionType', 'target', 'driftType'],
+    optional: ['intentSpec', 'reason', 'severity', 'metadata'],
   },
   [IDE_SOCKET_ACCESS_BLOCKED]: {
     required: ['socketPattern', 'source'],

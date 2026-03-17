@@ -10,5 +10,15 @@
   "WebFetch": "http.request",
   "WebSearch": "http.request",
   "Agent": "shell.exec",
-  "Skill": "shell.exec"
+  "Skill": "shell.exec",
+
+  "create": "file.write",
+  "edit": "file.write",
+  "view": "file.read",
+  "bash": "shell.exec",
+  "powershell": "shell.exec",
+  "glob": "file.read",
+  "grep": "file.read",
+  "web_fetch": "http.request",
+  "task": "shell.exec"
 }

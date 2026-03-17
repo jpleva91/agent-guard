@@ -39,7 +39,13 @@ export interface EvidencePack {
 
 /** A single step in the governance evaluation path */
 export interface EvaluationStep {
-  phase: 'normalization' | 'policy-evaluation' | 'invariant-check' | 'simulation' | 'verdict';
+  phase:
+    | 'normalization'
+    | 'policy-evaluation'
+    | 'invariant-check'
+    | 'simulation'
+    | 'intent-alignment'
+    | 'verdict';
   description: string;
   outcome: 'pass' | 'fail' | 'skip' | 'match' | 'no-match';
   details?: Record<string, unknown>;
@@ -84,6 +90,16 @@ export interface ExplanationChain {
   derivation: string;
 }
 
+/** Summary of intent alignment for inclusion in evidence packs */
+export interface IntentAlignmentSummary {
+  aligned: boolean;
+  drifts: Array<{
+    driftType: string;
+    reason: string;
+  }>;
+  intentDescription?: string;
+}
+
 /** Explainable evidence pack — extends EvidencePack with decision explanation */
 export interface ExplainableEvidencePack extends EvidencePack {
   schemaVersion: string;
@@ -93,6 +109,8 @@ export interface ExplainableEvidencePack extends EvidencePack {
   confidence: number;
   /** Formal separation of probabilistic advice from deterministic adjudication */
   explanationChain: ExplanationChain;
+  /** Intent alignment summary (present when IntentSpec is configured) */
+  intentAlignment?: IntentAlignmentSummary;
 }
 
 /** Serialized form suitable for JSON export and long-term archival */
@@ -127,6 +145,7 @@ export interface SerializedEvidencePack {
   }>;
   relatedEventIds: string[];
   summary: string;
+  intentAlignment?: IntentAlignmentSummary;
 }
 
 function generatePackId(timestamp: number, intent: NormalizedIntent): string {
@@ -215,7 +234,8 @@ function buildEvaluationPath(
   intent: NormalizedIntent,
   decision: EvalResult,
   violations: InvariantCheck[],
-  simulation: SimulationSummary | null
+  simulation: SimulationSummary | null,
+  intentAlignment?: IntentAlignmentSummary | null
 ): EvaluationStep[] {
   const steps: EvaluationStep[] = [];
 
@@ -300,7 +320,30 @@ function buildEvaluationPath(
     });
   }
 
-  // Step 5: Final verdict
+  // Step 5: Intent alignment (if IntentSpec is configured)
+  if (intentAlignment) {
+    if (intentAlignment.aligned) {
+      steps.push({
+        phase: 'intent-alignment',
+        description: 'Action aligns with declared intent',
+        outcome: 'pass',
+        details: intentAlignment.intentDescription
+          ? { intentDescription: intentAlignment.intentDescription }
+          : undefined,
+      });
+    } else {
+      for (const drift of intentAlignment.drifts) {
+        steps.push({
+          phase: 'intent-alignment',
+          description: `Intent drift (advisory): ${drift.reason}`,
+          outcome: 'fail',
+          details: { driftType: drift.driftType },
+        });
+      }
+    }
+  }
+
+  // Step 6: Final verdict
   steps.push({
     phase: 'verdict',
     description: `Final verdict: ${decision.decision.toUpperCase()} — ${decision.reason}`,
@@ -437,8 +480,9 @@ export function createExplainableEvidencePack(params: {
   violations?: InvariantCheck[];
   events?: DomainEvent[];
   simulation?: SimulationSummary | null;
+  intentAlignment?: IntentAlignmentSummary | null;
 }): { pack: ExplainableEvidencePack; event: DomainEvent } {
-  const { simulation = null } = params;
+  const { simulation = null, intentAlignment = null } = params;
   const { pack: basePack, event } = createEvidencePack(params);
 
   const violations = params.violations ?? [];
@@ -446,7 +490,8 @@ export function createExplainableEvidencePack(params: {
     params.intent,
     params.decision,
     violations,
-    simulation
+    simulation,
+    intentAlignment
   );
   const provenance = buildProvenance(params.decision, violations, simulation);
   const explanationChain = buildExplanationChain(params.decision, provenance);
@@ -459,6 +504,7 @@ export function createExplainableEvidencePack(params: {
     verdictType: 'deterministic',
     confidence: 1.0,
     explanationChain,
+    ...(intentAlignment ? { intentAlignment } : {}),
   };
 
   return { pack, event };
@@ -494,5 +540,6 @@ export function serializeEvidencePack(pack: ExplainableEvidencePack): Serialized
     violations: pack.violations,
     relatedEventIds: pack.events,
     summary: pack.summary,
+    ...(pack.intentAlignment ? { intentAlignment: pack.intentAlignment } : {}),
   };
 }
