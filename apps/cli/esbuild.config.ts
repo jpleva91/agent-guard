@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild';
-import { readFileSync } from 'fs';
+import { cpSync, readFileSync } from 'fs';
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 
@@ -25,5 +25,10 @@ await esbuild.build({
   ...shared,
   entryPoints: ['src/bin.ts'],
 });
+
+// Copy hooks/ and templates/ into dist so they ship with the npm package
+// (npm rejects path traversals like ../../hooks/ in the files array)
+cpSync('../../hooks', 'dist/hooks', { recursive: true });
+cpSync('../../templates', 'dist/templates', { recursive: true });
 
 console.log('CLI build complete.');
