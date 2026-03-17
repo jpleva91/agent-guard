@@ -65,7 +65,7 @@ AI coding agents execute file writes, shell commands, and git operations autonom
 AgentGuard adds a **deterministic decision point** between proposal and execution:
 
 - **Safety policies** — declare what agents can and cannot do in YAML
-- **Invariant enforcement** — 20 built-in checks (secrets, protected branches, blast radius, skill/task protection, package script injection, lockfile integrity, CI/CD config, permission escalation, governance self-modification, container config, environment variables, recursive operations, large file writes, network egress, destructive migrations, transitive effect analysis) run on every action
+- **Invariant enforcement** — 21 built-in checks (secrets, protected branches, blast radius, skill/task protection, package script injection, lockfile integrity, CI/CD config, permission escalation, governance self-modification, container config, environment variables, recursive operations, large file writes, network egress, destructive migrations, transitive effect analysis, IDE socket access) run on every action
 - **Audit trail** — every decision is recorded in structured SQLite, inspectable after the fact
 - **Session debugging** — replay any agent session to see exactly what happened and why
 
@@ -75,7 +75,7 @@ AgentGuard evaluates every agent action through a **governed action kernel**:
 
 1. **Normalize** — Claude Code tool calls (Bash, Write, Edit, Read) are mapped to canonical action types (shell.exec, file.write, file.read)
 2. **Evaluate** — policies match against the action (deny git.push to main, deny destructive commands, enforce scope limits)
-3. **Check invariants** — 20 built-in safety checks run on every action
+3. **Check invariants** — 21 built-in safety checks run on every action
 4. **Execute** — if allowed, the action runs via adapters (file, shell, git handlers)
 5. **Emit events** — full lifecycle events sunk to SQLite for audit trail
 
@@ -83,7 +83,7 @@ AgentGuard evaluates every agent action through a **governed action kernel**:
 
 ```
   AgentGuard Runtime Active
-  policy: agentguard.yaml | invariants: 20 active
+  policy: agentguard.yaml | invariants: 21 active
 
   ✓ file.write src/auth/service.ts
   ✓ shell.exec npm test
@@ -123,7 +123,7 @@ Drop an `agentguard.yaml` in your repo root — the CLI picks it up automaticall
 
 ## Built-in Invariants
 
-20 safety invariants run on every action evaluation:
+21 safety invariants run on every action evaluation:
 
 | Invariant | Severity | Description |
 |-----------|----------|-------------|
@@ -147,6 +147,7 @@ Drop an `agentguard.yaml` in your repo root — the CLI picks it up automaticall
 | **transitive-effect-analysis** | 4 (high) | Analyzes written files for downstream effects that would violate policy |
 | **recursive-operation-guard** | 2 (low) | Flags find -exec, xargs combined with write/delete operations |
 | **lockfile-integrity** | 2 (low) | Ensures package.json changes sync with lockfiles |
+| **no-ide-socket-access** | 4 (high) | Blocks access to IDE socket files (vscode-ipc-*.sock) |
 
 ## RTK Token Optimization
 
@@ -232,7 +233,8 @@ agentguard plugin install <path>          # Install a plugin from a local path
 agentguard plugin remove <id>            # Remove a plugin by ID
 agentguard plugin search [query]          # Search for plugins on npm
 
-# === Telemetry ===
+# === Trust & Telemetry ===
+agentguard trust                          # Manage policy and hook trust verification
 agentguard telemetry                      # Manage telemetry enrollment and settings
 agentguard help                           # Show all commands
 ```
@@ -340,7 +342,8 @@ packages/
 ├── core/src/               # @red-codes/core — Shared types, actions, hash, rng, execution-log
 ├── events/src/             # @red-codes/events — Canonical event model (schema, bus, store)
 ├── policy/src/             # @red-codes/policy — Policy evaluation, YAML/JSON loaders, composition
-├── invariants/src/         # @red-codes/invariants — 20 built-in invariant definitions + checker
+├── invariants/src/         # @red-codes/invariants — 21 built-in invariant definitions + checker
+├── invariant-data-protection/src/ # @red-codes/invariant-data-protection — Data protection invariant plugin
 ├── kernel/src/             # @red-codes/kernel — Governed action kernel (orchestrator, AAB, decisions, simulation)
 ├── adapters/src/           # @red-codes/adapters — Execution adapters (file, shell, git, claude-code)
 ├── analytics/src/          # @red-codes/analytics — Cross-session violation analytics
@@ -356,6 +359,7 @@ apps/
 │   ├── bin.ts              # CLI entry point
 │   ├── evidence-summary.ts # Evidence summary generator for PR reports
 │   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, etc.
+├── mcp-server/src/         # @red-codes/mcp-server — MCP governance server (14 governance tools)
 ├── vscode-extension/src/   # agentguard-vscode — VS Code extension
 │   ├── extension.ts        # Sidebar panels, file watcher, notifications
 │   ├── providers/          # Tree data providers (run status, run history, recent events)
@@ -365,7 +369,7 @@ apps/
 crates/
 └── kernel-core/            # Rust kernel (in development)
 
-policies/                   # Policy packs (YAML: ci-safe, enterprise, open-source, strict)
+policies/                   # Policy packs (YAML: ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
 ```
 
 ## npm Packages

@@ -46,7 +46,8 @@ packages/
 ├── core/          @red-codes/core — Shared utilities (types, actions, hash, execution-log)
 ├── events/        @red-codes/events — Canonical event model (schema, bus, store)
 ├── policy/        @red-codes/policy — Policy system (composer, evaluator, loaders, pack loader)
-├── invariants/    @red-codes/invariants — Invariant system (20 built-in definitions, checker)
+├── invariants/    @red-codes/invariants — Invariant system (21 built-in definitions, checker)
+├── invariant-data-protection/ @red-codes/invariant-data-protection — Data protection invariant plugin
 ├── kernel/        @red-codes/kernel — Governed action kernel (orchestrate, normalize, decide, escalate)
 ├── adapters/      @red-codes/adapters — Execution adapters (file, shell, git, claude-code)
 ├── analytics/     @red-codes/analytics — Cross-session violation analytics
@@ -59,10 +60,11 @@ packages/
 
 apps/
 ├── cli/           @red-codes/agentguard — CLI entry point and commands (published npm package)
+├── mcp-server/    @red-codes/mcp-server — MCP governance server (14 governance tools)
 ├── vscode-extension/  agentguard-vscode — VS Code extension (sidebar panels, notifications, diagnostics)
 └── telemetry-server/  @red-codes/telemetry-server — Telemetry ingestion server (enrollment, batch ingest)
 
-policies/          Policy packs (YAML: ci-safe, enterprise, open-source, strict)
+policies/          Policy packs (YAML: ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
 ```
 
 ## Layer Rules

@@ -59,8 +59,8 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Canonical Action Representation (23 types, 8 classes) | Implemented | `packages/core/src/actions.ts` |
 | Action Authorization Boundary (AAB) | Implemented (2 bypass vectors) | `packages/kernel/src/aab.ts` |
 | Policy Evaluator (two-phase deny/allow) | Implemented | `packages/policy/src/evaluator.ts` |
-| 20 Built-in Invariants | Fully Implemented | `packages/invariants/src/definitions.ts`, `packages/invariants/src/checker.ts` |
-| Event Model (50 event kinds) | Comprehensive | `packages/events/src/schema.ts` |
+| 21 Built-in Invariants | Fully Implemented | `packages/invariants/src/definitions.ts`, `packages/invariants/src/checker.ts` |
+| Event Model (45 event kinds) | Comprehensive | `packages/events/src/schema.ts` |
 | SQLite Persistence | Implemented | `packages/storage/src/sqlite-store.ts` |
 | Simulation Engine (3 simulators + impact forecast) | Fully Implemented | `packages/kernel/src/simulation/` |
 | Blast Radius Computation | Implemented | `packages/kernel/src/blast-radius.ts` |
@@ -75,7 +75,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 |-----------|--------|-----------|
 | Plugin Ecosystem (discovery, registry, validation) | Implemented | `packages/plugins/src/` |
 | Renderer Plugin System | Implemented | `packages/renderers/src/` |
-| CLI (guard, inspect, events, replay, export, import, simulate, ci-check, plugin, policy, policy-verify, claude-hook, claude-init, init, diff, evidence-pr, traces, session-viewer, status) | Implemented | `apps/cli/src/` |
+| CLI (guard, inspect, events, replay, export, import, simulate, ci-check, plugin, policy, policy-verify, claude-hook, claude-init, init, diff, evidence-pr, traces, session-viewer, status, adoption, learn, migrate, trust) | Implemented | `apps/cli/src/` |
 | Claude Code Hook Integration | Implemented | `packages/adapters/src/claude-code.ts` |
 | VS Code Extension (sidebar panels, event reader, inline diagnostics) | Implemented | `apps/vscode-extension/` |
 | Policy Pack Loader | Implemented | `packages/policy/src/pack-loader.ts` |
@@ -103,8 +103,8 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Canonical Action Representation | Implemented | Production |
 | AAB Reference Monitor | Implemented | 1 bypass vector to close (missing-adapter fixed) |
 | Policy Evaluator | Implemented | Production |
-| 17 Built-in Invariants | Fully Implemented | Production |
-| Event Model (49 kinds) | Comprehensive | Production |
+| 21 Built-in Invariants | Fully Implemented | Production |
+| Event Model (45 kinds) | Comprehensive | Production |
 | Simulation & Forecasting | Fully Implemented | Production |
 | Escalation State Machine | Implemented | Functional (events persisted as StateChanged) |
 | Plugin Sandbox | Implemented | Application-level only |
@@ -251,7 +251,7 @@ This is the architectural hinge. These changes transform the AAB from advisory i
 
 ### Phase 6.5 — Invariant Expansion `STABLE`
 
-> **Theme:** Close invariant coverage gaps. Expanded from 10 to 20 built-in invariants.
+> **Theme:** Close invariant coverage gaps. Expanded from 10 to 21 built-in invariants.
 
 The `SystemState` interface in `packages/invariants/src/definitions.ts` is the bottleneck for invariant expansion — it needs to become a richer context object with action-specific fields.
 
@@ -291,7 +291,7 @@ Prior art: Kubernetes Capability Primitives (KCP), OS capability-based security 
 - [x] Policy templates for common scenarios (`policies/strict`, `policies/ci-safe`, `policies/enterprise`, `policies/open-source`)
 - [x] Policy composition (multiple policy files merged with precedence) (`packages/policy/src/composer.ts`, `guard --policy a --policy b`)
 - [x] Policy validation CLI (`agentguard policy validate <file>`)
-- [ ] Community policy packs (SOC2, HIPAA, internal engineering standards)
+- [x] Community policy packs (SOC2, HIPAA, engineering standards) (`policies/soc2/`, `policies/hipaa/`, `policies/engineering-standards/`)
 - [ ] Policy pack versioning and compatibility
 
 ### Phase 9 — Agent Integrations `PLANNED`
@@ -457,7 +457,7 @@ The agent governance space is emerging. Several projects address overlapping pro
 
 AgentGuard is built for contributors. Here are the best places to start:
 
-- **Write an invariant pack** — Define domain-specific invariants in `packages/invariants/src/community/`. See `packages/invariants/src/definitions.ts` for the 17 built-in invariants as a reference.
+- **Write an invariant pack** — Define domain-specific invariants in `packages/invariants/src/community/`. See `packages/invariants/src/definitions.ts` for the 21 built-in invariants as a reference.
 - **Create a policy pack** — Ship a reusable policy YAML in `policies/`. See `agentguard.yaml` for the format and `packages/policy/src/pack-loader.ts` for the pack loading contract.
 - **Build an adapter** — Add support for a new agent framework in `packages/adapters/src/`. Follow the pattern in `packages/adapters/src/claude-code.ts`.
 - **Add a renderer** — Create a custom governance output renderer implementing the `GovernanceRenderer` interface in `packages/renderers/src/types.ts`.

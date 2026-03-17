@@ -8,12 +8,12 @@ The system has one architectural spine: the **canonical event model**. All syste
 
 **Key characteristics:**
 - Governed action kernel: propose → normalize → evaluate → execute → emit
-- 20 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, no skill modification, no scheduled task modification, credential file creation, package script injection, lockfile integrity, recursive operation guard, large file write, CI/CD config modification, permission escalation, governance self-modification, container config modification, environment variable modification, network egress, destructive migration, transitive effect analysis)
+- 21 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, no skill modification, no scheduled task modification, credential file creation, package script injection, lockfile integrity, recursive operation guard, large file write, CI/CD config modification, permission escalation, governance self-modification, container config modification, environment variable modification, network egress, destructive migration, transitive effect analysis, IDE socket access)
 - YAML/JSON policy format with pattern matching, scopes, and branch conditions
 - Escalation tracking: NORMAL → ELEVATED → HIGH → LOCKDOWN
 - SQLite event persistence for audit trail and replay (JSONL export still supported)
 - Claude Code adapter for PreToolUse/PostToolUse hooks
-- **pnpm monorepo** with Turbo orchestration: 10 packages under `packages/`, 3 apps under `apps/`
+- **pnpm monorepo** with Turbo orchestration: 13 packages under `packages/`, 3 apps under `apps/`
 - Each package compiles independently via `tsc`; CLI bundle via `esbuild` in `apps/cli`
 - Scoped npm packages: `@red-codes/*` for workspace modules, `@red-codes/agentguard` for published CLI
 - CLI has runtime dependencies (`chokidar`, `commander`, `pino`); optional `better-sqlite3` for SQLite storage backend
@@ -67,7 +67,7 @@ packages/
 │   ├── pack-loader.ts          # Policy pack loader (community policy sets)
 │   └── yaml-loader.ts          # YAML policy parser
 ├── invariants/src/             # @red-codes/invariants — Invariant system
-│   ├── definitions.ts          # 20 built-in invariant definitions
+│   ├── definitions.ts          # 21 built-in invariant definitions
 │   └── checker.ts              # Invariant evaluation engine
 ├── kernel/src/                 # @red-codes/kernel — Governed action kernel
 │   ├── kernel.ts               # Orchestrator (propose → evaluate → execute → emit)
@@ -99,6 +99,7 @@ packages/
 │   ├── discovery.ts            # Plugin discovery mechanism
 │   ├── registry.ts             # Plugin registry
 │   ├── sandbox.ts              # Plugin sandboxing
+│   ├── simulator-loader.ts     # Simulator plugin loader
 │   ├── validator.ts            # Plugin validation
 │   ├── types.ts                # Plugin type definitions
 │   └── index.ts                # Module re-exports
@@ -109,6 +110,8 @@ packages/
 │   ├── types.ts                # Renderer type definitions
 │   └── index.ts                # Module re-exports
 ├── storage/src/                # @red-codes/storage — Storage backends (SQLite, opt-in)
+│   ├── adoption-analytics.ts   # Adoption analytics engine
+│   ├── denial-learner.ts       # Denial pattern learning
 │   ├── factory.ts              # Storage bundle factory
 │   ├── index.ts                # Module re-exports
 │   ├── migrations.ts           # Schema migrations (version-based)
@@ -118,12 +121,16 @@ packages/
 │   └── types.ts                # Storage type definitions
 ├── telemetry/src/              # @red-codes/telemetry — Runtime telemetry and logging
 ├── telemetry-client/src/       # @red-codes/telemetry-client — Telemetry client (identity, signing, queue, sender)
-└── swarm/src/                  # @red-codes/swarm — Shareable agent swarm templates
-    ├── config.ts               # Swarm configuration
-    ├── manifest.ts             # Swarm manifest parsing
-    ├── scaffolder.ts           # Swarm scaffolding
-    ├── types.ts                # Swarm type definitions
-    └── index.ts                # Module re-exports
+├── swarm/src/                  # @red-codes/swarm — Shareable agent swarm templates
+│   ├── config.ts               # Swarm configuration
+│   ├── manifest.ts             # Swarm manifest parsing
+│   ├── scaffolder.ts           # Swarm scaffolding
+│   ├── types.ts                # Swarm type definitions
+│   └── index.ts                # Module re-exports
+└── invariant-data-protection/src/ # @red-codes/invariant-data-protection — Data protection invariant plugin
+    ├── index.ts                # Module re-exports
+    ├── invariants.ts           # Data protection invariant definitions
+    └── patterns.ts             # Data protection patterns
 
 apps/
 ├── cli/src/                    # @red-codes/agentguard — CLI (published npm package)
@@ -137,13 +144,13 @@ apps/
 │   ├── session-store.ts        # Session management
 │   ├── file-event-store.ts     # File-based event persistence
 │   ├── evidence-summary.ts     # Evidence summary generator for PR reports
-│   └── commands/               # guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, policy-verify, claude-hook, claude-init, init, diff, evidence-pr, traces, session-viewer, status, analytics, auto-setup, config, audit-verify, demo
+│   └── commands/               # guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, policy-verify, claude-hook, claude-init, init, diff, evidence-pr, traces, session-viewer, status, analytics, auto-setup, config, audit-verify, demo, adoption, learn, migrate, trust
 ├── mcp-server/src/             # @red-codes/mcp-server — MCP governance server
 │   ├── index.ts                # Entry point
 │   ├── server.ts               # MCP server implementation
 │   ├── config.ts               # Server configuration
 │   ├── backends/               # Storage backends
-│   └── tools/                  # 15 governance MCP tools
+│   └── tools/                  # 14 governance MCP tools
 └── vscode-extension/src/       # agentguard-vscode — VS Code extension
     ├── extension.ts            # Extension entry point (sidebar panels, file watcher)
     ├── providers/              # Tree data providers (run status, run history, recent events)
@@ -151,9 +158,9 @@ apps/
 
 tests/
 └── *.test.js               # 14 JS test files (custom zero-dependency harness)
-# 118 TS test files (vitest) distributed across packages/ and apps/ directories
+# 132 TS test files (vitest) distributed across packages/ and apps/ directories
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
-policies/                   # Policy packs (YAML: ci-safe, enterprise, open-source, strict)
+policies/                   # Policy packs (YAML: ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
 docs/                       # System documentation (architecture, event model, specs)
 hooks/                      # Git hooks (post-commit, post-merge)
 examples/                   # Example governance scenarios and error demos
@@ -195,7 +202,7 @@ The kernel loop is the core of AgentGuard. Every agent action passes through it:
 1. Agent proposes action (Claude Code tool call → `RawAgentAction`)
 2. AAB normalizes intent (tool → action type, detect git/destructive commands)
 3. Policy evaluator matches rules (deny/allow with scopes, branches, limits)
-4. Invariant checker verifies system state (20 defaults)
+4. Invariant checker verifies system state (21 defaults)
 5. If allowed: execute via adapter (file/shell/git handlers)
 6. Emit lifecycle events: `ACTION_REQUESTED` → `ACTION_ALLOWED/DENIED` → `ACTION_EXECUTED/FAILED`
 7. Sink all events to SQLite for audit trail
@@ -218,7 +225,8 @@ Each workspace package maps to a single architectural concept:
 - **packages/telemetry-client/** — Telemetry client (identity, signing, queue, sender)
 - **packages/swarm/** — Shareable agent swarm templates (config, manifest, scaffolder)
 - **apps/cli/** — CLI entry point and commands (published as `@red-codes/agentguard`)
-- **apps/mcp-server/** — MCP governance server (15 governance tools)
+- **packages/invariant-data-protection/** — Data protection invariant plugin
+- **apps/mcp-server/** — MCP governance server (14 governance tools)
 
 ### CLI Commands
 - `agentguard guard` — Start the governed action runtime (policy + invariant enforcement)
@@ -247,6 +255,10 @@ Each workspace package maps to a single architectural concept:
 - `agentguard config show|get|set` — Manage AgentGuard configuration
 - `agentguard audit-verify` — Verify tamper-resistant audit chain integrity
 - `agentguard demo` — Interactive governance showcase
+- `agentguard adoption` — Adoption metrics and onboarding status
+- `agentguard learn` — Interactive tutorials and learning paths
+- `agentguard migrate` — Migrate configuration between versions
+- `agentguard trust` — Manage policy and hook trust verification
 
 ### Event Model
 The canonical event model is the architectural spine. Event kinds defined in `packages/events/src/schema.ts`:
@@ -261,6 +273,10 @@ The canonical event model is the architectural spine. Event kinds defined in `pa
 - **Dev activity**: `FileSaved`, `TestCompleted`, `BuildCompleted`, `CommitCreated`, `CodeReviewed`, `DeployCompleted`, `LintCompleted`
 - **Token Optimization**: `TokenOptimizationApplied`
 - **Heartbeat**: `HeartbeatEmitted`, `HeartbeatMissed`, `AgentUnresponsive`
+- **Integrity & Trust**: `HookIntegrityVerified`, `HookIntegrityFailed`, `PolicyTrustVerified`, `PolicyTrustDenied`
+- **Adoption Analytics**: `AdoptionAnalyzed`, `AdoptionAnalysisFailed`
+- **Denial Learning**: `DenialPatternDetected`
+- **Environmental Enforcement**: `IdeSocketAccessBlocked`
 
 ### Action Classes & Types
 23 canonical action types across 8 classes, defined in `packages/core/src/actions.ts`:
@@ -314,7 +330,7 @@ pnpm test --filter=@red-codes/kernel  # Test a single package
 **Test structure:**
 - **Vitest workspace** (`vitest.workspace.ts`): orchestrates tests across all packages
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (distributed across `packages/*/tests/` and `apps/*/tests/`): 118 files using vitest
+- **TypeScript tests** (distributed across `packages/*/tests/` and `apps/*/tests/`): 132 files using vitest
 - **Coverage areas**: adapters, kernel (AAB, engine, monitor, blast radius, heartbeat, integration, e2e pipeline, conformance), CLI commands (args, guard, inspect, init, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate, policy-verify, diff, evidence-pr, traces, plugin, auto-setup, config), decision records, domain models, events, evidence packs, evidence summary, execution log, export-import roundtrip, impact forecast, invariants, notification formatter, plugins (discovery, registry, sandbox, validation), policy evaluation (including composer, pack loader, policy packs, evaluation trace, forecast conditions), renderers, replay (engine, comparator, processor), simulation, SQLite storage (migrations, session, sink, store, factory), swarm (scaffolder), TUI renderer, violation mapper, VS Code event reader, YAML loading
 
 ## CI/CD & Automation
@@ -328,3 +344,4 @@ pnpm test --filter=@red-codes/kernel  # Test a single package
 | `agentguard-governance.yml` | Reusable workflow (called from other repos) | CI governance verification for sessions |
 | `codeql.yml` | PR to `main`/`master` + weekly schedule | CodeQL security analysis |
 | `deploy-pages.yml` | Push to `main` (paths: `site/**`) | Deploys site directory to GitHub Pages |
+| `bench-regression-gate.yml` | PR / scheduled | Performance benchmark regression gate |
