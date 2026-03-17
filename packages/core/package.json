@@ -1,9 +1,10 @@
 {
   "name": "@red-codes/core",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Core types, actions, and utilities for the AgentGuard platform",
   "type": "module",
   "license": "Apache-2.0",
+  "private": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -11,6 +12,16 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
+  },
+  "files": [
+    "dist/",
+    "LICENSE",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AgentGuardHQ/agentguard",
+    "directory": "packages/core"
   },
   "scripts": {
     "build": "tsc -b",

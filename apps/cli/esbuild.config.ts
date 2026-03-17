@@ -1,4 +1,14 @@
 import * as esbuild from 'esbuild';
+import { readFileSync } from 'fs';
+
+const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+
+// Bundle @red-codes/* packages inline (they're not published individually).
+// Externalize only true npm runtime deps that users install.
+const externalDeps = [
+  ...Object.keys(pkg.dependencies || {}).filter((d: string) => !d.startsWith('@red-codes/')),
+  ...Object.keys(pkg.optionalDependencies || {}),
+];
 
 const shared: esbuild.BuildOptions = {
   bundle: true,
@@ -7,7 +17,7 @@ const shared: esbuild.BuildOptions = {
   format: 'esm',
   sourcemap: true,
   outdir: 'dist',
-  packages: 'external',
+  external: externalDeps,
 };
 
 // CLI bundle — single self-contained entry point
