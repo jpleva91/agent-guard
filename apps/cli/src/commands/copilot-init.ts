@@ -122,9 +122,7 @@ export async function copilotInit(args: string[] = []): Promise<void> {
     `  ${FG.green}\u2713${RESET}  Hooks installed in ${FG.cyan}${hooksLabel}${RESET}\n`
   );
   process.stderr.write(`  ${DIM}preToolUse:    governance enforcement (all tools)${RESET}\n`);
-  process.stderr.write(
-    `  ${DIM}postToolUse:   error monitoring (bash/powershell)${RESET}\n`
-  );
+  process.stderr.write(`  ${DIM}postToolUse:   error monitoring (bash/powershell)${RESET}\n`);
   if (storeBackend) {
     process.stderr.write(`  ${DIM}Storage:       ${storeBackend}${RESET}\n`);
   }
@@ -301,7 +299,9 @@ function showProtectionSummary(policyGenerated: boolean): void {
   process.stderr.write(
     `  ${FG.green}\u25A0${RESET} ${DIM}Allow${RESET} file reads, file writes (non-sensitive)\n`
   );
-  process.stderr.write(`  ${FG.blue}\u25A0${RESET} ${DIM}Track${RESET} all actions with audit trail\n`);
+  process.stderr.write(
+    `  ${FG.blue}\u25A0${RESET} ${DIM}Track${RESET} all actions with audit trail\n`
+  );
   process.stderr.write('\n');
 
   process.stderr.write(`  ${BOLD}Next steps:${RESET}\n`);
@@ -323,16 +323,11 @@ function showProtectionSummary(policyGenerated: boolean): void {
       `  ${DIM}2. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`
     );
   }
-  process.stderr.write(
-    `\n  ${DIM}Remove: ${FG.cyan}agentguard copilot-init --remove${RESET}\n\n`
-  );
+  process.stderr.write(`\n  ${DIM}Remove: ${FG.cyan}agentguard copilot-init --remove${RESET}\n\n`);
 }
 
 function hasAgentGuardHook(config: HooksConfig): boolean {
-  const allEntries = [
-    ...(config.hooks?.preToolUse || []),
-    ...(config.hooks?.postToolUse || []),
-  ];
+  const allEntries = [...(config.hooks?.preToolUse || []), ...(config.hooks?.postToolUse || [])];
   return allEntries.some((entry) => {
     const cmd = entry.bash || '';
     return cmd.includes(HOOK_MARKER);

@@ -148,7 +148,7 @@ mod tests {
         assert_eq!(TOOL_ACTION_MAP.get("Bash").unwrap(), "shell.exec");
         assert_eq!(TOOL_ACTION_MAP.get("Write").unwrap(), "file.write");
         assert_eq!(TOOL_ACTION_MAP.get("WebFetch").unwrap(), "http.request");
-        assert_eq!(TOOL_ACTION_MAP.len(), 12);
+        assert_eq!(TOOL_ACTION_MAP.len(), 21);
     }
 
     #[test]
