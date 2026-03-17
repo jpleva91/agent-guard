@@ -148,7 +148,7 @@ mod tests {
         assert_eq!(TOOL_ACTION_MAP.get("Bash").unwrap(), "shell.exec");
         assert_eq!(TOOL_ACTION_MAP.get("Write").unwrap(), "file.write");
         assert_eq!(TOOL_ACTION_MAP.get("WebFetch").unwrap(), "http.request");
-        assert_eq!(TOOL_ACTION_MAP.len(), 12);
+        assert_eq!(TOOL_ACTION_MAP.len(), 21);
     }
 
     #[test]
@@ -187,6 +187,6 @@ mod tests {
     fn test_escalation_config_loads() {
         assert_eq!(ESCALATION_CONFIG.defaults.denial_threshold, 5);
         assert_eq!(ESCALATION_CONFIG.defaults.violation_threshold, 3);
-        assert_eq!(ESCALATION_CONFIG.defaults.window_size, 10);
+        assert_eq!(ESCALATION_CONFIG.defaults.window_size, 300000);
     }
 }
