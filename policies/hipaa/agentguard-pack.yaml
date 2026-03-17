@@ -1,0 +1,159 @@
+# HIPAA compliance policy pack — rules aligned with HIPAA Security Rule requirements.
+# Enforces access controls, audit logging, integrity protections, and transmission
+# security for environments handling Protected Health Information (PHI).
+#
+# Relevant HIPAA Security Rule sections:
+#   164.312(a)(1)  Access control
+#   164.312(b)     Audit controls
+#   164.312(c)(1)  Integrity controls
+#   164.312(d)     Person or entity authentication
+#   164.312(e)(1)  Transmission security
+#
+# Branch protection and blast radius limits are enforced by the built-in
+# `protected-branch` and `blast-radius` invariants respectively.
+#
+# Usage:
+#   extends: ["./policies/hipaa"]
+
+id: hipaa-pack
+name: HIPAA Compliance Pack
+description: Policy rules aligned with HIPAA Security Rule for PHI protection, access control, and audit requirements
+severity: 5
+
+rules:
+  # --- 164.312(c)(1): Integrity — no history rewriting ---
+  - action: git.force-push
+    effect: deny
+    reason: "HIPAA 164.312(c)(1): Force push destroys audit trail integrity"
+
+  - action: git.reset
+    effect: deny
+    reason: "HIPAA 164.312(c)(1): Git reset is destructive and violates integrity controls"
+
+  # --- 164.312(c)(1): No branch deletion — preserves change history ---
+  - action: git.branch.delete
+    effect: deny
+    reason: "HIPAA 164.312(c)(1): Branch deletion denied — preserves change history"
+
+  # --- 164.312(a)(1): Credential and secrets protection ---
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: "HIPAA 164.312(a)(1): Environment files may contain PHI connection strings"
+
+  - action: file.write
+    effect: deny
+    target: "*.pem"
+    reason: "HIPAA 164.312(a)(1): Certificate files must not be modified by agents"
+
+  - action: file.write
+    effect: deny
+    target: "*.key"
+    reason: "HIPAA 164.312(a)(1): Private key files must not be modified by agents"
+
+  - action: file.write
+    effect: deny
+    target: "*.secret"
+    reason: "HIPAA 164.312(a)(1): Secret files must not be modified by agents"
+
+  - action: file.write
+    effect: deny
+    target: "*.pfx"
+    reason: "HIPAA 164.312(a)(1): PKCS#12 certificate bundles must not be modified"
+
+  - action: file.write
+    effect: deny
+    target: "*.p12"
+    reason: "HIPAA 164.312(a)(1): PKCS#12 certificate bundles must not be modified"
+
+  # --- 164.312(e)(1): Transmission security — no uncontrolled network access ---
+  - action: shell.exec
+    effect: deny
+    target: curl
+    reason: "HIPAA 164.312(e)(1): External HTTP requests denied — use approved encrypted channels"
+
+  - action: shell.exec
+    effect: deny
+    target: wget
+    reason: "HIPAA 164.312(e)(1): External downloads denied — use approved encrypted channels"
+
+  - action: http.request
+    effect: deny
+    reason: "HIPAA 164.312(e)(1): HTTP requests denied — use approved encrypted API endpoints"
+
+  # --- 164.312(c)(1): Destructive operation protection ---
+  - action: shell.exec
+    effect: deny
+    target: rm -rf
+    reason: "HIPAA 164.312(c)(1): Destructive shell commands denied"
+
+  - action: shell.exec
+    effect: deny
+    target: "chmod 777"
+    reason: "HIPAA 164.312(c)(1): Overly permissive chmod denied"
+
+  - action: file.delete
+    effect: deny
+    reason: "HIPAA 164.312(c)(1): File deletion denied — preserves data integrity"
+
+  # --- 164.312(a)(1): Infrastructure and deployment controls ---
+  - action: infra.apply
+    effect: deny
+    reason: "HIPAA 164.312(a)(1): Infrastructure changes require authorized approval"
+
+  - action: infra.destroy
+    effect: deny
+    reason: "HIPAA 164.312(a)(1): Infrastructure destruction requires authorized approval"
+
+  - action: deploy.trigger
+    effect: deny
+    reason: "HIPAA 164.312(a)(1): Deployments require authorized CI/CD pipeline"
+
+  - action: npm.publish
+    effect: deny
+    reason: "HIPAA 164.312(a)(1): Package publishing requires authorized release pipeline"
+
+  # --- Allowed operations ---
+  - action: file.read
+    effect: allow
+    reason: "Reading files supports audit review and compliance verification"
+
+  - action: file.write
+    effect: allow
+    reason: "File writes allowed within credential limits (blast radius enforced by invariant)"
+
+  - action: git.diff
+    effect: allow
+    reason: "Viewing diffs supports change review"
+
+  - action: git.commit
+    effect: allow
+    reason: "Commits to feature branches allowed"
+
+  - action: git.push
+    effect: allow
+    reason: "Pushes allowed (branch protection enforced by invariant)"
+
+  - action: git.checkout
+    effect: allow
+    reason: "Branch switching allowed"
+
+  - action: git.branch.create
+    effect: allow
+    reason: "Branch creation allowed for isolated development"
+
+  - action: test.run
+    effect: allow
+    reason: "Running tests supports compliance verification"
+
+  - action: npm.install
+    effect: allow
+    reason: "Dependency installation allowed"
+
+  - action: npm.script.run
+    effect: allow
+    reason: "NPM scripts allowed for build and test"
+
+  - action: shell.exec
+    effect: allow
+    reason: "Shell commands allowed for build and development"

@@ -1,0 +1,144 @@
+# SOC2 compliance policy pack — rules aligned with SOC2 Trust Services Criteria.
+# Enforces change management, access control, audit trail completeness,
+# and protection against external threats.
+#
+# Relevant SOC2 controls:
+#   CC6.1  Logical access controls
+#   CC6.6  External threat protection
+#   CC7.1  System change management
+#   CC7.2  Change monitoring (via protected-branch invariant)
+#   CC8.1  Infrastructure change authorization
+#
+# Branch protection (CC7.2) and blast radius limits are enforced by the
+# built-in `protected-branch` and `blast-radius` invariants respectively.
+#
+# Usage:
+#   extends: ["./policies/soc2"]
+
+id: soc2-pack
+name: SOC2 Compliance Pack
+description: Policy rules aligned with SOC2 Trust Services Criteria for audit, access control, and change management
+severity: 4
+
+rules:
+  # --- CC7.1: Change management — require tests before push ---
+  - action: git.push
+    effect: deny
+    requireTests: true
+    reason: "SOC2 CC7.1: Changes must pass tests before push (test-before-push)"
+
+  # --- CC7.1: No force push — preserves audit trail ---
+  - action: git.force-push
+    effect: deny
+    reason: "SOC2 CC7.1: Force push rewrites history, violating change traceability"
+
+  # --- CC7.1: No git reset — destructive history rewriting ---
+  - action: git.reset
+    effect: deny
+    reason: "SOC2 CC7.1: Git reset is destructive and violates change traceability"
+
+  # --- CC6.1: Credential and secrets protection ---
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: "SOC2 CC6.1: Environment files must be managed via secrets manager"
+
+  - action: file.write
+    effect: deny
+    target: "*.pem"
+    reason: "SOC2 CC6.1: Certificate files must not be modified by agents"
+
+  - action: file.write
+    effect: deny
+    target: "*.key"
+    reason: "SOC2 CC6.1: Private key files must not be modified by agents"
+
+  - action: file.write
+    effect: deny
+    target: "*.secret"
+    reason: "SOC2 CC6.1: Secret files must not be modified by agents"
+
+  # --- CC6.6: External threat protection — no arbitrary network access ---
+  - action: shell.exec
+    effect: deny
+    target: curl
+    reason: "SOC2 CC6.6: External HTTP requests from shell denied — use approved APIs"
+
+  - action: shell.exec
+    effect: deny
+    target: wget
+    reason: "SOC2 CC6.6: External downloads from shell denied — use approved channels"
+
+  # --- CC6.6: Destructive command protection ---
+  - action: shell.exec
+    effect: deny
+    target: rm -rf
+    reason: "SOC2 CC6.6: Destructive shell commands denied"
+
+  - action: shell.exec
+    effect: deny
+    target: "chmod 777"
+    reason: "SOC2 CC6.6: Overly permissive chmod denied"
+
+  # --- CC8.1: Infrastructure change authorization ---
+  - action: infra.apply
+    effect: deny
+    reason: "SOC2 CC8.1: Infrastructure changes require authorized approval"
+
+  - action: infra.destroy
+    effect: deny
+    reason: "SOC2 CC8.1: Infrastructure destruction requires authorized approval"
+
+  - action: deploy.trigger
+    effect: deny
+    reason: "SOC2 CC8.1: Deployments must go through authorized CI/CD pipeline"
+
+  # --- CC7.1: Package publishing requires release pipeline ---
+  - action: npm.publish
+    effect: deny
+    reason: "SOC2 CC7.1: Package publishing requires authorized release pipeline"
+
+  # --- Allowed operations ---
+  - action: file.read
+    effect: allow
+    reason: "Reading files is safe and supports audit review"
+
+  - action: file.write
+    effect: allow
+    reason: "File writes allowed within credential limits (blast radius enforced by invariant)"
+
+  - action: file.delete
+    effect: allow
+    reason: "File deletion allowed (blast radius enforced by invariant)"
+
+  - action: git.diff
+    effect: allow
+    reason: "Viewing diffs supports change review"
+
+  - action: git.commit
+    effect: allow
+    reason: "Commits to feature branches allowed"
+
+  - action: git.push
+    effect: allow
+    reason: "Pushes allowed when tests pass (branch protection enforced by invariant)"
+
+  - action: git.checkout
+    effect: allow
+    reason: "Branch switching allowed"
+
+  - action: git.branch.create
+    effect: allow
+    reason: "Branch creation allowed"
+
+  - action: test.run
+    effect: allow
+    reason: "Running tests supports change verification"
+
+  - action: npm.install
+    effect: allow
+    reason: "Dependency installation allowed"
+
+  - action: npm.script.run
+    effect: allow
+    reason: "NPM scripts allowed for build and test"

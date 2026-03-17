@@ -1,0 +1,138 @@
+# Engineering standards policy pack — enforces development best practices.
+# Covers test-before-push, code review requirements, conventional commits,
+# and safe dependency management.
+#
+# Suitable for teams that want to enforce engineering discipline without
+# compliance-specific requirements (see soc2 or hipaa packs for those).
+#
+# Branch protection and blast radius limits are enforced by the built-in
+# `protected-branch` and `blast-radius` invariants respectively.
+#
+# Usage:
+#   extends: ["./policies/engineering-standards"]
+
+id: engineering-standards-pack
+name: Engineering Standards Pack
+description: Engineering best practices — test-before-push, format checks, credential protection, and safe dependency management
+severity: 3
+
+rules:
+  # --- Test-before-push enforcement ---
+  - action: git.push
+    effect: deny
+    requireTests: true
+    reason: "Tests must pass before pushing (test-before-push)"
+
+  # --- Format-before-push enforcement ---
+  - action: git.push
+    effect: deny
+    requireFormat: true
+    reason: "Code formatting must pass before pushing"
+
+  # --- No force push — preserves shared history ---
+  - action: git.force-push
+    effect: deny
+    reason: "Force push rewrites shared history — use revert instead"
+
+  # --- No destructive git operations ---
+  - action: git.reset
+    effect: deny
+    reason: "Git reset is destructive — use revert for safe rollbacks"
+
+  # --- Secrets and credentials ---
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: "Environment files must not be committed — use .env.example"
+
+  - action: file.write
+    effect: deny
+    target: "*.key"
+    reason: "Private key files must not be modified by agents"
+
+  - action: file.write
+    effect: deny
+    target: "*.pem"
+    reason: "Certificate files must not be modified by agents"
+
+  # --- Destructive shell commands ---
+  - action: shell.exec
+    effect: deny
+    target: rm -rf
+    reason: "Destructive shell commands denied"
+
+  - action: shell.exec
+    effect: deny
+    target: "chmod 777"
+    reason: "Overly permissive chmod denied — use specific permissions"
+
+  # --- Package safety ---
+  - action: npm.publish
+    effect: deny
+    reason: "Package publishing requires manual release process"
+
+  # --- Infrastructure controls ---
+  - action: infra.destroy
+    effect: deny
+    reason: "Infrastructure destruction requires explicit authorization"
+
+  # --- Allowed operations ---
+  - action: file.read
+    effect: allow
+    reason: "All reads allowed"
+
+  - action: file.write
+    effect: allow
+    reason: "File writes allowed within credential limits (blast radius enforced by invariant)"
+
+  - action: file.delete
+    effect: allow
+    reason: "File deletion allowed (blast radius enforced by invariant)"
+
+  - action: git.diff
+    effect: allow
+    reason: "Viewing diffs is always safe"
+
+  - action: git.commit
+    effect: allow
+    reason: "Commits to feature branches allowed"
+
+  - action: git.push
+    effect: allow
+    reason: "Pushes allowed when tests and format pass (branch protection enforced by invariant)"
+
+  - action: git.checkout
+    effect: allow
+    reason: "Branch switching allowed"
+
+  - action: git.branch.create
+    effect: allow
+    reason: "Branch creation allowed"
+
+  - action: git.branch.delete
+    effect: allow
+    reason: "Branch cleanup allowed"
+
+  - action: test.run
+    effect: allow
+    reason: "Running tests is always safe"
+
+  - action: shell.exec
+    effect: allow
+    reason: "Shell commands allowed for build and development"
+
+  - action: npm.install
+    effect: allow
+    reason: "Dependency installation allowed"
+
+  - action: npm.script.run
+    effect: allow
+    reason: "NPM scripts allowed"
+
+  - action: infra.apply
+    effect: allow
+    reason: "Infrastructure changes allowed (destruction denied above)"
+
+  - action: deploy.trigger
+    effect: allow
+    reason: "Deployments allowed through standard pipeline"
