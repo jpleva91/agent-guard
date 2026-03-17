@@ -2,6 +2,9 @@
 
 // AgentGuard CLI — Runtime governance for AI coding agents
 
+// Injected by esbuild at build time via define
+declare const AGENTGUARD_VERSION: string;
+
 import { formatHelp } from './args.js';
 import { resolveStorageConfig } from '@red-codes/storage';
 
@@ -837,14 +840,7 @@ async function main() {
 
     case '--version':
     case '-v': {
-      const { readFileSync } = await import('node:fs');
-      const { fileURLToPath } = await import('node:url');
-      const { dirname, join } = await import('node:path');
-      const __dir = dirname(fileURLToPath(import.meta.url));
-      const pkg = JSON.parse(readFileSync(join(__dir, '..', '..', 'package.json'), 'utf8')) as {
-        version: string;
-      };
-      console.log(`agentguard v${pkg.version}`);
+      console.log(`agentguard v${AGENTGUARD_VERSION}`);
       break;
     }
 

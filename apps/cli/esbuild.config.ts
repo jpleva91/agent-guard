@@ -18,6 +18,9 @@ const shared: esbuild.BuildOptions = {
   sourcemap: true,
   outdir: 'dist',
   external: externalDeps,
+  define: {
+    'AGENTGUARD_VERSION': JSON.stringify(pkg.version),
+  },
 };
 
 // CLI bundle — single self-contained entry point
