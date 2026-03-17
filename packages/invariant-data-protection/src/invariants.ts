@@ -2,7 +2,14 @@
 // Follows the same shape as built-in invariants in @red-codes/invariants.
 
 import type { AgentGuardInvariant, SystemState } from '@red-codes/invariants';
-import { PII_PATTERNS, SECRET_PATTERNS, isLogPath } from './patterns.js';
+import {
+  PII_PATTERNS,
+  SECRET_PATTERNS,
+  isLogPath,
+  classifyCredentialShape,
+  scanForFingerprints,
+} from './patterns.js';
+import type { SecretFingerprint } from './patterns.js';
 
 /** Default maximum files per batch operation */
 const DEFAULT_MAX_FILE_COUNT = 50;
@@ -22,10 +29,16 @@ function detectPii(content: string): string | null {
 
 /**
  * Scan content for the first matching secret pattern.
+ * Supports context-aware patterns: when a contextPattern is defined,
+ * the main pattern only triggers if the context regex also matches.
  * Returns the label of the first match, or null if none found.
  */
 function detectSecret(content: string): string | null {
-  for (const { pattern, label } of SECRET_PATTERNS) {
+  for (const { pattern, label, contextPattern } of SECRET_PATTERNS) {
+    // If a context pattern is defined, check context first
+    if (contextPattern && !contextPattern.test(content)) {
+      continue;
+    }
     if (pattern.test(content)) {
       return label;
     }
@@ -34,7 +47,26 @@ function detectSecret(content: string): string | null {
 }
 
 /**
- * Data protection invariants — 3 invariants for PII, secrets, and batch limits.
+ * Scan content for credential-shaped strings using Shannon entropy.
+ * Extracts candidate tokens by splitting on whitespace and common delimiters,
+ * then classifies each using entropy + heuristic scoring.
+ * Returns the reason string of the first match, or null if none found.
+ */
+function detectByEntropy(content: string): string | null {
+  // Extract candidate tokens: split on whitespace, quotes, commas, semicolons
+  const candidates = content.split(/[\s"'`,;=:{}[\]()]+/).filter(Boolean);
+  for (const candidate of candidates) {
+    const match = classifyCredentialShape(candidate);
+    if (match && (match.confidence === 'high' || match.confidence === 'medium')) {
+      return `entropy-detected credential (${match.reason})`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Data protection invariants — 3 invariants for PII, secrets (with entropy detection),
+ * and batch limits.
  */
 export const DATA_PROTECTION_INVARIANTS: AgentGuardInvariant[] = [
   {
@@ -108,12 +140,37 @@ export const DATA_PROTECTION_INVARIANTS: AgentGuardInvariant[] = [
         };
       }
 
+      // Layer 1: Regex pattern matching (with context-aware patterns)
       const secretType = detectSecret(content);
       if (secretType) {
         return {
           holds: false,
           expected: 'No hardcoded secrets',
           actual: `Hardcoded secret detected: ${secretType}`,
+        };
+      }
+
+      // Layer 2: Check against known-secret fingerprints (if provided in state)
+      const fingerprints = (state as SystemState & { secretFingerprints?: SecretFingerprint[] })
+        .secretFingerprints;
+      if (fingerprints && fingerprints.length > 0) {
+        const fpMatch = scanForFingerprints(content, fingerprints);
+        if (fpMatch) {
+          return {
+            holds: false,
+            expected: 'No hardcoded secrets',
+            actual: `Known secret detected via fingerprint: ${fpMatch}`,
+          };
+        }
+      }
+
+      // Layer 3: Entropy-based detection for unknown secret formats
+      const entropyMatch = detectByEntropy(content);
+      if (entropyMatch) {
+        return {
+          holds: false,
+          expected: 'No hardcoded secrets',
+          actual: `Potential secret detected: ${entropyMatch}`,
         };
       }
 
