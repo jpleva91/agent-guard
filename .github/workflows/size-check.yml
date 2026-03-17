@@ -41,3 +41,20 @@ jobs:
       - run: pnpm turbo test
       - name: Coverage check
         run: pnpm test:coverage
+
+  rust-kernel:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: crates/kernel-core
+      - name: Check
+        run: cargo check --manifest-path crates/kernel-core/Cargo.toml
+      - name: Clippy
+        run: cargo clippy --manifest-path crates/kernel-core/Cargo.toml -- -D warnings
+      - name: Test
+        run: cargo test --manifest-path crates/kernel-core/Cargo.toml
