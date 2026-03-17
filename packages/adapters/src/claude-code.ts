@@ -226,11 +226,19 @@ export function formatHookResponse(result: KernelResult): string {
   if (!result.allowed) {
     const reason = result.decision?.decision?.reason ?? 'Action denied';
     const violations = result.decision?.violations ?? [];
-    const parts = [`DENIED: ${reason}`];
+    const parts = [reason];
     if (violations.length > 0) {
-      parts.push(`Violations: ${violations.map((v) => v.name).join(', ')}`);
+      parts.push(`Violations: ${violations.map((v: { name: string }) => v.name).join(', ')}`);
     }
-    return JSON.stringify({ error: parts.join(' | ') });
+    // Claude Code PreToolUse hook format: permissionDecision "deny" with exit code 2
+    // ensures the tool call is hard-blocked (non-retryable)
+    return JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: 'PreToolUse',
+        permissionDecision: 'deny',
+        permissionDecisionReason: parts.join(' | '),
+      },
+    });
   }
   return '';
 }
