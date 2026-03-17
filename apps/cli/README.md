@@ -170,7 +170,7 @@ Agents handle implementation, code review, CI triage, security audits, planning,
 ## Links
 
 - [GitHub](https://github.com/AgentGuardHQ/agentguard)
-- [Documentation](https://agentguardhq.github.io/agent-guard/)
+- [Documentation](https://agentguardhq.github.io/agentguard/)
 - [Architecture](https://github.com/AgentGuardHQ/agentguard/blob/main/docs/unified-architecture.md)
 - [Roadmap](https://github.com/AgentGuardHQ/agentguard/blob/main/ROADMAP.md)
 
