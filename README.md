@@ -136,6 +136,33 @@ Drop an `agentguard.yaml` in your repo root — the CLI picks it up automaticall
 | **recursive-operation-guard** | 2 (low) | Flags find -exec, xargs combined with write/delete operations |
 | **lockfile-integrity** | 2 (low) | Ensures package.json changes sync with lockfiles |
 
+## RTK Token Optimization
+
+AgentGuard integrates with [RTK (Rust Token Killer)](https://github.com/rtk-ai/rtk) to reduce token consumption by 60-90% on common CLI output. When RTK is installed, AgentGuard's shell adapter automatically rewrites commands through RTK after governance approval.
+
+```bash
+# Install RTK (optional but recommended)
+npm install -g @anthropic-ai/rtk
+
+# AgentGuard detects RTK automatically
+agentguard status
+# ⚡ Token optimization  rtk v0.30.0 (60-90% token savings)
+```
+
+**How it works:** After the kernel approves a shell command, the shell adapter passes it to `rtk rewrite` for a token-optimized equivalent. If RTK has a compact version (git, npm, cargo, tsc, docker, kubectl, etc.), it uses that. If not, the original command runs unchanged. This happens transparently — no configuration needed.
+
+**Token savings by category:**
+
+| Category | Commands | Savings |
+|----------|----------|---------|
+| Tests | vitest, playwright, cargo test | 90-99% |
+| Build | next, tsc, lint, prettier | 70-87% |
+| Git | status, log, diff, add, commit | 59-80% |
+| Package managers | pnpm, npm, npx | 70-90% |
+| Infrastructure | docker, kubectl | 85% |
+
+Control via environment variable: `AGENTGUARD_RTK_ENABLED=true` (default) or `false` to disable.
+
 ## Escalation
 
 AgentGuard tracks repeated denials and invariant violations. If an agent repeatedly attempts blocked actions, the runtime escalates to lockdown — all actions denied until a human intervenes. See [escalation state machine](docs/unified-architecture.md) for the full detail.

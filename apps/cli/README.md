@@ -157,6 +157,17 @@ npm install @red-codes/core      # Types, actions, utilities
 npm install @red-codes/events    # Canonical event model
 ```
 
+## RTK Token Optimization
+
+AgentGuard integrates with [RTK](https://github.com/rtk-ai/rtk) to reduce token consumption by 60-90%. When RTK is installed, shell commands are automatically rewritten for compact output after governance approval.
+
+```bash
+npm install -g @anthropic-ai/rtk    # Install RTK (optional)
+agentguard status                    # Confirms: ⚡ Token optimization active
+```
+
+Works with git, npm, cargo, tsc, docker, kubectl, and more. No configuration needed — AgentGuard detects RTK automatically.
+
 ## Agent Swarm
 
 AgentGuard ships with a 26-agent autonomous development swarm:
