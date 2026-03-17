@@ -15,6 +15,11 @@
     "LICENSE",
     "README.md"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AgentGuardHQ/agentguard",
+    "directory": "apps/cli"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
