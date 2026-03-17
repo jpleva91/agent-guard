@@ -817,6 +817,18 @@ async function main() {
       break;
     }
 
+    case 'copilot-init': {
+      const { copilotInit } = await import('./commands/copilot-init.js');
+      await copilotInit(args.slice(1));
+      break;
+    }
+
+    case 'copilot-hook': {
+      const { copilotHook } = await import('./commands/copilot-hook.js');
+      await copilotHook(args[1], args.slice(2)); // 'pre' or 'post', then remaining flags
+      break;
+    }
+
     case 'auto-setup': {
       if (wantsHelp) {
         console.log(formatHelp(COMMANDS['auto-setup']));
@@ -949,9 +961,12 @@ function printHelp(): void {
 
   \x1b[1mIntegration:\x1b[0m
     agentguard claude-init                    Set up Claude Code hook integration
+    agentguard copilot-init                   Set up Copilot CLI hook integration
+    agentguard copilot-init --global          Install hooks globally (~/.copilot/hooks/)
     agentguard auto-setup                     Auto-detect and configure hooks
     agentguard auto-setup --dry-run           Detect without installing
-    agentguard claude-hook                    PreToolUse/PostToolUse hook handler (internal)
+    agentguard claude-hook                    Claude Code hook handler (internal)
+    agentguard copilot-hook                   Copilot CLI hook handler (internal)
     agentguard status                         Check governance readiness (hooks, policy, dirs)
     agentguard status --quiet                 Machine-readable check (exit code only)
     agentguard demo                           See governance in action (interactive showcase)
