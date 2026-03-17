@@ -8,6 +8,7 @@ import type { StorageBundle } from '@red-codes/storage';
 export function createLocalDataSource(config: McpConfig): DataSource {
   // Lazy-load storage to avoid requiring better-sqlite3 at import time
   let storagePromise: Promise<StorageBundle> | null = null;
+  let resolvedStorage: StorageBundle | null = null;
 
   async function getStorage(): Promise<StorageBundle> {
     if (!storagePromise) {
@@ -20,6 +21,7 @@ export function createLocalDataSource(config: McpConfig): DataSource {
         if (!storage.db) {
           throw new Error('SQLite storage backend did not initialize database.');
         }
+        resolvedStorage = storage;
         return storage;
       })();
     }
@@ -27,6 +29,14 @@ export function createLocalDataSource(config: McpConfig): DataSource {
   }
 
   return {
+    close(): void {
+      if (resolvedStorage) {
+        resolvedStorage.close();
+        resolvedStorage = null;
+      }
+      storagePromise = null;
+    },
+
     async listRuns(limit?: number): Promise<string[]> {
       const storage = await getStorage();
       const { listRunIds } = await import('@red-codes/storage');

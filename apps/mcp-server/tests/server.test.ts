@@ -28,8 +28,13 @@ describe('MCP server config', () => {
 
 describe('Local data source', () => {
   let tmpDir: string | undefined;
+  let activeDs: ReturnType<typeof createLocalDataSource> | undefined;
 
   afterEach(() => {
+    if (activeDs) {
+      activeDs.close?.();
+      activeDs = undefined;
+    }
     if (tmpDir) {
       rmSync(tmpDir, { recursive: true, force: true });
       tmpDir = undefined;
@@ -54,6 +59,7 @@ describe('Local data source', () => {
       baseDir: tmpDir,
     };
     const ds = createLocalDataSource(config);
+    activeDs = ds;
     const runs = await ds.listRuns();
     expect(runs).toEqual([]);
   });

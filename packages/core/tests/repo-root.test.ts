@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { isAbsolute } from 'node:path';
 import { resolveMainRepoRoot, isWorktree, _resetRepoRootCache } from '../src/repo-root.js';
 
 beforeEach(() => {
@@ -20,7 +21,7 @@ describe('resolveMainRepoRoot', () => {
 
   it('returns an absolute path', () => {
     const result = resolveMainRepoRoot();
-    expect(result.startsWith('/')).toBe(true);
+    expect(isAbsolute(result)).toBe(true);
   });
 
   it('cache can be reset', () => {

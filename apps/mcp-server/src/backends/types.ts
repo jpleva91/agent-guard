@@ -7,4 +7,6 @@ export interface DataSource {
   loadEvents(runId: string): Promise<DomainEvent[]>;
   loadDecisions(runId: string): Promise<GovernanceDecisionRecord[]>;
   queryEvents(opts: { runId?: string; kind?: string; limit?: number }): Promise<DomainEvent[]>;
+  /** Release underlying resources (e.g. close SQLite connection). No-op if unsupported. */
+  close?(): void;
 }
