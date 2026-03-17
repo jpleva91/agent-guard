@@ -214,6 +214,8 @@ export type EventKind =
   | 'AdoptionAnalysisFailed'
   // Denial Learning
   | 'DenialPatternDetected'
+  // Intent Drift
+  | 'IntentDriftDetected'
   // Environmental Enforcement
   // TODO(issue-225): Reserved for future direct emission; currently InvariantViolation is emitted instead.
   | 'IdeSocketAccessBlocked';
