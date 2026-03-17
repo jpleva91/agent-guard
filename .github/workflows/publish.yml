@@ -38,31 +38,34 @@ jobs:
           fi
 
       # Publish in dependency order: core → events → cli
-      # Each step skips if the version is already on npm
+      # Library packages tolerate "already published" (E403) since their versions
+      # only bump when they actually change.
 
       - name: Publish @red-codes/core
         working-directory: packages/core
         run: |
-          PKG_NAME=$(node -p "require('./package.json').name")
-          PKG_VER=$(node -p "require('./package.json').version")
-          if npm view "${PKG_NAME}@${PKG_VER}" version 2>/dev/null; then
-            echo "${PKG_NAME}@${PKG_VER} already published, skipping"
-          else
-            pnpm publish --provenance --access public --no-git-checks
-          fi
+          OUTPUT=$(pnpm publish --provenance --access public --no-git-checks 2>&1) && echo "$OUTPUT" || {
+            echo "$OUTPUT"
+            if echo "$OUTPUT" | grep -q "cannot publish over the previously published"; then
+              echo "::notice::@red-codes/core already published at this version, skipping"
+            else
+              exit 1
+            fi
+          }
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @red-codes/events
         working-directory: packages/events
         run: |
-          PKG_NAME=$(node -p "require('./package.json').name")
-          PKG_VER=$(node -p "require('./package.json').version")
-          if npm view "${PKG_NAME}@${PKG_VER}" version 2>/dev/null; then
-            echo "${PKG_NAME}@${PKG_VER} already published, skipping"
-          else
-            pnpm publish --provenance --access public --no-git-checks
-          fi
+          OUTPUT=$(pnpm publish --provenance --access public --no-git-checks 2>&1) && echo "$OUTPUT" || {
+            echo "$OUTPUT"
+            if echo "$OUTPUT" | grep -q "cannot publish over the previously published"; then
+              echo "::notice::@red-codes/events already published at this version, skipping"
+            else
+              exit 1
+            fi
+          }
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
