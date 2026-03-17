@@ -15,6 +15,7 @@
     { "path": "packages/adapters" },
     { "path": "packages/storage" },
     { "path": "packages/plugins" },
+    { "path": "packages/invariant-data-protection" },
     { "path": "packages/renderers" },
     { "path": "packages/swarm" },
     { "path": "apps/cli" },

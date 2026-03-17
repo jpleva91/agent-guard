@@ -1,0 +1,42 @@
+{
+  "name": "@red-codes/invariant-data-protection",
+  "version": "0.1.0",
+  "description": "Reference invariant plugin for data protection — PII detection, secret scanning, and batch limits",
+  "type": "module",
+  "license": "Apache-2.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/",
+    "ts:check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@red-codes/core": "workspace:*",
+    "@red-codes/invariants": "workspace:*",
+    "@red-codes/plugins": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0",
+    "typescript": "^5.9.3"
+  },
+  "agentguard": {
+    "type": "invariant"
+  },
+  "keywords": [
+    "agentguard-plugin",
+    "invariant",
+    "data-protection",
+    "pii",
+    "secrets"
+  ]
+}
