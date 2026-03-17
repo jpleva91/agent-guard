@@ -20,28 +20,30 @@ agent proposes action  →  policy evaluated  →  invariants checked  →  allo
 
 ## Quick Start
 
-**30 seconds to see it work:**
+**Install from npm and see it work in 30 seconds:**
 
 ```bash
-git clone https://github.com/AgentGuardHQ/agent-guard.git
-cd agent-guard
-pnpm install && pnpm build
+# 1. Install globally
+npm install -g @red-codes/agentguard
 
-# Evaluate a sample action against the default policy
-echo '{"tool":"Bash","command":"git push origin main"}' | npx agentguard guard --dry-run
+# 2. Set up Claude Code hooks
+agentguard claude-init
+
+# 3. Check governance status
+agentguard status
 ```
 
 **Try it on your own repo:**
 
 ```bash
-# Pipe an action into the kernel
-echo '{"tool":"Bash","command":"git push origin main"}' | npx @red-codes/agentguard guard --dry-run
+# Evaluate a sample action against the default policy
+echo '{"tool":"Bash","command":"git push origin main"}' | agentguard guard --dry-run
 
 # Start the runtime with a policy file
-npx @red-codes/agentguard guard --policy agentguard.yaml
+agentguard guard --policy agentguard.yaml
 
 # Inspect the last run
-npx @red-codes/agentguard inspect --last
+agentguard inspect --last
 ```
 
 ## Why AgentGuard Exists
@@ -140,6 +142,8 @@ AgentGuard tracks repeated denials and invariant violations. If an agent repeate
 
 ## CLI
 
+Install globally: `npm install -g @red-codes/agentguard`
+
 ```bash
 # === Governance ===
 agentguard guard                          # Start governed action runtime
@@ -150,15 +154,38 @@ agentguard inspect [runId]                # Show action graph and decisions for 
 agentguard inspect --last                 # Inspect most recent run
 agentguard events [runId]                 # Show raw event stream for a run
 agentguard analytics                      # Analyze violation patterns across sessions
+agentguard status                         # Show current governance session status
+agentguard audit-verify                   # Verify tamper-resistant audit chain integrity
 
-# === Portability ===
-agentguard export <runId>                 # Export a governance session to JSONL
-agentguard export --last                  # Export the most recent run
-agentguard import <file>                  # Import a governance session from JSONL
+# === Setup & Configuration ===
+agentguard claude-init                    # Set up Claude Code hook integration
+agentguard auto-setup                     # Auto-detect AgentGuard and configure Claude Code hooks
+agentguard config show|get|set            # Manage AgentGuard configuration
+agentguard init <type>                    # Scaffold governance extensions or storage backends
+agentguard demo                           # Interactive governance showcase
 
-# === Replay ===
+# === Adoption & Migration ===
+agentguard adoption                       # Adoption metrics and onboarding status
+agentguard learn                          # Interactive tutorials and learning paths
+agentguard migrate                        # Migrate configuration between versions
+
+# === Replay & Debug ===
+agentguard session-viewer [runId]         # Generate interactive HTML dashboard
 agentguard replay --last                  # Replay a governance session timeline
 agentguard replay --last --step           # Step through events interactively
+agentguard diff <run1> <run2>             # Compare two governance sessions side-by-side
+agentguard traces [runId]                 # Display policy evaluation traces for a run
+agentguard simulate <action-json>         # Simulate action and show predicted impact
+
+# === Portability & CI ===
+agentguard export <runId>                 # Export a governance session to JSONL
+agentguard import <file>                  # Import a governance session from JSONL
+agentguard ci-check <session>             # Verify governance session for violations
+agentguard evidence-pr                    # Attach governance evidence summary to a PR
+
+# === Policy ===
+agentguard policy validate <file>        # Validate a policy file without starting the runtime
+agentguard policy-verify <file>          # Verify policy file structure and rules
 
 # === Plugins ===
 agentguard plugin list                    # List installed plugins
@@ -166,43 +193,10 @@ agentguard plugin install <path>          # Install a plugin from a local path
 agentguard plugin remove <id>            # Remove a plugin by ID
 agentguard plugin search [query]          # Search for plugins on npm
 
-# === Simulation ===
-agentguard simulate <action-json>         # Simulate action and show predicted impact
-agentguard simulate --action <type>       # Simulate by action type and flags
-
-# === Policy ===
-agentguard policy validate <file>        # Validate a policy file without starting the runtime
-
-# === CI/CD ===
-agentguard ci-check <session>             # Verify governance session for violations
-agentguard ci-check --last                # Check most recent run locally
-
-# === Comparison ===
-agentguard diff <run1> <run2>             # Compare two governance sessions side-by-side
-agentguard diff --last                   # Compare the two most recent runs
-
-# === Evidence ===
-agentguard evidence-pr                    # Attach governance evidence summary to a PR
-agentguard evidence-pr --pr <number>     # Post evidence to a specific PR
-agentguard evidence-pr --dry-run         # Preview evidence report
-
-# === Traces ===
-agentguard traces [runId]                 # Display policy evaluation traces for a run
-agentguard traces --last                  # Show traces for the most recent run
-agentguard traces --last --summary       # Summary statistics only
-agentguard traces --last --json          # JSON output
-
 # === Telemetry ===
 agentguard telemetry                      # Manage telemetry enrollment and settings
-
-# === Integration ===
-agentguard claude-init                    # Set up Claude Code hook integration
-agentguard init <type>                    # Scaffold governance extensions or storage backends
-agentguard policy-verify <file>          # Verify policy file structure and rules
 agentguard help                           # Show all commands
 ```
-
-Install globally: `npm i -g @red-codes/agentguard`
 
 ## Claude Code Integration
 
@@ -211,7 +205,7 @@ AgentGuard integrates with [Claude Code](https://docs.anthropic.com/en/docs/clau
 This design is intentional: no daemon to crash, no ports to manage, no IPC. Each hook invocation is self-contained — load policy, evaluate, respond, exit. If anything fails, the hook exits cleanly and Claude Code continues (fail-open).
 
 ```bash
-npx @red-codes/agentguard claude-init    # Set up Claude Code hooks
+agentguard claude-init    # Set up Claude Code hooks
 ```
 
 **Three hooks are installed:**
@@ -332,8 +326,31 @@ apps/
 │   └── services/           # Event reader, notification formatter, diagnostics, violation mapper
 └── telemetry-server/src/   # @red-codes/telemetry-server — Telemetry ingestion server (enrollment, batch ingest, rate limiting)
 
+crates/
+└── kernel-core/            # Rust kernel (in development)
+
 policies/                   # Policy packs (YAML: ci-safe, enterprise, open-source, strict)
 ```
+
+## npm Packages
+
+AgentGuard is published as three packages on npm:
+
+| Package | Description | Install |
+|---------|-------------|---------|
+| [`@red-codes/agentguard`](https://www.npmjs.com/package/@red-codes/agentguard) | CLI -- the primary install for end users | `npm install -g @red-codes/agentguard` |
+| [`@red-codes/core`](https://www.npmjs.com/package/@red-codes/core) | Shared types, action definitions, utilities | `npm install @red-codes/core` |
+| [`@red-codes/events`](https://www.npmjs.com/package/@red-codes/events) | Canonical event model (schema, bus, store) | `npm install @red-codes/events` |
+
+**Building integrations?** Install the library packages for typed access to AgentGuard's action model and event system:
+
+```bash
+npm install @red-codes/core @red-codes/events
+```
+
+## Rust Kernel
+
+Work has started on a Rust implementation of the governance kernel in `crates/kernel-core/`. The long-term goal is to replace the TypeScript kernel with a native binary for lower latency and smaller footprint. The Rust kernel is not yet functional -- the TypeScript kernel remains the production implementation.
 
 ## Run Locally
 
@@ -357,6 +374,14 @@ pnpm test               # Run all tests (turbo test)
 | [Event Model](docs/event-model.md) | Canonical event schema |
 | [Plugin API](docs/plugin-api.md) | Event sources and extension points |
 | [Contributing](CONTRIBUTING.md) | How to contribute |
+
+## Report Issues and Contributing
+
+Found a bug, have a feature request, or want to contribute? Open an issue at:
+
+**[github.com/AgentGuardHQ/agentguard/issues](https://github.com/AgentGuardHQ/agentguard/issues)**
+
+Contributions are welcome -- see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on submitting pull requests, writing invariants, creating policy packs, and building adapters.
 
 ## License
 

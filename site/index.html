@@ -373,7 +373,7 @@
             <div class="text-muted text-sm mt-1">Invariants</div>
           </div>
           <div class="reveal">
-            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="21">0</div>
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="29">0</div>
             <div class="text-muted text-sm mt-1">CLI Commands</div>
           </div>
         </div>
@@ -863,25 +863,25 @@
           <div class="reveal" style="transition-delay: 100ms">
             <div class="flex items-center gap-2 mb-3">
               <span class="font-mono text-cta text-sm font-semibold">02</span>
-              <span class="text-text font-semibold text-sm">Evaluate an action (dry run)</span>
+              <span class="text-text font-semibold text-sm">Hook into Claude Code</span>
             </div>
             <div class="relative group">
-              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">echo '{"tool":"Bash","command":"git push origin main"}' | npx agentguard guard --dry-run</span></code></pre>
-              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="echo '{&quot;tool&quot;:&quot;Bash&quot;,&quot;command&quot;:&quot;git push origin main&quot;}' | npx agentguard guard --dry-run" aria-label="Copy to clipboard">
+              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">agentguard claude-init</span></code></pre>
+              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="agentguard claude-init" aria-label="Copy to clipboard">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>
           </div>
 
-          <!-- Claude Code -->
+          <!-- Status -->
           <div class="reveal" style="transition-delay: 200ms">
             <div class="flex items-center gap-2 mb-3">
               <span class="font-mono text-cta text-sm font-semibold">03</span>
-              <span class="text-text font-semibold text-sm">Hook into Claude Code</span>
+              <span class="text-text font-semibold text-sm">Check governance status</span>
             </div>
             <div class="relative group">
-              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">npx @red-codes/agentguard claude-init</span></code></pre>
-              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="npx @red-codes/agentguard claude-init" aria-label="Copy to clipboard">
+              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">agentguard status</span></code></pre>
+              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="agentguard status" aria-label="Copy to clipboard">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>
@@ -1059,7 +1059,7 @@ rules:
     <section id="cli" class="py-24" aria-labelledby="cli-heading">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-16 reveal">
-          <h2 id="cli-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">21 CLI Commands</h2>
+          <h2 id="cli-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">29 CLI Commands</h2>
           <p class="text-muted text-lg max-w-2xl mx-auto">Full lifecycle governance from your terminal.</p>
         </div>
 
@@ -1072,6 +1072,8 @@ rules:
               <li class="text-muted"><span class="text-text">inspect</span> &mdash; Action graph + decisions</li>
               <li class="text-muted"><span class="text-text">events</span> &mdash; Raw event stream</li>
               <li class="text-muted"><span class="text-text">analytics</span> &mdash; Violation patterns</li>
+              <li class="text-muted"><span class="text-text">status</span> &mdash; Governance session status</li>
+              <li class="text-muted"><span class="text-text">audit-verify</span> &mdash; Audit chain integrity</li>
             </ul>
           </div>
 
@@ -1110,14 +1112,26 @@ rules:
             </ul>
           </div>
 
-          <!-- Integration -->
+          <!-- Integration & Setup -->
           <div class="reveal bg-surface border border-surface-light rounded-xl p-5">
-            <h3 class="font-mono font-semibold text-cta text-xs uppercase tracking-wider mb-3">Integration</h3>
+            <h3 class="font-mono font-semibold text-cta text-xs uppercase tracking-wider mb-3">Setup &amp; Integration</h3>
             <ul class="space-y-2 text-sm font-mono">
               <li class="text-muted"><span class="text-text">claude-init</span> &mdash; Claude Code hooks</li>
-              <li class="text-muted"><span class="text-text">claude-hook</span> &mdash; Hook handler</li>
+              <li class="text-muted"><span class="text-text">auto-setup</span> &mdash; Auto-detect &amp; configure</li>
+              <li class="text-muted"><span class="text-text">config</span> &mdash; Show/get/set config</li>
               <li class="text-muted"><span class="text-text">init</span> &mdash; Scaffold extensions</li>
+              <li class="text-muted"><span class="text-text">demo</span> &mdash; Interactive showcase</li>
               <li class="text-muted"><span class="text-text">telemetry</span> &mdash; Enrollment &amp; settings</li>
+            </ul>
+          </div>
+
+          <!-- Adoption & Migration -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-5">
+            <h3 class="font-mono font-semibold text-info text-xs uppercase tracking-wider mb-3">Adoption &amp; Migration</h3>
+            <ul class="space-y-2 text-sm font-mono">
+              <li class="text-muted"><span class="text-text">adoption</span> &mdash; Metrics &amp; onboarding</li>
+              <li class="text-muted"><span class="text-text">learn</span> &mdash; Interactive tutorials</li>
+              <li class="text-muted"><span class="text-text">migrate</span> &mdash; Version migration</li>
             </ul>
           </div>
 
@@ -1271,7 +1285,7 @@ rules:
                 <pre class="bg-bg rounded-lg px-3 py-2 text-sm font-mono text-text overflow-x-auto"><code>agentguard init swarm \
   --tiers core,governance</code></pre>
               </div>
-              <p class="text-muted text-xs mt-3">Requires <a href="https://github.com/AgentGuardHQ/agent-guard" class="text-cta hover:underline">building from source</a>. Generates <span class="text-text font-mono">.claude/skills/</span>, agent prompts, and <span class="text-text font-mono">agentguard-swarm.yaml</span> config.</p>
+              <p class="text-muted text-xs mt-3">Install with <span class="text-text font-mono">npm install -g @red-codes/agentguard</span>. Generates <span class="text-text font-mono">.claude/skills/</span>, agent prompts, and <span class="text-text font-mono">agentguard-swarm.yaml</span> config.</p>
             </div>
           </div>
 
@@ -1312,7 +1326,7 @@ rules:
             <h3 class="font-mono font-bold text-text text-lg mb-2">Claude Code</h3>
             <p class="text-muted text-sm leading-relaxed mb-4">Inline hook integration &mdash; no daemon, no sidecar. AgentGuard fires on every tool call via PreToolUse/PostToolUse hooks, evaluates policies and invariants in-process, and exits. Fail-open by design.</p>
             <div class="relative group mb-4">
-              <pre class="bg-bg/50 rounded-lg p-3 font-mono text-xs overflow-x-auto"><code class="text-muted"><span class="text-cta">$</span> npx agentguard claude-init</code></pre>
+              <pre class="bg-bg/50 rounded-lg p-3 font-mono text-xs overflow-x-auto"><code class="text-muted"><span class="text-cta">$</span> agentguard claude-init</code></pre>
             </div>
             <div class="flex flex-wrap gap-2">
               <span class="text-xs font-mono text-muted bg-surface-light/50 px-2 py-1 rounded">PreToolUse</span>
@@ -1366,8 +1380,8 @@ rules:
           <div class="reveal flex items-start gap-3">
             <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             <div>
-              <h3 class="font-mono font-semibold text-text text-sm">JSONL + SQLite + Firestore</h3>
-              <p class="text-muted text-sm mt-1">Three storage backends. Append-only audit trail with indexed queries at scale.</p>
+              <h3 class="font-mono font-semibold text-text text-sm">JSONL + SQLite</h3>
+              <p class="text-muted text-sm mt-1">Append-only audit trail with indexed queries. Portable JSONL export for CI and archival.</p>
             </div>
           </div>
           <div class="reveal flex items-start gap-3">
@@ -1427,6 +1441,17 @@ rules:
         </div>
 
         <div class="space-y-4 reveal-stagger">
+          <!-- Rust Kernel -->
+          <div class="reveal flex items-start gap-4 bg-surface border border-cta/30 rounded-xl p-5">
+            <div class="shrink-0 mt-0.5">
+              <span class="font-mono text-xs font-semibold px-2 py-1 rounded bg-cta/10 text-cta">ACTIVE</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-mono font-semibold text-text text-sm">Rust Kernel &mdash; crates/kernel-core/</h3>
+              <p class="text-muted text-sm mt-1">Native governance kernel in Rust for lower latency and smaller footprint. Early development &mdash; the TypeScript kernel remains the production implementation.</p>
+            </div>
+          </div>
+
           <!-- Phase 6 -->
           <div class="reveal flex items-start gap-4 bg-surface border border-surface-light rounded-xl p-5">
             <div class="shrink-0 mt-0.5">
@@ -1521,6 +1546,10 @@ rules:
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 Contributing Guide
               </a>
+              <a href="https://github.com/AgentGuardHQ/agentguard/issues" target="_blank" rel="noopener noreferrer" class="border border-surface-light hover:border-muted text-text font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2 cursor-pointer">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Report Issues
+              </a>
               <a href="https://github.com/AgentGuardHQ/agent-guard" target="_blank" rel="noopener noreferrer" class="border border-surface-light hover:border-muted text-text font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2 cursor-pointer">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 Star on GitHub
@@ -1561,7 +1590,9 @@ rules:
             <li><a href="#invariants" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Invariants</a></li>
             <li><a href="#cli" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">CLI Commands</a></li>
             <li><a href="#swarm" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Agent Swarm</a></li>
-            <li><a href="https://www.npmjs.com/package/@red-codes/agentguard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">npm Package</a></li>
+            <li><a href="https://www.npmjs.com/package/@red-codes/agentguard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">@red-codes/agentguard</a></li>
+            <li><a href="https://www.npmjs.com/package/@red-codes/core" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">@red-codes/core</a></li>
+            <li><a href="https://www.npmjs.com/package/@red-codes/events" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">@red-codes/events</a></li>
           </ul>
         </div>
 
