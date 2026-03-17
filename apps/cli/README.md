@@ -8,7 +8,16 @@
 ## Install
 
 ```bash
+# Install AgentGuard
 npm install -g @red-codes/agentguard
+
+# (Optional) Install RTK for 60-90% token savings on CLI output
+# Homebrew: brew install rtk
+# macOS/Linux: curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+# Windows: download from https://github.com/rtk-ai/rtk/releases
+
+# Set up Claude Code hooks
+agentguard claude-init
 ```
 
 ## What It Does
