@@ -49,7 +49,7 @@ packages/
 ├── invariants/    @red-codes/invariants — Invariant system (21 built-in definitions, checker)
 ├── invariant-data-protection/ @red-codes/invariant-data-protection — Data protection invariant plugin
 ├── kernel/        @red-codes/kernel — Governed action kernel (orchestrate, normalize, decide, escalate)
-├── adapters/      @red-codes/adapters — Execution adapters (file, shell, git, claude-code)
+├── adapters/      @red-codes/adapters — Execution adapters (file, shell, git, claude-code, copilot-cli)
 ├── analytics/     @red-codes/analytics — Cross-session violation analytics
 ├── storage/       @red-codes/storage — SQLite storage backend (opt-in)
 ├── telemetry/     @red-codes/telemetry — Runtime telemetry and logging

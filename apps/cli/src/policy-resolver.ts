@@ -2,7 +2,7 @@
 // Supports policy composition: multiple --policy flags + hierarchical discovery.
 
 import { readFileSync, existsSync } from 'node:fs';
-import { resolve, dirname, join } from 'node:path';
+import { resolve, dirname, join, normalize } from 'node:path';
 import { homedir } from 'node:os';
 import { loadYamlPolicy, parseYamlPolicy } from '@red-codes/policy';
 import { resolveExtends, mergePolicies } from '@red-codes/policy';
@@ -24,7 +24,43 @@ const USER_POLICY_CANDIDATES = [
   join('.agentguard', 'policy.yml'),
 ];
 
-export function findDefaultPolicy(): string | null {
+/**
+ * Walk up from a target file path looking for the nearest policy file.
+ * Returns both the policy path and the project root directory.
+ * This enables governance enforcement even when cwd differs from the project root
+ * (e.g., when Claude Code runs from a parent directory).
+ */
+export function findPolicyForPath(
+  targetPath: string
+): { policyPath: string; projectRoot: string } | null {
+  const absPath = normalize(resolve(targetPath));
+  // Start from the file's directory (dirname handles both files and trailing-slash dirs)
+  let dir = dirname(absPath);
+
+  const seen = new Set<string>();
+  while (!seen.has(dir)) {
+    seen.add(dir);
+    for (const name of DEFAULT_POLICY_CANDIDATES) {
+      const candidate = join(dir, name);
+      if (existsSync(candidate)) {
+        return { policyPath: candidate, projectRoot: dir };
+      }
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break; // Filesystem root
+    dir = parent;
+  }
+  return null;
+}
+
+export function findDefaultPolicy(targetPath?: string): string | null {
+  // Path-aware resolution: walk up from the target file to find the nearest policy.
+  // This fixes the governance bypass when cwd is a parent directory of the project.
+  if (targetPath) {
+    const result = findPolicyForPath(targetPath);
+    if (result) return result.policyPath;
+  }
+
   // Check cwd first (worktree-local policies take precedence)
   for (const name of DEFAULT_POLICY_CANDIDATES) {
     if (existsSync(name)) return name;
@@ -114,9 +150,11 @@ function loadPolicyFileTyped(policyPath: string): LoadedPolicy[] {
 
 /**
  * Load policy definitions from a single path (backwards compatible).
+ * When targetPath is provided, walks up from that file to find the nearest policy —
+ * fixing the governance bypass when cwd differs from the project root.
  */
-export function loadPolicyDefs(policyPath?: string): unknown[] {
-  const resolved = policyPath || findDefaultPolicy();
+export function loadPolicyDefs(policyPath?: string, targetPath?: string): unknown[] {
+  const resolved = policyPath || findDefaultPolicy(targetPath);
   return resolved ? loadPolicyFile(resolved) : [];
 }
 

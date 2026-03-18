@@ -257,7 +257,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   }
 
   // Show what protections are active
-  showProtectionSummary(policyGenerated, rtkStatus);
+  showProtectionSummary(policyGenerated, rtkStatus, isGlobal);
 }
 
 function removeHook(settingsPath: string, settingsLabel: string): void {
@@ -448,7 +448,8 @@ function generateStarterPolicy(): boolean {
 
 function showProtectionSummary(
   policyGenerated: boolean,
-  rtkStatus?: { available: boolean; version?: string }
+  rtkStatus?: { available: boolean; version?: string },
+  isGlobal?: boolean
 ): void {
   process.stderr.write('\n');
   process.stderr.write(`  ${FG.green}${BOLD}AgentGuard is active.${RESET}\n\n`);
@@ -498,6 +499,16 @@ function showProtectionSummary(
       `  ${DIM}2. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`
     );
   }
+  // Suggest global installation if this was a local install
+  if (!isGlobal) {
+    process.stderr.write(
+      `\n  ${FG.yellow}Tip:${RESET} Run ${FG.cyan}agentguard claude-init --global${RESET} to install hooks globally.\n`
+    );
+    process.stderr.write(
+      `  ${DIM}Global hooks protect governed repos even when Claude Code starts from a parent directory.${RESET}\n`
+    );
+  }
+
   process.stderr.write(
     `\n  ${DIM}Try it: ${FG.cyan}agentguard demo${RESET}${DIM} — see governance in action${RESET}\n`
   );

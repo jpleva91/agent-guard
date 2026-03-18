@@ -71,6 +71,33 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
   process.exit(0);
 }
 
+/**
+ * Extract the target file path from a hook payload for path-aware policy resolution.
+ * Used to find the nearest agentguard.yaml when cwd differs from the project root.
+ */
+function extractTargetPath(payload: ClaudeCodeHookPayload): string | undefined {
+  const input = payload.tool_input || {};
+
+  // File tools have an explicit file_path
+  if (input.file_path && typeof input.file_path === 'string') {
+    return input.file_path;
+  }
+
+  // Glob/Grep have a path parameter
+  if (input.path && typeof input.path === 'string') {
+    return input.path;
+  }
+
+  // Bash: look for absolute paths in the command
+  if (payload.tool_name === 'Bash' && typeof input.command === 'string') {
+    // Match Unix or Windows absolute paths (avoid matching flags like --force)
+    const match = input.command.match(/(?:^|\s)(\/(?!dev\/null)[^\s"']+|[A-Z]:\\[^\s"']+)/);
+    if (match) return match[1];
+  }
+
+  return undefined;
+}
+
 /** Returns true if the action was denied. */
 async function handlePreToolUse(
   payload: ClaudeCodeHookPayload,
@@ -78,7 +105,7 @@ async function handlePreToolUse(
 ): Promise<boolean> {
   const { processClaudeCodeHook, formatHookResponse } = await import('@red-codes/adapters');
   const { createKernel } = await import('@red-codes/kernel');
-  const { loadPolicyDefs } = await import('../policy-resolver.js');
+  const { loadPolicyDefs, findPolicyForPath } = await import('../policy-resolver.js');
   const { resolveStorageConfig, createStorageBundle } = await import('@red-codes/storage');
 
   // Ensure hook field is set
@@ -87,10 +114,23 @@ async function handlePreToolUse(
     hook: 'PreToolUse',
   };
 
+  // Extract target path for path-aware policy resolution.
+  // This fixes the governance bypass when Claude Code runs from a parent directory.
+  const targetPath = extractTargetPath(normalizedPayload);
+  let projectRoot: string | undefined;
+
+  // If we have a target path, try to find the project root and policy together (one walk-up)
+  if (targetPath) {
+    const policyResult = findPolicyForPath(targetPath);
+    if (policyResult) {
+      projectRoot = policyResult.projectRoot;
+    }
+  }
+
   // Load policy (fail-open: empty policy if none found)
   let policyDefs: unknown[] = [];
   try {
-    policyDefs = loadPolicyDefs();
+    policyDefs = loadPolicyDefs(undefined, targetPath);
   } catch (policyErr) {
     // Policy loading failure is non-fatal — continue with no policy (allow all)
     process.stderr.write(
@@ -142,7 +182,13 @@ async function handlePreToolUse(
   const envPersona = readPersonaFromEnv();
   const resolvedPersona = envPersona ? resolvePersona(undefined, envPersona) : undefined;
 
-  const result = await processClaudeCodeHook(kernel, normalizedPayload, {}, resolvedPersona);
+  const result = await processClaudeCodeHook(
+    kernel,
+    normalizedPayload,
+    {},
+    resolvedPersona,
+    projectRoot
+  );
   kernel.shutdown();
 
   // Close storage (important for SQLite to flush WAL)
