@@ -153,10 +153,7 @@ export function topDeniedActions(
  * Per-run summary: event counts broken down by governance outcome.
  * Replaces: loading all events per run then computing counts in memory.
  */
-export function summarizeRuns(
-  db: Database.Database,
-  filter?: AggregationTimeFilter
-): RunSummary[] {
+export function summarizeRuns(db: Database.Database, filter?: AggregationTimeFilter): RunSummary[] {
   const { where, params } = buildTimeConditions(filter, 'events');
   const sql = `
     SELECT
@@ -186,7 +183,9 @@ export function countViolationsByInvariant(
   filter?: AggregationTimeFilter
 ): ViolationByInvariant[] {
   const { where, params } = buildTimeConditions(filter, 'events');
-  const kindCondition = where ? `${where} AND kind = 'InvariantViolation'` : "WHERE kind = 'InvariantViolation'";
+  const kindCondition = where
+    ? `${where} AND kind = 'InvariantViolation'`
+    : "WHERE kind = 'InvariantViolation'";
   const sql = `
     SELECT
       COALESCE(json_extract(data, '$.invariant'), json_extract(data, '$.invariantId'), 'unknown') as invariant,
@@ -290,9 +289,7 @@ export function denialPatterns(
   readonly distinctSessions: number;
 }> {
   const { where, params } = buildTimeConditions(filter, 'decisions');
-  const whereClause = where
-    ? `${where} AND outcome = 'denied'`
-    : "WHERE outcome = 'denied'";
+  const whereClause = where ? `${where} AND outcome = 'denied'` : "WHERE outcome = 'denied'";
   const sql = `
     SELECT
       action_type as actionType,

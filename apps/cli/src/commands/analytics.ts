@@ -140,9 +140,7 @@ export async function analytics(args: string[], storageConfig?: StorageConfig): 
       const maxOutcome = Math.max(...outcomes.map((o) => o.count));
       for (const o of outcomes) {
         const pct =
-          stats.totalDecisions > 0
-            ? ((o.count / stats.totalDecisions) * 100).toFixed(1)
-            : '0.0';
+          stats.totalDecisions > 0 ? ((o.count / stats.totalDecisions) * 100).toFixed(1) : '0.0';
         const outcomeColor =
           o.outcome === 'denied' ? 'red' : o.outcome === 'allowed' ? 'green' : 'yellow';
         process.stderr.write(
@@ -199,9 +197,7 @@ export async function analytics(args: string[], storageConfig?: StorageConfig): 
       for (const r of shown) {
         const duration = fmtDuration(r.lastEventAt - r.firstEventAt);
         const denyRate =
-          r.allowed + r.denied > 0
-            ? ((r.denied / (r.allowed + r.denied)) * 100).toFixed(0)
-            : '0';
+          r.allowed + r.denied > 0 ? ((r.denied / (r.allowed + r.denied)) * 100).toFixed(0) : '0';
         process.stderr.write(
           `  ${dim(r.runId.slice(0, 12))} ${fmtDate(r.firstEventAt)} ${dim(duration.padStart(8))} ` +
             `${color(String(r.allowed), 'green')}/${color(String(r.denied), 'red')} ` +
