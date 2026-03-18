@@ -28,6 +28,7 @@ export function createTelemetrySender(
   const batchSize = config.batchSize ?? DEFAULT_BATCH_SIZE;
   const maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES;
   const serverUrl = config.serverUrl;
+  const cloudApiKey = config.cloudApiKey;
 
   let timer: ReturnType<typeof setInterval> | null = null;
   let flushing = false;
@@ -43,6 +44,12 @@ export function createTelemetrySender(
       'Content-Type': 'application/json',
     };
 
+    // Cloud API key auth (from config.json or env var)
+    if (cloudApiKey) {
+      headers['X-API-Key'] = cloudApiKey;
+      headers['X-Install-Id'] = identity?.install_id ?? 'unknown';
+    }
+
     if (mode === 'verified' && identity) {
       if (identity.enrollment_token) {
         headers['Authorization'] = `Bearer ${identity.enrollment_token}`;
@@ -55,7 +62,9 @@ export function createTelemetrySender(
       }
     }
 
-    const url = serverUrl.replace(/\/+$/, '') + '/api/v1/telemetry/batch';
+    // When sending to cloud, use /v1/ path; for legacy servers use /api/v1/
+    const pathPrefix = cloudApiKey ? '/v1/telemetry/batch' : '/api/v1/telemetry/batch';
+    const url = serverUrl.replace(/\/+$/, '') + pathPrefix;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {

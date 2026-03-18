@@ -75,3 +75,6 @@ rules:
   - action: file.write
     effect: allow
     reason: File writes allowed by default
+
+telemetry:
+  enabled: true

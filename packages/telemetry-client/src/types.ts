@@ -34,6 +34,8 @@ export interface TelemetryIdentity {
 /** Telemetry client configuration */
 export interface TelemetryClientConfig {
   serverUrl?: string;
+  /** Cloud API key — sent as X-API-Key header when sending to AgentGuard Cloud */
+  cloudApiKey?: string;
   mode?: TelemetryMode;
   flushIntervalMs?: number; // default 60000
   batchSize?: number; // default 50

@@ -1,7 +1,7 @@
 // Telemetry client facade — main entry point for the telemetry SDK.
 
 import { randomUUID } from 'node:crypto';
-import { unlinkSync } from 'node:fs';
+import { readFileSync, unlinkSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type {
@@ -56,6 +56,28 @@ function createNoopClient(): TelemetryClient {
   };
 }
 
+/**
+ * Resolve cloud endpoint and API key from (in priority order):
+ * 1. Env vars: AGENTGUARD_CLOUD_ENDPOINT, AGENTGUARD_CLOUD_API_KEY
+ * 2. Config file: ~/.agentguard/config.json → cloud.endpoint, cloud.apiKey
+ */
+function resolveCloudConfig(): { endpoint?: string; apiKey?: string } {
+  const envEndpoint = process.env.AGENTGUARD_CLOUD_ENDPOINT;
+  const envApiKey = process.env.AGENTGUARD_CLOUD_API_KEY;
+  if (envEndpoint) return { endpoint: envEndpoint, apiKey: envApiKey };
+
+  try {
+    const configPath = join(homedir(), '.agentguard', 'config.json');
+    const raw = JSON.parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
+    const cloud = raw.cloud as { endpoint?: string; apiKey?: string } | undefined;
+    if (cloud?.endpoint) return { endpoint: cloud.endpoint, apiKey: cloud.apiKey ?? envApiKey };
+  } catch {
+    // No config file or invalid JSON — fall through
+  }
+
+  return {};
+}
+
 /** Create a telemetry client. Returns a no-op client when mode is 'off'. */
 export async function createTelemetryClient(
   config?: Partial<TelemetryClientConfig>
@@ -66,8 +88,13 @@ export async function createTelemetryClient(
 
   if (mode === 'off') return createNoopClient();
 
+  // Resolve cloud endpoint: explicit config > env var > config.json
+  const cloud = resolveCloudConfig();
+  const serverUrl = config?.serverUrl ?? cloud.endpoint;
+
   const fullConfig: TelemetryClientConfig = {
-    serverUrl: config?.serverUrl,
+    serverUrl,
+    cloudApiKey: cloud.apiKey,
     mode,
     flushIntervalMs: config?.flushIntervalMs ?? 60_000,
     batchSize: config?.batchSize ?? 50,

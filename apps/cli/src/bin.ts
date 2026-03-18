@@ -441,6 +441,23 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard trust .agentguard/policy.yaml --yes',
     ],
   },
+  cloud: {
+    name: 'agentguard cloud',
+    description: 'Manage AgentGuard Cloud connection (connect, status, disconnect)',
+    usage: 'agentguard cloud <command> [options]',
+    flags: [
+      {
+        flag: '--endpoint <url>',
+        description: 'Cloud endpoint URL (default: https://telemetry.agentguard.dev)',
+      },
+    ],
+    examples: [
+      'agentguard cloud connect ag_live_abc123def456xyz',
+      'agentguard cloud connect ag_test_key1234567890 --endpoint https://custom.example.com',
+      'agentguard cloud status',
+      'agentguard cloud disconnect',
+    ],
+  },
   'session-viewer': {
     name: 'agentguard session-viewer',
     description: 'Generate an interactive HTML visualization of a governance session',
@@ -850,6 +867,17 @@ async function main() {
       break;
     }
 
+    case 'cloud': {
+      const { cloud: cloudCmd } = await import('./commands/cloud.js');
+      if (wantsHelp) {
+        await cloudCmd(['help']);
+        break;
+      }
+      const code = await cloudCmd(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
     case '--version':
     case '-v': {
       console.log(`agentguard v${AGENTGUARD_VERSION}`);
@@ -978,6 +1006,12 @@ function printHelp(): void {
     agentguard config set <key> <value> -g    Set a user-level config value
     agentguard config path                    Show config file locations
     agentguard config keys                    List available config keys
+
+  \x1b[1mCloud:\x1b[0m
+    agentguard cloud connect <api-key>        Connect to AgentGuard Cloud
+    agentguard cloud connect ... --endpoint   Use a custom cloud endpoint
+    agentguard cloud status                   Show cloud connection status
+    agentguard cloud disconnect               Remove cloud connection
 
   \x1b[1mMeta:\x1b[0m
     agentguard --version                      Show version
