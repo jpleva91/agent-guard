@@ -233,6 +233,14 @@ agentguard plugin install <path>          # Install a plugin from a local path
 agentguard plugin remove <id>            # Remove a plugin by ID
 agentguard plugin search [query]          # Search for plugins on npm
 
+# === Cloud ===
+agentguard cloud connect <api-key>       # Connect to AgentGuard Cloud
+agentguard cloud status                  # Check cloud connection status
+agentguard cloud events                  # Query governance events from cloud
+agentguard cloud runs                    # List governance runs from cloud
+agentguard cloud summary                 # Cloud analytics summary
+agentguard cloud disconnect              # Disconnect from cloud
+
 # === Trust & Telemetry ===
 agentguard trust                          # Manage policy and hook trust verification
 agentguard telemetry                      # Manage telemetry enrollment and settings
@@ -277,6 +285,80 @@ The kernel runs in evaluation-only mode (`dryRun: true`) — it checks policies 
 | Grep | file.read |
 
 See [Hook Architecture](docs/hook-architecture.md) for the full design, configuration options, and debugging guide.
+
+**Global hook installation (recommended):**
+
+For full coverage even when Claude Code starts from a parent directory, install hooks globally:
+
+```bash
+agentguard claude-init --global    # Installs to ~/.claude/settings.json
+```
+
+Global hooks use path-aware policy resolution — they walk up from the target file to find the nearest `agentguard.yaml`, so governance applies regardless of working directory.
+
+## GitHub Copilot Integration
+
+AgentGuard also supports [GitHub Copilot CLI](https://docs.github.com/en/copilot/using-github-copilot/using-github-copilot-in-the-command-line) via the same hook pattern:
+
+```bash
+agentguard copilot-init             # Set up Copilot hooks
+agentguard copilot-init --global    # Global installation
+agentguard copilot-init --remove    # Remove hooks
+```
+
+Copilot tool names (`bash`, `view`, `edit`, `create`, `glob`, `grep`) are normalized to AgentGuard's canonical action types, and all policies and invariants apply identically.
+
+## AgentGuard Cloud
+
+Connect to AgentGuard Cloud for centralized governance analytics across teams and repos:
+
+```bash
+agentguard cloud connect <api-key>   # Store credentials
+agentguard cloud status              # Check connection
+agentguard cloud events              # Query governance events
+agentguard cloud runs                # List governance runs
+agentguard cloud summary             # Analytics summary
+agentguard cloud disconnect          # Remove credentials
+```
+
+Cloud telemetry is opt-in and configured via `agentguard cloud connect`. Events, runs, and analytics are queryable from the CLI or via the MCP server's cloud tools.
+
+## Compliance Policy Packs
+
+AgentGuard ships with pre-built compliance policy packs:
+
+```yaml
+# In your agentguard.yaml:
+extends:
+  - soc2
+  - hipaa
+  - engineering-standards
+```
+
+| Pack | Controls | Description |
+|------|----------|-------------|
+| **soc2** | CC6.1, CC6.6, CC7.1-7.2 | SOC 2 Type II access controls and change management |
+| **hipaa** | 164.312(a)-(e) | HIPAA technical safeguards for PHI protection |
+| **engineering-standards** | — | Balanced dev-friendly guardrails |
+| **ci-safe** | — | Strict CI/CD pipeline protection |
+| **enterprise** | — | Full enterprise governance |
+| **strict** | — | Maximum restriction |
+| **open-source** | — | OSS contribution-friendly defaults |
+
+Policy packs are composable — list multiple in `extends` and they merge with your local rules taking highest precedence.
+
+## Data Protection Plugin
+
+For enhanced secret detection beyond the built-in invariants:
+
+```bash
+npm install @red-codes/invariant-data-protection
+```
+
+Adds three invariants:
+- **no-pii-in-logs** — Scans log-file writes for emails, SSNs, credit cards, phone numbers
+- **no-hardcoded-secrets** — 3-layer detection: regex patterns → fingerprint matching → Shannon entropy analysis (18+ secret types)
+- **max-file-count-per-action** — Limits batch operations to a configurable file count
 
 ## Agent Swarm
 
@@ -358,7 +440,7 @@ apps/
 ├── cli/src/                # @red-codes/agentguard — CLI (published npm package)
 │   ├── bin.ts              # CLI entry point
 │   ├── evidence-summary.ts # Evidence summary generator for PR reports
-│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, etc.
+│   └── commands/           # guard, inspect, replay, export, import, simulate, ci-check, cloud, etc.
 ├── mcp-server/src/         # @red-codes/mcp-server — MCP governance server (14 governance tools)
 ├── vscode-extension/src/   # agentguard-vscode — VS Code extension
 │   ├── extension.ts        # Sidebar panels, file watcher, notifications
