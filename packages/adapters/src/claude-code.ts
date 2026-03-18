@@ -37,9 +37,12 @@ export function resolveAgentIdentity(sessionId?: string): string {
  * Normalize file paths for policy matching.
  * Claude Code sends absolute paths (e.g. C:\Users\...\project\.env).
  * Policy rules use relative paths (e.g. .env, .github/workflows/).
- * Convert absolute paths to relative (from cwd) so rules match correctly.
+ * Convert absolute paths to relative (from projectRoot or cwd) so rules match correctly.
+ *
+ * When projectRoot is provided (from path-aware policy resolution), it's used instead of
+ * process.cwd(). This fixes the governance bypass when cwd differs from the project root.
  */
-function normalizeFilePath(filePath: string | undefined): string | undefined {
+function normalizeFilePath(filePath: string | undefined, projectRoot?: string): string | undefined {
   if (!filePath) return filePath;
 
   // Normalize Windows backslashes to forward slashes
@@ -48,10 +51,10 @@ function normalizeFilePath(filePath: string | undefined): string | undefined {
   const isAbsolute = normalized.startsWith('/') || /^[a-zA-Z]:\//.test(normalized);
   if (!isAbsolute) return normalized;
 
-  // Convert to relative path from cwd
-  const cwd = process.cwd().replace(/\\/g, '/');
-  if (normalized.startsWith(cwd + '/')) {
-    return normalized.slice(cwd.length + 1);
+  // Convert to relative path from project root (preferred) or cwd (fallback)
+  const root = (projectRoot || process.cwd()).replace(/\\/g, '/');
+  if (normalized.startsWith(root + '/')) {
+    return normalized.slice(root.length + 1);
   }
 
   // Fallback: use basename so .env still matches regardless of full path
@@ -61,7 +64,8 @@ function normalizeFilePath(filePath: string | undefined): string | undefined {
 
 export function normalizeClaudeCodeAction(
   payload: ClaudeCodeHookPayload,
-  persona?: AgentPersona
+  persona?: AgentPersona,
+  projectRoot?: string
 ): RawAgentAction {
   const input = payload.tool_input || {};
   const agent = resolveAgentIdentity(payload.session_id);
@@ -74,7 +78,7 @@ export function normalizeClaudeCodeAction(
     case 'Write':
       baseAction = {
         tool: 'Write',
-        file: normalizeFilePath(input.file_path as string | undefined),
+        file: normalizeFilePath(input.file_path as string | undefined, projectRoot),
         content: input.content as string | undefined,
         agent,
         metadata: { hook: payload.hook, sessionId: payload.session_id },
@@ -84,7 +88,7 @@ export function normalizeClaudeCodeAction(
     case 'Edit':
       baseAction = {
         tool: 'Edit',
-        file: normalizeFilePath(input.file_path as string | undefined),
+        file: normalizeFilePath(input.file_path as string | undefined, projectRoot),
         content: input.new_string as string | undefined,
         agent,
         metadata: {
@@ -98,7 +102,7 @@ export function normalizeClaudeCodeAction(
     case 'Read':
       baseAction = {
         tool: 'Read',
-        file: normalizeFilePath(input.file_path as string | undefined),
+        file: normalizeFilePath(input.file_path as string | undefined, projectRoot),
         agent,
         metadata: { hook: payload.hook, sessionId: payload.session_id },
       };
@@ -216,9 +220,10 @@ export async function processClaudeCodeHook(
   kernel: Kernel,
   payload: ClaudeCodeHookPayload,
   systemContext: Record<string, unknown> = {},
-  persona?: AgentPersona
+  persona?: AgentPersona,
+  projectRoot?: string
 ): Promise<KernelResult> {
-  const rawAction = normalizeClaudeCodeAction(payload, persona);
+  const rawAction = normalizeClaudeCodeAction(payload, persona, projectRoot);
   return kernel.propose(rawAction, systemContext);
 }
 
