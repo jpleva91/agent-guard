@@ -11,9 +11,9 @@ import { execSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { fileURLToPath } from 'node:url';
 import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
 import { resolveMainRepoRoot } from '@red-codes/core';
+import type { CloudSinkBundle } from '@red-codes/telemetry';
 
 // --- Session state: persist formatPass/testsPass across hook invocations ----
 // Each Claude Code session is stateless per hook call. We bridge this by writing
@@ -193,19 +193,54 @@ async function handlePreToolUse(
     // Sink creation failure is non-fatal
   }
 
+  // Cloud telemetry — send governance events to the telemetry server so the
+  // office-sim (and any dashboard) can visualize real agent activity.
+  // Short-lived hook: we flush immediately after processing, not on an interval.
+  let cloudSinks: CloudSinkBundle | null = null;
+  try {
+    const { createCloudSinks } = await import('@red-codes/telemetry');
+    const { loadIdentity, resolveMode } = await import('@red-codes/telemetry-client');
+    const identity = loadIdentity();
+    const telemetryMode = resolveMode(identity);
+    if (telemetryMode !== 'off') {
+      const apiKey = process.env.AGENTGUARD_API_KEY ?? identity?.enrollment_token;
+      cloudSinks = await createCloudSinks({
+        mode: telemetryMode,
+        serverUrl:
+          process.env.AGENTGUARD_TELEMETRY_URL ??
+          identity?.server_url ??
+          'https://telemetry.agentguard.dev',
+        runId,
+        agentId: 'claude-code',
+        installId: identity?.install_id,
+        apiKey,
+        flushIntervalMs: 0, // No interval — we flush manually before exit
+      });
+    }
+  } catch {
+    // Cloud telemetry setup failure is non-fatal
+  }
+
   // Build kernel — dryRun: true = evaluate policies/invariants only (no adapter execution).
   // Claude Code handles actual tool execution; the hook only governs (allow/deny).
   // Events and decision records are still emitted and persisted to the configured storage backend.
   //
   // Default-deny: when policies are loaded, unknown actions are denied (fail-closed).
   // When no policies exist, fail-open to avoid blocking users who haven't configured governance.
+  const allEventSinks = [eventSink, cloudSinks?.eventSink].filter(
+    Boolean
+  ) as import('@red-codes/core').EventSink[];
+  const allDecisionSinks = [decisionSink, cloudSinks?.decisionSink].filter(
+    Boolean
+  ) as import('@red-codes/core').DecisionSink[];
+
   const kernel = createKernel({
     runId,
     policyDefs,
     dryRun: true,
     evaluateOptions: { defaultDeny: policyDefs.length > 0 },
-    sinks: eventSink ? [eventSink] : [],
-    decisionSinks: [decisionSink].filter(Boolean) as import('@red-codes/core').DecisionSink[],
+    sinks: allEventSinks,
+    decisionSinks: allDecisionSinks,
   });
 
   // Record session in the sessions table (SQLite only).
@@ -233,6 +268,18 @@ async function handlePreToolUse(
     projectRoot
   );
   kernel.shutdown();
+
+  // Flush cloud telemetry before exit — hook is short-lived so we can't rely on intervals.
+  // Cap at 2s to avoid blocking the agent on network issues.
+  if (cloudSinks) {
+    try {
+      const flushTimeout = new Promise<void>((resolve) => setTimeout(resolve, 2000));
+      await Promise.race([cloudSinks.flush(), flushTimeout]);
+    } catch {
+      // Non-fatal
+    }
+    cloudSinks.stop();
+  }
 
   // Close storage (important for SQLite to flush WAL)
   if (storage) {
@@ -399,10 +446,7 @@ function readStdin(): Promise<string> {
   });
 }
 
-// Entry point: when run directly via `node claude-hook.js pre|post`, invoke claudeHook().
-// Without this, the file only exports the function and nothing executes.
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const hookArg = process.argv[2]; // 'pre' or 'post'
-  const extra = process.argv.slice(3); // e.g., ['--store', 'sqlite']
-  claudeHook(hookArg, extra);
-}
+// Note: Self-execution guard removed. In the esbuild bundle, all modules share one
+// import.meta.url, so the guard always fired — racing with bin.ts's dispatcher,
+// consuming stdin, and calling process.exit() before the real invocation could run.
+// The CLI dispatcher (bin.ts) handles invocation via `case 'claude-hook':`.

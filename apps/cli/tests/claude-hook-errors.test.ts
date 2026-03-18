@@ -7,6 +7,8 @@ let restoreStdin: (() => void) | null = null;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Disable cloud telemetry in tests to avoid network-dependent flush delays
+  process.env.AGENTGUARD_TELEMETRY = 'off';
   vi.spyOn(process, 'exit').mockImplementation((() => {}) as never);
   vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
   vi.spyOn(process.stderr, 'write').mockImplementation(() => true);

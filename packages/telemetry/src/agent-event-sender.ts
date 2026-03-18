@@ -14,6 +14,7 @@ export interface AgentEventSenderConfig {
   apiKey?: string;
   maxRetries?: number; // default 3
   retryDelayMs?: number; // default 1000
+  fetchTimeoutMs?: number; // default 10000
 }
 
 export interface AgentEventSender {
@@ -42,6 +43,7 @@ export function createAgentEventSender(config: AgentEventSenderConfig): AgentEve
   const { serverUrl, queue, batchSize } = config;
   const maxRetries = config.maxRetries ?? 3;
   const retryDelayMs = config.retryDelayMs ?? 1000;
+  const fetchTimeoutMs = config.fetchTimeoutMs ?? 10_000;
 
   let intervalId: ReturnType<typeof setInterval> | undefined;
 
@@ -64,7 +66,7 @@ export function createAgentEventSender(config: AgentEventSenderConfig): AgentEve
           method: 'POST',
           headers,
           body,
-          signal: AbortSignal.timeout(10_000),
+          signal: AbortSignal.timeout(fetchTimeoutMs),
         });
 
         if (response.ok) {

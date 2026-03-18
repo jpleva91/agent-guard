@@ -78,7 +78,9 @@ describe('mapDomainEventToAgentEvent', () => {
     expect(result.action).toBe('file.write');
     expect(result.resource).toBe('/src/app.ts');
     expect(result.agentId).toBe('agent-1');
-    expect(result.eventId).toBe('evt_1');
+    expect(result.eventId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+    );
   });
 
   it('maps ActionAllowed to decision with success outcome', () => {
@@ -311,11 +313,13 @@ describe('mapDecisionToAgentEvent', () => {
     expect(result.outcome).toBe('success');
   });
 
-  it('uses recordId as eventId', () => {
+  it('generates UUID for eventId', () => {
     const record = makeDecisionRecord({ recordId: 'dec_abc123' });
     const result = mapDecisionToAgentEvent(record);
 
-    expect(result.eventId).toBe('dec_abc123');
+    expect(result.eventId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+    );
   });
 
   it('includes metadata with governance context', () => {

@@ -85,19 +85,37 @@ export async function createCloudSinks(config: CloudSinkConfig): Promise<CloudSi
 
   let sender: AgentEventSender;
   try {
-    sender = createAgentEventSender({ serverUrl, queue, batchSize, apiKey: config.apiKey });
+    sender = createAgentEventSender({
+      serverUrl,
+      queue,
+      batchSize,
+      apiKey: config.apiKey,
+      // Short-lived hooks need a tighter fetch timeout to avoid blocking the agent
+      fetchTimeoutMs: flushIntervalMs === 0 ? 2000 : 10_000,
+      maxRetries: flushIntervalMs === 0 ? 1 : 3,
+    });
   } catch {
     return createNoopBundle();
   }
 
-  sender.start(flushIntervalMs);
+  // Only start the background interval for long-lived processes.
+  // Short-lived hooks (flushIntervalMs === 0) rely on explicit flush() before exit —
+  // setInterval(fn, 0) races with flush() and causes events to be dequeued but not delivered.
+  if (flushIntervalMs > 0) {
+    sender.start(flushIntervalMs);
+  }
 
   function prepareEvent(agentEvent: AgentEvent): AgentEvent {
-    const withSession: AgentEvent = { ...agentEvent, sessionId: runId };
+    const prepared: AgentEvent = {
+      ...agentEvent,
+      sessionId: runId,
+      // Inject fallback agentId for events that don't carry one (e.g. PolicyTraceRecorded, EvidencePackGenerated)
+      agentId: agentEvent.agentId === 'unknown' ? agentId : agentEvent.agentId,
+    };
     if (isAnonymous) {
-      return anonymizeEvent(withSession, installId);
+      return anonymizeEvent(prepared, installId);
     }
-    return withSession;
+    return prepared;
   }
 
   const eventSink: EventSink = {

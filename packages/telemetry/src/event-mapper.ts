@@ -1,6 +1,7 @@
 // Event Mapper — converts DomainEvent and GovernanceDecisionRecord to AgentEvent.
 // AgentEvent is the wire format sent to the cloud telemetry API.
 
+import { randomUUID } from 'node:crypto';
 import type { DomainEvent, EventKind, GovernanceDecisionRecord } from '@red-codes/core';
 
 // ---------------------------------------------------------------------------
@@ -109,7 +110,7 @@ export function mapDomainEventToAgentEvent(event: DomainEvent): AgentEvent {
   const riskLevel = resolveRiskLevel(simulationRiskLevel, escalationLevel);
 
   const agentEvent: AgentEvent = {
-    eventId: event.id,
+    eventId: randomUUID(),
     agentId,
     timestamp: new Date(event.timestamp).toISOString(),
     eventType,
@@ -149,7 +150,7 @@ export function mapDecisionToAgentEvent(record: GovernanceDecisionRecord): Agent
   const riskLevel = resolveRiskLevel(simulationRiskLevel, escalationLevel);
 
   const agentEvent: AgentEvent = {
-    eventId: record.recordId,
+    eventId: randomUUID(),
     agentId: record.action.agent,
     timestamp: new Date(record.timestamp).toISOString(),
     eventType: 'decision',
