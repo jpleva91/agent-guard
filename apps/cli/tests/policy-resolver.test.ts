@@ -37,6 +37,7 @@ import {
 
 import {
   findDefaultPolicy,
+  findPolicyForPath,
   findUserPolicy,
   loadPolicyFile,
   loadPolicyDefs,
@@ -65,6 +66,80 @@ describe('findDefaultPolicy', () => {
   it('returns agentguard.yml if agentguard.yaml does not exist but .yml does', () => {
     vi.mocked(existsSync).mockImplementation((p) => p === 'agentguard.yml');
     expect(findDefaultPolicy()).toBe('agentguard.yml');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// findPolicyForPath — path-aware policy resolution (global hook bypass fix)
+// ---------------------------------------------------------------------------
+
+describe('findPolicyForPath', () => {
+  // Use resolve() so paths include the drive letter on Windows (e.g., C:\home\...)
+  const projectDir = resolve('/home/user/project');
+  const policyPath = join(projectDir, 'agentguard.yaml');
+
+  it('finds policy in the same directory as the target file', () => {
+    vi.mocked(existsSync).mockImplementation((p) => p === policyPath);
+
+    const result = findPolicyForPath(join(projectDir, '.env'));
+
+    expect(result).toEqual({ policyPath, projectRoot: projectDir });
+  });
+
+  it('walks up directories to find policy', () => {
+    vi.mocked(existsSync).mockImplementation((p) => p === policyPath);
+
+    const result = findPolicyForPath(join(projectDir, 'src', 'deep', 'file.ts'));
+
+    expect(result).toEqual({ policyPath, projectRoot: projectDir });
+  });
+
+  it('returns null when no policy found anywhere up the tree', () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    const result = findPolicyForPath(join(projectDir, 'file.ts'));
+
+    expect(result).toBeNull();
+  });
+
+  it('finds .agentguard.yaml variant', () => {
+    const dotPolicyPath = join(projectDir, '.agentguard.yaml');
+    vi.mocked(existsSync).mockImplementation((p) => p === dotPolicyPath);
+
+    const result = findPolicyForPath(join(projectDir, 'src', 'index.ts'));
+
+    expect(result).toEqual({ policyPath: dotPolicyPath, projectRoot: projectDir });
+  });
+
+  it('prefers agentguard.yaml over agentguard.yml in same directory', () => {
+    const ymlPath = join(projectDir, 'agentguard.yml');
+    vi.mocked(existsSync).mockImplementation((p) => p === policyPath || p === ymlPath);
+
+    const result = findPolicyForPath(join(projectDir, '.env'));
+
+    // agentguard.yaml is checked first in DEFAULT_POLICY_CANDIDATES
+    expect(result?.policyPath).toBe(policyPath);
+  });
+});
+
+describe('findDefaultPolicy with targetPath', () => {
+  const projectDir = resolve('/home/user/project');
+  const policyPath = join(projectDir, 'agentguard.yaml');
+
+  it('uses path-aware resolution when targetPath is provided', () => {
+    vi.mocked(existsSync).mockImplementation((p) => p === policyPath);
+
+    const result = findDefaultPolicy(join(projectDir, 'src', 'auth.ts'));
+
+    expect(result).toBe(policyPath);
+  });
+
+  it('falls back to cwd when targetPath yields no policy', () => {
+    vi.mocked(existsSync).mockImplementation((p) => p === 'agentguard.yaml');
+
+    const result = findDefaultPolicy(resolve('/some/random/file.ts'));
+
+    expect(result).toBe('agentguard.yaml');
   });
 });
 
@@ -220,6 +295,25 @@ describe('loadPolicyDefs', () => {
     const result = loadPolicyDefs();
 
     expect(result).toEqual([]);
+  });
+
+  it('uses targetPath for path-aware resolution when no explicit path given', () => {
+    const projectDir = resolve('/home/user/project');
+    const projectPolicyPath = join(projectDir, 'agentguard.yaml');
+    const yamlContent = 'id: project\nname: Project\nrules: []';
+    const mockPolicy = { id: 'project', name: 'Project', rules: [], severity: 3 };
+
+    vi.mocked(existsSync).mockImplementation(
+      (p) => p === projectPolicyPath || p === resolve(projectPolicyPath)
+    );
+    vi.mocked(readFileSync).mockReturnValue(yamlContent);
+    vi.mocked(loadYamlPolicy).mockReturnValue(mockPolicy as never);
+    vi.mocked(parseYamlPolicy).mockReturnValue({ extends: [] } as never);
+
+    const result = loadPolicyDefs(undefined, join(projectDir, '.env'));
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({ id: 'project', name: 'Project', rules: [], severity: 3 });
   });
 });
 
