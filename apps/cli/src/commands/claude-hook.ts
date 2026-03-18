@@ -8,11 +8,45 @@
 
 import { randomUUID } from 'node:crypto';
 import { execSync, spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
 import { resolveMainRepoRoot } from '@red-codes/core';
+
+// --- Session state: persist formatPass/testsPass across hook invocations ----
+// Each Claude Code session is stateless per hook call. We bridge this by writing
+// a small JSON file keyed by session_id so format/test results from one call are
+// visible to subsequent PreToolUse governance checks in the same session.
+
+interface SessionState extends Record<string, unknown> {
+  formatPass?: boolean;
+  testsPass?: boolean;
+}
+
+function sessionStatePath(sessionId: string): string {
+  return join(tmpdir(), `agentguard-session-${sessionId}.state.json`);
+}
+
+function readSessionState(sessionId: string | undefined): SessionState {
+  const key = sessionId || String(process.ppid) || 'default';
+  try {
+    return JSON.parse(readFileSync(sessionStatePath(key), 'utf8')) as SessionState;
+  } catch {
+    return {};
+  }
+}
+
+function writeSessionState(sessionId: string | undefined, patch: Partial<SessionState>): void {
+  const key = sessionId || String(process.ppid) || 'default';
+  try {
+    const current = readSessionState(key);
+    writeFileSync(sessionStatePath(key), JSON.stringify({ ...current, ...patch }));
+  } catch {
+    // Non-fatal — state tracking is best-effort
+  }
+}
 
 /** Resolve the CLI command — use local bin.js if in the agentguard dev repo, else bare `agentguard`. */
 function resolveCliCommand(): string {
@@ -186,10 +220,12 @@ async function handlePreToolUse(
   const envPersona = readPersonaFromEnv();
   const resolvedPersona = envPersona ? resolvePersona(undefined, envPersona) : undefined;
 
+  const sessionState = readSessionState(normalizedPayload.session_id);
+
   const result = await processClaudeCodeHook(
     kernel,
     normalizedPayload,
-    {},
+    sessionState,
     resolvedPersona,
     projectRoot
   );
@@ -231,10 +267,39 @@ function handlePostToolUse(data: Record<string, unknown>, cliArgs: string[] = []
     process.stdout.write('\n');
   }
 
+  // Extract command string — tool_input may be a string or {command: "..."} object
+  const rawInput = data.tool_input;
+  const toolInput: string =
+    typeof rawInput === 'string'
+      ? rawInput
+      : typeof (rawInput as Record<string, unknown>)?.command === 'string'
+        ? ((rawInput as Record<string, unknown>).command as string)
+        : typeof data.command === 'string'
+          ? data.command
+          : '';
+
   // Track rtk-optimized commands (informational — for session viewer visibility)
-  const toolInput = (data.tool_input || data.command || '') as string;
   if (toolInput.startsWith('rtk ') || toolInput.includes('/rtk ')) {
     process.stderr.write(`  \x1b[36m\u26A1\x1b[0m rtk: token-optimized output\n`);
+  }
+
+  // Track format pass — when a Prettier/format command exits 0, record it for the session.
+  // This satisfies the `requireFormat` policy condition on subsequent git.commit actions.
+  const sessionId =
+    (data.session_id as string | undefined) || process.env.CLAUDE_SESSION_ID || undefined;
+  if (exitCode === 0 && sessionId) {
+    const isFormatCmd =
+      toolInput.includes('prettier') ||
+      toolInput.includes('format:fix') ||
+      toolInput.includes('format --write');
+    if (isFormatCmd) {
+      writeSessionState(sessionId, { formatPass: true });
+    }
+    const isTestCmd =
+      toolInput.includes('vitest') || toolInput.includes('jest') || toolInput.includes('pnpm test');
+    if (isTestCmd) {
+      writeSessionState(sessionId, { testsPass: true });
+    }
   }
 
   // Detect PR creation — suggest opening the session viewer
