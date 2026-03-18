@@ -182,7 +182,13 @@ async function handlePreToolUse(
   const envPersona = readPersonaFromEnv();
   const resolvedPersona = envPersona ? resolvePersona(undefined, envPersona) : undefined;
 
-  const result = await processClaudeCodeHook(kernel, normalizedPayload, {}, resolvedPersona, projectRoot);
+  const result = await processClaudeCodeHook(
+    kernel,
+    normalizedPayload,
+    {},
+    resolvedPersona,
+    projectRoot
+  );
   kernel.shutdown();
 
   // Close storage (important for SQLite to flush WAL)
