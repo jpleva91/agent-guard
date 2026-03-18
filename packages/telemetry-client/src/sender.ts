@@ -29,6 +29,7 @@ export function createTelemetrySender(
   const maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES;
   const serverUrl = config.serverUrl;
   const cloudApiKey = config.cloudApiKey;
+  const agentName = config.agentName;
 
   let timer: ReturnType<typeof setInterval> | null = null;
   let flushing = false;
@@ -43,6 +44,10 @@ export function createTelemetrySender(
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
+
+    if (agentName) {
+      headers['X-Agent-Name'] = agentName;
+    }
 
     // Cloud API key auth (from config.json or env var)
     if (cloudApiKey) {

@@ -41,6 +41,8 @@ export interface TelemetryClientConfig {
   batchSize?: number; // default 50
   maxRetries?: number; // default 3
   maxQueueSizeMb?: number; // default 10
+  /** Human-readable agent name for swarm identity (e.g. "backlog-steward") */
+  agentName?: string;
   /** Override identity file path (for testing) */
   identityPath?: string;
   /** Override queue path (for testing) */

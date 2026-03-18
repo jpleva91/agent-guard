@@ -100,6 +100,7 @@ export async function createTelemetryClient(
     batchSize: config?.batchSize ?? 50,
     maxRetries: config?.maxRetries ?? 3,
     maxQueueSizeMb: config?.maxQueueSizeMb ?? 10,
+    agentName: config?.agentName ?? process.env.AGENTGUARD_AGENT_NAME,
     identityPath: config?.identityPath,
     queuePath: config?.queuePath,
   };
