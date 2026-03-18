@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
-import { RESET, BOLD, DIM, FG } from '../colors.js';
+import { RESET, BOLD, DIM, FG, padVis } from '../colors.js';
 
 const DEFAULT_ENDPOINT = 'https://telemetry.agentguard.dev';
 const CONFIG_PATH = join(homedir(), '.agentguard', 'config.json');
@@ -302,7 +302,7 @@ async function cloudEvents(args: string[]): Promise<number> {
       const agentId = ev.agentId ?? '—';
 
       process.stderr.write(
-        `  ${ts.padEnd(24)} ${outcome}${''.padEnd(Math.max(0, 12 - (ev.outcome ?? '—').length))} ${evType.padEnd(22)} ${action.padEnd(20)} ${agentId}\n`
+        `  ${ts.padEnd(24)} ${padVis(outcome, 12)} ${evType.padEnd(22)} ${action.padEnd(20)} ${agentId}\n`
       );
     }
 
@@ -395,7 +395,7 @@ async function cloudRuns(args: string[]): Promise<number> {
         : '—';
 
       process.stderr.write(
-        `  ${sid.padEnd(28)} ${st}${''.padEnd(Math.max(0, 12 - (run.status ?? '—').length))} ${ec.padEnd(8)} ${vc.padEnd(12)} ${started}\n`
+        `  ${sid.padEnd(28)} ${padVis(st, 12)} ${ec.padEnd(8)} ${vc.padEnd(12)} ${started}\n`
       );
     }
 
@@ -432,7 +432,7 @@ async function cloudSummary(): Promise<number> {
 
     process.stderr.write('\n');
     process.stderr.write(`  ${BOLD}Cloud Analytics Summary${RESET}\n\n`);
-    process.stderr.write(JSON.stringify(data, null, 2) + '\n');
+    process.stdout.write(JSON.stringify(data, null, 2) + '\n');
     process.stderr.write('\n');
 
     return 0;
