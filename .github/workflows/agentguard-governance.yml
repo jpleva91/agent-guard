@@ -9,8 +9,17 @@
 #     governance:
 #       uses: jpleva91/agent-guard/.github/workflows/agentguard-governance.yml@main
 #       with:
-#         session-file: .agentguard/exports/session.agentguard.jsonl
-#         fail-on-violation: true
+#         policy: agentguard.yaml
+#         mode: enforce
+#
+#   # With action manifest (dry-run evaluation):
+#   jobs:
+#     governance:
+#       uses: jpleva91/agent-guard/.github/workflows/agentguard-governance.yml@main
+#       with:
+#         action-manifest: .agentguard/actions.jsonl
+#         policy: agentguard.yaml
+#         mode: enforce
 #
 # Usage (from the same repo):
 #
@@ -33,23 +42,47 @@ on:
         required: false
         type: string
         default: ''
+      action-manifest:
+        description: >
+          Path to a JSONL file of actions to evaluate via `agentguard guard --dry-run`.
+          Each line should be a JSON object with tool/command fields.
+          When provided, the workflow evaluates actions against policy without executing them.
+          Cannot be used together with session-file.
+        required: false
+        type: string
+        default: ''
       policy-file:
         description: >
           Path to the governance policy file (YAML or JSON).
-          Used for policy validation. Defaults to agentguard.yaml.
+          Used for policy validation and guard --dry-run evaluation.
+          Defaults to agentguard.yaml.
         required: false
         type: string
         default: 'agentguard.yaml'
+      mode:
+        description: >
+          Governance mode: "enforce" fails the workflow on violations,
+          "audit" reports violations without failing.
+        required: false
+        type: string
+        default: 'enforce'
       fail-on-violation:
-        description: 'Fail the workflow if invariant violations are found.'
+        description: 'Fail the workflow if invariant violations are found (enforce mode only).'
         required: false
         type: boolean
         default: true
       fail-on-denial:
-        description: 'Fail the workflow if any governance actions were denied.'
+        description: 'Fail the workflow if any governance actions were denied (enforce mode only).'
         required: false
         type: boolean
         default: false
+      violation-threshold:
+        description: >
+          Number of violations allowed before failing (enforce mode only).
+          Default 0 means any violation fails. Set to e.g. 5 to allow up to 5 violations.
+        required: false
+        type: number
+        default: 0
       post-evidence:
         description: >
           Post a governance evidence report as a PR comment.
@@ -91,15 +124,71 @@ jobs:
         run: npm install -g @red-codes/agentguard@${{ inputs.agentguard-version }}
 
       - name: Validate policy file
+        id: policy
         run: |
           if [ -f "${{ inputs.policy-file }}" ]; then
-            echo "::notice title=Policy File::Found governance policy: ${{ inputs.policy-file }}"
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            # Run structural validation
+            if agentguard policy validate "${{ inputs.policy-file }}" --json > policy-validation.json 2>&1; then
+              echo "valid=true" >> "$GITHUB_OUTPUT"
+              echo "::notice title=Policy File::Governance policy validated: ${{ inputs.policy-file }}"
+            else
+              echo "valid=false" >> "$GITHUB_OUTPUT"
+              echo "::warning title=Policy Validation::Policy file has issues — check policy-validation.json artifact"
+            fi
           else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "valid=false" >> "$GITHUB_OUTPUT"
             echo "::warning title=No Policy File::Governance policy not found at ${{ inputs.policy-file }}. Running in fail-open mode."
           fi
 
-      - name: Run governance check
+      - name: Run guard dry-run (action manifest)
+        id: guard-dryrun
+        if: inputs.action-manifest != ''
+        run: |
+          if [ ! -f "${{ inputs.action-manifest }}" ]; then
+            echo "::error title=Missing Manifest::Action manifest not found: ${{ inputs.action-manifest }}"
+            exit 1
+          fi
+
+          POLICY_FLAG=""
+          if [ "${{ steps.policy.outputs.found }}" = "true" ]; then
+            POLICY_FLAG="--policy ${{ inputs.policy-file }}"
+          fi
+
+          # Evaluate each action in the manifest via guard --dry-run
+          VIOLATIONS=0
+          DENIALS=0
+          TOTAL=0
+          RESULTS="[]"
+
+          while IFS= read -r line || [ -n "$line" ]; do
+            [ -z "$line" ] && continue
+            TOTAL=$((TOTAL + 1))
+            RESULT=$(echo "$line" | agentguard guard --dry-run $POLICY_FLAG --json 2>&1) || true
+            RESULTS=$(echo "$RESULTS" | jq --argjson r "$(echo "$RESULT" | jq -c '.' 2>/dev/null || echo '{"raw":"'"$(echo "$RESULT" | head -1)"'"}')" '. + [$r]')
+
+            # Check for violations/denials in result
+            if echo "$RESULT" | jq -e '.violations // [] | length > 0' 2>/dev/null; then
+              V=$(echo "$RESULT" | jq '.violations | length')
+              VIOLATIONS=$((VIOLATIONS + V))
+            fi
+            if echo "$RESULT" | jq -e '.denied // false' 2>/dev/null; then
+              DENIALS=$((DENIALS + 1))
+            fi
+          done < "${{ inputs.action-manifest }}"
+
+          # Write structured output
+          echo "{\"total\":$TOTAL,\"violations\":$VIOLATIONS,\"denials\":$DENIALS}" > governance-result.json
+
+          echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
+          echo "violations=$VIOLATIONS" >> "$GITHUB_OUTPUT"
+          echo "denials=$DENIALS" >> "$GITHUB_OUTPUT"
+          echo "ran=true" >> "$GITHUB_OUTPUT"
+
+      - name: Run governance check (session)
         id: ci-check
+        if: inputs.action-manifest == ''
         run: |
           ARGS=""
 
@@ -114,19 +203,26 @@ jobs:
             exit 0
           fi
 
-          # Add failure mode flags
-          if [ "${{ inputs.fail-on-violation }}" = "true" ]; then
-            ARGS="$ARGS --fail-on-violation"
-          fi
-          if [ "${{ inputs.fail-on-denial }}" = "true" ]; then
-            ARGS="$ARGS --fail-on-denial"
+          # Add failure mode flags (only in enforce mode)
+          if [ "${{ inputs.mode }}" = "enforce" ]; then
+            if [ "${{ inputs.fail-on-violation }}" = "true" ]; then
+              ARGS="$ARGS --fail-on-violation"
+            fi
+            if [ "${{ inputs.fail-on-denial }}" = "true" ]; then
+              ARGS="$ARGS --fail-on-denial"
+            fi
           fi
 
           # Run the check with JSON output for structured data
           agentguard ci-check $ARGS --json > governance-result.json 2>&1 || true
 
-          # Display the result
-          cat governance-result.json
+          # Extract counts for threshold checking
+          VIOLATIONS=$(jq '.violations // 0' governance-result.json 2>/dev/null || echo "0")
+          DENIALS=$(jq '.denials // 0' governance-result.json 2>/dev/null || echo "0")
+          TOTAL=$(jq '.total // 0' governance-result.json 2>/dev/null || echo "0")
+          echo "violations=$VIOLATIONS" >> "$GITHUB_OUTPUT"
+          echo "denials=$DENIALS" >> "$GITHUB_OUTPUT"
+          echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
 
           # Build evidence posting flags
           EVIDENCE_ARGS=""
@@ -135,11 +231,115 @@ jobs:
           fi
 
           # Run again for terminal output, annotations, and evidence posting
-          agentguard ci-check $ARGS $EVIDENCE_ARGS
+          # In audit mode, never fail; in enforce mode, let ci-check exit code propagate
+          if [ "${{ inputs.mode }}" = "audit" ]; then
+            agentguard ci-check $ARGS $EVIDENCE_ARGS || true
+          else
+            agentguard ci-check $ARGS $EVIDENCE_ARGS
+          fi
+
+      - name: Check violation threshold
+        if: >
+          inputs.mode == 'enforce' &&
+          inputs.violation-threshold > 0 &&
+          steps.ci-check.outputs.skip != 'true'
+        run: |
+          VIOLATIONS=0
+          if [ -n "${{ steps.ci-check.outputs.violations }}" ]; then
+            VIOLATIONS=${{ steps.ci-check.outputs.violations }}
+          elif [ -n "${{ steps.guard-dryrun.outputs.violations }}" ]; then
+            VIOLATIONS=${{ steps.guard-dryrun.outputs.violations }}
+          fi
+
+          THRESHOLD=${{ inputs.violation-threshold }}
+          if [ "$VIOLATIONS" -gt "$THRESHOLD" ]; then
+            echo "::error title=Violation Threshold Exceeded::Found $VIOLATIONS violations (threshold: $THRESHOLD)"
+            exit 1
+          else
+            echo "::notice title=Within Threshold::$VIOLATIONS violations within threshold of $THRESHOLD"
+          fi
+
+      - name: Write job summary
+        if: always() && steps.ci-check.outputs.skip != 'true'
+        run: |
+          MODE="${{ inputs.mode }}"
+          MODE_BADGE="enforce"
+          if [ "$MODE" = "audit" ]; then
+            MODE_BADGE="audit"
+          fi
+
+          # Read result data
+          VIOLATIONS="0"
+          DENIALS="0"
+          TOTAL="0"
+          if [ -n "${{ steps.ci-check.outputs.violations }}" ]; then
+            VIOLATIONS="${{ steps.ci-check.outputs.violations }}"
+            DENIALS="${{ steps.ci-check.outputs.denials }}"
+            TOTAL="${{ steps.ci-check.outputs.total }}"
+          elif [ -n "${{ steps.guard-dryrun.outputs.violations }}" ]; then
+            VIOLATIONS="${{ steps.guard-dryrun.outputs.violations }}"
+            DENIALS="${{ steps.guard-dryrun.outputs.denials }}"
+            TOTAL="${{ steps.guard-dryrun.outputs.total }}"
+          fi
+
+          # Determine status
+          STATUS_ICON="&#x2705;"
+          STATUS_TEXT="Passed"
+          if [ "$VIOLATIONS" != "0" ] || [ "$DENIALS" != "0" ]; then
+            if [ "$MODE" = "enforce" ]; then
+              STATUS_ICON="&#x274C;"
+              STATUS_TEXT="Failed"
+            else
+              STATUS_ICON="&#x26A0;&#xFE0F;"
+              STATUS_TEXT="Violations found (audit mode)"
+            fi
+          fi
+
+          # Policy status
+          POLICY_STATUS="Not found (fail-open)"
+          if [ "${{ steps.policy.outputs.found }}" = "true" ]; then
+            if [ "${{ steps.policy.outputs.valid }}" = "true" ]; then
+              POLICY_STATUS="${{ inputs.policy-file }} (valid)"
+            else
+              POLICY_STATUS="${{ inputs.policy-file }} (validation issues)"
+            fi
+          fi
+
+          # Write summary
+          cat >> "$GITHUB_STEP_SUMMARY" << SUMMARY
+          ## ${STATUS_ICON} AgentGuard Governance Report
+
+          | Property | Value |
+          |----------|-------|
+          | **Status** | ${STATUS_TEXT} |
+          | **Mode** | ${MODE_BADGE} |
+          | **Policy** | ${POLICY_STATUS} |
+          | **Actions evaluated** | ${TOTAL} |
+          | **Violations** | ${VIOLATIONS} |
+          | **Denials** | ${DENIALS} |
+
+          SUMMARY
+
+          # Add threshold info if configured
+          if [ "${{ inputs.violation-threshold }}" != "0" ]; then
+            echo "**Violation threshold:** ${{ inputs.violation-threshold }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          # Add details from JSON result if available
+          if [ -f governance-result.json ]; then
+            echo "<details>" >> "$GITHUB_STEP_SUMMARY"
+            echo "<summary>Raw governance result</summary>" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat governance-result.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Export full session
         id: export-session
-        if: steps.ci-check.outputs.skip != 'true' && always()
+        if: inputs.action-manifest == '' && steps.ci-check.outputs.skip != 'true' && always()
         run: |
           SESSION_FILE="governance-session.agentguard.jsonl"
           if [ -n "${{ inputs.session-file }}" ] && [ -f "${{ inputs.session-file }}" ]; then
@@ -159,8 +359,11 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: governance-report
-          path: governance-result.json
+          path: |
+            governance-result.json
+            policy-validation.json
           retention-days: 30
+          if-no-files-found: ignore
 
       - name: Upload full governance session
         if: steps.export-session.outputs.exported == 'true' && always()
