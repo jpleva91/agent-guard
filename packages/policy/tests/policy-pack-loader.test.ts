@@ -72,6 +72,34 @@ rules:
     const result = parseYamlPolicy(yaml);
     expect(result.extends).toEqual(['./pack']);
   });
+
+  it('parses version and agentguardVersion fields', () => {
+    const yaml = `
+id: versioned-policy
+name: Versioned Policy
+version: 1.2.0
+agentguardVersion: ">=2.0.0"
+rules:
+  - action: file.read
+    effect: allow
+`;
+    const result = parseYamlPolicy(yaml);
+    expect(result.version).toBe('1.2.0');
+    expect(result.agentguardVersion).toBe('>=2.0.0');
+  });
+
+  it('leaves version fields undefined when not present', () => {
+    const yaml = `
+id: no-version
+name: No Version
+rules:
+  - action: file.read
+    effect: allow
+`;
+    const result = parseYamlPolicy(yaml);
+    expect(result.version).toBeUndefined();
+    expect(result.agentguardVersion).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -205,6 +233,26 @@ rules:
     expect(pack!.name).toBe('JSON Pack');
   });
 
+  it('loads JSON pack with version fields', () => {
+    const packPath = join(TEST_DIR, 'versioned.json');
+    writeFileSync(
+      packPath,
+      JSON.stringify({
+        id: 'versioned-json',
+        name: 'Versioned JSON',
+        version: '2.1.0',
+        agentguardVersion: '^2.0.0',
+        severity: 3,
+        rules: [{ action: 'file.delete', effect: 'deny' }],
+      }),
+    );
+
+    const pack = loadPackFile(packPath);
+    expect(pack).not.toBeNull();
+    expect(pack!.version).toBe('2.1.0');
+    expect(pack!.agentguardVersion).toBe('^2.0.0');
+  });
+
   it('returns null for invalid JSON pack', () => {
     const packPath = join(TEST_DIR, 'bad.json');
     writeFileSync(packPath, 'not valid json');
@@ -256,9 +304,13 @@ rules:
 `
     );
 
-    const { policies, errors } = resolveExtends(['./pack-a.yaml', './pack-b.yaml'], TEST_DIR);
+    const { policies, errors, warnings } = resolveExtends(
+      ['./pack-a.yaml', './pack-b.yaml'],
+      TEST_DIR,
+    );
 
     expect(errors).toHaveLength(0);
+    expect(warnings).toHaveLength(0);
     expect(policies).toHaveLength(2);
     expect(policies[0].id).toBe('pack-a');
     expect(policies[1].id).toBe('pack-b');
@@ -281,7 +333,7 @@ name: Pack 1
 rules:
   - action: git.push
     effect: deny
-`
+`,
     );
     writeFileSync(
       join(TEST_DIR, 'pack2.yaml'),
@@ -291,7 +343,7 @@ name: Pack 2
 rules:
   - action: file.delete
     effect: deny
-`
+`,
     );
 
     const { policies, errors } = resolveExtends(['./pack1.yaml', './pack2.yaml'], TEST_DIR);
@@ -299,6 +351,148 @@ rules:
     expect(policies).toHaveLength(1);
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain('Duplicate pack ID');
+  });
+
+  it('loads pack with version metadata', () => {
+    writeFileSync(
+      join(TEST_DIR, 'versioned-pack.yaml'),
+      `
+id: versioned
+name: Versioned Pack
+version: 1.2.0
+agentguardVersion: ">=2.0.0"
+rules:
+  - action: file.delete
+    effect: deny
+`,
+    );
+
+    const { policies, errors } = resolveExtends(
+      ['./versioned-pack.yaml'],
+      TEST_DIR,
+      { currentAgentguardVersion: '2.2.0' },
+    );
+
+    expect(errors).toHaveLength(0);
+    expect(policies).toHaveLength(1);
+    expect(policies[0].version).toBe('1.2.0');
+    expect(policies[0].agentguardVersion).toBe('>=2.0.0');
+  });
+
+  it('rejects pack incompatible with current AgentGuard version', () => {
+    writeFileSync(
+      join(TEST_DIR, 'future-pack.yaml'),
+      `
+id: future
+name: Future Pack
+version: 1.0.0
+agentguardVersion: ">=5.0.0"
+rules:
+  - action: file.delete
+    effect: deny
+`,
+    );
+
+    const { policies, errors } = resolveExtends(
+      ['./future-pack.yaml'],
+      TEST_DIR,
+      { currentAgentguardVersion: '2.2.0' },
+    );
+
+    expect(policies).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('incompatible');
+    expect(errors[0]).toContain('>=5.0.0');
+  });
+
+  it('skips compatibility check when no currentAgentguardVersion provided', () => {
+    writeFileSync(
+      join(TEST_DIR, 'strict-pack.yaml'),
+      `
+id: strict
+name: Strict Pack
+agentguardVersion: ">=99.0.0"
+rules:
+  - action: file.delete
+    effect: deny
+`,
+    );
+
+    const { policies, errors } = resolveExtends(
+      ['./strict-pack.yaml'],
+      TEST_DIR,
+    );
+
+    expect(errors).toHaveLength(0);
+    expect(policies).toHaveLength(1);
+  });
+
+  it('warns when version pin does not match pack version', () => {
+    writeFileSync(
+      join(TEST_DIR, 'old-pack.yaml'),
+      `
+id: old-pack
+name: Old Pack
+version: 1.0.0
+rules:
+  - action: file.delete
+    effect: deny
+`,
+    );
+
+    const { policies, warnings } = resolveExtends(
+      ['./old-pack.yaml@^2.0.0'],
+      TEST_DIR,
+    );
+
+    expect(policies).toHaveLength(1);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('does not satisfy');
+    expect(warnings[0]).toContain('^2.0.0');
+  });
+
+  it('warns when version pin requested but pack has no version', () => {
+    writeFileSync(
+      join(TEST_DIR, 'no-ver.yaml'),
+      `
+id: no-ver
+name: No Version Pack
+rules:
+  - action: file.delete
+    effect: deny
+`,
+    );
+
+    const { policies, warnings } = resolveExtends(
+      ['./no-ver.yaml@^1.0.0'],
+      TEST_DIR,
+    );
+
+    expect(policies).toHaveLength(1);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('no version field');
+  });
+
+  it('accepts pack when version pin matches', () => {
+    writeFileSync(
+      join(TEST_DIR, 'good-pack.yaml'),
+      `
+id: good-pack
+name: Good Pack
+version: 1.3.0
+rules:
+  - action: file.delete
+    effect: deny
+`,
+    );
+
+    const { policies, warnings } = resolveExtends(
+      ['./good-pack.yaml@^1.2.0'],
+      TEST_DIR,
+    );
+
+    expect(policies).toHaveLength(1);
+    expect(warnings).toHaveLength(0);
   });
 });
 

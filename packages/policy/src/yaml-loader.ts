@@ -22,6 +22,8 @@ export interface YamlPolicyDef {
   name?: string;
   description?: string;
   severity?: number;
+  version?: string;
+  agentguardVersion?: string;
   extends?: string[];
   persona?: YamlPersonaDef;
   rules?: YamlRule[];
@@ -237,6 +239,12 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
           break;
         case 'severity':
           result.severity = parseInt(val, 10);
+          break;
+        case 'version':
+          result.version = trimQuotes(val);
+          break;
+        case 'agentguardVersion':
+          result.agentguardVersion = trimQuotes(val);
           break;
         case 'extends':
           if (val) {
@@ -529,6 +537,14 @@ export function loadYamlPolicy(yaml: string, defaultId?: string): LoadedPolicy {
     rules: (def.rules || []).map(convertRule),
     severity: def.severity ?? 3,
   };
+
+  if (def.version) {
+    policy.version = def.version;
+  }
+
+  if (def.agentguardVersion) {
+    policy.agentguardVersion = def.agentguardVersion;
+  }
 
   if (def.persona) {
     (policy as LoadedPolicy & { persona?: AgentPersona }).persona = yamlPersonaToAgentPersona(

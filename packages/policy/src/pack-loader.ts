@@ -1,5 +1,6 @@
 // Policy pack loader — resolves, loads, validates, and merges policy packs.
 // Supports local directory packs and npm-style package references.
+// Includes version compatibility checking for policy packs.
 //
 // A policy pack is a YAML or JSON policy file that can be referenced via the
 // `extends` key in a policy definition. Packs are loaded and their rules are
@@ -10,6 +11,7 @@ import { resolve, join } from 'node:path';
 import type { LoadedPolicy, PolicyRule } from './evaluator.js';
 import { loadYamlPolicy } from './yaml-loader.js';
 import { validatePolicy } from './loader.js';
+import { parsePackReference, checkCompatibility, satisfiesRange } from './pack-version.js';
 
 /** Candidate filenames when resolving a pack directory */
 const PACK_MANIFEST_CANDIDATES = [
@@ -23,6 +25,14 @@ const PACK_MANIFEST_CANDIDATES = [
 export interface PackResolutionResult {
   policies: LoadedPolicy[];
   errors: string[];
+  /** Non-fatal version warnings (e.g., version pin mismatch) */
+  warnings: string[];
+}
+
+/** Options for resolving and loading policy packs */
+export interface PackLoadOptions {
+  /** The current AgentGuard version for compatibility checking (e.g., "2.2.0") */
+  currentAgentguardVersion?: string;
 }
 
 /**
@@ -32,6 +42,9 @@ export interface PackResolutionResult {
  * 1. Relative path — `"./packs/strict"` or `"./packs/strict.yaml"`
  * 2. Absolute path — `"/home/user/packs/strict.yaml"`
  * 3. npm package — `"@agentguard/security-pack"` resolved from node_modules
+ *
+ * References may include a version constraint suffix (e.g., `"./pack@^1.2.0"`),
+ * which is stripped before path resolution.
  */
 export function resolvePackPath(ref: string, baseDir: string): string | null {
   // 1. Direct file reference (relative or absolute)
@@ -98,6 +111,8 @@ export function loadPackFile(filePath: string): LoadedPolicy | null {
       description: parsed.description as string | undefined,
       rules: parsed.rules as PolicyRule[],
       severity: (parsed.severity as number) ?? 3,
+      version: parsed.version as string | undefined,
+      agentguardVersion: parsed.agentguardVersion as string | undefined,
     };
   } catch {
     return null;
@@ -107,16 +122,23 @@ export function loadPackFile(filePath: string): LoadedPolicy | null {
 /**
  * Resolve and load all policy packs from an `extends` list.
  *
- * @param extends_ - Array of pack references (paths or npm package names)
+ * @param extends_ - Array of pack references (paths, npm package names, or versioned refs like "pack@^1.0.0")
  * @param baseDir  - Directory to resolve relative paths from
- * @returns Loaded pack policies and any errors encountered
+ * @param options  - Optional settings including the current AgentGuard version for compatibility checks
+ * @returns Loaded pack policies, errors, and version warnings
  */
-export function resolveExtends(extends_: string[], baseDir: string): PackResolutionResult {
+export function resolveExtends(
+  extends_: string[],
+  baseDir: string,
+  options?: PackLoadOptions,
+): PackResolutionResult {
   const policies: LoadedPolicy[] = [];
   const errors: string[] = [];
+  const warnings: string[] = [];
   const seenIds = new Set<string>();
 
-  for (const ref of extends_) {
+  for (const rawRef of extends_) {
+    const { ref, versionConstraint } = parsePackReference(rawRef);
     const resolvedPath = resolvePackPath(ref, baseDir);
 
     if (!resolvedPath) {
@@ -136,11 +158,42 @@ export function resolveExtends(extends_: string[], baseDir: string): PackResolut
       continue;
     }
 
+    // Check version pin constraint (from extends reference like "pack@^1.2.0")
+    if (versionConstraint) {
+      if (pack.version) {
+        if (!satisfiesRange(pack.version, versionConstraint)) {
+          warnings.push(
+            `Pack "${pack.id}" version ${pack.version} does not satisfy ` +
+              `pinned constraint ${versionConstraint} (from "${rawRef}")`,
+          );
+        }
+      } else {
+        warnings.push(
+          `Pack "${pack.id}" has no version field but version pin ` +
+            `${versionConstraint} was requested (from "${rawRef}")`,
+        );
+      }
+    }
+
+    // Check AgentGuard version compatibility
+    if (pack.agentguardVersion && options?.currentAgentguardVersion) {
+      const compat = checkCompatibility(
+        pack.agentguardVersion,
+        options.currentAgentguardVersion,
+      );
+      if (!compat.compatible) {
+        errors.push(
+          `Pack "${pack.id}" is incompatible: ${compat.reason}`,
+        );
+        continue;
+      }
+    }
+
     seenIds.add(pack.id);
     policies.push(pack);
   }
 
-  return { policies, errors };
+  return { policies, errors, warnings };
 }
 
 /**
@@ -157,7 +210,7 @@ export function resolveExtends(extends_: string[], baseDir: string): PackResolut
  */
 export function mergePolicies(
   localPolicy: LoadedPolicy,
-  packPolicies: LoadedPolicy[]
+  packPolicies: LoadedPolicy[],
 ): LoadedPolicy[] {
   // Pack policies come first (lower precedence in evaluation order)
   // Local policy comes last (highest precedence)

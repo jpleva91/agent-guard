@@ -112,10 +112,13 @@ export function loadPolicyFile(policyPath: string): unknown[] {
     const def = parseYamlPolicy(content);
     if (def.extends && def.extends.length > 0) {
       const baseDir = dirname(absPath);
-      const { policies: packPolicies, errors } = resolveExtends(def.extends, baseDir);
+      const { policies: packPolicies, errors, warnings } = resolveExtends(def.extends, baseDir);
 
       for (const err of errors) {
         process.stderr.write(`  \x1b[33mWarning:\x1b[0m ${err}\n`);
+      }
+      for (const warn of warnings) {
+        process.stderr.write(`  \x1b[33mWarning:\x1b[0m ${warn}\n`);
       }
 
       const merged = mergePolicies(localPolicy, packPolicies);

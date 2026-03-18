@@ -84,6 +84,10 @@ export interface LoadedPolicy {
   rules: PolicyRule[];
   severity: number;
   persona?: AgentPersona;
+  /** Semantic version of the policy pack (e.g., "1.2.0") */
+  version?: string;
+  /** Required AgentGuard version range (e.g., ">=2.0.0", "^2.1.0") */
+  agentguardVersion?: string;
 }
 
 export interface NormalizedIntent {

@@ -197,7 +197,7 @@ describe('loadPolicyFile', () => {
     vi.mocked(readFileSync).mockReturnValue(yamlContent);
     vi.mocked(loadYamlPolicy).mockReturnValue(localPolicy as never);
     vi.mocked(parseYamlPolicy).mockReturnValue({ extends: ['ci-safe'] } as never);
-    vi.mocked(resolveExtends).mockReturnValue({ policies: [packPolicy], errors: [] } as never);
+    vi.mocked(resolveExtends).mockReturnValue({ policies: [packPolicy], errors: [], warnings: [] } as never);
     vi.mocked(mergePolicies).mockReturnValue(mergedPolicies as never);
 
     const result = loadPolicyFile('test-policy.yaml');
