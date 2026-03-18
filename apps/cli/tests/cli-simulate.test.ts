@@ -9,6 +9,12 @@ vi.mock('node:child_process', () => ({
   execFileSync: vi.fn(() => 'added 1 package in 0.5s\n+ express@4.21.0\n'),
 }));
 
+// Static import — vi.mock() is hoisted by vitest, so the mock is applied before
+// this import resolves. This avoids per-test dynamic import() overhead that caused
+// flaky CI timeouts (issue #590) when cold-loading the entire dependency tree
+// (@red-codes/kernel, policy, invariants, core) inside the test timeout window.
+import { simulate } from '../src/commands/simulate.js';
+
 // Mock process.exit, stderr, stdout to capture output
 const _mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
 const stderrChunks: string[] = [];
@@ -32,9 +38,8 @@ beforeEach(() => {
   stdoutChunks.length = 0;
 });
 
-describe('simulate command', { timeout: 15_000 }, () => {
+describe('simulate command', () => {
   it('simulates a file.write action via structured flags', async () => {
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(['--action', 'file.write', '--target', 'src/index.ts']);
     expect(code).toBe(0);
     const output = stderrChunks.join('');
@@ -43,7 +48,6 @@ describe('simulate command', { timeout: 15_000 }, () => {
   });
 
   it('simulates a sensitive file write as high risk', async () => {
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(['--action', 'file.write', '--target', '.env']);
     expect(code).toBe(0);
     const output = stderrChunks.join('');
@@ -52,7 +56,6 @@ describe('simulate command', { timeout: 15_000 }, () => {
   });
 
   it('simulates a file.delete action', async () => {
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(['--action', 'file.delete', '--target', 'package-lock.json']);
     expect(code).toBe(0);
     const output = stderrChunks.join('');
@@ -61,7 +64,6 @@ describe('simulate command', { timeout: 15_000 }, () => {
   });
 
   it('outputs JSON when --json flag is set', async () => {
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(['--action', 'file.write', '--target', 'readme.md', '--json']);
     expect(code).toBe(0);
     const output = stdoutChunks.join('');
@@ -74,7 +76,6 @@ describe('simulate command', { timeout: 15_000 }, () => {
   });
 
   it('accepts JSON action descriptor as positional argument', async () => {
-    const { simulate } = await import('../src/commands/simulate.js');
     const json = JSON.stringify({ tool: 'Write', file: '.env.production' });
     const code = await simulate([json]);
     expect(code).toBe(0);
@@ -83,7 +84,6 @@ describe('simulate command', { timeout: 15_000 }, () => {
   });
 
   it('returns error for unsupported action type', async () => {
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(['--action', 'http.request', '--target', 'https://example.com']);
     expect(code).toBe(1);
     const output = stderrChunks.join('');
@@ -91,7 +91,6 @@ describe('simulate command', { timeout: 15_000 }, () => {
   });
 
   it('returns error when no action is provided', async () => {
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate([]);
     expect(code).toBe(1);
     const output = stderrChunks.join('');
@@ -99,7 +98,6 @@ describe('simulate command', { timeout: 15_000 }, () => {
   });
 
   it('returns JSON error when no action provided with --json', async () => {
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(['--json']);
     expect(code).toBe(1);
     const output = stdoutChunks.join('');
@@ -108,7 +106,6 @@ describe('simulate command', { timeout: 15_000 }, () => {
   });
 
   it('validates unknown action types with --action flag', async () => {
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(['--action', 'not.a.real.action', '--target', 'foo']);
     expect(code).toBe(1);
     const output = stderrChunks.join('');
@@ -116,7 +113,6 @@ describe('simulate command', { timeout: 15_000 }, () => {
   });
 
   it('simulates npm install via shell.exec command', async () => {
-    const { simulate } = await import('../src/commands/simulate.js');
     const json = JSON.stringify({ tool: 'Bash', command: 'npm install express' });
     const code = await simulate([json, '--json']);
     expect(code).toBe(0);
@@ -126,7 +122,6 @@ describe('simulate command', { timeout: 15_000 }, () => {
   });
 
   it('passes json option from SimulateOptions', async () => {
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(['--action', 'file.write', '--target', 'src/a.ts'], {
       json: true,
     });
@@ -137,7 +132,7 @@ describe('simulate command', { timeout: 15_000 }, () => {
   });
 });
 
-describe('simulate with --policy flag', { timeout: 15_000 }, () => {
+describe('simulate with --policy flag', () => {
   const testDir = join(tmpdir(), 'agentguard-simulate-test-' + Date.now());
 
   beforeEach(() => {
@@ -167,7 +162,6 @@ rules:
 `
     );
 
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(
       ['--action', 'file.write', '--target', '.env', '--policy', policyFile],
       {}
@@ -193,7 +187,6 @@ rules:
 `
     );
 
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(
       ['--action', 'file.write', '--target', 'src/index.ts', '--policy', policyFile],
       {}
@@ -218,7 +211,6 @@ rules:
 `
     );
 
-    const { simulate } = await import('../src/commands/simulate.js');
     // git.push to main triggers the protected-branch invariant (directPush to protected branch)
     const code = await simulate(
       ['--action', 'git.push', '--branch', 'main', '--policy', policyFile],
@@ -245,7 +237,6 @@ rules:
 `
     );
 
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(
       ['--action', 'file.write', '--target', '.env', '--json', '--policy', policyFile],
       {}
@@ -273,7 +264,6 @@ rules:
 `
     );
 
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(
       ['--action', 'file.write', '--target', 'src/foo.ts', '--json', '--policy', policyFile],
       {}
@@ -301,7 +291,6 @@ rules:
 `
     );
 
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(['--action', 'file.write', '--target', '.env', '--json'], {
       policy: policyFile,
     });
@@ -326,7 +315,6 @@ rules:
 `
     );
 
-    const { simulate } = await import('../src/commands/simulate.js');
     // Both policy deny (push to main) AND invariant violation (direct push to protected branch)
     const code = await simulate(
       ['--action', 'git.push', '--branch', 'main', '--policy', policyFile],
@@ -337,7 +325,6 @@ rules:
   });
 
   it('does not include governance output when --policy is not provided', async () => {
-    const { simulate } = await import('../src/commands/simulate.js');
     const code = await simulate(['--action', 'file.write', '--target', '.env', '--json']);
     expect(code).toBe(0);
     const output = stdoutChunks.join('');
@@ -370,8 +357,7 @@ rules:
         ])
       );
 
-      const { simulate } = await import('../src/commands/simulate.js');
-      const code = await simulate([], { plan: planFile });
+        const code = await simulate([], { plan: planFile });
       expect(code).toBe(0);
       const output = stderrChunks.join('');
       expect(output).toContain('Plan Simulation Result');
@@ -389,8 +375,7 @@ rules:
         ])
       );
 
-      const { simulate } = await import('../src/commands/simulate.js');
-      const code = await simulate(['--json'], { plan: planFile });
+        const code = await simulate(['--json'], { plan: planFile });
       expect(code).toBe(0);
       const output = stdoutChunks.join('');
       const result = JSON.parse(output.trim());
@@ -405,8 +390,7 @@ rules:
       const planFile = join(planDir, 'bad-plan.json');
       writeFileSync(planFile, '{ not valid json }');
 
-      const { simulate } = await import('../src/commands/simulate.js');
-      const code = await simulate([], { plan: planFile });
+        const code = await simulate([], { plan: planFile });
       expect(code).toBe(1);
       const output = stderrChunks.join('');
       expect(output).toContain('Failed to load plan');
@@ -416,16 +400,14 @@ rules:
       const planFile = join(planDir, 'empty-plan.json');
       writeFileSync(planFile, '[]');
 
-      const { simulate } = await import('../src/commands/simulate.js');
-      const code = await simulate([], { plan: planFile });
+        const code = await simulate([], { plan: planFile });
       expect(code).toBe(1);
       const output = stderrChunks.join('');
       expect(output).toContain('non-empty JSON array');
     });
 
     it('returns error for missing plan file', async () => {
-      const { simulate } = await import('../src/commands/simulate.js');
-      const code = await simulate([], { plan: '/nonexistent/plan.json' });
+        const code = await simulate([], { plan: '/nonexistent/plan.json' });
       expect(code).toBe(1);
       const output = stderrChunks.join('');
       expect(output).toContain('Failed to load plan');
@@ -455,8 +437,7 @@ rules:
 `
       );
 
-      const { simulate } = await import('../src/commands/simulate.js');
-      const code = await simulate(['--json'], { plan: planFile, policy: policyFile });
+        const code = await simulate(['--json'], { plan: planFile, policy: policyFile });
       expect(code).toBe(2); // policy denial
       const output = stdoutChunks.join('');
       const result = JSON.parse(output.trim());
@@ -488,8 +469,7 @@ rules:
         process.stdin.emit('end');
       });
 
-      const { simulate } = await import('../src/commands/simulate.js');
-      const code = await simulate([]);
+        const code = await simulate([]);
 
       expect(code).toBe(0);
       expect(stderrChunks.join('')).toContain('filesystem-simulator');
@@ -504,8 +484,7 @@ rules:
         process.stdin.emit('end');
       });
 
-      const { simulate } = await import('../src/commands/simulate.js');
-      const code = await simulate([]);
+        const code = await simulate([]);
 
       expect(code).toBe(1);
       expect(stderrChunks.join('')).toContain('Invalid JSON on stdin');
@@ -519,8 +498,7 @@ rules:
         process.stdin.emit('error', new Error('stdin error'));
       });
 
-      const { simulate } = await import('../src/commands/simulate.js');
-      const code = await simulate([]);
+        const code = await simulate([]);
 
       expect(code).toBe(1);
       expect(stderrChunks.join('')).toContain('No action provided');
