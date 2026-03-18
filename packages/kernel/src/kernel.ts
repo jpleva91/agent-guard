@@ -13,8 +13,11 @@ import type {
   EventSink,
 } from '@red-codes/core';
 import { createMonitor } from './monitor.js';
-import type { MonitorConfig, MonitorDecision } from './monitor.js';
+import type { MonitorConfig, MonitorDecision, MonitorState } from './monitor.js';
 import type { RawAgentAction } from './aab.js';
+import { normalizeIntent } from './aab.js';
+import { createTierRouter } from './tier-router.js';
+import type { EvaluationTier, TierRouterConfig, TierRouter, TierMetrics } from './tier-router.js';
 import {
   createAction,
   getActionClass,
@@ -76,6 +79,8 @@ export interface KernelResult {
   modified?: boolean;
   /** Intent drift results (advisory — present when an IntentSpec is configured) */
   intentDrift?: IntentDriftResult;
+  /** Evaluation tier used for this action (fast/standard/deep) */
+  tier?: EvaluationTier;
 }
 
 /**
@@ -150,6 +155,9 @@ export interface KernelConfig extends MonitorConfig {
    * Advisory mode only — does not block execution.
    */
   intentSpec?: IntentSpec;
+  /** Tier router configuration for adaptive governance depth.
+   *  When provided, enables tiered evaluation (fast/standard/deep). */
+  tierRouterConfig?: TierRouterConfig;
 }
 
 export interface Kernel {
@@ -162,6 +170,8 @@ export interface Kernel {
   getSeed(): number;
   getActionLog(): KernelResult[];
   getEventCount(): number;
+  /** Returns tier evaluation metrics (counts and timings per tier) */
+  getTierMetrics(): TierMetrics | null;
   shutdown(): void;
 }
 
@@ -186,6 +196,9 @@ export function createKernel(config: KernelConfig = {}): Kernel {
   const modifyTimeoutMs = config.modifyTimeoutMs ?? 30_000;
   const tracer = config.tracer ?? null;
   const intentSpec = config.intentSpec ?? null;
+  const tierRouter: TierRouter | null = config.tierRouterConfig
+    ? createTierRouter(config.tierRouterConfig)
+    : null;
   const actionLog: KernelResult[] = [];
   let eventCount = 0;
   let filesModifiedCount = 0;
@@ -222,6 +235,24 @@ export function createKernel(config: KernelConfig = {}): Kernel {
     propose: async (rawAction, systemContext = {}) => {
       const span =
         tracer?.startSpan('kernel.propose', `propose:${rawAction.tool || 'unknown'}`) ?? null;
+
+      // Tier classification — performed before proposalBody so it's available for the wrapper
+      let outerTier: EvaluationTier = 'standard';
+      const outerTierStart = performance.now();
+      if (tierRouter) {
+        const preIntent = normalizeIntent(rawAction);
+        const escalation = monitor.getEscalationLevel();
+        const classification = tierRouter.classify(
+          preIntent.action,
+          preIntent.target,
+          escalation,
+          preIntent.destructive
+        );
+        outerTier = classification.tier;
+        span?.setAttribute('tier', outerTier);
+        span?.setAttribute('tierReason', classification.reason);
+      }
+
       const proposalBody = async (): Promise<KernelResult> => {
         const allEvents: DomainEvent[] = [];
         let wasModified = false;
@@ -236,6 +267,164 @@ export function createKernel(config: KernelConfig = {}): Kernel {
           metadata: { runId, command: rawAction.command, persona: rawAction.persona },
         });
         allEvents.push(requestedEvent);
+
+        // 1b. Tier routing — use outer tier classification for fast-path cache
+        const currentTier = outerTier;
+
+        if (tierRouter && currentTier === 'fast') {
+          const intent = normalizeIntent(rawAction);
+
+          // Fast-path: check cache for previously allowed action signatures
+          {
+            const cached = tierRouter.getCached(intent.action, intent.target);
+            if (cached) {
+              tierRouter.recordTiming('fast', performance.now() - outerTierStart);
+
+              // Construct minimal allow result without full policy evaluation
+              const allowedEvent = createEvent(ACTION_ALLOWED, {
+                actionType: intent.action,
+                target: intent.target,
+                capability: 'fast-path-cache',
+                actionId: undefined,
+                reason: cached.reason,
+                metadata: { runId, tier: 'fast', cacheHitCount: cached.hitCount },
+              });
+              allEvents.push(allowedEvent);
+
+              // Build canonical action for execution
+              let fastAction: CanonicalAction | null = null;
+              try {
+                if (intent.action !== 'unknown') {
+                  fastAction = createAction(intent.action, intent.target, 'kernel-proposed', {
+                    command: rawAction.command,
+                    agent: rawAction.agent,
+                    runId,
+                  });
+                }
+              } catch {
+                // Action creation may fail for unknown types
+              }
+
+              // Execute via adapter if not dry-run
+              let execution: ExecutionResult | null = null;
+              let executionDurationMs: number | null = null;
+              if (!dryRun && fastAction) {
+                const actionClass = getActionClass(fastAction.type);
+                if (actionClass && adapters.has(actionClass)) {
+                  const adapterDecisionRecord: DecisionRecord = {
+                    actionId: fastAction.id,
+                    decision: 'allow',
+                    reason: 'Fast-path cached allow',
+                    timestamp: Date.now(),
+                    policyHash: 'fast-path-cache',
+                  };
+                  const startTime = Date.now();
+                  try {
+                    execution = await adapters.execute(fastAction, adapterDecisionRecord);
+                    executionDurationMs = Date.now() - startTime;
+                    if (execution.success) {
+                      allEvents.push(
+                        createEvent(ACTION_EXECUTED, {
+                          actionType: fastAction.type,
+                          target: fastAction.target,
+                          result: 'success',
+                          actionId: fastAction.id,
+                          duration: executionDurationMs,
+                          metadata: { runId, tier: 'fast' },
+                        })
+                      );
+                    } else {
+                      allEvents.push(
+                        createEvent(ACTION_FAILED, {
+                          actionType: fastAction.type,
+                          target: fastAction.target,
+                          error: execution.error || 'Unknown execution error',
+                          actionId: fastAction.id,
+                          duration: executionDurationMs,
+                          metadata: { runId, tier: 'fast' },
+                        })
+                      );
+                    }
+                  } catch (err) {
+                    executionDurationMs = Date.now() - startTime;
+                    execution = { success: false, error: (err as Error).message };
+                    allEvents.push(
+                      createEvent(ACTION_FAILED, {
+                        actionType: fastAction.type,
+                        target: fastAction.target,
+                        error: (err as Error).message,
+                        actionId: fastAction.id,
+                        duration: executionDurationMs,
+                        metadata: { runId, tier: 'fast' },
+                      })
+                    );
+                  }
+                }
+              }
+
+              sinkEvents(allEvents);
+
+              const fastMonitorState: MonitorState = {
+                escalationLevel: monitor.getEscalationLevel(),
+                totalEvaluations: 0,
+                totalDenials: 0,
+                totalViolations: 0,
+                windowedDenials: 0,
+                windowedViolations: 0,
+              };
+
+              const fastDecision: MonitorDecision = {
+                allowed: true,
+                intent,
+                decision: {
+                  allowed: true,
+                  decision: 'allow',
+                  matchedRule: null,
+                  matchedPolicy: null,
+                  reason: 'Fast-path cached allow',
+                  severity: 0,
+                },
+                violations: [],
+                events: [],
+                evidencePack: null,
+                intervention: null,
+                monitor: fastMonitorState,
+              };
+
+              const decisionRecord = buildDecisionRecord({
+                runId,
+                decision: fastDecision,
+                execution,
+                executionDurationMs,
+                simulation: null,
+              });
+              sinkDecision(decisionRecord);
+
+              const decisionEvent = createEvent(DECISION_RECORDED, {
+                recordId: decisionRecord.recordId,
+                outcome: decisionRecord.outcome,
+                actionType: decisionRecord.action.type,
+                target: decisionRecord.action.target,
+                reason: decisionRecord.reason,
+              });
+              sinkEvent(decisionEvent);
+
+              const result: KernelResult = {
+                allowed: true,
+                executed: execution !== null,
+                decision: fastDecision,
+                execution,
+                action: fastAction,
+                events: allEvents,
+                runId,
+                decisionRecord,
+                tier: 'fast',
+              };
+              actionLog.push(result);
+              return result;
+            }
+          }
+        }
 
         // 2. Evaluate via monitor (AAB → policy → invariants → evidence)
         // `let` because the PAUSE-approved path reassigns: decision = { ...decision, allowed: true }
@@ -801,7 +990,9 @@ export function createKernel(config: KernelConfig = {}): Kernel {
             sinkEvent(simEvent);
 
             // Re-check invariants if simulation reveals elevated risk
+            // Deep tier forces re-check for all simulated actions regardless of threshold
             if (
+              currentTier === 'deep' ||
               simulationResult.blastRadius > blastRadiusThreshold ||
               simulationResult.riskLevel === 'high'
             ) {
@@ -1141,6 +1332,11 @@ export function createKernel(config: KernelConfig = {}): Kernel {
         });
         sinkEvent(decisionEvent);
 
+        // Cache allow for fast-path eligible actions
+        if (tierRouter && currentTier === 'fast' && decision.allowed) {
+          tierRouter.setCached(decision.intent.action, decision.intent.target);
+        }
+
         const result: KernelResult = {
           allowed: true,
           executed: execution !== null,
@@ -1175,6 +1371,13 @@ export function createKernel(config: KernelConfig = {}): Kernel {
             clearTimeout(timer!);
           }
         }
+        // Record tier timing and attach tier to result
+        if (tierRouter) {
+          tierRouter.recordTiming(outerTier, performance.now() - outerTierStart);
+          if (!result.tier) {
+            result = { ...result, tier: outerTier };
+          }
+        }
         span?.setAttribute('outcome', result.allowed ? 'allow' : 'deny');
         span?.end();
         return result;
@@ -1198,6 +1401,10 @@ export function createKernel(config: KernelConfig = {}): Kernel {
 
     getEventCount() {
       return eventCount;
+    },
+
+    getTierMetrics() {
+      return tierRouter ? tierRouter.getMetrics() : null;
     },
 
     shutdown() {

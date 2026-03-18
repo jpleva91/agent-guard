@@ -25,7 +25,7 @@ const ESCALATION_NAMES: Record<EscalationLevel, string> = {
   [ESCALATION.LOCKDOWN]: 'LOCKDOWN',
 };
 
-interface MonitorState {
+export interface MonitorState {
   escalationLevel: EscalationLevel;
   totalEvaluations: number;
   totalDenials: number;
@@ -66,6 +66,7 @@ export interface Monitor {
     systemContext?: Record<string, unknown>
   ): MonitorDecision;
   getStatus(): Record<string, unknown>;
+  getEscalationLevel(): EscalationLevel;
   resetEscalation(): void;
 }
 
@@ -235,6 +236,10 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
           windowedViolations: recentViolations.length,
         },
       };
+    },
+
+    getEscalationLevel() {
+      return escalationLevel;
     },
 
     getStatus() {

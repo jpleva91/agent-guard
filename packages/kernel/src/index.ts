@@ -21,3 +21,4 @@ export * from './simulation/dependency-graph-simulator.js';
 export * from './contract.js';
 export * from './enforcement-audit.js';
 export * from './intent.js';
+export * from './tier-router.js';
