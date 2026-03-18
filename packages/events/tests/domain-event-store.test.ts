@@ -37,9 +37,7 @@ describe('domain/event-store', () => {
 
   it('queries by kind', () => {
     const store = createInMemoryStore();
-    store.append(
-      createEvent(POLICY_DENIED, { policy: 'p1', action: 'a1', reason: 'r1' })
-    );
+    store.append(createEvent(POLICY_DENIED, { policy: 'p1', action: 'a1', reason: 'r1' }));
     store.append(
       createEvent(INVARIANT_VIOLATION, {
         invariant: 'no-secret',
@@ -47,9 +45,7 @@ describe('domain/event-store', () => {
         actual: 'dirty',
       })
     );
-    store.append(
-      createEvent(POLICY_DENIED, { policy: 'p2', action: 'a2', reason: 'r2' })
-    );
+    store.append(createEvent(POLICY_DENIED, { policy: 'p2', action: 'a2', reason: 'r2' }));
 
     const denied = store.query({ kind: POLICY_DENIED });
     expect(denied).toHaveLength(2);
@@ -66,9 +62,7 @@ describe('domain/event-store', () => {
       reason: 'specific-reason',
     });
     store.append(e1);
-    store.append(
-      createEvent(POLICY_DENIED, { policy: 'other', action: 'other', reason: 'other' })
-    );
+    store.append(createEvent(POLICY_DENIED, { policy: 'other', action: 'other', reason: 'other' }));
 
     const results = store.query({ fingerprint: e1.fingerprint });
     expect(results).toHaveLength(1);
@@ -91,17 +85,13 @@ describe('domain/event-store', () => {
 
   it('returns empty array for unknown replay ID', () => {
     const store = createInMemoryStore();
-    store.append(
-      createEvent(POLICY_DENIED, { policy: 'p', action: 'a', reason: 'r' })
-    );
+    store.append(createEvent(POLICY_DENIED, { policy: 'p', action: 'a', reason: 'r' }));
     expect(store.replay('unknown_id')).toHaveLength(0);
   });
 
   it('clears all events', () => {
     const store = createInMemoryStore();
-    store.append(
-      createEvent(POLICY_DENIED, { policy: 'p', action: 'a', reason: 'r' })
-    );
+    store.append(createEvent(POLICY_DENIED, { policy: 'p', action: 'a', reason: 'r' }));
     store.clear();
     expect(store.count()).toBe(0);
   });
@@ -135,12 +125,8 @@ describe('domain/event-store', () => {
 
     it('fromNDJSON loads events and returns count', () => {
       const source = createInMemoryStore();
-      source.append(
-        createEvent(POLICY_DENIED, { policy: 'p1', action: 'a1', reason: 'r1' })
-      );
-      source.append(
-        createEvent(POLICY_DENIED, { policy: 'p2', action: 'a2', reason: 'r2' })
-      );
+      source.append(createEvent(POLICY_DENIED, { policy: 'p1', action: 'a1', reason: 'r1' }));
+      source.append(createEvent(POLICY_DENIED, { policy: 'p2', action: 'a2', reason: 'r2' }));
       const ndjson = source.toNDJSON();
 
       const target = createInMemoryStore();

@@ -130,10 +130,7 @@ describe('agentguard/core/engine', () => {
       });
 
       // Without formatPass — should be denied
-      const denied = engine.evaluate(
-        { tool: 'Bash', command: 'git commit -m "test"' },
-        {}
-      );
+      const denied = engine.evaluate({ tool: 'Bash', command: 'git commit -m "test"' }, {});
       expect(denied.allowed).toBe(false);
 
       // With formatPass via systemContext — should be allowed
@@ -164,10 +161,7 @@ describe('agentguard/core/engine', () => {
       });
 
       // Without testsPass — should be denied
-      const denied = engine.evaluate(
-        { tool: 'Bash', command: 'git commit -m "test"' },
-        {}
-      );
+      const denied = engine.evaluate({ tool: 'Bash', command: 'git commit -m "test"' }, {});
       expect(denied.allowed).toBe(false);
 
       // With testsPass via systemContext — should be allowed

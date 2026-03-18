@@ -19,7 +19,7 @@ const shared: esbuild.BuildOptions = {
   outdir: 'dist',
   external: externalDeps,
   define: {
-    'AGENTGUARD_VERSION': JSON.stringify(pkg.version),
+    AGENTGUARD_VERSION: JSON.stringify(pkg.version),
   },
 };
 

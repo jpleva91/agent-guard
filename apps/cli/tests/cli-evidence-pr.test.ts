@@ -29,12 +29,7 @@ import { evidencePr } from '../src/commands/evidence-pr.js';
 import { execSync } from 'node:child_process';
 import { parseArgs } from '../src/args.js';
 import { aggregateEvents, formatEvidenceMarkdown } from '../src/evidence-summary.js';
-import {
-  createStorageBundle,
-  listRunIds,
-  getLatestRunId,
-  loadRunEvents,
-} from '@red-codes/storage';
+import { createStorageBundle, listRunIds, getLatestRunId, loadRunEvents } from '@red-codes/storage';
 import type { StorageConfig } from '@red-codes/storage';
 
 const mockSummary = {

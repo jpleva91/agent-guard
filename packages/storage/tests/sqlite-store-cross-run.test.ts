@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { runMigrations, createSqliteEventStore, queryEventsByKindAcrossRuns } from '@red-codes/storage';
+import {
+  runMigrations,
+  createSqliteEventStore,
+  queryEventsByKindAcrossRuns,
+} from '@red-codes/storage';
 import type { DomainEvent } from '@red-codes/core';
 
 let _counter = 0;

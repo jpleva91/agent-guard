@@ -97,9 +97,7 @@ describe('rtkRewrite', () => {
   });
 
   it('returns original command when rtk rewrite returns empty string (no equivalent)', () => {
-    vi.mocked(execSync)
-      .mockReturnValueOnce('rtk 0.30.0')
-      .mockReturnValueOnce('');
+    vi.mocked(execSync).mockReturnValueOnce('rtk 0.30.0').mockReturnValueOnce('');
 
     const result = rtkRewrite('git log --oneline');
     expect(result.rewritten).toBe(false);

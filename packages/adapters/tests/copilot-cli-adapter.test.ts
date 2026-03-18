@@ -210,7 +210,17 @@ describe('normalizeCopilotCliAction — session ID propagation', () => {
   });
 
   it('propagates session identity through all tool types', () => {
-    const tools = ['create', 'edit', 'view', 'bash', 'powershell', 'glob', 'grep', 'web_fetch', 'task'];
+    const tools = [
+      'create',
+      'edit',
+      'view',
+      'bash',
+      'powershell',
+      'glob',
+      'grep',
+      'web_fetch',
+      'task',
+    ];
     for (const tool of tools) {
       const payload: CopilotCliHookPayload = {
         toolName: tool,

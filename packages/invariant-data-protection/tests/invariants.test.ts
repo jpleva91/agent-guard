@@ -192,9 +192,7 @@ describe('classifyCredentialShape', () => {
   });
 
   it('returns null for natural language (many spaces)', () => {
-    expect(
-      classifyCredentialShape('this is a normal English sentence with many words')
-    ).toBeNull();
+    expect(classifyCredentialShape('this is a normal English sentence with many words')).toBeNull();
   });
 
   it('detects known-prefix credentials', () => {
@@ -769,9 +767,7 @@ describe('no-hardcoded-secrets', () => {
     const result = inv.check({
       currentActionType: 'file.write',
       fileContentDiff: 'config.db = "xJ7mK9pQ2rV5tW3n";',
-      secretFingerprints: [
-        { name: 'DB_PASSWORD', variants: ['xJ7mK9pQ2rV5tW3n'] },
-      ],
+      secretFingerprints: [{ name: 'DB_PASSWORD', variants: ['xJ7mK9pQ2rV5tW3n'] }],
     } as SystemState & { secretFingerprints: Array<{ name: string; variants: string[] }> });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('Known secret detected via fingerprint: DB_PASSWORD');
