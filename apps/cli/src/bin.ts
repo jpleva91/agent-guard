@@ -443,19 +443,29 @@ const COMMANDS: Record<string, CommandHelp> = {
   },
   cloud: {
     name: 'agentguard cloud',
-    description: 'Manage AgentGuard Cloud connection (connect, status, disconnect)',
+    description:
+      'Manage AgentGuard Cloud connection and query data (connect, status, disconnect, events, runs, summary)',
     usage: 'agentguard cloud <command> [options]',
     flags: [
       {
         flag: '--endpoint <url>',
         description: 'Cloud endpoint URL (default: https://telemetry.agentguard.dev)',
       },
+      { flag: '--limit <n>', description: 'Number of results to return (events/runs)' },
+      { flag: '--session <id>', description: 'Filter events by session ID' },
+      { flag: '--agent <name>', description: 'Filter by agent ID (events/runs)' },
+      { flag: '--type <type>', description: 'Filter events by event type' },
+      { flag: '--status <status>', description: 'Filter runs by status' },
     ],
     examples: [
       'agentguard cloud connect ag_live_abc123def456xyz',
       'agentguard cloud connect ag_test_key1234567890 --endpoint https://custom.example.com',
       'agentguard cloud status',
       'agentguard cloud disconnect',
+      'agentguard cloud events',
+      'agentguard cloud events --limit 50 --agent claude',
+      'agentguard cloud runs --status completed',
+      'agentguard cloud summary',
     ],
   },
   'session-viewer': {
@@ -1012,6 +1022,9 @@ function printHelp(): void {
     agentguard cloud connect ... --endpoint   Use a custom cloud endpoint
     agentguard cloud status                   Show cloud connection status
     agentguard cloud disconnect               Remove cloud connection
+    agentguard cloud events                   Query governance events from cloud
+    agentguard cloud runs                     Query governance runs from cloud
+    agentguard cloud summary                  Show cloud analytics summary
 
   \x1b[1mMeta:\x1b[0m
     agentguard --version                      Show version
