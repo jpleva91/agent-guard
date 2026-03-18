@@ -44,7 +44,7 @@ async function main(): Promise<void> {
   registerGovernanceTools(server, config);
   registerMonitoringTools(server, dataSource);
   registerPolicyTools(server);
-  registerAnalyticsTools(server);
+  registerAnalyticsTools(server, config);
 
   // Start stdio transport
   const transport = new StdioServerTransport();
