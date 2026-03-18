@@ -357,7 +357,7 @@ rules:
         ])
       );
 
-        const code = await simulate([], { plan: planFile });
+      const code = await simulate([], { plan: planFile });
       expect(code).toBe(0);
       const output = stderrChunks.join('');
       expect(output).toContain('Plan Simulation Result');
@@ -375,7 +375,7 @@ rules:
         ])
       );
 
-        const code = await simulate(['--json'], { plan: planFile });
+      const code = await simulate(['--json'], { plan: planFile });
       expect(code).toBe(0);
       const output = stdoutChunks.join('');
       const result = JSON.parse(output.trim());
@@ -390,7 +390,7 @@ rules:
       const planFile = join(planDir, 'bad-plan.json');
       writeFileSync(planFile, '{ not valid json }');
 
-        const code = await simulate([], { plan: planFile });
+      const code = await simulate([], { plan: planFile });
       expect(code).toBe(1);
       const output = stderrChunks.join('');
       expect(output).toContain('Failed to load plan');
@@ -400,14 +400,14 @@ rules:
       const planFile = join(planDir, 'empty-plan.json');
       writeFileSync(planFile, '[]');
 
-        const code = await simulate([], { plan: planFile });
+      const code = await simulate([], { plan: planFile });
       expect(code).toBe(1);
       const output = stderrChunks.join('');
       expect(output).toContain('non-empty JSON array');
     });
 
     it('returns error for missing plan file', async () => {
-        const code = await simulate([], { plan: '/nonexistent/plan.json' });
+      const code = await simulate([], { plan: '/nonexistent/plan.json' });
       expect(code).toBe(1);
       const output = stderrChunks.join('');
       expect(output).toContain('Failed to load plan');
@@ -437,7 +437,7 @@ rules:
 `
       );
 
-        const code = await simulate(['--json'], { plan: planFile, policy: policyFile });
+      const code = await simulate(['--json'], { plan: planFile, policy: policyFile });
       expect(code).toBe(2); // policy denial
       const output = stdoutChunks.join('');
       const result = JSON.parse(output.trim());
@@ -469,7 +469,7 @@ rules:
         process.stdin.emit('end');
       });
 
-        const code = await simulate([]);
+      const code = await simulate([]);
 
       expect(code).toBe(0);
       expect(stderrChunks.join('')).toContain('filesystem-simulator');
@@ -484,7 +484,7 @@ rules:
         process.stdin.emit('end');
       });
 
-        const code = await simulate([]);
+      const code = await simulate([]);
 
       expect(code).toBe(1);
       expect(stderrChunks.join('')).toContain('Invalid JSON on stdin');
@@ -498,7 +498,7 @@ rules:
         process.stdin.emit('error', new Error('stdin error'));
       });
 
-        const code = await simulate([]);
+      const code = await simulate([]);
 
       expect(code).toBe(1);
       expect(stderrChunks.join('')).toContain('No action provided');

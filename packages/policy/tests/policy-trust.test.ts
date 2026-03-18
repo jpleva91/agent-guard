@@ -46,9 +46,7 @@ describe('analyzePolicyRisk', () => {
 
   it('flags disabled security invariants as danger', async () => {
     const { analyzePolicyRisk } = await load();
-    const flags = analyzePolicyRisk(
-      'invariants:\n  - secret_exposure: false\n    enabled: false',
-    );
+    const flags = analyzePolicyRisk('invariants:\n  - secret_exposure: false\n    enabled: false');
     const dangers = flags.filter((f) => f.level === 'danger');
     expect(dangers.length).toBeGreaterThan(0);
   });
@@ -63,7 +61,7 @@ describe('analyzePolicyRisk', () => {
   it('returns empty for safe policy', async () => {
     const { analyzePolicyRisk } = await load();
     const flags = analyzePolicyRisk(
-      'id: safe\nname: Safe Policy\nrules:\n  - action: file.write\n    effect: deny',
+      'id: safe\nname: Safe Policy\nrules:\n  - action: file.write\n    effect: deny'
     );
     expect(flags).toHaveLength(0);
   });
@@ -121,7 +119,7 @@ describe('classifyPolicyLocation', () => {
   it('classifies CLI flag as implicitly_trusted', async () => {
     const { classifyPolicyLocation } = await load();
     expect(classifyPolicyLocation('./agentguard.yaml', { isExplicitCliFlag: true })).toBe(
-      'implicitly_trusted',
+      'implicitly_trusted'
     );
   });
 

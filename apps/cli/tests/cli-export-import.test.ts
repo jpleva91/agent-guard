@@ -189,7 +189,12 @@ describe('importSession CLI', () => {
       decisionCount: 1,
     };
     const fileContent =
-      JSON.stringify(header) + '\n' + JSON.stringify(event) + '\n' + JSON.stringify(decision) + '\n';
+      JSON.stringify(header) +
+      '\n' +
+      JSON.stringify(event) +
+      '\n' +
+      JSON.stringify(decision) +
+      '\n';
 
     const importFile = join(tmpDir, 'import-full.jsonl');
     const { writeFileSync } = await import('node:fs');
@@ -275,7 +280,11 @@ describe('importSession CLI', () => {
     };
     const futureFile = join(tmpDir, 'future.jsonl');
     const { writeFileSync } = await import('node:fs');
-    writeFileSync(futureFile, JSON.stringify(header) + '\n' + JSON.stringify(makeEvent()) + '\n', 'utf8');
+    writeFileSync(
+      futureFile,
+      JSON.stringify(header) + '\n' + JSON.stringify(makeEvent()) + '\n',
+      'utf8'
+    );
 
     await importSession([futureFile], storageConfig);
 
@@ -298,7 +307,11 @@ describe('importSession CLI', () => {
     };
     const currentFile = join(tmpDir, 'current.jsonl');
     const { writeFileSync } = await import('node:fs');
-    writeFileSync(currentFile, JSON.stringify(header) + '\n' + JSON.stringify(event) + '\n', 'utf8');
+    writeFileSync(
+      currentFile,
+      JSON.stringify(header) + '\n' + JSON.stringify(event) + '\n',
+      'utf8'
+    );
 
     await importSession([currentFile], storageConfig);
 

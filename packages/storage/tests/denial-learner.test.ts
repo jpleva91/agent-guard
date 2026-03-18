@@ -17,7 +17,7 @@ function makeDenial(
   reason: string,
   runId: string,
   timestamp = 1000,
-  extra: Partial<DenialEvent> = {},
+  extra: Partial<DenialEvent> = {}
 ): DenialEvent {
   return { actionType, reason, timestamp, runId, ...extra };
 }
@@ -234,7 +234,7 @@ describe('scoreDenialConfidence', () => {
 
   it('caps at 1.0', () => {
     const events: DenialEvent[] = Array.from({ length: 50 }, (_, i) =>
-      makeDenial('git.push', 'protected branch', `run${i}`, i * 1000),
+      makeDenial('git.push', 'protected branch', `run${i}`, i * 1000)
     );
 
     const score = scoreDenialConfidence(events);

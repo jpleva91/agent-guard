@@ -91,7 +91,13 @@ describe('replay CLI functions', () => {
         startedAt: '2024-01-01T00:00:00Z',
         events: [
           { kind: 'RunStarted', timestamp: 1000 },
-          { kind: 'PolicyDenied', timestamp: 2000, policy: 'no-push', action: 'push', reason: 'denied' },
+          {
+            kind: 'PolicyDenied',
+            timestamp: 2000,
+            policy: 'no-push',
+            action: 'push',
+            reason: 'denied',
+          },
         ],
       } as never);
       await replay(['sess-1']);
@@ -117,8 +123,20 @@ describe('replay CLI functions', () => {
         startedAt: '2024-01-01T00:00:00Z',
         events: [
           { kind: 'PolicyDenied', timestamp: 1000, policy: 'p1', action: 'a1', reason: 'r1' },
-          { kind: 'PolicyDenied', timestamp: 2000, policy: 'no-push', action: 'push', reason: 'denied' },
-          { kind: 'InvariantViolation', timestamp: 3000, invariant: 'inv', expected: 'e', actual: 'a' },
+          {
+            kind: 'PolicyDenied',
+            timestamp: 2000,
+            policy: 'no-push',
+            action: 'push',
+            reason: 'denied',
+          },
+          {
+            kind: 'InvariantViolation',
+            timestamp: 3000,
+            invariant: 'inv',
+            expected: 'e',
+            actual: 'a',
+          },
         ],
         summary: { duration: 3000 },
       } as never);

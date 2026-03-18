@@ -4,11 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import Database from 'better-sqlite3';
-import {
-  runMigrations,
-  createSqliteEventSink,
-  createSqliteDecisionSink,
-} from '@red-codes/storage';
+import { runMigrations, createSqliteEventSink, createSqliteDecisionSink } from '@red-codes/storage';
 import type { StorageConfig } from '@red-codes/storage';
 import type { DomainEvent, GovernanceDecisionRecord } from '@red-codes/core';
 
@@ -97,10 +93,7 @@ describe('inspect', () => {
   });
 
   it('loads specific run by ID', async () => {
-    seedEvents('run_001', [
-      makeActionEvent('ActionAllowed'),
-      makeActionEvent('ActionExecuted'),
-    ]);
+    seedEvents('run_001', [makeActionEvent('ActionAllowed'), makeActionEvent('ActionExecuted')]);
 
     await inspect(['run_001'], storageConfig);
 
