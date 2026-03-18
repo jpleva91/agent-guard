@@ -388,11 +388,13 @@ Each invariant has a severity level (1-5). When invariants are violated, the max
 | Severity | Intervention | Behavior |
 |----------|-------------|----------|
 | >= 5 | `DENY` | Action is blocked immediately |
-| >= 4 | `PAUSE` | Action is suspended for human review |
-| >= 3 | `ROLLBACK` | Action is blocked; system suggests reversal |
+| >= 4 | `PAUSE` | Action is escalated; a `PauseHandler` callback is invoked for human-in-the-loop approval. If no handler is provided or the handler times out, the action is auto-denied. If approved, execution proceeds normally. |
+| >= 3 | `ROLLBACK` | Action executes under a snapshot safety net. A `SnapshotProvider` captures pre-execution state. If execution fails or post-execution invariant checks fail, the snapshot is restored. If no provider is configured, execution proceeds without rollback capability (best-effort). |
 | < 3 | `TEST_ONLY` | Action is allowed but flagged for testing |
 
-> *Implementation: `packages/kernel/src/decision.ts` --- `selectIntervention()` function.*
+Policy rules may also specify an explicit `intervention` field that overrides the severity-based default (e.g., a rule with severity 5 can specify `intervention: pause` to require human review instead of immediate denial). The `MODIFY` intervention type is also supported: a `ModifyHandler` callback rewrites the action, which is then re-evaluated through the full policy/invariant pipeline before execution.
+
+> *Implementation: `packages/kernel/src/decision.ts` --- `selectIntervention()` function; `packages/kernel/src/kernel.ts` --- `PauseHandler`, `SnapshotProvider`, `ModifyHandler` interfaces.*
 
 ### 6.4 Invariant Checking Pipeline
 

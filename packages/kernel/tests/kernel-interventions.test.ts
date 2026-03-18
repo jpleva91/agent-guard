@@ -663,6 +663,146 @@ describe('MODIFY Intervention', () => {
   });
 });
 
+describe('ROLLBACK post-execution invariant check', () => {
+  it('rolls back when post-execution invariant check fails', async () => {
+    const snapshotProvider: SnapshotProvider = {
+      capture: vi.fn().mockResolvedValue({ snapshotId: 'snap-post-001' }),
+      restore: vi.fn().mockResolvedValue({ success: true }),
+    };
+
+    // Custom invariant that always fails — simulates a post-execution invariant violation
+    const failingInvariant = {
+      id: 'post-exec-check',
+      name: 'Post-Execution Check',
+      description: 'Always fails to test post-execution rollback',
+      severity: 4,
+      check: () => ({
+        holds: false,
+        expected: 'post-execution state valid',
+        actual: 'post-execution state invalid',
+      }),
+    };
+
+    const kernel = createKernel({
+      dryRun: false,
+      policyDefs: [writePolicy('rollback')],
+      invariants: [failingInvariant],
+      snapshotProvider,
+      adapters: {
+        has: () => true,
+        execute: vi.fn().mockResolvedValue({ success: true }),
+        register: vi.fn(),
+      },
+    });
+
+    const result = await kernel.propose({
+      tool: 'Write',
+      file: 'src/index.ts',
+      content: 'new content',
+      agent: 'test-agent',
+    });
+
+    expect(snapshotProvider.capture).toHaveBeenCalledOnce();
+    expect(snapshotProvider.restore).toHaveBeenCalledWith('snap-post-001');
+    expect(result.rolledBack).toBe(true);
+    expect(result.intervention).toBe(INTERVENTION.ROLLBACK);
+  });
+
+  it('does not rollback when post-execution invariant check passes', async () => {
+    const snapshotProvider: SnapshotProvider = {
+      capture: vi.fn().mockResolvedValue({ snapshotId: 'snap-post-002' }),
+      restore: vi.fn().mockResolvedValue({ success: true }),
+    };
+
+    // Custom invariant that always passes
+    const passingInvariant = {
+      id: 'post-exec-pass',
+      name: 'Post-Execution Pass',
+      description: 'Always passes',
+      severity: 4,
+      check: () => ({
+        holds: true,
+        expected: 'valid',
+        actual: 'valid',
+      }),
+    };
+
+    const kernel = createKernel({
+      dryRun: false,
+      policyDefs: [writePolicy('rollback')],
+      invariants: [passingInvariant],
+      snapshotProvider,
+      adapters: {
+        has: () => true,
+        execute: vi.fn().mockResolvedValue({ success: true }),
+        register: vi.fn(),
+      },
+    });
+
+    const result = await kernel.propose({
+      tool: 'Write',
+      file: 'src/index.ts',
+      content: 'new content',
+      agent: 'test-agent',
+    });
+
+    expect(snapshotProvider.capture).toHaveBeenCalledOnce();
+    expect(snapshotProvider.restore).not.toHaveBeenCalled();
+    expect(result.rolledBack).toBe(false);
+    expect(result.executed).toBe(true);
+  });
+
+  it('emits ActionFailed with postExecutionInvariantFailure metadata on rollback', async () => {
+    const events: DomainEvent[] = [];
+    const snapshotProvider: SnapshotProvider = {
+      capture: vi.fn().mockResolvedValue({ snapshotId: 'snap-post-003' }),
+      restore: vi.fn().mockResolvedValue({ success: true }),
+    };
+
+    const failingInvariant = {
+      id: 'post-exec-check',
+      name: 'Post-Execution Check',
+      description: 'Always fails',
+      severity: 4,
+      check: () => ({
+        holds: false,
+        expected: 'valid',
+        actual: 'invalid',
+      }),
+    };
+
+    const kernel = createKernel({
+      dryRun: false,
+      policyDefs: [writePolicy('rollback')],
+      invariants: [failingInvariant],
+      snapshotProvider,
+      sinks: [{ write: (e: DomainEvent) => events.push(e) }],
+      adapters: {
+        has: () => true,
+        execute: vi.fn().mockResolvedValue({ success: true }),
+        register: vi.fn(),
+      },
+    });
+
+    await kernel.propose({
+      tool: 'Write',
+      file: 'src/index.ts',
+      content: 'new content',
+      agent: 'test-agent',
+    });
+
+    const failedEvent = events.find((e) => e.kind === 'ActionFailed');
+    expect(failedEvent).toBeDefined();
+    expect((failedEvent as Record<string, unknown>).error).toContain(
+      'Post-execution invariant check failed'
+    );
+    expect(
+      ((failedEvent as Record<string, unknown>).metadata as Record<string, unknown>)
+        .postExecutionInvariantFailure
+    ).toBe(true);
+  });
+});
+
 describe('Intervention decision records', () => {
   it('PAUSE denial creates a decision record with intervention', async () => {
     const kernel = createKernel({

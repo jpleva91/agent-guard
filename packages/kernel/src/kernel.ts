@@ -589,6 +589,43 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                     } catch {
                       rolledBack = false;
                     }
+                  } else if (execution.success && snapshotId && snapshotProvider) {
+                    // Execution succeeded — run post-execution invariant checks
+                    const postExecState = buildSystemState({
+                      ...systemContext,
+                      currentTarget: decision.intent.target,
+                      currentCommand: decision.intent.command,
+                      currentActionType: decision.intent.action,
+                      filesAffected: decision.intent.filesAffected || systemContext.filesAffected,
+                      targetBranch:
+                        decision.intent.branch || (systemContext.targetBranch as string),
+                      postExecution: true,
+                    });
+
+                    const postExecCheck = checkAllInvariants(
+                      config.invariants || DEFAULT_INVARIANTS,
+                      postExecState
+                    );
+
+                    if (!postExecCheck.allHold) {
+                      // Post-execution invariants failed — rollback
+                      sinkEvents(postExecCheck.events);
+                      try {
+                        const rollbackResult = await snapshotProvider.restore(snapshotId);
+                        rolledBack = rollbackResult.success;
+                        if (!rollbackResult.success) {
+                          monitor.process(
+                            {
+                              tool: 'kernel.rollback-failed',
+                              agent: rawAction.agent || 'kernel',
+                            },
+                            { ...systemContext, forceEscalation: 'LOCKDOWN' }
+                          );
+                        }
+                      } catch {
+                        rolledBack = false;
+                      }
+                    }
                   }
                 } catch (err) {
                   executionDurationMs = Date.now() - startTime;
@@ -607,23 +644,44 @@ export function createKernel(config: KernelConfig = {}): Kernel {
               }
             }
 
-            const executedEvent = execution?.success
-              ? createEvent(ACTION_EXECUTED, {
-                  actionType: decision.intent.action,
-                  target: decision.intent.target,
-                  result: 'success',
-                  actionId: action?.id,
-                  duration: executionDurationMs,
-                  metadata: { runId, intervention: interventionType, snapshotId },
-                })
-              : createEvent(ACTION_FAILED, {
-                  actionType: decision.intent.action,
-                  target: decision.intent.target,
-                  error: execution?.error || 'Execution skipped (no adapter or dry-run)',
-                  actionId: action?.id,
-                  duration: executionDurationMs,
-                  metadata: { runId, intervention: interventionType, rolledBack, snapshotId },
-                });
+            const executedEvent =
+              execution?.success && !rolledBack
+                ? createEvent(ACTION_EXECUTED, {
+                    actionType: decision.intent.action,
+                    target: decision.intent.target,
+                    result: 'success',
+                    actionId: action?.id,
+                    duration: executionDurationMs,
+                    metadata: { runId, intervention: interventionType, snapshotId },
+                  })
+                : execution?.success && rolledBack
+                  ? createEvent(ACTION_FAILED, {
+                      actionType: decision.intent.action,
+                      target: decision.intent.target,
+                      error: 'Post-execution invariant check failed — rolled back',
+                      actionId: action?.id,
+                      duration: executionDurationMs,
+                      metadata: {
+                        runId,
+                        intervention: interventionType,
+                        rolledBack,
+                        snapshotId,
+                        postExecutionInvariantFailure: true,
+                      },
+                    })
+                  : createEvent(ACTION_FAILED, {
+                      actionType: decision.intent.action,
+                      target: decision.intent.target,
+                      error: execution?.error || 'Execution skipped (no adapter or dry-run)',
+                      actionId: action?.id,
+                      duration: executionDurationMs,
+                      metadata: {
+                        runId,
+                        intervention: interventionType,
+                        rolledBack,
+                        snapshotId,
+                      },
+                    });
             allEvents.push(executedEvent);
             sinkEvents(allEvents);
 
