@@ -8,11 +8,48 @@
 
 import { randomUUID } from 'node:crypto';
 import { execSync, spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
 import { resolveMainRepoRoot } from '@red-codes/core';
+
+// --- Session state: persist formatPass/testsPass across hook invocations ----
+// Each Claude Code session is stateless per hook call. We bridge this by writing
+// a small JSON file keyed by session_id so format/test results from one call are
+// visible to subsequent PreToolUse governance checks in the same session.
+
+interface SessionState extends Record<string, unknown> {
+  formatPass?: boolean;
+  testsPass?: boolean;
+}
+
+function sessionStatePath(sessionId: string): string {
+  // Use a dedicated subdirectory rather than flat tmpdir to reduce path
+  // predictability on shared systems (e.g. multi-user CI machines).
+  return join(tmpdir(), 'agentguard', `session-${sessionId}.json`);
+}
+
+function readSessionState(sessionId: string | undefined): SessionState {
+  const key = sessionId || String(process.ppid) || 'default';
+  try {
+    return JSON.parse(readFileSync(sessionStatePath(key), 'utf8')) as SessionState;
+  } catch {
+    return {};
+  }
+}
+
+function writeSessionState(sessionId: string | undefined, patch: Partial<SessionState>): void {
+  const key = sessionId || String(process.ppid) || 'default';
+  try {
+    mkdirSync(join(tmpdir(), 'agentguard'), { recursive: true });
+    const current = readSessionState(key);
+    writeFileSync(sessionStatePath(key), JSON.stringify({ ...current, ...patch }));
+  } catch {
+    // Non-fatal — state tracking is best-effort
+  }
+}
 
 /** Resolve the CLI command — use local bin.js if in the agentguard dev repo, else bare `agentguard`. */
 function resolveCliCommand(): string {
@@ -127,12 +164,13 @@ async function handlePreToolUse(
     }
   }
 
-  // Load policy (fail-open: empty policy if none found)
+  // Load policy — when policies are loaded, default-deny applies (fail-closed).
+  // When no policy file is found, default-deny is disabled (fail-open).
   let policyDefs: unknown[] = [];
   try {
     policyDefs = loadPolicyDefs(undefined, targetPath);
   } catch (policyErr) {
-    // Policy loading failure is non-fatal — continue with no policy (allow all)
+    // Policy loading failure is non-fatal — continue with no policy (fail-open)
     process.stderr.write(
       `agentguard: warning — no policy loaded (${policyErr instanceof Error ? policyErr.message : 'unknown error'}). All actions will be allowed.\n`
     );
@@ -158,11 +196,14 @@ async function handlePreToolUse(
   // Build kernel — dryRun: true = evaluate policies/invariants only (no adapter execution).
   // Claude Code handles actual tool execution; the hook only governs (allow/deny).
   // Events and decision records are still emitted and persisted to the configured storage backend.
+  //
+  // Default-deny: when policies are loaded, unknown actions are denied (fail-closed).
+  // When no policies exist, fail-open to avoid blocking users who haven't configured governance.
   const kernel = createKernel({
     runId,
     policyDefs,
     dryRun: true,
-    evaluateOptions: { defaultDeny: false },
+    evaluateOptions: { defaultDeny: policyDefs.length > 0 },
     sinks: eventSink ? [eventSink] : [],
     decisionSinks: [decisionSink].filter(Boolean) as import('@red-codes/core').DecisionSink[],
   });
@@ -182,10 +223,12 @@ async function handlePreToolUse(
   const envPersona = readPersonaFromEnv();
   const resolvedPersona = envPersona ? resolvePersona(undefined, envPersona) : undefined;
 
+  const sessionState = readSessionState(normalizedPayload.session_id);
+
   const result = await processClaudeCodeHook(
     kernel,
     normalizedPayload,
-    {},
+    sessionState,
     resolvedPersona,
     projectRoot
   );
@@ -227,10 +270,39 @@ function handlePostToolUse(data: Record<string, unknown>, cliArgs: string[] = []
     process.stdout.write('\n');
   }
 
+  // Extract command string — tool_input may be a string or {command: "..."} object
+  const rawInput = data.tool_input;
+  const toolInput: string =
+    typeof rawInput === 'string'
+      ? rawInput
+      : typeof (rawInput as Record<string, unknown>)?.command === 'string'
+        ? ((rawInput as Record<string, unknown>).command as string)
+        : typeof data.command === 'string'
+          ? data.command
+          : '';
+
   // Track rtk-optimized commands (informational — for session viewer visibility)
-  const toolInput = (data.tool_input || data.command || '') as string;
   if (toolInput.startsWith('rtk ') || toolInput.includes('/rtk ')) {
     process.stderr.write(`  \x1b[36m\u26A1\x1b[0m rtk: token-optimized output\n`);
+  }
+
+  // Track format pass — when a Prettier/format command exits 0, record it for the session.
+  // This satisfies the `requireFormat` policy condition on subsequent git.commit actions.
+  const sessionId =
+    (data.session_id as string | undefined) || process.env.CLAUDE_SESSION_ID || undefined;
+  if (exitCode === 0 && sessionId) {
+    const isFormatCmd =
+      toolInput.includes('prettier') ||
+      toolInput.includes('format:fix') ||
+      toolInput.includes('format --write');
+    if (isFormatCmd) {
+      writeSessionState(sessionId, { formatPass: true });
+    }
+    const isTestCmd =
+      toolInput.includes('vitest') || toolInput.includes('jest') || toolInput.includes('pnpm test');
+    if (isTestCmd) {
+      writeSessionState(sessionId, { testsPass: true });
+    }
   }
 
   // Detect PR creation — suggest opening the session viewer

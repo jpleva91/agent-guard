@@ -144,8 +144,12 @@ export interface EvalResult {
 /** Options for the policy evaluator */
 export interface EvaluateOptions {
   /**
-   * When true (default), actions with no matching policy rule are denied.
-   * Set to false to opt into fail-open mode (legacy behavior) during migration.
+   * When true (default), actions with no matching policy rule are denied (fail-closed).
+   * This implements the "default deny" principle required by reference monitors.
+   *
+   * Set to false to opt into fail-open mode. The production hooks use this
+   * conditionally: default-deny when policies are loaded, fail-open when no
+   * policy file is found (to avoid blocking users who haven't configured governance).
    */
   defaultDeny?: boolean;
 }

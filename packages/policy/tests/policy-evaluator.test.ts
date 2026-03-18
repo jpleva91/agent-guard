@@ -337,6 +337,66 @@ describe('evaluate', () => {
     expect(result.severity).toBe(0);
   });
 
+  describe('default-deny for unknown/unrecognized actions', () => {
+    it('denies an unknown action type with no matching rule', () => {
+      const policy = makePolicy({
+        rules: [{ action: 'file.read', effect: 'allow' }],
+      });
+      const result = evaluate(makeIntent({ action: 'custom.unknown' }), [policy]);
+      expect(result.allowed).toBe(false);
+      expect(result.decision).toBe('deny');
+      expect(result.reason).toContain('default deny');
+      expect(result.matchedRule).toBeNull();
+      expect(result.matchedPolicy).toBeNull();
+    });
+
+    it('denies unrecognized action even with many allow rules for other types', () => {
+      const policy = makePolicy({
+        rules: [
+          { action: 'file.read', effect: 'allow' },
+          { action: 'file.write', effect: 'allow' },
+          { action: 'git.diff', effect: 'allow' },
+          { action: 'shell.exec', effect: 'allow' },
+        ],
+      });
+      const result = evaluate(makeIntent({ action: 'infra.destroy' }), [policy]);
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('default deny');
+    });
+
+    it('allows explicitly listed action while denying unlisted ones', () => {
+      const policy = makePolicy({
+        rules: [{ action: 'file.read', effect: 'allow' }],
+      });
+      const allowed = evaluate(makeIntent({ action: 'file.read' }), [policy]);
+      const denied = evaluate(makeIntent({ action: 'file.write' }), [policy]);
+      expect(allowed.allowed).toBe(true);
+      expect(denied.allowed).toBe(false);
+    });
+
+    it('sets trace.phaseThatMatched to "default" for default-deny', () => {
+      const result = evaluate(makeIntent({ action: 'deploy.trigger' }), []);
+      expect(result.trace).toBeDefined();
+      expect(result.trace!.phaseThatMatched).toBe('default');
+    });
+
+    it('uses severity 3 for default-deny decisions', () => {
+      const result = evaluate(makeIntent({ action: 'npm.publish' }), []);
+      expect(result.severity).toBe(3);
+    });
+
+    it('fail-open opt-in allows unknown actions', () => {
+      const policy = makePolicy({
+        rules: [{ action: 'file.read', effect: 'allow' }],
+      });
+      const result = evaluate(makeIntent({ action: 'custom.unknown' }), [policy], {
+        defaultDeny: false,
+      });
+      expect(result.allowed).toBe(true);
+      expect(result.reason).toContain('default allow');
+    });
+  });
+
   describe('policy intervention field', () => {
     it('passes through intervention from deny rule', () => {
       const policy = makePolicy({

@@ -93,11 +93,14 @@ async function handlePreToolUse(
 
   // Build kernel — dryRun: true = evaluate policies/invariants only (no adapter execution).
   // Copilot CLI handles actual tool execution; the hook only governs (allow/deny).
+  //
+  // Default-deny: when policies are loaded, unknown actions are denied (fail-closed).
+  // When no policies exist, fail-open to avoid blocking users who haven't configured governance.
   const kernel = createKernel({
     runId,
     policyDefs,
     dryRun: true,
-    evaluateOptions: { defaultDeny: false },
+    evaluateOptions: { defaultDeny: policyDefs.length > 0 },
     sinks: eventSink ? [eventSink] : [],
     decisionSinks: [decisionSink].filter(Boolean) as import('@red-codes/core').DecisionSink[],
   });

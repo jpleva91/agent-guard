@@ -56,6 +56,9 @@ rules:
   - action: file.delete
     effect: allow
 
+  - action: file.move
+    effect: allow
+
   - action: git.push
     effect: allow
 
@@ -71,6 +74,9 @@ rules:
   - action: git.branch.create
     effect: allow
 
+  - action: git.merge
+    effect: allow
+
   - action: shell.exec
     effect: allow
 
@@ -84,4 +90,7 @@ rules:
     effect: allow
 
   - action: npm.script.run
+    effect: allow
+
+  - action: http.request
     effect: allow

@@ -154,3 +154,5 @@ Pure domain logic with no environment dependencies.
 4. **Deterministic evaluation.** Same action + same policy + same state = same decision. No inference, no heuristics.
 
 5. **Observable.** Every decision produces events. Every event is sunk to JSONL. Every run is inspectable.
+
+6. **Default-deny (complete mediation).** When a policy file is loaded, any action without an explicit `allow` rule is denied. Agents cannot escalate privileges by requesting action types absent from the policy. Fail-open only applies when no policy is configured, preserving zero-friction onboarding while enforcing closed posture in governed environments.

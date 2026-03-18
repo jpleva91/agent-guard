@@ -69,6 +69,14 @@ rules:
   - action: file.write
     effect: allow
 
+  # File deletion is allowed in development.
+  - action: file.delete
+    effect: allow
+
+  # File move/rename.
+  - action: file.move
+    effect: allow
+
   # Git operations on non-protected branches.
   - action: git.push
     effect: allow
@@ -104,4 +112,8 @@ rules:
     effect: allow
 
   - action: npm.script.run
+    effect: allow
+
+  # HTTP requests for API calls and testing.
+  - action: http.request
     effect: allow

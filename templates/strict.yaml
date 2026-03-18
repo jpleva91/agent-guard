@@ -96,8 +96,19 @@ rules:
     reason: Deployments denied in strict mode
 
   # ─── Allowed operations ───────────────────────────────────────────────
+  # NOTE: With default-deny enabled, any action not listed here is denied.
+  # Add explicit allow rules for your workflow as needed.
+
   # Reading files is always safe.
   - action: file.read
+    effect: allow
+
+  # File writes allowed (subject to blast radius limit above).
+  - action: file.write
+    effect: allow
+
+  # Shell commands for builds and scripts (subject to deny rules above).
+  - action: shell.exec
     effect: allow
 
   # Running tests is encouraged.
@@ -109,4 +120,21 @@ rules:
 
   # Viewing diffs is safe.
   - action: git.diff
+    effect: allow
+
+  # Git operations needed for basic workflow.
+  - action: git.commit
+    effect: allow
+
+  - action: git.checkout
+    effect: allow
+
+  - action: git.branch.create
+    effect: allow
+
+  # NPM operations for dependency management.
+  - action: npm.install
+    effect: allow
+
+  - action: npm.script.run
     effect: allow
