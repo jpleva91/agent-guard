@@ -2,6 +2,7 @@
 // Pure domain logic. No DOM, no Node.js-specific APIs.
 
 import type { AgentPersona } from '@red-codes/core';
+import { PolicyMatcher } from '@red-codes/matchers';
 
 export interface PersonaCondition {
   trustTier?: string[];
@@ -155,32 +156,11 @@ export interface EvaluateOptions {
 }
 
 function matchAction(pattern: string, action: string): boolean {
-  if (pattern === '*') return true;
-  if (pattern === action) return true;
-
-  if (pattern.endsWith('.*')) {
-    const prefix = pattern.slice(0, -2);
-    return action.startsWith(prefix + '.');
-  }
-
-  return false;
+  return PolicyMatcher.matchAction(pattern, action);
 }
 
 function matchScope(scopePatterns: string[], target: string): boolean {
-  if (!scopePatterns || scopePatterns.length === 0) return true;
-  if (!target) return false;
-
-  for (const pattern of scopePatterns) {
-    if (pattern === '*') return true;
-    if (pattern === target) return true;
-    if (pattern.endsWith('/') && target.startsWith(pattern)) return true;
-    if (pattern.startsWith('*')) {
-      const suffix = pattern.slice(1);
-      if (target.endsWith(suffix)) return true;
-    }
-  }
-
-  return false;
+  return PolicyMatcher.matchScope(scopePatterns, target);
 }
 
 interface ConditionMatchResult {
@@ -313,7 +293,7 @@ function matchConditions(
   }
 
   if (conditions.branches && intent.branch) {
-    branchMatched = conditions.branches.includes(intent.branch);
+    branchMatched = new Set(conditions.branches).has(intent.branch);
     if (branchMatched) {
       return { matched: true, scopeMatched, limitExceeded, branchMatched };
     }

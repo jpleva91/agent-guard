@@ -73,6 +73,19 @@ export class PolicyMatcher {
         return true;
       }
 
+      // Legacy suffix pattern: `*.ext` matches any depth (e.g. `*.ts` → `src/index.ts`).
+      // picomatch treats `*` as single-segment, so `*.ts` would NOT match `src/index.ts`.
+      // Detect simple suffix patterns (start with `*`, no `/` or `**`) and match by suffix.
+      if (
+        normalizedPattern.startsWith('*') &&
+        !normalizedPattern.startsWith('**') &&
+        !normalizedPattern.includes('/')
+      ) {
+        const suffix = normalizedPattern.slice(1); // strip leading `*`
+        if (normalized.endsWith(suffix)) return true;
+        continue; // skip picomatch for this pattern — suffix check is authoritative
+      }
+
       // Glob matching via picomatch
       if (picomatch.isMatch(normalized, normalizedPattern, { dot: true })) {
         return true;

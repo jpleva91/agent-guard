@@ -189,6 +189,9 @@ importers:
       '@red-codes/events':
         specifier: workspace:*
         version: link:../events
+      '@red-codes/matchers':
+        specifier: workspace:*
+        version: link:../matchers
 
   packages/kernel:
     dependencies:
@@ -231,6 +234,9 @@ importers:
       '@red-codes/core':
         specifier: workspace:*
         version: link:../core
+      '@red-codes/matchers':
+        specifier: workspace:*
+        version: link:../matchers
     devDependencies:
       '@red-codes/events':
         specifier: workspace:*
