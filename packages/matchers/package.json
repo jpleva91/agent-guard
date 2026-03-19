@@ -31,5 +31,8 @@
     "re2js": "^1.0.0",
     "picomatch": "^4.0.0",
     "@tanishiking/aho-corasick": "^0.0.1"
+  },
+  "devDependencies": {
+    "@red-codes/core": "workspace:*"
   }
 }

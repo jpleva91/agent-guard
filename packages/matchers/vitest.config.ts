@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@red-codes/matchers': path.resolve(__dirname, 'src/index.ts'),
+      '@red-codes/core': path.resolve(__dirname, '../core/src/index.ts'),
     },
   },
   test: {
