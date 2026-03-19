@@ -1,5 +1,4 @@
 import { Trie } from '@tanishiking/aho-corasick';
-import { RE2JS } from 're2js';
 import type { DestructivePatternInput, GitActionPatternInput, MatchResult } from './types.js';
 import { categoryToReasonCode } from './reason-codes.js';
 
@@ -12,14 +11,13 @@ interface KeywordEntry {
   description: string;
   riskLevel: 'high' | 'critical';
   category: string;
-  caseInsensitive: boolean;
-  /** The original regex pattern for word-boundary verification. */
-  verifyRegex: RE2JS;
+  /** Native RegExp for word-boundary verification after Aho-Corasick hit. */
+  verifyRegex: RegExp;
 }
 
-/** A pattern that requires full RE2 regex matching (complex path). */
+/** A pattern that requires full regex matching (complex path). */
 interface RegexEntry {
-  regex: RE2JS;
+  regex: RegExp;
   patternId: string;
   description: string;
   riskLevel: 'high' | 'critical';
@@ -28,7 +26,7 @@ interface RegexEntry {
 
 /** A compiled git action with its patterns and action type. */
 interface GitActionEntry {
-  regexes: RE2JS[];
+  regexes: RegExp[];
   actionType: string;
 }
 
@@ -74,23 +72,14 @@ function makePatternId(category: string, index: number): string {
   return `destructive:${category}:${index}`;
 }
 
-/**
- * Compile a RE2JS pattern with optional flags string.
- * Supports 'i' flag for case-insensitive matching.
- */
-function compileRe2(pattern: string, flags?: string): RE2JS {
-  let flagBits = 0;
-  if (flags?.includes('i')) {
-    flagBits |= RE2JS.CASE_INSENSITIVE;
-  }
-  return RE2JS.compile(pattern, flagBits);
-}
-
 // ─── CommandScanner ─────────────────────────────────────────────────────────
 
 /**
  * Two-tier command matching system: Aho-Corasick keyword scanning (fast path)
- * with RE2 regex fallback (complex patterns).
+ * with native RegExp fallback (complex patterns).
+ *
+ * Uses V8's native RegExp engine for speed while maintaining structured
+ * MatchResult output with reason codes and pattern classification.
  */
 export class CommandScanner {
   private readonly keywordTrie: Trie | null;
@@ -102,7 +91,7 @@ export class CommandScanner {
     keywordTrie: Trie | null,
     keywordEntries: Map<string, KeywordEntry[]>,
     regexEntries: RegexEntry[],
-    gitActions: GitActionEntry[],
+    gitActions: GitActionEntry[]
   ) {
     this.keywordTrie = keywordTrie;
     this.keywordEntries = keywordEntries;
@@ -115,7 +104,7 @@ export class CommandScanner {
    *
    * Classifies each destructive pattern as keyword-extractable or complex,
    * builds an Aho-Corasick automaton for keywords, and compiles complex
-   * patterns with RE2.
+   * patterns with native RegExp.
    */
   static create(
     destructive: DestructivePatternInput[],
@@ -140,8 +129,7 @@ export class CommandScanner {
           description: p.description,
           riskLevel: p.riskLevel,
           category: p.category,
-          caseInsensitive: isCaseInsensitive,
-          verifyRegex: compileRe2(p.pattern, p.flags),
+          verifyRegex: new RegExp(p.pattern, p.flags ?? ''),
         };
 
         keywords.push(normalizedKeyword);
@@ -152,9 +140,9 @@ export class CommandScanner {
           keywordEntries.set(normalizedKeyword, [entry]);
         }
       } else {
-        // Complex pattern — RE2 fallback
+        // Complex pattern — native RegExp
         regexEntries.push({
-          regex: compileRe2(p.pattern, p.flags),
+          regex: new RegExp(p.pattern, p.flags ?? ''),
           patternId,
           description: p.description,
           riskLevel: p.riskLevel,
@@ -169,9 +157,9 @@ export class CommandScanner {
         ? new Trie(keywords, { caseInsensitive: true, allowOverlaps: true, onlyWholeWords: false })
         : null;
 
-    // Compile git action patterns
+    // Compile git action patterns with native RegExp
     const gitActions: GitActionEntry[] = git.map((g) => ({
-      regexes: g.patterns.map((pat) => compileRe2(pat)),
+      regexes: g.patterns.map((pat) => new RegExp(pat)),
       actionType: g.actionType,
     }));
 
@@ -181,8 +169,11 @@ export class CommandScanner {
   /**
    * Scan a command for destructive patterns using the two-tier approach.
    *
-   * - Tier 1: Aho-Corasick keyword scan — single O(n) pass over the input
-   * - Tier 2: RE2 regex fallback for complex patterns
+   * - Tier 1: Aho-Corasick keyword scan — single O(n) pass, then verify
+   *   word boundaries with native RegExp
+   * - Tier 1.5: Regex sweep for keyword entries missed by Aho-Corasick
+   *   (e.g. variable whitespace "rm  -rf" vs "rm -rf")
+   * - Tier 2: Native RegExp for complex patterns
    *
    * Returns all matches as structured MatchResult objects.
    */
@@ -204,8 +195,7 @@ export class CommandScanner {
           if (seenPatterns.has(entry.patternId)) continue;
 
           // Verify with the original regex for word-boundary accuracy
-          const matcher = entry.verifyRegex.matcher(command);
-          if (matcher.find()) {
+          if (entry.verifyRegex.test(command)) {
             seenPatterns.add(entry.patternId);
             results.push({
               matched: true,
@@ -228,8 +218,7 @@ export class CommandScanner {
       for (const entry of entries) {
         if (seenPatterns.has(entry.patternId)) continue;
 
-        const matcher = entry.verifyRegex.matcher(command);
-        if (matcher.find()) {
+        if (entry.verifyRegex.test(command)) {
           seenPatterns.add(entry.patternId);
           results.push({
             matched: true,
@@ -244,12 +233,11 @@ export class CommandScanner {
       }
     }
 
-    // ─── Tier 2: RE2 regex fallback for complex patterns ──────────────────
+    // ─── Tier 2: Native RegExp for complex patterns ──────────────────────
     for (const entry of this.regexEntries) {
       if (seenPatterns.has(entry.patternId)) continue;
 
-      const matcher = entry.regex.matcher(command);
-      if (matcher.find()) {
+      if (entry.regex.test(command)) {
         seenPatterns.add(entry.patternId);
         results.push({
           matched: true,
@@ -296,15 +284,12 @@ export class CommandScanner {
    * Patterns are checked in order — more specific patterns (e.g. force-push)
    * should appear before general ones (e.g. push) in the input.
    */
-  scanGitAction(
-    command: string,
-  ): { actionType: string; matchResult: MatchResult } | null {
+  scanGitAction(command: string): { actionType: string; matchResult: MatchResult } | null {
     if (!command) return null;
 
     for (const action of this.gitActions) {
       for (const regex of action.regexes) {
-        const matcher = regex.matcher(command);
-        if (matcher.find()) {
+        if (regex.test(command)) {
           return {
             actionType: action.actionType,
             matchResult: {

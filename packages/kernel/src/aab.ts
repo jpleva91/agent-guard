@@ -3,7 +3,11 @@
 // Pure domain logic. No DOM, no Node.js-specific APIs.
 
 import type { DomainEvent, AgentPersona, CompiledDestructivePattern } from '@red-codes/core';
-import { TOOL_ACTION_MAP_DATA, DESTRUCTIVE_PATTERNS_DATA, GIT_ACTION_PATTERNS_DATA } from '@red-codes/core';
+import {
+  TOOL_ACTION_MAP_DATA,
+  DESTRUCTIVE_PATTERNS_DATA,
+  GIT_ACTION_PATTERNS_DATA,
+} from '@red-codes/core';
 import { CommandScanner } from '@red-codes/matchers';
 import { evaluate } from '@red-codes/policy';
 import type {

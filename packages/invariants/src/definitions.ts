@@ -90,14 +90,29 @@ const credentialPathMatcher = PathMatcher.create([
   // SSH directory patterns
   { glob: '**/.ssh/**', id: 'ssh-dir', description: 'SSH config directory', severity: 5 },
   // AWS credential files
-  { glob: '**/.aws/credentials', id: 'aws-creds', description: 'AWS credentials file', severity: 5 },
+  {
+    glob: '**/.aws/credentials',
+    id: 'aws-creds',
+    description: 'AWS credentials file',
+    severity: 5,
+  },
   { glob: '**/.aws/config', id: 'aws-config', description: 'AWS config file', severity: 5 },
   // Google Cloud
-  { glob: '**/.config/gcloud/**', id: 'gcloud-dir', description: 'Google Cloud config directory', severity: 5 },
+  {
+    glob: '**/.config/gcloud/**',
+    id: 'gcloud-dir',
+    description: 'Google Cloud config directory',
+    severity: 5,
+  },
   // Azure
   { glob: '**/.azure/**', id: 'azure-dir', description: 'Azure config directory', severity: 5 },
   // Docker auth
-  { glob: '**/.docker/config.json', id: 'docker-auth', description: 'Docker auth config', severity: 5 },
+  {
+    glob: '**/.docker/config.json',
+    id: 'docker-auth',
+    description: 'Docker auth config',
+    severity: 5,
+  },
 ]);
 
 /** Matches credential file basenames at any depth (case-insensitive via caller lowercasing). */
@@ -109,7 +124,12 @@ const credentialBasenameMatcher = PathMatcher.create([
   { glob: '**/.netrc', id: 'netrc', description: 'netrc credentials file', severity: 5 },
   { glob: '.netrc', id: 'netrc-root', description: 'netrc credentials file at root', severity: 5 },
   { glob: '**/.curlrc', id: 'curlrc', description: 'curlrc credentials file', severity: 5 },
-  { glob: '.curlrc', id: 'curlrc-root', description: 'curlrc credentials file at root', severity: 5 },
+  {
+    glob: '.curlrc',
+    id: 'curlrc-root',
+    description: 'curlrc credentials file at root',
+    severity: 5,
+  },
 ]);
 
 /** Matches container configuration file basenames at any depth.
@@ -117,21 +137,76 @@ const credentialBasenameMatcher = PathMatcher.create([
 const containerConfigMatcher = PathMatcher.create([
   { glob: '**/dockerfile', id: 'dockerfile', description: 'Dockerfile', severity: 3 },
   { glob: 'dockerfile', id: 'dockerfile-root', description: 'Dockerfile at root', severity: 3 },
-  { glob: '**/docker-compose.yml', id: 'compose-yml', description: 'docker-compose.yml', severity: 3 },
-  { glob: 'docker-compose.yml', id: 'compose-yml-root', description: 'docker-compose.yml at root', severity: 3 },
-  { glob: '**/docker-compose.yaml', id: 'compose-yaml', description: 'docker-compose.yaml', severity: 3 },
-  { glob: 'docker-compose.yaml', id: 'compose-yaml-root', description: 'docker-compose.yaml at root', severity: 3 },
+  {
+    glob: '**/docker-compose.yml',
+    id: 'compose-yml',
+    description: 'docker-compose.yml',
+    severity: 3,
+  },
+  {
+    glob: 'docker-compose.yml',
+    id: 'compose-yml-root',
+    description: 'docker-compose.yml at root',
+    severity: 3,
+  },
+  {
+    glob: '**/docker-compose.yaml',
+    id: 'compose-yaml',
+    description: 'docker-compose.yaml',
+    severity: 3,
+  },
+  {
+    glob: 'docker-compose.yaml',
+    id: 'compose-yaml-root',
+    description: 'docker-compose.yaml at root',
+    severity: 3,
+  },
   { glob: '**/compose.yml', id: 'compose-short-yml', description: 'compose.yml', severity: 3 },
-  { glob: 'compose.yml', id: 'compose-short-yml-root', description: 'compose.yml at root', severity: 3 },
+  {
+    glob: 'compose.yml',
+    id: 'compose-short-yml-root',
+    description: 'compose.yml at root',
+    severity: 3,
+  },
   { glob: '**/compose.yaml', id: 'compose-short-yaml', description: 'compose.yaml', severity: 3 },
-  { glob: 'compose.yaml', id: 'compose-short-yaml-root', description: 'compose.yaml at root', severity: 3 },
+  {
+    glob: 'compose.yaml',
+    id: 'compose-short-yaml-root',
+    description: 'compose.yaml at root',
+    severity: 3,
+  },
   { glob: '**/.dockerignore', id: 'dockerignore', description: '.dockerignore', severity: 3 },
-  { glob: '.dockerignore', id: 'dockerignore-root', description: '.dockerignore at root', severity: 3 },
-  { glob: '**/containerfile', id: 'containerfile', description: 'Containerfile (Podman)', severity: 3 },
-  { glob: 'containerfile', id: 'containerfile-root', description: 'Containerfile at root', severity: 3 },
+  {
+    glob: '.dockerignore',
+    id: 'dockerignore-root',
+    description: '.dockerignore at root',
+    severity: 3,
+  },
+  {
+    glob: '**/containerfile',
+    id: 'containerfile',
+    description: 'Containerfile (Podman)',
+    severity: 3,
+  },
+  {
+    glob: 'containerfile',
+    id: 'containerfile-root',
+    description: 'Containerfile at root',
+    severity: 3,
+  },
   // *.dockerfile suffix pattern (e.g. app.dockerfile, prod.dockerfile)
-  { glob: '**/*.dockerfile', id: 'dockerfile-suffix', description: '*.dockerfile variant', severity: 3 },
-  { glob: '*.dockerfile', id: 'dockerfile-suffix-root', description: '*.dockerfile variant at root', severity: 3 },
+  {
+    glob: '**/*.dockerfile',
+    id: 'dockerfile-suffix',
+    description: '*.dockerfile variant',
+    severity: 3,
+  },
+  {
+    glob: '*.dockerfile',
+    id: 'dockerfile-suffix-root',
+    description: '*.dockerfile variant at root',
+    severity: 3,
+  },
 ]);
 
 /** IDE socket path patterns (lowercased for case-insensitive matching).
