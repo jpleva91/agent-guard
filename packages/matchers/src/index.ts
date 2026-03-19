@@ -74,8 +74,11 @@ export {
   categoryToReasonCode,
 } from './reason-codes.js';
 
+// ─── Matchers ────────────────────────────────────────────────────────────────
+
+export { CommandScanner } from './command-scanner.js';
+
 // ─── Matchers (stubs — implemented in subsequent tasks) ──────────────────────
 //
-// TODO(KE-1 Task 2): export { CommandScanner } from './command-scanner.js';
 // TODO(KE-1 Task 3): export { PathMatcher } from './path-matcher.js';
 // TODO(KE-1 Task 4): export { PolicyMatcher } from './policy-matcher.js';
