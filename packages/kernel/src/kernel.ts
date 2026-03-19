@@ -11,6 +11,7 @@ import type {
   DecisionRecord,
   SeededRng,
   EventSink,
+  RunManifest,
 } from '@red-codes/core';
 import { createMonitor } from './monitor.js';
 import type { MonitorConfig, MonitorDecision, MonitorState } from './monitor.js';
@@ -158,6 +159,12 @@ export interface KernelConfig extends MonitorConfig {
   /** Tier router configuration for adaptive governance depth.
    *  When provided, enables tiered evaluation (fast/standard/deep). */
   tierRouterConfig?: TierRouterConfig;
+  /**
+   * Run manifest — declares the authority set for this governance session.
+   * When provided, the kernel makes it available during policy evaluation
+   * and records it in governance decision records for audit trail.
+   */
+  manifest?: RunManifest;
 }
 
 export interface Kernel {
@@ -172,6 +179,8 @@ export interface Kernel {
   getEventCount(): number;
   /** Returns tier evaluation metrics (counts and timings per tier) */
   getTierMetrics(): TierMetrics | null;
+  /** Returns the run manifest if one was provided at initialization */
+  getManifest(): RunManifest | null;
   shutdown(): void;
 }
 
@@ -196,6 +205,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
   const modifyTimeoutMs = config.modifyTimeoutMs ?? 30_000;
   const tracer = config.tracer ?? null;
   const intentSpec = config.intentSpec ?? null;
+  const manifest = config.manifest ?? null;
   const tierRouter: TierRouter | null = config.tierRouterConfig
     ? createTierRouter(config.tierRouterConfig)
     : null;
@@ -1405,6 +1415,10 @@ export function createKernel(config: KernelConfig = {}): Kernel {
 
     getTierMetrics() {
       return tierRouter ? tierRouter.getMetrics() : null;
+    },
+
+    getManifest() {
+      return manifest;
     },
 
     shutdown() {

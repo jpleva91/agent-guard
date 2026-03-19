@@ -577,6 +577,67 @@ export interface Capability {
   readonly scope: string;
 }
 
+// ---------------------------------------------------------------------------
+// Capability-Scoped Sessions (Phase 7)
+// ---------------------------------------------------------------------------
+
+/** Granular permission level for capability grants */
+export type PermissionLevel = 'read' | 'write' | 'execute' | 'deploy';
+
+/** A single capability grant with scoped permissions */
+export interface CapabilityGrant {
+  /** Permission levels granted (read, write, execute, deploy) */
+  readonly permissions: readonly PermissionLevel[];
+  /** Action types this grant covers (e.g., 'file.read', 'git.*') — supports globs */
+  readonly actions: readonly string[];
+  /** File path patterns this grant is restricted to (glob syntax) */
+  readonly filePatterns?: readonly string[];
+  /** Branch patterns this grant is restricted to (glob syntax) */
+  readonly branchPatterns?: readonly string[];
+  /** Explicit command allowlist for shell.exec actions */
+  readonly commandAllowlist?: readonly string[];
+}
+
+/** Scope restrictions that limit what a session can touch */
+export interface ScopeRestriction {
+  /** Allowed file path patterns (glob syntax). If empty, no file access is granted. */
+  readonly allowedPaths: readonly string[];
+  /** Denied file path patterns (glob syntax). Takes precedence over allowedPaths. */
+  readonly deniedPaths?: readonly string[];
+  /** Allowed branch patterns (glob syntax). If empty, no branch operations are granted. */
+  readonly allowedBranches?: readonly string[];
+  /** Denied branch patterns (glob syntax). Takes precedence over allowedBranches. */
+  readonly deniedBranches?: readonly string[];
+  /** Allowed shell commands (exact match or glob). If empty, no shell access is granted. */
+  readonly allowedCommands?: readonly string[];
+  /** Maximum blast radius permitted for any single action */
+  readonly maxBlastRadius?: number;
+}
+
+/**
+ * RunManifest — declares the authority set for a governance session.
+ *
+ * Each run should declare up-front which roles and capabilities it requires.
+ * The manifest is the single source of truth for what a session is authorized to do.
+ * It is provided at kernel initialization and available during policy evaluation.
+ */
+export interface RunManifest {
+  /** Unique session identity (typically matches the kernel runId) */
+  readonly sessionId: string;
+  /** Agent role for this session — determines baseline permissions */
+  readonly role: AgentRole;
+  /** Granted capabilities — each grant specifies permissions, actions, and scope */
+  readonly grants: readonly CapabilityGrant[];
+  /** Scope restrictions — global limits applied across all grants */
+  readonly scope: ScopeRestriction;
+  /** Optional human-readable description of what this session is authorized to do */
+  readonly description?: string;
+  /** Optional maximum duration (ms) for this session. Kernel may enforce timeout. */
+  readonly maxDurationMs?: number;
+  /** Optional metadata for audit trail */
+  readonly metadata?: Record<string, unknown>;
+}
+
 /** Policy definition */
 export interface Policy {
   readonly capabilities: readonly string[];
