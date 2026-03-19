@@ -51,4 +51,8 @@ export type {
   ExecutionResult,
   EventSink,
   NormalizedIntent,
+  RunManifest,
+  CapabilityGrant,
+  ScopeRestriction,
+  PermissionLevel,
 } from '@red-codes/core';
