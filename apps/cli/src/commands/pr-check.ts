@@ -280,10 +280,10 @@ function formatPrComment(result: PrCheckResult): string {
     lines.push('| File | Action | Reason | Policy |');
     lines.push('|------|--------|--------|--------|');
     for (const v of result.violations) {
-      const escapedReason = v.reason.replace(/\|/g, '\\|');
-      lines.push(
-        `| \`${v.file}\` | ${v.action} | ${escapedReason} | ${v.policyName ?? '\u2014'} |`
-      );
+      const escapeMd = (s: string) => s.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+      const escapedReason = escapeMd(v.reason);
+      const escapedPolicy = v.policyName ? escapeMd(v.policyName) : '\u2014';
+      lines.push(`| \`${v.file}\` | ${v.action} | ${escapedReason} | ${escapedPolicy} |`);
     }
   }
 
