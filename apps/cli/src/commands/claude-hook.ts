@@ -315,7 +315,10 @@ async function handlePreToolUse(
   if (!result.allowed) {
     const response = formatHookResponse(result);
     if (response) {
-      process.stdout.write(response);
+      // Wait for stdout to flush before returning — process.exit() can fire
+      // before async writes complete, causing Claude Code to miss the deny
+      // response and treat exit code 2 as a no-op. This fixes #620.
+      await new Promise<void>((resolve) => process.stdout.write(response, () => resolve()));
     }
     return true;
   }
