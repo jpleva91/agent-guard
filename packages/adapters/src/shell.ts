@@ -1,6 +1,7 @@
 // Shell execution adapter — executes shell.exec actions.
 // Node.js adapter. Uses child_process.
-// Includes credential stripping to prevent ambient credential leakage.
+// Includes credential stripping to prevent ambient credential leakage
+// and privilege profiles for command-level access control.
 
 import { exec } from 'node:child_process';
 import type { CanonicalAction } from '@red-codes/core';
@@ -8,6 +9,239 @@ import { INVARIANT_IDE_CONTEXT_ENV_VARS } from '@red-codes/core';
 
 const DEFAULT_TIMEOUT = 30_000;
 const MAX_BUFFER = 1024 * 1024; // 1MB
+
+// ---------------------------------------------------------------------------
+// Privilege Profiles — command-level access control
+// ---------------------------------------------------------------------------
+
+/** Named privilege profile for shell command restrictions. */
+export interface ShellPrivilegeProfile {
+  /** Profile name (e.g., 'readonly', 'developer', 'ci', 'admin'). */
+  readonly name: string;
+  /** Command patterns allowed by this profile. If empty, all commands are allowed. */
+  readonly allow: readonly string[];
+  /** Command patterns denied by this profile. Deny takes precedence over allow. */
+  readonly deny: readonly string[];
+  /** Additional environment variables to strip (beyond credential defaults). */
+  readonly envRestrictions?: readonly string[];
+}
+
+/**
+ * Check whether a command matches a shell privilege pattern.
+ *
+ * Patterns use a simple glob syntax:
+ * - `*` matches any sequence of characters
+ * - A pattern without `*` matches the command prefix at a word boundary
+ *   (e.g., `ls` matches `ls -la` but not `lsof`)
+ */
+export function commandMatchesPattern(command: string, pattern: string): boolean {
+  const cmd = command.trim();
+  const pat = pattern.trim();
+
+  if (pat === '*') return true;
+  if (!cmd || !pat) return false;
+
+  // Escape regex special chars then replace glob * with .*
+  const escaped = pat.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+
+  // If pattern ends with *, match prefix freely; otherwise require word boundary
+  const suffix = pat.endsWith('*') ? '' : '(?:\\s|$)';
+  const regex = new RegExp(`^${escaped}${suffix}`, 'i');
+
+  return regex.test(cmd);
+}
+
+/**
+ * Error thrown when a command is blocked by a privilege profile.
+ * The kernel will catch this and emit the appropriate governance event.
+ */
+export class ShellProfileViolationError extends Error {
+  readonly profileName: string;
+  readonly command: string;
+
+  constructor(profileName: string, command: string) {
+    super(`Shell privilege profile '${profileName}' denied command: ${command}`);
+    this.name = 'ShellProfileViolationError';
+    this.profileName = profileName;
+    this.command = command;
+  }
+}
+
+/**
+ * Check a command against a privilege profile.
+ * Returns null if the command is allowed, or a reason string if denied.
+ */
+export function checkProfile(command: string, profile: ShellPrivilegeProfile): string | null {
+  // Deny patterns take precedence
+  for (const pattern of profile.deny) {
+    if (commandMatchesPattern(command, pattern)) {
+      return `denied by pattern '${pattern}' in profile '${profile.name}'`;
+    }
+  }
+
+  // If allow list is empty, all non-denied commands are allowed
+  if (profile.allow.length === 0) {
+    return null;
+  }
+
+  // Check if command matches any allow pattern
+  for (const pattern of profile.allow) {
+    if (commandMatchesPattern(command, pattern)) {
+      return null;
+    }
+  }
+
+  return `not in allowlist for profile '${profile.name}'`;
+}
+
+// ---------------------------------------------------------------------------
+// Built-in privilege profiles
+// ---------------------------------------------------------------------------
+
+/** Read-only profile: allows only observation commands, no mutations. */
+export const READONLY_PROFILE: ShellPrivilegeProfile = {
+  name: 'readonly',
+  allow: [
+    // File inspection
+    'ls',
+    'cat',
+    'head',
+    'tail',
+    'wc',
+    'file',
+    'stat',
+    'du',
+    'df',
+    // Output / info
+    'echo',
+    'printf',
+    'pwd',
+    'which',
+    'whoami',
+    'hostname',
+    'date',
+    'uname',
+    // Environment inspection
+    'env',
+    'printenv',
+    // Search
+    'grep',
+    'rg',
+    'find',
+    'tree',
+    'less',
+    'more',
+    // Git read-only
+    'git status*',
+    'git log*',
+    'git diff*',
+    'git show*',
+    'git branch*',
+    'git tag*',
+    'git remote*',
+    'git rev-parse*',
+    'git worktree list*',
+    // Runtime version checks
+    'node --version',
+    'node -v',
+    'npm --version',
+    'npm -v',
+    'pnpm --version',
+    'pnpm -v',
+  ],
+  deny: [],
+};
+
+/** Developer profile: allows build/test/dev work, denies destructive system operations. */
+export const DEVELOPER_PROFILE: ShellPrivilegeProfile = {
+  name: 'developer',
+  allow: [], // empty = allow all except denied
+  deny: [
+    // Destructive git operations
+    'git push --force*',
+    'git push -f*',
+    'git reset --hard*',
+    'git clean -f*',
+    // Dangerous system commands
+    'rm -rf /',
+    'rm -rf ~',
+    'mkfs*',
+    'dd if=*',
+    'shutdown*',
+    'reboot*',
+    'halt*',
+    'poweroff*',
+    'chmod 777*',
+    'fdisk*',
+    'parted*',
+    'format*',
+  ],
+};
+
+/** CI profile: allows build and test commands, denies pushes and installs. */
+export const CI_PROFILE: ShellPrivilegeProfile = {
+  name: 'ci',
+  allow: [
+    // Build tooling
+    'pnpm build*',
+    'pnpm test*',
+    'pnpm lint*',
+    'pnpm format*',
+    'pnpm ts:check*',
+    'npm run*',
+    'npm test*',
+    'npx *',
+    'node *',
+    'tsc*',
+    'esbuild*',
+    'vitest*',
+    'eslint*',
+    'prettier*',
+    // Git read operations
+    'git status*',
+    'git log*',
+    'git diff*',
+    'git show*',
+    'git branch*',
+    'git rev-parse*',
+    // File inspection
+    'ls',
+    'cat',
+    'head',
+    'tail',
+    'echo',
+    'pwd',
+    'grep',
+    'rg',
+    'find',
+  ],
+  deny: [
+    // No pushing in CI profile (CI pushes are handled by the CI system itself)
+    'git push*',
+    // No package installation (frozen lockfile only)
+    'pnpm install*',
+    'npm install*',
+    'yarn install*',
+    'yarn add*',
+    'pnpm add*',
+    'npm i *',
+  ],
+};
+
+/** Admin profile: unrestricted access with no command filtering. */
+export const ADMIN_PROFILE: ShellPrivilegeProfile = {
+  name: 'admin',
+  allow: [],
+  deny: [],
+};
+
+/** Map of built-in profile names to their definitions. */
+export const SHELL_PROFILES: Readonly<Record<string, ShellPrivilegeProfile>> = {
+  readonly: READONLY_PROFILE,
+  developer: DEVELOPER_PROFILE,
+  ci: CI_PROFILE,
+  admin: ADMIN_PROFILE,
+};
 
 /**
  * Default environment variables stripped before spawning child processes.
@@ -75,6 +309,8 @@ export interface ShellAdapterOptions {
   credentials?: CredentialStrippingOptions;
   /** When true, route commands through rtk for token-optimized output. */
   rtkEnabled?: boolean;
+  /** Privilege profile for command-level access control. String selects a built-in profile by name. */
+  profile?: ShellPrivilegeProfile | string;
 }
 
 /** Configuration for credential stripping behavior. */
@@ -97,6 +333,28 @@ export interface ShellResult {
   strippedIdeSockets?: string[];
   /** The original command before rtk rewrite (present only when rtk rewrote the command). */
   originalCommand?: string;
+  /** Active privilege profile name, if one was applied. */
+  profileName?: string;
+}
+
+/**
+ * Resolve a profile option to a ShellPrivilegeProfile.
+ * Accepts a profile object directly or a built-in profile name string.
+ */
+function resolveProfile(
+  profile: ShellPrivilegeProfile | string | undefined
+): ShellPrivilegeProfile | undefined {
+  if (!profile) return undefined;
+  if (typeof profile === 'string') {
+    const resolved = SHELL_PROFILES[profile];
+    if (!resolved) {
+      throw new Error(
+        `Unknown shell privilege profile '${profile}'. Available: ${Object.keys(SHELL_PROFILES).join(', ')}`
+      );
+    }
+    return resolved;
+  }
+  return profile;
 }
 
 /**
@@ -159,7 +417,9 @@ export function createShellAdapter(
   // Support both old (CredentialStrippingOptions) and new (ShellAdapterOptions) signatures
   const isNewOptions =
     optionsOrCredentials &&
-    ('credentials' in optionsOrCredentials || 'rtkEnabled' in optionsOrCredentials);
+    ('credentials' in optionsOrCredentials ||
+      'rtkEnabled' in optionsOrCredentials ||
+      'profile' in optionsOrCredentials);
   const credentialOptions = isNewOptions
     ? ((optionsOrCredentials as ShellAdapterOptions).credentials ?? {})
     : ((optionsOrCredentials as CredentialStrippingOptions) ?? {});
@@ -168,11 +428,23 @@ export function createShellAdapter(
   const rtkEnabled = isNewOptions
     ? ((optionsOrCredentials as ShellAdapterOptions).rtkEnabled ?? envRtk)
     : envRtk;
+  // Resolve privilege profile (string name or object)
+  const resolvedProfile = isNewOptions
+    ? resolveProfile((optionsOrCredentials as ShellAdapterOptions).profile)
+    : undefined;
 
   return async (action: CanonicalAction): Promise<ShellResult> => {
     let command = (action as Record<string, unknown>).command as string | undefined;
     if (!command) {
       throw new Error('shell.exec requires a command');
+    }
+
+    // Enforce privilege profile before any execution
+    if (resolvedProfile) {
+      const violation = checkProfile(command, resolvedProfile);
+      if (violation) {
+        throw new ShellProfileViolationError(resolvedProfile.name, command);
+      }
     }
 
     const timeout =
@@ -195,11 +467,22 @@ export function createShellAdapter(
       }
     }
 
+    // Merge profile env restrictions into credential stripping options
+    const effectiveCredentialOptions = resolvedProfile?.envRestrictions
+      ? {
+          ...credentialOptions,
+          additional: [...(credentialOptions.additional ?? []), ...resolvedProfile.envRestrictions],
+        }
+      : credentialOptions;
+
     const {
       env: sanitizedEnv,
       stripped,
       strippedIdeSockets,
-    } = sanitizeEnvironment(process.env as Record<string, string | undefined>, credentialOptions);
+    } = sanitizeEnvironment(
+      process.env as Record<string, string | undefined>,
+      effectiveCredentialOptions
+    );
 
     return new Promise((resolve, reject) => {
       exec(
@@ -218,6 +501,7 @@ export function createShellAdapter(
             strippedCredentials: stripped.length > 0 ? stripped : undefined,
             strippedIdeSockets: strippedIdeSockets.length > 0 ? strippedIdeSockets : undefined,
             originalCommand,
+            profileName: resolvedProfile?.name,
           });
         }
       );
