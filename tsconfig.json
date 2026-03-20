@@ -19,6 +19,7 @@
     { "path": "packages/renderers" },
     { "path": "packages/matchers" },
     { "path": "packages/swarm" },
+    { "path": "packages/sdk" },
     { "path": "apps/cli" },
     { "path": "apps/mcp-server" }
   ]
