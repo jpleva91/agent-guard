@@ -12,6 +12,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
+import type { LoadedPolicy } from '@red-codes/policy';
 import { resolveMainRepoRoot } from '@red-codes/core';
 import type { CloudSinkBundle } from '@red-codes/telemetry';
 
@@ -239,10 +240,10 @@ async function handlePreToolUse(
   // Multiple policies may each disable different invariants — merge them all.
   const disabledIds = new Set<string>();
   for (const def of policyDefs) {
-    const di = (def as Record<string, unknown>).disabledInvariants;
+    const di = (def as LoadedPolicy).disabledInvariants;
     if (Array.isArray(di)) {
       for (const id of di) {
-        if (typeof id === 'string') disabledIds.add(id);
+        disabledIds.add(id);
       }
     }
   }

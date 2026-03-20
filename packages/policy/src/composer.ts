@@ -18,6 +18,11 @@ export interface CompositionResult {
     project: number;
     explicit: number;
   };
+  /** Merged set of invariant IDs disabled across all composed policies.
+   * Union of all disabledInvariants arrays — an invariant is disabled if any
+   * loaded policy disables it. This is the authoritative merged list for
+   * the kernel; the CLI should prefer this over iterating policyDefs directly. */
+  disabledInvariants: string[];
 }
 
 /**
@@ -48,7 +53,17 @@ export function composePolicies(sources: CompositionSource[]): CompositionResult
     explicit: sorted.filter((s) => s.layer === 'explicit').length,
   };
 
-  return { policies, sources: sorted, layers };
+  // Merge disabledInvariants across all composed policies (union).
+  // An invariant is disabled if any loaded policy disables it.
+  const disabledInvariantsSet = new Set<string>();
+  for (const policy of policies) {
+    for (const id of policy.disabledInvariants ?? []) {
+      disabledInvariantsSet.add(id);
+    }
+  }
+  const disabledInvariants = [...disabledInvariantsSet];
+
+  return { policies, sources: sorted, layers, disabledInvariants };
 }
 
 /**

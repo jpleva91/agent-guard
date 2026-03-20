@@ -4,8 +4,13 @@ import { composePolicies, describeComposition } from '@red-codes/policy';
 import type { CompositionSource } from '@red-codes/policy';
 import type { LoadedPolicy } from '@red-codes/policy';
 
-function makePolicy(id: string, name: string, rules: LoadedPolicy['rules'] = []): LoadedPolicy {
-  return { id, name, rules, severity: 3 };
+function makePolicy(
+  id: string,
+  name: string,
+  rules: LoadedPolicy['rules'] = [],
+  disabledInvariants?: string[]
+): LoadedPolicy {
+  return { id, name, rules, severity: 3, ...(disabledInvariants ? { disabledInvariants } : {}) };
 }
 
 function makeSource(
@@ -141,6 +146,53 @@ describe('describeComposition', () => {
     expect(desc).toContain('[override]');
     expect(desc).toContain('base.yaml');
     expect(desc).toContain('override.yaml');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// disabledInvariants merging
+// ---------------------------------------------------------------------------
+
+describe('composePolicies — disabledInvariants', () => {
+  it('returns empty disabledInvariants when no policies disable any', () => {
+    const policy = makePolicy('p', 'P');
+    const result = composePolicies([makeSource('./agentguard.yaml', 'project', policy)]);
+    expect(result.disabledInvariants).toEqual([]);
+  });
+
+  it('returns disabledInvariants from a single policy', () => {
+    const policy = makePolicy('p', 'P', [], ['no-cicd-config-modification']);
+    const result = composePolicies([makeSource('./agentguard.yaml', 'project', policy)]);
+    expect(result.disabledInvariants).toEqual(['no-cicd-config-modification']);
+  });
+
+  it('merges disabledInvariants across multiple policies (union)', () => {
+    const user = makePolicy('user', 'User', [], ['no-cicd-config-modification']);
+    const proj = makePolicy('proj', 'Project', [], ['no-governance-self-modification']);
+    const result = composePolicies([
+      makeSource('~/.agentguard/policy.yaml', 'user', user),
+      makeSource('./agentguard.yaml', 'project', proj),
+    ]);
+    expect(result.disabledInvariants).toContain('no-cicd-config-modification');
+    expect(result.disabledInvariants).toContain('no-governance-self-modification');
+    expect(result.disabledInvariants).toHaveLength(2);
+  });
+
+  it('deduplicates invariant IDs disabled by multiple policies', () => {
+    const a = makePolicy('a', 'A', [], ['no-cicd-config-modification']);
+    const b = makePolicy('b', 'B', [], ['no-cicd-config-modification', 'no-force-push']);
+    const result = composePolicies([
+      makeSource('a.yaml', 'explicit', a),
+      makeSource('b.yaml', 'explicit', b),
+    ]);
+    expect(result.disabledInvariants).toHaveLength(2);
+    expect(result.disabledInvariants).toContain('no-cicd-config-modification');
+    expect(result.disabledInvariants).toContain('no-force-push');
+  });
+
+  it('returns empty disabledInvariants for empty composition', () => {
+    const result = composePolicies([]);
+    expect(result.disabledInvariants).toEqual([]);
   });
 });
 

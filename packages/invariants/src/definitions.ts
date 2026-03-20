@@ -230,8 +230,12 @@ function identifyIde(pattern: string): string {
 }
 
 /** Returns true if the shell command contains a stdout file redirect (>, >>).
- * Ignores safe patterns: stderr redirects (2>/dev/null, 2>&1) and pipes. */
-function hasFileRedirect(command: string): boolean {
+ * Ignores safe patterns: stderr redirects (2>/dev/null, 2>&1) and pipes.
+ *
+ * Known edge case: quoted strings containing `>` may produce false positives
+ * (e.g., `echo "hello > world"` is flagged as a redirect). This is intentional —
+ * for a security check, false positives are safer than false negatives. */
+export function hasFileRedirect(command: string): boolean {
   // Strip safe stderr patterns before checking for output redirects
   const stripped = command
     .replace(/\d+>\/dev\/null/g, '')
@@ -240,6 +244,27 @@ function hasFileRedirect(command: string): boolean {
   // Check for remaining > or >> (stdout file redirect)
   return /(?:^|[^&\d])>/.test(stripped);
 }
+
+/** Action types that are always read-only — exempt from write-guard invariants.
+ * Read, Glob, and Grep tools all map to file.read; git.diff is structural comparison only. */
+const READ_ONLY_ACTIONS: string[] = ['file.read', 'git.diff'];
+
+/** Shell command basenames that perform read-only operations.
+ * Used by write-guard invariants to skip commands that cannot modify protected paths. */
+const READ_ONLY_CMDS: string[] = [
+  'ls',
+  'cat',
+  'head',
+  'tail',
+  'find',
+  'grep',
+  'rg',
+  'tree',
+  'stat',
+  'file',
+  'wc',
+  'diff',
+];
 
 /** Shell profile file basenames (case-insensitive) that establish persistent environment changes. */
 const SHELL_PROFILE_BASENAMES = [
@@ -554,7 +579,6 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     severity: 4,
     check(state) {
       const actionType = state.currentActionType || '';
-      const READ_ONLY_ACTIONS = ['file.read', 'git.diff'];
 
       // Skip read-only action types (Read, Glob, Grep tools all map to file.read)
       if (READ_ONLY_ACTIONS.includes(actionType)) {
@@ -565,20 +589,6 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       if (actionType === 'shell.exec') {
         const command = (state.currentCommand || '').trim();
         const baseCmd = command.split(/\s+/)[0]?.replace(/^.*\//, '') || '';
-        const READ_ONLY_CMDS = [
-          'ls',
-          'cat',
-          'head',
-          'tail',
-          'find',
-          'grep',
-          'rg',
-          'tree',
-          'stat',
-          'file',
-          'wc',
-          'diff',
-        ];
         if (READ_ONLY_CMDS.includes(baseCmd) && !hasFileRedirect(command)) {
           return { holds: true, expected: 'N/A', actual: 'Read-only shell command' };
         }
@@ -620,7 +630,6 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     severity: 5,
     check(state) {
       const actionType = state.currentActionType || '';
-      const READ_ONLY_ACTIONS = ['file.read', 'git.diff'];
 
       // Skip read-only action types (Read, Glob, Grep tools all map to file.read)
       if (READ_ONLY_ACTIONS.includes(actionType)) {
@@ -631,20 +640,6 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       if (actionType === 'shell.exec') {
         const command = (state.currentCommand || '').trim();
         const baseCmd = command.split(/\s+/)[0]?.replace(/^.*\//, '') || '';
-        const READ_ONLY_CMDS = [
-          'ls',
-          'cat',
-          'head',
-          'tail',
-          'find',
-          'grep',
-          'rg',
-          'tree',
-          'stat',
-          'file',
-          'wc',
-          'diff',
-        ];
         if (READ_ONLY_CMDS.includes(baseCmd) && !hasFileRedirect(command)) {
           return { holds: true, expected: 'N/A', actual: 'Read-only shell command' };
         }
@@ -908,7 +903,6 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     severity: 5,
     check(state) {
       const actionType = state.currentActionType || '';
-      const READ_ONLY_ACTIONS = ['file.read', 'git.diff'];
 
       // Skip read-only action types (Read, Glob, Grep tools all map to file.read)
       if (READ_ONLY_ACTIONS.includes(actionType)) {
@@ -919,20 +913,6 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       if (actionType === 'shell.exec') {
         const command = (state.currentCommand || '').trim();
         const baseCmd = command.split(/\s+/)[0]?.replace(/^.*\//, '') || '';
-        const READ_ONLY_CMDS = [
-          'ls',
-          'cat',
-          'head',
-          'tail',
-          'find',
-          'grep',
-          'rg',
-          'tree',
-          'stat',
-          'file',
-          'wc',
-          'diff',
-        ];
         if (READ_ONLY_CMDS.includes(baseCmd) && !hasFileRedirect(command)) {
           return { holds: true, expected: 'N/A', actual: 'Read-only shell command' };
         }
@@ -1081,7 +1061,6 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     severity: 5,
     check(state) {
       const actionType = state.currentActionType || '';
-      const READ_ONLY_ACTIONS = ['file.read', 'git.diff'];
 
       // Skip read-only action types (Read, Glob, Grep tools all map to file.read)
       if (READ_ONLY_ACTIONS.includes(actionType)) {
@@ -1092,20 +1071,6 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       if (actionType === 'shell.exec') {
         const command = (state.currentCommand || '').trim();
         const baseCmd = command.split(/\s+/)[0]?.replace(/^.*\//, '') || '';
-        const READ_ONLY_CMDS = [
-          'ls',
-          'cat',
-          'head',
-          'tail',
-          'find',
-          'grep',
-          'rg',
-          'tree',
-          'stat',
-          'file',
-          'wc',
-          'diff',
-        ];
         if (READ_ONLY_CMDS.includes(baseCmd) && !hasFileRedirect(command)) {
           return { holds: true, expected: 'N/A', actual: 'Read-only shell command' };
         }

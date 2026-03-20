@@ -220,6 +220,68 @@ rules:
   });
 });
 
+describe('disabledInvariants parsing', () => {
+  it('parses inline disabledInvariants array', () => {
+    const yaml = `
+id: dev-policy
+name: Dev Policy
+severity: 2
+disabledInvariants: [no-cicd-config-modification, no-force-push]
+rules:
+  - action: '*'
+    effect: allow
+`;
+    const result = parseYamlPolicy(yaml);
+    expect(result.disabledInvariants).toEqual(['no-cicd-config-modification', 'no-force-push']);
+  });
+
+  it('parses multi-line disabledInvariants array', () => {
+    const yaml = `
+id: dev-policy
+name: Dev Policy
+severity: 2
+disabledInvariants:
+  - no-cicd-config-modification
+  - no-governance-self-modification
+rules:
+  - action: '*'
+    effect: allow
+`;
+    const result = parseYamlPolicy(yaml);
+    expect(result.disabledInvariants).toEqual([
+      'no-cicd-config-modification',
+      'no-governance-self-modification',
+    ]);
+  });
+
+  it('loadYamlPolicy propagates disabledInvariants to LoadedPolicy', () => {
+    const yaml = `
+id: dev-policy
+name: Dev Policy
+severity: 2
+disabledInvariants: [no-cicd-config-modification]
+rules:
+  - action: '*'
+    effect: allow
+`;
+    const policy = loadYamlPolicy(yaml);
+    expect(policy.disabledInvariants).toEqual(['no-cicd-config-modification']);
+  });
+
+  it('omits disabledInvariants from LoadedPolicy when not set', () => {
+    const yaml = `
+id: strict
+name: Strict
+severity: 5
+rules:
+  - action: '*'
+    effect: deny
+`;
+    const policy = loadYamlPolicy(yaml);
+    expect(policy.disabledInvariants).toBeUndefined();
+  });
+});
+
 describe('requireFormat parsing', () => {
   it('parses requireFormat from YAML rule', () => {
     const yaml = `

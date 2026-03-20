@@ -299,6 +299,15 @@ function matchConditions(
   }
 
   if (conditions.branches) {
+    // `branches` acts as a required filter: the rule only matches when the intent's branch is
+    // in the configured list. If no branch is detected (intent.branch === undefined), the
+    // condition does not match — the rule is skipped entirely.
+    //
+    // Semantic: "this rule applies only to these branches" — not "match positively if present".
+    // Consequence for deny rules: a missing branch means the deny does NOT fire (safer default).
+    // Consequence for allow rules: a missing branch means the allow does NOT fire (fail-closed).
+    // Policy authors using `conditions.branches: [main]` should verify behavior when the branch
+    // cannot be detected (e.g., file writes with no git context).
     if (intent.branch) {
       branchMatched = conditions.branches.includes(intent.branch);
     } else {

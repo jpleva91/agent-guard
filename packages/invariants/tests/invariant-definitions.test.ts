@@ -8,6 +8,7 @@ import {
   isCredentialPath,
   isContainerConfigPath,
   isShellProfilePath,
+  hasFileRedirect,
 } from '@red-codes/invariants';
 import type { SystemState } from '@red-codes/invariants';
 import { checkAllInvariants, buildSystemState } from '@red-codes/invariants';
@@ -2537,5 +2538,49 @@ describe('checkAllInvariants interaction tests', () => {
     expect(result.allHold).toBe(true);
     expect(result.violations).toEqual([]);
     expect(result.events).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// hasFileRedirect
+// ---------------------------------------------------------------------------
+
+describe('hasFileRedirect', () => {
+  it('detects stdout redirect (>)', () => {
+    expect(hasFileRedirect('echo foo > out.txt')).toBe(true);
+  });
+
+  it('detects append redirect (>>)', () => {
+    expect(hasFileRedirect('echo foo >> out.txt')).toBe(true);
+  });
+
+  it('allows stderr redirect to /dev/null (2>/dev/null)', () => {
+    expect(hasFileRedirect('ls .claude/skills/ 2>/dev/null')).toBe(false);
+  });
+
+  it('allows combined stderr redirect (&>/dev/null)', () => {
+    expect(hasFileRedirect('cmd &>/dev/null')).toBe(false);
+  });
+
+  it('allows stderr-to-stdout redirect (2>&1)', () => {
+    expect(hasFileRedirect('cmd 2>&1')).toBe(false);
+  });
+
+  it('allows numbered fd redirect (1>/dev/null)', () => {
+    expect(hasFileRedirect('cmd 1>/dev/null')).toBe(false);
+  });
+
+  it('allows plain commands with no redirects', () => {
+    expect(hasFileRedirect('ls -la')).toBe(false);
+  });
+
+  it('allows pipes', () => {
+    expect(hasFileRedirect('cat file | grep pattern')).toBe(false);
+  });
+
+  // Known false-positive: quoted `>` triggers redirect detection.
+  // This is intentional — safer to over-flag than under-flag in a security check.
+  it('false-positive: quoted > in string is flagged (documented behavior)', () => {
+    expect(hasFileRedirect('echo "hello > world"')).toBe(true);
   });
 });
