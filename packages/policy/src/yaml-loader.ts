@@ -27,6 +27,8 @@ export interface YamlPolicyDef {
   extends?: string[];
   persona?: YamlPersonaDef;
   rules?: YamlRule[];
+  /** Kernel invariant IDs to disable (human-operator override) */
+  disabledInvariants?: string[];
 }
 
 interface YamlRule {
@@ -195,6 +197,7 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
   let inBranches = false;
   let inActionArray = false;
   let inExtends = false;
+  let inDisabledInvariants = false;
   let inTopLevelPersona = false;
   let inRulePersona = false;
   let inRuleForecast = false;
@@ -214,6 +217,7 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
       inRules = false;
       inBranches = false;
       inExtends = false;
+      inDisabledInvariants = false;
       inTopLevelPersona = false;
       inRulePersona = false;
       if (currentRule) {
@@ -259,6 +263,19 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
             result.extends = [];
           }
           break;
+        case 'disabledInvariants':
+          if (val) {
+            // Inline array: disabledInvariants: [no-cicd-config-modification]
+            const diArr = parseInlineArray(val);
+            if (diArr.length > 0) {
+              result.disabledInvariants = diArr;
+            }
+          } else {
+            // Multi-line array follows
+            inDisabledInvariants = true;
+            result.disabledInvariants = [];
+          }
+          break;
         case 'persona':
           inTopLevelPersona = true;
           result.persona = result.persona || {};
@@ -286,6 +303,13 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
     if (inExtends && trimmed.startsWith('- ')) {
       result.extends = result.extends || [];
       result.extends.push(trimQuotes(trimmed.slice(2).trim()));
+      continue;
+    }
+
+    // Inside disabledInvariants array (multi-line)
+    if (inDisabledInvariants && trimmed.startsWith('- ')) {
+      result.disabledInvariants = result.disabledInvariants || [];
+      result.disabledInvariants.push(trimQuotes(trimmed.slice(2).trim()));
       continue;
     }
 
@@ -550,6 +574,10 @@ export function loadYamlPolicy(yaml: string, defaultId?: string): LoadedPolicy {
     (policy as LoadedPolicy & { persona?: AgentPersona }).persona = yamlPersonaToAgentPersona(
       def.persona
     );
+  }
+
+  if (def.disabledInvariants && def.disabledInvariants.length > 0) {
+    policy.disabledInvariants = def.disabledInvariants;
   }
 
   return policy;

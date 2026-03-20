@@ -89,6 +89,8 @@ export interface LoadedPolicy {
   version?: string;
   /** Required AgentGuard version range (e.g., ">=2.0.0", "^2.1.0") */
   agentguardVersion?: string;
+  /** Invariant IDs to disable for this policy (human-operator override) */
+  disabledInvariants?: string[];
 }
 
 export interface NormalizedIntent {

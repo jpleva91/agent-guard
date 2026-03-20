@@ -142,6 +142,7 @@ async function handlePreToolUse(
 ): Promise<boolean> {
   const { processClaudeCodeHook, formatHookResponse } = await import('@red-codes/adapters');
   const { createKernel } = await import('@red-codes/kernel');
+  const { DEFAULT_INVARIANTS } = await import('@red-codes/invariants');
   const { loadPolicyDefs, findPolicyForPath } = await import('../policy-resolver.js');
   const { resolveStorageConfig, createStorageBundle } = await import('@red-codes/storage');
 
@@ -234,6 +235,24 @@ async function handlePreToolUse(
     Boolean
   ) as import('@red-codes/core').DecisionSink[];
 
+  // Collect disabledInvariants from loaded policies (human-operator override).
+  // Multiple policies may each disable different invariants — merge them all.
+  const disabledIds = new Set<string>();
+  for (const def of policyDefs) {
+    const di = (def as Record<string, unknown>).disabledInvariants;
+    if (Array.isArray(di)) {
+      for (const id of di) {
+        if (typeof id === 'string') disabledIds.add(id);
+      }
+    }
+  }
+
+  // Filter DEFAULT_INVARIANTS if any are disabled by policy.
+  let invariants: typeof DEFAULT_INVARIANTS | undefined;
+  if (disabledIds.size > 0) {
+    invariants = DEFAULT_INVARIANTS.filter((inv) => !disabledIds.has(inv.id));
+  }
+
   const kernel = createKernel({
     runId,
     policyDefs,
@@ -241,6 +260,7 @@ async function handlePreToolUse(
     evaluateOptions: { defaultDeny: policyDefs.length > 0 },
     sinks: allEventSinks,
     decisionSinks: allDecisionSinks,
+    ...(invariants ? { invariants } : {}),
   });
 
   // Record session in the sessions table (SQLite only).
