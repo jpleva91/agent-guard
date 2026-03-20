@@ -450,6 +450,7 @@ packages/
 ├── invariant-data-protection/src/ # @red-codes/invariant-data-protection — Data protection invariant plugin
 ├── kernel/src/             # @red-codes/kernel — Governed action kernel (orchestrator, AAB, decisions, simulation)
 ├── adapters/src/           # @red-codes/adapters — Execution adapters (file, shell, git, claude-code)
+├── matchers/src/           # @red-codes/matchers — Structured matchers (Aho-Corasick, globs, sets)
 ├── storage/src/            # @red-codes/storage — SQLite storage backend (opt-in)
 ├── telemetry/src/          # @red-codes/telemetry — Runtime telemetry and logging
 ├── plugins/src/            # @red-codes/plugins — Plugin ecosystem (discovery, registry, sandboxing)

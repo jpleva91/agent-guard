@@ -365,7 +365,7 @@ Depends on: Phase 6 (default-deny) + KE-2 (ActionContext). The `RunManifest` def
 
 Prior art: Kubernetes Capability Primitives (KCP), OS capability-based security models.
 
-- [ ] `RunManifest` type with role and capability grants (extend existing `Capability` type in `packages/core/src/types.ts`)
+- [x] `RunManifest` type with role and capability grants (extend existing `Capability` type in `packages/core/src/types.ts`)
 - [ ] `IntentSpec` format — machine-readable contract of expected agent behavior (planned action types, target files/branches, expected scope). Declared independently of the agent, loaded at session start
 - [ ] Intent-vs-execution comparison in audit trail — flag actions that fall outside declared intent even if policy allows them (advisory initially, enforceable later)
 - [ ] Validate every adapter call against session capabilities in `packages/kernel/src/kernel.ts`
@@ -382,7 +382,7 @@ Prior art: Kubernetes Capability Primitives (KCP), OS capability-based security 
 - [x] Policy composition (multiple policy files merged with precedence) (`packages/policy/src/composer.ts`, `guard --policy a --policy b`)
 - [x] Policy validation CLI (`agentguard policy validate <file>`)
 - [x] Community policy packs (SOC2, HIPAA, engineering standards) (`policies/soc2/`, `policies/hipaa/`, `policies/engineering-standards/`)
-- [ ] Policy pack versioning and compatibility
+- [x] Policy pack versioning and compatibility (`packages/policy/src/pack-version.ts`)
 - [ ] **Policy provider interface** — Pluggable evaluation backends for non-hot-path policy types. The Evaluator plane stays pure (custom matchers, zero I/O, sub-ms). External providers (OPA/Rego, custom DSL, enterprise policy engines) evaluate business-rule policies via async or pre-cached paths. Provider results are cached in-memory; unreachable providers fall back to native rules. External providers can ADD restrictions but NEVER relax native rule decisions. OPA integration provides instant credibility with security teams using OPA in K8s/service-mesh stacks.
 - [ ] **Remediation mode in decision model** — Expand kernel decision responses beyond ALLOW/DENY/ESCALATE to include MODIFY (rewrite action to safe equivalent, e.g. add `--dry-run` flag) and SUGGEST (return recommended alternative with human-readable explanation). Example: `terraform destroy prod` → DENY + SUGGEST: "Run `terraform plan` in staging, or request approval." Remediation suggestions are surfaced to the agent runtime and logged in telemetry. Pattern: Validate → Diagnose → Repair → Enforce. This is the key differentiator vs hyperscaler guardrails that only binary block.
 

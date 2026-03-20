@@ -48,6 +48,7 @@ packages/
 ├── policy/        @red-codes/policy — Policy system (composer, evaluator, loaders, pack loader)
 ├── invariants/    @red-codes/invariants — Invariant system (21 built-in definitions, checker)
 ├── invariant-data-protection/ @red-codes/invariant-data-protection — Data protection invariant plugin
+├── matchers/      @red-codes/matchers — Structured matchers (Aho-Corasick, globs, hash sets)
 ├── kernel/        @red-codes/kernel — Governed action kernel (orchestrate, normalize, decide, escalate)
 ├── adapters/      @red-codes/adapters — Execution adapters (file, shell, git, claude-code, copilot-cli)
 ├── storage/       @red-codes/storage — SQLite storage backend (opt-in)
@@ -72,7 +73,8 @@ Package boundaries enforce these dependency rules via `package.json` workspace d
 - **@red-codes/kernel** may import from events, policy, invariants, telemetry, core
 - **@red-codes/events** may import from core only
 - **@red-codes/policy** may import from core only
-- **@red-codes/invariants** may import from core, events only
+- **@red-codes/invariants** may import from core, events, matchers only
+- **@red-codes/matchers** may import from core only
 - **@red-codes/adapters** may import from core, kernel only
 - **@red-codes/plugins** may import from core only
 - **@red-codes/renderers** may import from core, kernel, plugins only

@@ -13,7 +13,7 @@ The system has one architectural spine: the **canonical event model**. All syste
 - Escalation tracking: NORMAL → ELEVATED → HIGH → LOCKDOWN
 - SQLite event persistence for audit trail and replay (JSONL export still supported)
 - Claude Code adapter for PreToolUse/PostToolUse hooks
-- **pnpm monorepo** with Turbo orchestration: 13 packages under `packages/`, 3 apps under `apps/`
+- **pnpm monorepo** with Turbo orchestration: 14 packages under `packages/`, 3 apps under `apps/`
 - Each package compiles independently via `tsc`; CLI bundle via `esbuild` in `apps/cli`
 - Scoped npm packages: `@red-codes/*` for workspace modules, `@red-codes/agentguard` for published CLI
 - CLI has runtime dependencies (`chokidar`, `commander`, `pino`); optional `better-sqlite3` for SQLite storage backend
@@ -42,14 +42,18 @@ This is a **pnpm monorepo** orchestrated by **Turbo**. Workspace packages live i
 ```
 packages/
 ├── core/src/                   # @red-codes/core — Shared utilities
-│   ├── types.ts                # Shared TypeScript type definitions
+│   ├── types.ts                # Shared TypeScript type definitions (includes RunManifest)
 │   ├── actions.ts              # 23 canonical action types across 8 classes
 │   ├── governance-data.ts      # Governance data loader (typed access to shared JSON data)
 │   ├── data/                   # JSON governance data (actions, blast-radius, destructive-patterns, escalation, git-action-patterns, invariant-patterns, tool-action-map)
 │   ├── hash.ts                 # Content hashing utilities
+│   ├── crypto-hash.ts          # Cryptographic hashing (SHA-256)
 │   ├── rtk.ts                  # RTK token optimization integration
 │   ├── adapters.ts             # Adapter registry interface
 │   ├── rng.ts                  # Seeded random number generator
+│   ├── persona.ts              # Persona definitions
+│   ├── repo-root.ts            # Repository root detection
+│   ├── trust-store.ts          # Trust store for policy/hook verification
 │   └── execution-log/          # Execution audit log
 │       ├── bridge.ts           # Bridge between event systems
 │       ├── event-log.ts        # Event logging
@@ -65,10 +69,18 @@ packages/
 │   ├── evaluator.ts            # Rule matching engine
 │   ├── loader.ts               # Policy validation + loading
 │   ├── pack-loader.ts          # Policy pack loader (community policy sets)
+│   ├── pack-version.ts         # Semantic versioning for policy packs
+│   ├── policy-trust.ts         # Policy trust verification
 │   └── yaml-loader.ts          # YAML policy parser
 ├── invariants/src/             # @red-codes/invariants — Invariant system
 │   ├── definitions.ts          # 21 built-in invariant definitions
 │   └── checker.ts              # Invariant evaluation engine
+├── matchers/src/               # @red-codes/matchers — Structured matchers (KE-1)
+│   ├── path-matcher.ts         # Glob-based path matching (picomatch)
+│   ├── command-scanner.ts      # Command pattern scanning (Aho-Corasick)
+│   ├── policy-matcher.ts       # Policy rule matching
+│   ├── reason-codes.ts         # Machine-readable match result reason codes
+│   └── types.ts                # Matcher type definitions
 ├── kernel/src/                 # @red-codes/kernel — Governed action kernel
 │   ├── kernel.ts               # Orchestrator (propose → evaluate → execute → emit)
 │   ├── aab.ts                  # Action Authorization Boundary (normalization)
@@ -77,6 +89,9 @@ packages/
 │   ├── decision.ts             # Runtime assurance engine
 │   ├── monitor.ts              # Escalation state machine
 │   ├── evidence.ts             # Evidence pack generation
+│   ├── enforcement-audit.ts    # Enforcement audit chain
+│   ├── intent.ts               # Intent drift detection
+│   ├── tier-router.ts          # Tiered evaluation pipeline routing
 │   ├── replay-comparator.ts    # Replay outcome comparison
 │   ├── replay-engine.ts        # Deterministic replay engine
 │   ├── replay-processor.ts     # Replay event processor
@@ -94,7 +109,9 @@ packages/
 ├── adapters/src/               # @red-codes/adapters — Execution adapters
 │   ├── registry.ts             # Adapter registry (action class → handler)
 │   ├── file.ts, shell.ts, git.ts  # Action handlers
-│   └── claude-code.ts          # Claude Code hook adapter
+│   ├── claude-code.ts          # Claude Code hook adapter
+│   ├── copilot-cli.ts          # Copilot CLI hook adapter
+│   └── hook-integrity.ts       # Hook integrity verification
 ├── plugins/src/                # @red-codes/plugins — Plugin ecosystem
 │   ├── discovery.ts            # Plugin discovery mechanism
 │   ├── registry.ts             # Plugin registry
@@ -158,7 +175,7 @@ apps/
 
 tests/
 └── *.test.js               # 14 JS test files (custom zero-dependency harness)
-# 138 TS test files (vitest) distributed across packages/ and apps/ directories
+# 147 TS test files (vitest) distributed across packages/ and apps/ directories
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
 policies/                   # Policy packs (YAML: ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
 docs/                       # System documentation (architecture, event model, specs)
@@ -214,9 +231,10 @@ See `docs/unified-architecture.md` for the full model.
 Each workspace package maps to a single architectural concept:
 - **packages/kernel/** — Governed action kernel, escalation, evidence, decisions, simulation
 - **packages/events/** — Canonical event model (schema, bus, store, persistence)
-- **packages/policy/** — Policy evaluator + loaders (YAML/JSON, pack loader)
+- **packages/policy/** — Policy evaluator + loaders (YAML/JSON, pack loader, semantic versioning)
 - **packages/invariants/** — Invariant definitions + checker
-- **packages/adapters/** — Execution adapters (file, shell, git, claude-code)
+- **packages/matchers/** — Structured matchers for enforcement (Aho-Corasick, globs, hash sets)
+- **packages/adapters/** — Execution adapters (file, shell, git, claude-code, copilot-cli)
 - **packages/plugins/** — Plugin ecosystem (discovery, registry, validation, sandboxing)
 - **packages/renderers/** — Renderer plugin system (registry, TUI renderer)
 - **packages/core/** — Shared utilities (types, actions, hash, execution-log)
@@ -334,8 +352,8 @@ pnpm test --filter=@red-codes/kernel  # Test a single package
 **Test structure:**
 - **Vitest workspace** (`vitest.workspace.ts`): orchestrates tests across all packages
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (distributed across `packages/*/tests/` and `apps/*/tests/`): 138 files using vitest
-- **Coverage areas**: adapters, kernel (AAB, engine, monitor, blast radius, heartbeat, integration, e2e pipeline, conformance), CLI commands (args, guard, inspect, init, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate, policy-verify, diff, evidence-pr, traces, plugin, auto-setup, config), decision records, domain models, events, evidence packs, evidence summary, execution log, export-import roundtrip, impact forecast, invariants, notification formatter, plugins (discovery, registry, sandbox, validation), policy evaluation (including composer, pack loader, policy packs, evaluation trace, forecast conditions), renderers, replay (engine, comparator, processor), simulation, SQLite storage (migrations, session, sink, store, factory), swarm (scaffolder), TUI renderer, violation mapper, VS Code event reader, YAML loading
+- **TypeScript tests** (distributed across `packages/*/tests/` and `apps/*/tests/`): 147 files using vitest
+- **Coverage areas**: adapters (file, git, shell, claude-code, copilot-cli, hook integrity), kernel (AAB, engine, monitor, blast radius, heartbeat, integration, e2e pipeline, conformance, tiers, intent drift, enforcement audit, interventions), CLI commands (args, guard, inspect, init, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate, policy-verify, diff, evidence-pr, traces, plugin, auto-setup, config, demo, migrate), decision records, domain models, events, evidence packs (explainable, explanation chain), evidence summary, execution log, export-import roundtrip, impact forecast, invariants, matchers (path-matcher, command-scanner, policy-matcher, benchmark), notification formatter, plugins (discovery, registry, sandbox, validation), policy evaluation (including composer, pack loader, policy packs, evaluation trace, forecast conditions, gate conditions, persona, trust, pack versioning), renderers, replay (engine, comparator, processor), simulation (filesystem, git, package, dependency graph), SQLite storage (migrations, session, sink, store, cross-run, factory, aggregation queries, commands), swarm (scaffolder, config, manifest), telemetry (event queue, event sender, anonymize, cloud sink, event mapper), TUI renderer, violation mapper, VS Code event reader, YAML loading
 
 ## CI/CD & Automation
 
