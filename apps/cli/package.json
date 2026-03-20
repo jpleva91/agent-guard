@@ -36,27 +36,27 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "chokidar": "^5.0.0",
     "commander": "^14.0.3",
-    "pino": "^10.3.1",
-    "chokidar": "^5.0.0"
+    "pino": "^10.3.1"
   },
   "optionalDependencies": {
     "better-sqlite3": "^12.8.0"
   },
   "devDependencies": {
+    "@red-codes/adapters": "workspace:*",
     "@red-codes/core": "workspace:*",
     "@red-codes/events": "workspace:*",
-    "@red-codes/policy": "workspace:*",
     "@red-codes/invariants": "workspace:*",
     "@red-codes/kernel": "workspace:*",
-    "@red-codes/adapters": "workspace:*",
-    "@red-codes/storage": "workspace:*",
     "@red-codes/plugins": "workspace:*",
+    "@red-codes/policy": "workspace:*",
     "@red-codes/renderers": "workspace:*",
+    "@red-codes/storage": "workspace:*",
     "@red-codes/swarm": "workspace:*",
     "@red-codes/telemetry": "workspace:*",
     "@red-codes/telemetry-client": "workspace:*",
     "@types/better-sqlite3": "^7.6.0",
-    "yaml": "^2.7.1"
+    "yaml": "^2.8.2"
   }
 }
