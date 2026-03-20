@@ -50,9 +50,16 @@ export interface GuardOptions {
 export async function guard(_args: string[], options: GuardOptions = {}): Promise<number> {
   // Buffer stdin immediately — async setup below can cause a race where piped
   // input arrives (and EOF fires) before processStdin() attaches 'data' handlers.
-  // resume() switches stdin to flowing mode so Node.js buffers chunks in memory.
+  // We attach a real data handler + end tracker so nothing is lost during the
+  // await gap.  processStdin() drains this buffer before switching to live mode.
+  const earlyChunks: string[] = [];
+  let earlyEnded = false;
   if (!process.stdin.isTTY) {
-    process.stdin.resume();
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', (chunk: string) => earlyChunks.push(chunk));
+    process.stdin.on('end', () => {
+      earlyEnded = true;
+    });
   }
 
   // Resolve policies — use composition if multiple paths provided
@@ -204,6 +211,8 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
   return processStdin(kernel, renderers, storage, cloudSinks, {
     noOpen: options.noOpen,
     storeConfig,
+    earlyChunks,
+    earlyEnded,
   });
 }
 
@@ -212,7 +221,12 @@ async function processStdin(
   renderers: RendererRegistry,
   storage: StorageBundle,
   cloudSinks: CloudSinkBundle,
-  viewerOpts: { noOpen?: boolean; storeConfig: StorageConfig }
+  viewerOpts: {
+    noOpen?: boolean;
+    storeConfig: StorageConfig;
+    earlyChunks?: string[];
+    earlyEnded?: boolean;
+  }
 ): Promise<number> {
   const startTime = Date.now();
   let totalActions = 0;
@@ -223,8 +237,8 @@ async function processStdin(
   return new Promise((resolvePromise) => {
     let buffer = '';
 
-    process.stdin.setEncoding('utf8');
-    process.stdin.on('data', async (chunk: string) => {
+    // Process a chunk of stdin data — shared between early-buffer drain and live stream
+    const processChunk = async (chunk: string) => {
       buffer += chunk;
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
@@ -274,7 +288,13 @@ async function processStdin(
           );
         }
       }
-    });
+    };
+
+    // Attach live stream handler (encoding was already set during early buffering)
+    if (!viewerOpts.earlyChunks) {
+      process.stdin.setEncoding('utf8');
+    }
+    process.stdin.on('data', processChunk);
 
     const shutdown = async () => {
       kernel.shutdown();
@@ -316,6 +336,34 @@ async function processStdin(
       await openSessionViewer(viewerOpts);
       resolvePromise(0);
     });
+
+    // Drain any chunks that were buffered before processStdin was called.
+    // This handles the race where piped stdin arrives during async setup.
+    if (viewerOpts.earlyChunks && viewerOpts.earlyChunks.length > 0) {
+      const drainAsync = async () => {
+        for (const chunk of viewerOpts.earlyChunks!) {
+          await processChunk(chunk);
+        }
+        // If stdin already closed during async setup, trigger shutdown now
+        if (viewerOpts.earlyEnded) {
+          await shutdown();
+          await openSessionViewer(viewerOpts);
+          resolvePromise(0);
+        }
+      };
+      drainAsync().catch((err) => {
+        process.stderr.write(
+          `  \x1b[31mError:\x1b[0m ${err instanceof Error ? err.message : String(err)}\n`
+        );
+        resolvePromise(1);
+      });
+    } else if (viewerOpts.earlyEnded) {
+      // stdin closed before any data arrived
+      shutdown()
+        .then(() => openSessionViewer(viewerOpts))
+        .then(() => resolvePromise(0))
+        .catch(() => resolvePromise(1));
+    }
   });
 }
 

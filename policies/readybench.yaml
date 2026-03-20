@@ -1,0 +1,302 @@
+# ReadyBench policy — tailored guardrails for the ReadyBench B2B marketplace.
+#
+# Stack: Express 5 + React 19 + Prisma ORM + PostgreSQL
+# Deployment: Vercel (frontend, port 3000) + Render (backend, port 3001)
+# AI agents: Claude Code (primary) + Google Gemini (document parsing)
+# Production: readybench.io / readybench-api.onrender.com
+# Staging: readybench-staging.vercel.app / readybench-staging-api.onrender.com
+#
+# Active invariants (built-in, not disabled):
+#   - no-secret-exposure          (sensitive files must not be committed)
+#   - no-destructive-migration    (flags DROP/TRUNCATE in migration files)
+#   - protected-branch            (main, staging — direct push forbidden)
+#   - blast-radius-limit          (max files per operation, default 20)
+#   - no-force-push               (force push forbidden)
+#   - no-credential-file-creation (SSH keys, cloud configs, auth tokens)
+#
+# Default deny is active — any action without an explicit allow rule is denied.
+#
+# Usage:
+#   agentguard guard --policy policies/readybench.yaml
+
+id: readybench-policy
+name: ReadyBench Safety Policy
+description: Governance guardrails for the ReadyBench B2B marketplace (Express + React + Prisma + PostgreSQL)
+severity: 4
+
+rules:
+  # ═══════════════════════════════════════════════════════════════════════
+  # DENY RULES — Safety boundaries
+  # ═══════════════════════════════════════════════════════════════════════
+
+  # --- Environment files (secrets) ---
+  - action: file.write
+    effect: deny
+    target: ".env"
+    reason: Secrets file must not be modified — manage via deployment platform env vars
+
+  - action: file.write
+    effect: deny
+    target: ".env.production"
+    reason: Production secrets must not be modified by agents
+
+  - action: file.write
+    effect: deny
+    target: ".env.local"
+    reason: Local secrets file must not be modified by agents
+
+  - action: file.write
+    effect: deny
+    target: ".env.staging"
+    reason: Staging secrets file must not be modified by agents
+
+  # --- Production secrets in file content ---
+  # Deny writes containing production database URLs or Stripe keys
+  - action: file.write
+    effect: deny
+    target: "*STRIPE_SECRET_KEY*"
+    reason: Files containing Stripe secret keys must not be written
+
+  - action: file.write
+    effect: deny
+    target: "*STRIPE_WEBHOOK_SECRET*"
+    reason: Files containing Stripe webhook secrets must not be written
+
+  - action: file.write
+    effect: deny
+    target: "*DATABASE_URL*"
+    reason: Files containing production database URLs must not be written
+
+  # --- Prisma migration directory (prevent accidental schema changes) ---
+  - action: file.write
+    effect: deny
+    target: "backend/prisma/migrations/"
+    reason: Prisma migration files must not be created or modified by agents — run prisma migrate dev manually
+
+  # --- Force push protection on main and staging ---
+  - action: git.force-push
+    effect: deny
+    reason: Force push is forbidden — rewrites shared history
+
+  - action: git.push
+    effect: deny
+    target: "--force"
+    reason: Force push flags are forbidden
+
+  - action: git.push
+    effect: deny
+    branches: [main, staging]
+    reason: Direct push to main or staging is forbidden — use pull requests
+
+  # --- Deployment config protection ---
+  - action: file.write
+    effect: deny
+    target: "frontend/vercel.json"
+    reason: Vercel deployment config must not be modified by agents
+
+  - action: file.write
+    effect: deny
+    target: "render.yaml"
+    reason: Render deployment config must not be modified by agents
+
+  # --- Database backup protection ---
+  - action: file.delete
+    effect: deny
+    target: "*.dump"
+    reason: Database backup files must not be deleted
+
+  # --- Shell commands referencing production databases ---
+  - action: shell.exec
+    effect: deny
+    target: "readybench-api.onrender.com"
+    reason: Shell commands must not reference production API
+
+  - action: shell.exec
+    effect: deny
+    target: "readybench.io"
+    reason: Shell commands must not reference production frontend
+
+  - action: shell.exec
+    effect: deny
+    target: "DATABASE_URL"
+    reason: Shell commands must not reference production database connection strings
+
+  # --- Docker/infrastructure config protection ---
+  - action: file.write
+    effect: deny
+    target: "docker-compose.*.yml"
+    reason: Docker Compose infrastructure configs must not be modified by agents
+
+  - action: file.write
+    effect: deny
+    target: "docker-compose.*.yaml"
+    reason: Docker Compose infrastructure configs must not be modified by agents
+
+  # --- Blast radius limit (enterprise-grade) ---
+  - action: file.write
+    effect: deny
+    limit: 15
+    reason: Blast radius exceeded — max 15 files per operation
+
+  - action: file.delete
+    effect: deny
+    limit: 5
+    reason: Bulk deletion denied — max 5 files per action
+
+  # --- Destructive operations ---
+  - action: shell.exec
+    effect: deny
+    target: "rm -rf"
+    reason: Destructive shell commands denied
+
+  - action: git.reset
+    effect: deny
+    reason: Git reset is destructive — use revert instead
+
+  - action: git.branch.delete
+    effect: deny
+    reason: Branch deletion must be done manually
+
+  # --- Deployment and publish protection ---
+  - action: deploy.trigger
+    effect: deny
+    reason: Deployments must go through CI/CD pipeline (Vercel/Render)
+
+  - action: npm.publish
+    effect: deny
+    reason: Package publishing is not part of the ReadyBench workflow
+
+  - action: infra.apply
+    effect: deny
+    reason: Infrastructure changes require explicit authorization
+
+  - action: infra.destroy
+    effect: deny
+    reason: Infrastructure destruction is forbidden
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # ALLOW RULES — Safe development workflows
+  # ═══════════════════════════════════════════════════════════════════════
+
+  # --- Reading is always safe ---
+  - action: file.read
+    effect: allow
+    reason: Reading files is always safe
+
+  # --- Safe development directories ---
+  - action:
+      - file.write
+      - file.delete
+      - file.move
+    effect: allow
+    target: "frontend/src/"
+    reason: Frontend source code is safe to modify
+
+  - action:
+      - file.write
+      - file.delete
+      - file.move
+    effect: allow
+    target: "backend/routes/"
+    reason: Backend routes are safe to modify
+
+  - action:
+      - file.write
+      - file.delete
+      - file.move
+    effect: allow
+    target: "backend/services/"
+    reason: Backend services are safe to modify
+
+  - action:
+      - file.write
+      - file.delete
+      - file.move
+    effect: allow
+    target: "backend/tests/"
+    reason: Backend test files are safe to modify
+
+  - action:
+      - file.write
+      - file.delete
+      - file.move
+    effect: allow
+    target: "e2e/"
+    reason: End-to-end test files are safe to modify
+
+  # --- General file operations (subject to deny rules above) ---
+  - action: file.write
+    effect: allow
+    reason: File writes allowed within blast radius limits
+
+  - action: file.delete
+    effect: allow
+    reason: File deletion allowed (subject to deny rules)
+
+  - action: file.move
+    effect: allow
+    reason: File move/rename allowed by default
+
+  # --- Git operations on feature branches ---
+  - action: git.diff
+    effect: allow
+    reason: Viewing diffs is always safe
+
+  - action: git.commit
+    effect: allow
+    reason: Commits allowed by default
+
+  - action: git.push
+    effect: allow
+    reason: Pushes allowed to feature branches (main/staging denied above)
+
+  - action: git.checkout
+    effect: allow
+    reason: Branch switching allowed
+
+  - action: git.branch.create
+    effect: allow
+    reason: Branch creation allowed
+
+  - action: git.merge
+    effect: allow
+    reason: Merge allowed by default
+
+  # --- Shell commands for development tools ---
+  - action: shell.exec
+    effect: allow
+    reason: Shell execution allowed for dev tools (npm, pnpm, vitest, playwright, prisma)
+
+  # --- Testing is always encouraged ---
+  - action:
+      - test.run
+      - test.run.unit
+      - test.run.integration
+    effect: allow
+    reason: Running tests is always safe and encouraged
+
+  # --- Package management ---
+  - action: npm.install
+    effect: allow
+    reason: Dependency installation allowed
+
+  - action: npm.script.run
+    effect: allow
+    reason: NPM script execution allowed (build, dev, test, lint)
+
+  # --- HTTP requests (for API testing) ---
+  - action: http.request
+    effect: allow
+    reason: HTTP requests allowed for local API testing
+
+# ═══════════════════════════════════════════════════════════════════════
+# Actions intentionally denied by default-deny (no explicit allow rule):
+#
+#   npm.publish       — not part of ReadyBench workflow
+#   git.branch.delete — branch cleanup is a manual operation
+#   git.reset         — history rewrite denied explicitly above
+#   git.force-push    — denied explicitly above
+#   deploy.trigger    — denied explicitly above (use Vercel/Render CI)
+#   infra.apply       — denied explicitly above
+#   infra.destroy     — denied explicitly above
+# ═══════════════════════════════════════════════════════════════════════
