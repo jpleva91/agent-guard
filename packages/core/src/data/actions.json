@@ -7,7 +7,8 @@
     "NPM": "npm",
     "HTTP": "http",
     "DEPLOY": "deploy",
-    "INFRA": "infra"
+    "INFRA": "infra",
+    "MCP": "mcp"
   },
   "types": {
     "file.read": { "class": "file", "description": "Read file contents" },
@@ -32,7 +33,8 @@
     "http.request": { "class": "http", "description": "Make an HTTP request" },
     "deploy.trigger": { "class": "deploy", "description": "Trigger deployment" },
     "infra.apply": { "class": "infra", "description": "Apply infrastructure changes" },
-    "infra.destroy": { "class": "infra", "description": "Destroy infrastructure" }
+    "infra.destroy": { "class": "infra", "description": "Destroy infrastructure" },
+    "mcp.call": { "class": "mcp", "description": "Invoke an MCP server tool" }
   },
   "decisions": {
     "ALLOW": "allow",

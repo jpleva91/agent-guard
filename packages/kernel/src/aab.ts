@@ -114,7 +114,7 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
   }
 
   const tool = rawAction.tool || '';
-  let action = TOOL_ACTION_MAP[tool] || 'unknown';
+  let action = TOOL_ACTION_MAP[tool] || (tool.startsWith('mcp__') ? 'mcp.call' : 'unknown');
   let target = rawAction.file || rawAction.target || '';
 
   if (action === 'shell.exec' && rawAction.command) {
