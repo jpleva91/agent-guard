@@ -3,6 +3,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { claudeHook } from '../src/commands/claude-hook.js';
 
+// Force enforce mode for denial tests. Without this, the default mode is 'monitor'
+// which warns instead of blocking. These tests verify blocking (enforce) behavior.
+vi.mock('../src/mode-resolver.js', () => ({
+  resolveInvariantMode: () => 'enforce' as const,
+}));
+
 let restoreStdin: (() => void) | null = null;
 
 beforeEach(() => {
