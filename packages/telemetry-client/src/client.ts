@@ -1,5 +1,14 @@
 // Telemetry client facade — main entry point for the telemetry SDK.
 
+/**
+ * Lightweight CLI telemetry — anonymous install/usage metrics.
+ * Sends batched events to /v1/telemetry/batch with optional Ed25519 signing.
+ * Modes: 'off' | 'anonymous' | 'verified'
+ *
+ * For governance event telemetry (tool calls, decisions, policy evaluations),
+ * use @red-codes/telemetry cloud-sink instead.
+ */
+
 import { randomUUID } from 'node:crypto';
 import { readFileSync, unlinkSync } from 'node:fs';
 import { homedir } from 'node:os';

@@ -1,5 +1,15 @@
 // CloudSinkBundle — EventSink + DecisionSink for cloud telemetry API.
 
+/**
+ * Governance event telemetry — sends rich domain events to AgentGuard Cloud.
+ * Uses tenant API key auth via X-API-Key header.
+ * Sends events to /v1/events directly (not the batch endpoint).
+ *
+ * This is the primary telemetry path for governed sessions.
+ * For lightweight anonymous CLI telemetry (install/usage metrics),
+ * use @red-codes/telemetry-client instead.
+ */
+
 import { homedir } from 'node:os';
 import type {
   DomainEvent,
