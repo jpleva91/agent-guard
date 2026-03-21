@@ -29,6 +29,12 @@ export interface YamlPolicyDef {
   rules?: YamlRule[];
   /** Kernel invariant IDs to disable (human-operator override) */
   disabledInvariants?: string[];
+  /** Top-level enforcement mode: 'monitor' (warn) or 'enforce' (block) */
+  mode?: 'monitor' | 'enforce';
+  /** Named policy pack to apply (e.g., 'essentials', 'strict') */
+  pack?: string;
+  /** Per-invariant mode overrides: invariant ID → 'monitor' | 'enforce' */
+  invariantModes?: Record<string, 'monitor' | 'enforce'>;
 }
 
 interface YamlRule {
@@ -199,6 +205,7 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
   let inExtends = false;
   let inDisabledInvariants = false;
   let inTopLevelPersona = false;
+  let inInvariants = false;
   let inRulePersona = false;
   let inRuleForecast = false;
   let ruleStartIndent = 0;
@@ -219,6 +226,7 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
       inExtends = false;
       inDisabledInvariants = false;
       inTopLevelPersona = false;
+      inInvariants = false;
       inRulePersona = false;
       if (currentRule) {
         rules.push(currentRule);
@@ -283,6 +291,20 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
         case 'rules':
           inRules = true;
           break;
+        case 'mode':
+          if (val === 'monitor' || val === 'enforce') {
+            result.mode = val;
+          }
+          break;
+        case 'pack':
+          result.pack = trimQuotes(val);
+          break;
+        case 'invariants':
+          if (!val) {
+            inInvariants = true;
+            result.invariantModes = {};
+          }
+          break;
       }
       continue;
     }
@@ -295,6 +317,20 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
         const val = trimmed.slice(colonIdx + 1).trim();
         result.persona = result.persona || {};
         applyTopLevelPersonaField(result.persona, key, val);
+      }
+      continue;
+    }
+
+    // Inside invariants block (per-invariant mode overrides)
+    if (inInvariants && !inRules) {
+      const colonIdx = trimmed.indexOf(':');
+      if (colonIdx !== -1) {
+        const invId = trimmed.slice(0, colonIdx).trim();
+        const invMode = trimQuotes(trimmed.slice(colonIdx + 1).trim());
+        if (invMode === 'monitor' || invMode === 'enforce') {
+          result.invariantModes = result.invariantModes || {};
+          result.invariantModes[invId] = invMode;
+        }
       }
       continue;
     }
@@ -578,6 +614,18 @@ export function loadYamlPolicy(yaml: string, defaultId?: string): LoadedPolicy {
 
   if (def.disabledInvariants && def.disabledInvariants.length > 0) {
     policy.disabledInvariants = def.disabledInvariants;
+  }
+
+  if (def.mode) {
+    policy.mode = def.mode;
+  }
+
+  if (def.pack) {
+    policy.pack = def.pack;
+  }
+
+  if (def.invariantModes && Object.keys(def.invariantModes).length > 0) {
+    policy.invariantModes = def.invariantModes;
   }
 
   return policy;

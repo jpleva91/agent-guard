@@ -91,6 +91,12 @@ export interface LoadedPolicy {
   agentguardVersion?: string;
   /** Invariant IDs to disable for this policy (human-operator override) */
   disabledInvariants?: string[];
+  /** Enforcement mode: 'monitor' (warn) or 'enforce' (block). Defaults to 'monitor'. */
+  mode?: 'monitor' | 'enforce';
+  /** Per-invariant mode overrides from yaml config or pack */
+  invariantModes?: Record<string, 'monitor' | 'enforce'>;
+  /** Named pack reference (resolved by the hook layer) */
+  pack?: string;
 }
 
 export interface NormalizedIntent {

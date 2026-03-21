@@ -155,6 +155,83 @@ rules:
     expect(result.name).toBe('single-quoted');
     expect(result.rules![0].action).toBe('git.push');
   });
+
+  it('parses mode field', () => {
+    const yaml = `
+id: test
+name: Test
+mode: monitor
+`;
+    const result = parseYamlPolicy(yaml);
+    expect(result.mode).toBe('monitor');
+  });
+
+  it('parses mode enforce', () => {
+    const yaml = `
+id: test
+name: Test
+mode: enforce
+`;
+    const result = parseYamlPolicy(yaml);
+    expect(result.mode).toBe('enforce');
+  });
+
+  it('defaults mode to undefined when absent', () => {
+    const yaml = `
+id: test
+name: Test
+`;
+    const result = parseYamlPolicy(yaml);
+    expect(result.mode).toBeUndefined();
+  });
+
+  it('parses pack field', () => {
+    const yaml = `
+id: test
+name: Test
+pack: essentials
+`;
+    const result = parseYamlPolicy(yaml);
+    expect(result.pack).toBe('essentials');
+  });
+
+  it('parses per-invariant mode overrides', () => {
+    const yaml = `
+id: test
+name: Test
+mode: monitor
+invariants:
+  no-secret-exposure: enforce
+  protected-branch: monitor
+  no-force-push: enforce
+`;
+    const result = parseYamlPolicy(yaml);
+    expect(result.invariantModes).toEqual({
+      'no-secret-exposure': 'enforce',
+      'protected-branch': 'monitor',
+      'no-force-push': 'enforce',
+    });
+  });
+
+  it('parses mode with rules together', () => {
+    const yaml = `
+id: test
+name: Test
+mode: monitor
+pack: essentials
+invariants:
+  no-force-push: enforce
+rules:
+  - action: git.push
+    effect: deny
+    reason: No push
+`;
+    const result = parseYamlPolicy(yaml);
+    expect(result.mode).toBe('monitor');
+    expect(result.pack).toBe('essentials');
+    expect(result.invariantModes).toEqual({ 'no-force-push': 'enforce' });
+    expect(result.rules).toHaveLength(1);
+  });
 });
 
 describe('loadYamlPolicy', () => {
@@ -217,6 +294,24 @@ rules:
 `;
     const policy = loadYamlPolicy(yaml);
     expect(policy.rules[0].conditions?.branches).toEqual(['main', 'master']);
+  });
+
+  it('surfaces mode and pack in LoadedPolicy', () => {
+    const yaml = `
+id: test-policy
+name: Test Policy
+mode: monitor
+pack: essentials
+invariants:
+  no-force-push: enforce
+rules:
+  - action: file.read
+    effect: allow
+`;
+    const policy = loadYamlPolicy(yaml);
+    expect(policy.mode).toBe('monitor');
+    expect(policy.pack).toBe('essentials');
+    expect(policy.invariantModes).toEqual({ 'no-force-push': 'enforce' });
   });
 });
 
