@@ -10,7 +10,13 @@ beforeEach(() => {
   // Disable cloud telemetry in tests to avoid network-dependent flush delays
   process.env.AGENTGUARD_TELEMETRY = 'off';
   vi.spyOn(process, 'exit').mockImplementation((() => {}) as never);
-  vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+  vi.spyOn(process.stdout, 'write').mockImplementation((...args: unknown[]) => {
+    // Invoke the flush callback if provided — the production code awaits it
+    // (see handlePreToolUse's stdout.write(response, () => resolve()) pattern).
+    const lastArg = args[args.length - 1];
+    if (typeof lastArg === 'function') (lastArg as () => void)();
+    return true;
+  });
   vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
 });
 
