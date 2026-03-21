@@ -9,7 +9,7 @@
 import { randomUUID } from 'node:crypto';
 import { execSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, parse as parsePath } from 'node:path';
 import { tmpdir } from 'node:os';
 import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
 import type { LoadedPolicy } from '@red-codes/policy';
@@ -52,6 +52,47 @@ function writeSessionState(sessionId: string | undefined, patch: Partial<Session
   }
 }
 
+/**
+ * Load AGENTGUARD_* variables from the nearest .env file, walking up from cwd.
+ * Only sets variables that are not already in process.env (env vars take precedence).
+ * This allows the hook to pick up the API key from the project's .env without
+ * hardcoding secrets in the hook command or global config files.
+ */
+function loadProjectEnv(): void {
+  let dir = process.cwd();
+  const { root } = parsePath(dir);
+
+  while (dir !== root) {
+    const envPath = join(dir, '.env');
+    if (existsSync(envPath)) {
+      try {
+        const content = readFileSync(envPath, 'utf8');
+        for (const line of content.split('\n')) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const eqIdx = trimmed.indexOf('=');
+          if (eqIdx < 0) continue;
+          const key = trimmed.slice(0, eqIdx).trim();
+          // Only load AGENTGUARD_* vars — don't pollute the env with unrelated keys
+          if (!key.startsWith('AGENTGUARD_')) continue;
+          if (process.env[key] !== undefined) continue; // env vars take precedence
+          let value = trimmed.slice(eqIdx + 1).trim();
+          // Strip surrounding quotes
+          if ((value.startsWith('"') && value.endsWith('"')) ||
+              (value.startsWith("'") && value.endsWith("'"))) {
+            value = value.slice(1, -1);
+          }
+          process.env[key] = value;
+        }
+      } catch {
+        // Non-fatal — continue without .env
+      }
+      return; // Stop at the first .env found
+    }
+    dir = require('node:path').dirname(dir);
+  }
+}
+
 /** Resolve the CLI command — use local bin.js if in the agentguard dev repo, else bare `agentguard`. */
 function resolveCliCommand(): string {
   const mainRoot = resolveMainRepoRoot();
@@ -61,6 +102,10 @@ function resolveCliCommand(): string {
 }
 
 export async function claudeHook(hookType?: string, extraArgs: string[] = []): Promise<void> {
+  // Load AGENTGUARD_* env vars from the project's .env file before anything reads them.
+  // This is the canonical way to configure the API key — no secrets in hook commands or global config.
+  loadProjectEnv();
+
   try {
     // Stop hook has no stdin payload — generates session viewer HTML quietly (no browser open)
     if (hookType === 'stop') {

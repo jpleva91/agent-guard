@@ -1,26 +1,19 @@
 // agentguard cloud login — device-code auth flow for CLI-to-cloud authentication
+// Saves credentials to project .env (not global config) and optionally enables
+// verified telemetry mode for cloud metrics.
 
 import { randomBytes } from 'node:crypto';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { homedir } from 'node:os';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { join, dirname, parse as parsePath } from 'node:path';
 import { execFile } from 'node:child_process';
+import { createInterface } from 'node:readline';
 import { RESET, BOLD, DIM, FG } from '../colors.js';
 
 const DEFAULT_API_ENDPOINT = 'https://agentguard-cloud.vercel.app';
 const DEFAULT_DASHBOARD_URL = 'https://agentguard-cloud-dashboard.vercel.app';
-const CONFIG_PATH = join(homedir(), '.agentguard', 'config.json');
 
 const POLL_INTERVAL_MS = 2_000;
 const POLL_MAX_ATTEMPTS = 150; // 5 minutes
-
-interface ConfigFile {
-  cloud?: {
-    endpoint: string;
-    apiKey: string;
-  };
-  [key: string]: unknown;
-}
 
 interface PollResponse {
   status: 'pending' | 'authorized' | 'expired';
@@ -29,29 +22,85 @@ interface PollResponse {
   endpoint?: string;
 }
 
-/** Load ~/.agentguard/config.json, returning an empty object if missing or invalid. */
-function loadConfig(): ConfigFile {
-  if (!existsSync(CONFIG_PATH)) return {};
-  try {
-    const raw = readFileSync(CONFIG_PATH, 'utf8');
-    const parsed: unknown = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return parsed as ConfigFile;
-    }
-    return {};
-  } catch {
-    return {};
+// ── Project root + .env helpers ──────────────────────────────────────────────
+
+/**
+ * Find the project root by walking up from cwd looking for common markers.
+ * Returns cwd if no marker is found.
+ */
+function findProjectRoot(): string {
+  const markers = ['package.json', 'agentguard.yaml', '.git', 'pyproject.toml', 'Cargo.toml'];
+  let dir = process.cwd();
+  const { root } = parsePath(dir);
+  while (dir !== root) {
+    if (markers.some((m) => existsSync(join(dir, m)))) return dir;
+    dir = dirname(dir);
   }
+  return process.cwd();
 }
 
-/** Write config object to ~/.agentguard/config.json, creating the directory if needed. */
-function saveConfig(config: ConfigFile): void {
-  const dir = dirname(CONFIG_PATH);
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
+/**
+ * Upsert a key=value pair in a .env file. Creates the file if it doesn't exist.
+ * Preserves existing content and comments.
+ */
+function upsertEnvVar(envPath: string, key: string, value: string): void {
+  let lines: string[] = [];
+  if (existsSync(envPath)) {
+    lines = readFileSync(envPath, 'utf8').split('\n');
   }
-  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', { mode: 0o600 });
+
+  const pattern = new RegExp(`^${key}=`);
+  const newLine = `${key}=${value}`;
+  const idx = lines.findIndex((l) => pattern.test(l));
+
+  if (idx >= 0) {
+    lines[idx] = newLine;
+  } else {
+    // Add a blank line separator if the file doesn't end with one
+    if (lines.length > 0 && lines[lines.length - 1]!.trim() !== '') {
+      lines.push('');
+    }
+    lines.push(`# AgentGuard Cloud (added by agentguard cloud login)`);
+    lines.push(newLine);
+  }
+
+  // Ensure file ends with a newline
+  const content = lines.join('\n').replace(/\n*$/, '\n');
+  writeFileSync(envPath, content, { mode: 0o600 });
 }
+
+/** Load existing endpoint from project .env if present. */
+function loadEndpointFromEnv(envPath: string): string | undefined {
+  if (!existsSync(envPath)) return undefined;
+  const match = readFileSync(envPath, 'utf8').match(/^AGENTGUARD_TELEMETRY_URL=(.+)$/m);
+  let value = match?.[1]?.trim();
+  if (value && ((value.startsWith('"') && value.endsWith('"')) ||
+                (value.startsWith("'") && value.endsWith("'")))) {
+    value = value.slice(1, -1);
+  }
+  return value;
+}
+
+// ── Interactive prompts ──────────────────────────────────────────────────────
+
+/** Prompt the user with a yes/no question. Returns true for yes. */
+async function promptYesNo(question: string, defaultYes = true): Promise<boolean> {
+  if (!process.stdin.isTTY) return defaultYes;
+
+  const rl = createInterface({ input: process.stdin, output: process.stderr });
+  const hint = defaultYes ? 'Y/n' : 'y/N';
+
+  return new Promise<boolean>((resolve) => {
+    rl.question(`  ${question} [${hint}]: `, (answer) => {
+      rl.close();
+      const a = answer.trim().toLowerCase();
+      if (a === '') return resolve(defaultYes);
+      resolve(a === 'y' || a === 'yes');
+    });
+  });
+}
+
+// ── Utilities ────────────────────────────────────────────────────────────────
 
 /** Generate a random 8-char alphanumeric code. */
 function generateDeviceCode(): string {
@@ -74,7 +123,6 @@ function openBrowser(url: string): void {
       // Silently ignore errors — user can open the URL manually
     });
   } else if (platform === 'win32') {
-    // On Windows, 'cmd.exe /c start' is the standard way to open a URL
     execFile('cmd.exe', ['/c', 'start', '', url], () => {
       // Silently ignore errors
     });
@@ -90,6 +138,8 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// ── Main command ─────────────────────────────────────────────────────────────
+
 /**
  * CLI handler for `agentguard cloud login` command.
  *
@@ -97,7 +147,8 @@ function sleep(ms: number): Promise<void> {
  *   1. Generates a random code and registers it with the cloud API
  *   2. Prints an auth URL and opens it in the browser
  *   3. Polls the cloud API until the code is authorized or expired
- *   4. Saves the resulting API key and endpoint to ~/.agentguard/config.json
+ *   4. Saves the API key and endpoint to the project's .env file
+ *   5. Asks if the user wants cloud metrics (sets telemetry to verified mode)
  */
 export async function cloudLogin(args: string[]): Promise<number> {
   // Parse flags
@@ -117,10 +168,12 @@ export async function cloudLogin(args: string[]): Promise<number> {
     }
   }
 
-  // Determine the API endpoint: flag → existing config → default
+  // Determine the API endpoint: flag → existing .env → default
+  const projectRoot = findProjectRoot();
+  const envPath = join(projectRoot, '.env');
+
   if (!apiEndpoint) {
-    const config = loadConfig();
-    apiEndpoint = config.cloud?.endpoint ?? DEFAULT_API_ENDPOINT;
+    apiEndpoint = loadEndpointFromEnv(envPath) ?? DEFAULT_API_ENDPOINT;
   }
 
   // Derive dashboard URL: fall back to default if not explicitly provided
@@ -217,19 +270,32 @@ export async function cloudLogin(args: string[]): Promise<number> {
         return 1;
       }
 
-      // 6. Save to config using the same pattern as cloudConnect in cloud.ts
+      // 6. Save to project .env file
       const savedEndpoint = authorizedEndpoint ?? apiEndpoint;
-      const config = loadConfig();
-      config.cloud = { endpoint: savedEndpoint, apiKey };
-      saveConfig(config);
+      upsertEnvVar(envPath, 'AGENTGUARD_API_KEY', apiKey);
+      upsertEnvVar(envPath, 'AGENTGUARD_TELEMETRY_URL', savedEndpoint);
 
       const displayName = tenantName ?? 'AgentGuard Cloud';
 
       process.stderr.write('\n');
       process.stderr.write(`  ${FG.green}✓${RESET}  Connected to ${BOLD}${displayName}${RESET}\n`);
       process.stderr.write(
-        `  ${FG.green}✓${RESET}  API key saved to ${DIM}${CONFIG_PATH}${RESET}\n`
+        `  ${FG.green}✓${RESET}  Credentials saved to ${DIM}${envPath}${RESET}\n`
       );
+
+      // 7. Ask about cloud metrics / telemetry mode
+      const enableMetrics = await promptYesNo(
+        'Enable cloud metrics? (sends governance telemetry to AgentGuard Cloud)',
+      );
+
+      if (enableMetrics) {
+        upsertEnvVar(envPath, 'AGENTGUARD_TELEMETRY', 'verified');
+        process.stderr.write(`  ${FG.green}✓${RESET}  Telemetry set to ${BOLD}verified${RESET} mode\n`);
+      } else {
+        upsertEnvVar(envPath, 'AGENTGUARD_TELEMETRY', 'anonymous');
+        process.stderr.write(`  ${DIM}Telemetry set to anonymous mode${RESET}\n`);
+      }
+
       process.stderr.write('\n');
       process.stderr.write(`  ${DIM}Run \`agentguard cloud status\` to verify.${RESET}\n\n`);
 
@@ -274,7 +340,12 @@ function showLoginHelp(): void {
   ${BOLD}Flow:${RESET}
     1. A device code is generated and registered with the cloud API.
     2. Your browser is opened to the authentication page.
-    3. After you authorize in the browser, the CLI saves your API key.
+    3. After you authorize in the browser, the CLI saves your API key to .env.
+    4. You're asked if you want to enable cloud metrics (verified telemetry).
+
+  ${BOLD}Credentials:${RESET}
+    Saved to the project's .env file (not a global config). The hook reads
+    AGENTGUARD_API_KEY and AGENTGUARD_TELEMETRY_URL from .env at runtime.
 
   ${BOLD}Examples:${RESET}
     agentguard cloud login
