@@ -34,17 +34,79 @@ export interface AgentEvent {
 // ---------------------------------------------------------------------------
 
 const KIND_TO_EVENT_TYPE: Partial<Record<EventKind, AgentEvent['eventType']>> = {
+  // Reference Monitor
   ActionRequested: 'tool_call',
   ActionExecuted: 'tool_call',
   ActionFailed: 'tool_call',
   ActionAllowed: 'decision',
   ActionDenied: 'decision',
   ActionEscalated: 'decision',
+
+  // Decision & Simulation
   DecisionRecorded: 'decision',
   SimulationCompleted: 'policy_evaluation',
+
+  // Governance
   PolicyDenied: 'policy_evaluation',
+  UnauthorizedAction: 'policy_evaluation',
   InvariantViolation: 'policy_evaluation',
+  BlastRadiusExceeded: 'policy_evaluation',
+  MergeGuardFailure: 'policy_evaluation',
+  EvidencePackGenerated: 'decision',
+
+  // Policy
+  PolicyComposed: 'policy_evaluation',
   PolicyTraceRecorded: 'policy_evaluation',
+
+  // Session
+  StateChanged: 'decision',
+  RunStarted: 'decision',
+  RunEnded: 'decision',
+  CheckpointReached: 'decision',
+
+  // Pipeline
+  PipelineStarted: 'tool_call',
+  StageCompleted: 'tool_call',
+  StageFailed: 'tool_call',
+  PipelineCompleted: 'tool_call',
+  PipelineFailed: 'tool_call',
+  FileScopeViolation: 'tool_call',
+
+  // Developer Signals
+  FileSaved: 'tool_call',
+  TestCompleted: 'tool_call',
+  BuildCompleted: 'tool_call',
+  CommitCreated: 'tool_call',
+  CodeReviewed: 'tool_call',
+  DeployCompleted: 'tool_call',
+  LintCompleted: 'tool_call',
+
+  // Token Optimization
+  TokenOptimizationApplied: 'tool_call',
+
+  // Agent Liveness
+  HeartbeatEmitted: 'decision',
+  HeartbeatMissed: 'decision',
+  AgentUnresponsive: 'decision',
+
+  // Integrity & Trust
+  HookIntegrityVerified: 'policy_evaluation',
+  HookIntegrityFailed: 'policy_evaluation',
+  PolicyTrustVerified: 'policy_evaluation',
+  PolicyTrustDenied: 'policy_evaluation',
+
+  // Adoption Analytics
+  AdoptionAnalyzed: 'policy_evaluation',
+  AdoptionAnalysisFailed: 'policy_evaluation',
+
+  // Denial Learning
+  DenialPatternDetected: 'policy_evaluation',
+
+  // Intent Drift
+  IntentDriftDetected: 'policy_evaluation',
+
+  // Environmental Enforcement
+  IdeSocketAccessBlocked: 'policy_evaluation',
 };
 
 // ---------------------------------------------------------------------------

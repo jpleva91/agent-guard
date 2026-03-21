@@ -487,3 +487,340 @@ describe('mapDecisionToAgentEvent', () => {
     expect(result.timestamp).toBe(new Date(1710000000000).toISOString());
   });
 });
+
+// ---------------------------------------------------------------------------
+// Unmapped event kinds — TDD: write failing tests first, then add mappings
+// ---------------------------------------------------------------------------
+
+describe('mapDomainEventToAgentEvent — session events', () => {
+  it('maps StateChanged to decision', () => {
+    const event = makeDomainEvent({ kind: 'StateChanged', from: 'NORMAL', to: 'ELEVATED' });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('decision');
+  });
+
+  it('maps RunStarted to decision', () => {
+    const event = makeDomainEvent({ kind: 'RunStarted', runId: 'run_001' });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('decision');
+  });
+
+  it('maps RunEnded to decision', () => {
+    const event = makeDomainEvent({ kind: 'RunEnded', runId: 'run_001', result: 'success' });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('decision');
+  });
+
+  it('maps CheckpointReached to decision', () => {
+    const event = makeDomainEvent({
+      kind: 'CheckpointReached',
+      runId: 'run_001',
+      checkpoint: 'stage-1',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('decision');
+  });
+});
+
+describe('mapDomainEventToAgentEvent — governance events (unmapped subset)', () => {
+  it('maps UnauthorizedAction to policy_evaluation', () => {
+    const event = makeDomainEvent({
+      kind: 'UnauthorizedAction',
+      action: 'git.push',
+      reason: 'No permission',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('policy_evaluation');
+  });
+
+  it('maps BlastRadiusExceeded to policy_evaluation', () => {
+    const event = makeDomainEvent({
+      kind: 'BlastRadiusExceeded',
+      filesAffected: 50,
+      limit: 20,
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('policy_evaluation');
+  });
+
+  it('maps MergeGuardFailure to policy_evaluation', () => {
+    const event = makeDomainEvent({
+      kind: 'MergeGuardFailure',
+      branch: 'main',
+      reason: 'Protected branch',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('policy_evaluation');
+  });
+
+  it('maps EvidencePackGenerated to decision', () => {
+    const event = makeDomainEvent({
+      kind: 'EvidencePackGenerated',
+      packId: 'pack_1',
+      eventIds: ['evt_1', 'evt_2'],
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('decision');
+  });
+
+  it('maps PolicyComposed to policy_evaluation', () => {
+    const event = makeDomainEvent({
+      kind: 'PolicyComposed',
+      policyCount: 3,
+      totalRules: 15,
+      sources: ['default', 'custom'],
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('policy_evaluation');
+  });
+});
+
+describe('mapDomainEventToAgentEvent — pipeline events', () => {
+  it('maps PipelineStarted to tool_call', () => {
+    const event = makeDomainEvent({
+      kind: 'PipelineStarted',
+      runId: 'run_001',
+      task: 'code-review',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+
+  it('maps StageCompleted to tool_call', () => {
+    const event = makeDomainEvent({
+      kind: 'StageCompleted',
+      runId: 'run_001',
+      stageId: 'stage-1',
+      status: 'passed',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+
+  it('maps StageFailed to tool_call', () => {
+    const event = makeDomainEvent({
+      kind: 'StageFailed',
+      runId: 'run_001',
+      stageId: 'stage-2',
+      errors: ['timeout'],
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+
+  it('maps PipelineCompleted to tool_call', () => {
+    const event = makeDomainEvent({
+      kind: 'PipelineCompleted',
+      runId: 'run_001',
+      result: 'success',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+
+  it('maps PipelineFailed to tool_call', () => {
+    const event = makeDomainEvent({
+      kind: 'PipelineFailed',
+      runId: 'run_001',
+      failedStage: 'stage-3',
+      errors: ['exit code 1'],
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+
+  it('maps FileScopeViolation to tool_call', () => {
+    const event = makeDomainEvent({
+      kind: 'FileScopeViolation',
+      runId: 'run_001',
+      files: ['/etc/passwd'],
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+});
+
+describe('mapDomainEventToAgentEvent — developer signal events', () => {
+  it('maps FileSaved to tool_call', () => {
+    const event = makeDomainEvent({ kind: 'FileSaved', file: '/src/app.ts' });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+
+  it('maps TestCompleted to tool_call', () => {
+    const event = makeDomainEvent({ kind: 'TestCompleted', result: 'passed' });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+
+  it('maps BuildCompleted to tool_call', () => {
+    const event = makeDomainEvent({ kind: 'BuildCompleted', result: 'success' });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+
+  it('maps CommitCreated to tool_call', () => {
+    const event = makeDomainEvent({ kind: 'CommitCreated', hash: 'abc123' });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+
+  it('maps CodeReviewed to tool_call', () => {
+    const event = makeDomainEvent({ kind: 'CodeReviewed', action: 'approved' });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+
+  it('maps DeployCompleted to tool_call', () => {
+    const event = makeDomainEvent({ kind: 'DeployCompleted', result: 'success' });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+
+  it('maps LintCompleted to tool_call', () => {
+    const event = makeDomainEvent({ kind: 'LintCompleted', result: 'passed' });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+});
+
+describe('mapDomainEventToAgentEvent — token optimization', () => {
+  it('maps TokenOptimizationApplied to tool_call', () => {
+    const event = makeDomainEvent({
+      kind: 'TokenOptimizationApplied',
+      tool: 'rtk',
+      command: 'git status',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('tool_call');
+  });
+});
+
+describe('mapDomainEventToAgentEvent — agent liveness events', () => {
+  it('maps HeartbeatEmitted to decision', () => {
+    const event = makeDomainEvent({ kind: 'HeartbeatEmitted', agentId: 'agent-1' });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('decision');
+  });
+
+  it('maps HeartbeatMissed to decision', () => {
+    const event = makeDomainEvent({
+      kind: 'HeartbeatMissed',
+      agentId: 'agent-1',
+      missedCount: 2,
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('decision');
+  });
+
+  it('maps AgentUnresponsive to decision', () => {
+    const event = makeDomainEvent({
+      kind: 'AgentUnresponsive',
+      agentId: 'agent-1',
+      missedCount: 5,
+      threshold: 3,
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('decision');
+  });
+});
+
+describe('mapDomainEventToAgentEvent — integrity events', () => {
+  it('maps HookIntegrityVerified to policy_evaluation', () => {
+    const event = makeDomainEvent({
+      kind: 'HookIntegrityVerified',
+      settingsPath: '/path/to/settings.json',
+      hash: 'sha256:abc',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('policy_evaluation');
+  });
+
+  it('maps HookIntegrityFailed to policy_evaluation', () => {
+    const event = makeDomainEvent({
+      kind: 'HookIntegrityFailed',
+      settingsPath: '/path/to/settings.json',
+      reason: 'Hash mismatch',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('policy_evaluation');
+  });
+
+  it('maps PolicyTrustVerified to policy_evaluation', () => {
+    const event = makeDomainEvent({
+      kind: 'PolicyTrustVerified',
+      policyPath: '/policies/default.yaml',
+      status: 'trusted',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('policy_evaluation');
+  });
+
+  it('maps PolicyTrustDenied to policy_evaluation', () => {
+    const event = makeDomainEvent({
+      kind: 'PolicyTrustDenied',
+      policyPath: '/policies/untrusted.yaml',
+      reason: 'Not in trust store',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('policy_evaluation');
+  });
+});
+
+describe('mapDomainEventToAgentEvent — adoption and learning events', () => {
+  it('maps AdoptionAnalyzed to policy_evaluation', () => {
+    const event = makeDomainEvent({
+      kind: 'AdoptionAnalyzed',
+      sessionId: 'sess_001',
+      adoptionPct: 85,
+      totalToolCalls: 100,
+      governedActions: 85,
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('policy_evaluation');
+  });
+
+  it('maps AdoptionAnalysisFailed to policy_evaluation', () => {
+    const event = makeDomainEvent({
+      kind: 'AdoptionAnalysisFailed',
+      sessionId: 'sess_001',
+      error: 'Database unavailable',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('policy_evaluation');
+  });
+
+  it('maps DenialPatternDetected to policy_evaluation', () => {
+    const event = makeDomainEvent({
+      kind: 'DenialPatternDetected',
+      actionType: 'git.push',
+      occurrences: 5,
+      confidence: 0.9,
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('policy_evaluation');
+  });
+
+  it('maps IntentDriftDetected to policy_evaluation', () => {
+    const event = makeDomainEvent({
+      kind: 'IntentDriftDetected',
+      actionType: 'file.write',
+      target: '/etc/hosts',
+      driftType: 'scope-expansion',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('policy_evaluation');
+  });
+});
+
+describe('mapDomainEventToAgentEvent — environmental enforcement', () => {
+  it('maps IdeSocketAccessBlocked to policy_evaluation', () => {
+    const event = makeDomainEvent({
+      kind: 'IdeSocketAccessBlocked',
+      socketPattern: '*.sock',
+      source: 'shell-adapter',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.eventType).toBe('policy_evaluation');
+  });
+});
