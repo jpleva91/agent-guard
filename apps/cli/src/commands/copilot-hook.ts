@@ -96,6 +96,12 @@ async function handlePreToolUse(
   //
   // Default-deny: when policies are loaded, unknown actions are denied (fail-closed).
   // When no policies exist, fail-open to avoid blocking users who haven't configured governance.
+  if (policyDefs.length === 0) {
+    process.stderr.write(
+      '[agentguard] WARNING: No policies loaded — running in fail-open mode. All unmatched actions will be allowed.\n'
+    );
+  }
+
   const kernel = createKernel({
     runId,
     policyDefs,

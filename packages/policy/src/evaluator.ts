@@ -152,6 +152,8 @@ export interface EvalResult {
   trace?: PolicyEvaluationTrace;
   /** Policy-specified intervention override (from the matched deny rule, if any) */
   policyIntervention?: 'pause' | 'rollback' | 'deny' | 'modify';
+  /** Security warning when the evaluation outcome may indicate a configuration risk */
+  warning?: string;
 }
 
 /** Options for the policy evaluator */
@@ -272,7 +274,8 @@ function matchForecastCondition(
 
 function matchConditions(
   conditions: PolicyRule['conditions'],
-  intent: NormalizedIntent
+  intent: NormalizedIntent,
+  effect: 'allow' | 'deny' = 'allow'
 ): ConditionMatchResult {
   if (!conditions) return { matched: true };
 
@@ -306,19 +309,19 @@ function matchConditions(
 
   if (conditions.branches) {
     // `branches` acts as a required filter: the rule only matches when the intent's branch is
-    // in the configured list. If no branch is detected (intent.branch === undefined), the
-    // condition does not match — the rule is skipped entirely.
+    // in the configured list (or cannot be determined for deny rules).
     //
-    // Semantic: "this rule applies only to these branches" — not "match positively if present".
-    // Consequence for deny rules: a missing branch means the deny does NOT fire (safer default).
-    // Consequence for allow rules: a missing branch means the allow does NOT fire (fail-closed).
-    // Policy authors using `conditions.branches: [main]` should verify behavior when the branch
-    // cannot be detected (e.g., file writes with no git context).
+    // For deny rules: when branch is unknown (undefined), assume match (fail-closed / conservative).
+    //   This prevents bypass via commands that defeat branch extraction (e.g. shell chains).
+    // For allow rules: when branch is unknown, do NOT match (fail-closed).
+    //   This ensures actions aren't allowed without confirmed branch context.
     if (intent.branch) {
       branchMatched = conditions.branches.includes(intent.branch);
     } else {
-      // No branch detected — cannot confirm this targets a protected branch
-      branchMatched = false;
+      // No branch detected — conservative approach based on rule effect:
+      // Deny rules: match (block the action to be safe)
+      // Allow rules: skip (don't grant access without branch confirmation)
+      branchMatched = effect === 'deny';
     }
     if (!branchMatched) {
       return { matched: false, scopeMatched, limitExceeded, branchMatched };
@@ -440,7 +443,7 @@ export function evaluate(
         continue;
       }
 
-      const conditionResult = matchConditions(rule.conditions, intent);
+      const conditionResult = matchConditions(rule.conditions, intent, 'deny');
 
       if (conditionResult.matched) {
         ruleIndexMap.set(key, rulesEvaluated.length);
@@ -493,7 +496,7 @@ export function evaluate(
         continue;
       }
 
-      const conditionResult = matchConditions(rule.conditions, intent);
+      const conditionResult = matchConditions(rule.conditions, intent, 'allow');
 
       if (conditionResult.matched) {
         const evalRecord = createRuleEval(policy, ruleIndex, rule, true, conditionResult, 'match');
@@ -555,6 +558,8 @@ export function evaluate(
     matchedPolicy: null,
     reason: 'No matching policy rule — default allow (fail-open)',
     severity: 0,
+    warning:
+      'SECURITY: Fail-open mode is active. All unmatched actions are allowed. Load a policy to enable governance.',
     trace: {
       rulesEvaluated,
       totalRulesChecked: rulesEvaluated.filter((r) => r.outcome !== 'skipped').length,

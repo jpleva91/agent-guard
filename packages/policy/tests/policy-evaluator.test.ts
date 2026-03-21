@@ -284,9 +284,45 @@ describe('evaluate', () => {
         ],
       });
       // branch is 'feature' — doesn't match 'main' or 'master',
-      // but matchConditions still returns true (falls through)
+      // so the deny rule with branch condition is skipped; default-deny blocks it
       const result = evaluate(makeIntent({ action: 'git.push', branch: 'feature' }), [policy]);
       expect(result.allowed).toBe(false);
+    });
+
+    it('deny rule with branch condition — denies when branch is undefined (fail-closed)', () => {
+      const policy = makePolicy({
+        rules: [
+          {
+            action: 'git.push',
+            effect: 'deny',
+            conditions: { branches: ['main', 'master'] },
+            reason: 'Protected branch',
+          },
+        ],
+      });
+      // When branch cannot be detected (undefined), deny rules should still fire
+      // to prevent bypass via commands that defeat branch extraction
+      const result = evaluate(makeIntent({ action: 'git.push', branch: undefined }), [policy]);
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toBe('Protected branch');
+      expect(result.matchedRule).not.toBeNull();
+    });
+
+    it('allow rule with branch condition — does not match when branch is undefined', () => {
+      const policy = makePolicy({
+        rules: [
+          {
+            action: 'git.push',
+            effect: 'allow',
+            conditions: { branches: ['main'] },
+            reason: 'Allow push to main',
+          },
+        ],
+      });
+      // Allow rules should NOT match when branch is unknown (fail-closed)
+      const result = evaluate(makeIntent({ action: 'git.push', branch: undefined }), [policy]);
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toContain('default deny');
     });
   });
 
@@ -394,6 +430,19 @@ describe('evaluate', () => {
       });
       expect(result.allowed).toBe(true);
       expect(result.reason).toContain('default allow');
+    });
+
+    it('fail-open result includes security warning', () => {
+      const result = evaluate(makeIntent(), [], { defaultDeny: false });
+      expect(result.allowed).toBe(true);
+      expect(result.warning).toBeDefined();
+      expect(result.warning).toContain('Fail-open mode is active');
+    });
+
+    it('default-deny result does not include warning', () => {
+      const result = evaluate(makeIntent(), []);
+      expect(result.allowed).toBe(false);
+      expect(result.warning).toBeUndefined();
     });
   });
 

@@ -104,8 +104,14 @@ function getDestructiveDetails(command: string): DestructivePattern | null {
 
 function extractBranch(command: string | undefined): string | null {
   if (!command) return null;
-  const match = command.match(/\bgit\s+push\s+\S+\s+(\S+)/);
-  return match ? match[1] : null;
+  // Split on shell chain operators so we can extract branches from commands
+  // wrapped in chains like `cd /repo && git push origin main`
+  const segments = command.split(/\s*(?:&&|\|\||;)\s*/);
+  for (const segment of segments) {
+    const match = segment.match(/\bgit\s+push\s+\S+\s+(\S+)/);
+    if (match) return match[1]!;
+  }
+  return null;
 }
 
 export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedIntent {

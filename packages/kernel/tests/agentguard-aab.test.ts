@@ -719,6 +719,32 @@ describe('agentguard/core/aab', () => {
       expect(intent.target).toBe('main');
     });
 
+    it('extracts branch from git push in shell chain with &&', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'cd /repo && git push origin main',
+      });
+      expect(intent.action).toBe('git.push');
+      expect(intent.branch).toBe('main');
+    });
+
+    it('extracts branch from git push in shell chain with ;', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'echo "deploying"; git push origin production',
+      });
+      expect(intent.action).toBe('git.push');
+      expect(intent.branch).toBe('production');
+    });
+
+    it('extracts branch from git push in shell chain with ||', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'git pull origin main || git push origin main',
+      });
+      expect(intent.branch).toBe('main');
+    });
+
     it('marks destructive shell commands', () => {
       const intent = normalizeIntent({ tool: 'Bash', command: 'rm -rf /' });
       expect(intent.destructive).toBe(true);

@@ -306,6 +306,12 @@ async function handlePreToolUse(
     invariants = DEFAULT_INVARIANTS.filter((inv) => !disabledIds.has(inv.id));
   }
 
+  if (policyDefs.length === 0) {
+    process.stderr.write(
+      '[agentguard] WARNING: No policies loaded — running in fail-open mode. All unmatched actions will be allowed.\n'
+    );
+  }
+
   const kernel = createKernel({
     runId,
     policyDefs,
