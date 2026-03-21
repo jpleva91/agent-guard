@@ -891,6 +891,13 @@ async function main() {
     }
 
     case 'cloud': {
+      const sub = args[1];
+      if (sub === 'login') {
+        const { cloudLogin } = await import('./commands/cloud-login.js');
+        const code = await cloudLogin(args.slice(2));
+        process.exit(code);
+        break;
+      }
       const { cloud: cloudCmd } = await import('./commands/cloud.js');
       if (wantsHelp) {
         await cloudCmd(['help']);
