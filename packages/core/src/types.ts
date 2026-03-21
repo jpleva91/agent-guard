@@ -216,6 +216,8 @@ export type EventKind =
   | 'DenialPatternDetected'
   // Intent Drift
   | 'IntentDriftDetected'
+  // Capability Validation
+  | 'CapabilityValidated'
   // Environmental Enforcement
   // TODO(issue-225): Reserved for future direct emission; currently InvariantViolation is emitted instead.
   | 'IdeSocketAccessBlocked';
