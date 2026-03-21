@@ -26,7 +26,7 @@ const COMMANDS: Record<string, CommandHelp> = {
     description: 'Analyze denial patterns and suggest policy improvements',
     usage: 'agentguard learn [flags]',
     flags: [
-      { flag: '--write-rules', description: 'Write governance hints to .claude/rules/' },
+      { flag: '--write-rules', description: 'Write safety hints to .claude/rules/' },
       { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       { flag: '--db-path <path>', description: 'SQLite database path' },
       { flag: '--json', description: 'Output as JSON' },
@@ -929,18 +929,18 @@ async function main() {
 
 function printHelp(): void {
   console.log(`
-  \x1b[1mAgentGuard\x1b[0m — Runtime governance for AI coding agents
+  \x1b[1mAgentGuard\x1b[0m — Run AI agents without fear
 
-  \x1b[1mGovernance:\x1b[0m
-    agentguard guard                          Start governed action runtime
+  \x1b[1mSafety:\x1b[0m
+    agentguard guard                          Start the safety runtime
     agentguard guard --policy <file>          Use a specific policy file (YAML/JSON)
     agentguard guard --policy a --policy b    Compose multiple policies with precedence
     agentguard guard --dry-run                Evaluate without executing actions
     agentguard guard --trace                  Show policy evaluation traces inline
     agentguard inspect [runId]                Inspect action graph and decisions
     agentguard events [runId]                 Show raw event stream for a run
-    agentguard analytics                      Analyze violation patterns across sessions
-    agentguard adoption                       Analyze % of tool calls going through governance
+    agentguard analytics                      Analyze blocked action patterns across sessions
+    agentguard adoption                       Show how much agent activity is protected
     agentguard learn                          Analyze denial patterns and suggest policy improvements
 
   \x1b[1mTraces:\x1b[0m
@@ -950,7 +950,7 @@ function printHelp(): void {
     agentguard traces --last --decision deny  Filter traces by decision
 
   [1mComparison:[0m
-    agentguard diff <runA> <runB>              Compare two governance sessions
+    agentguard diff <runA> <runB>              Compare two safety sessions
     agentguard diff --last                     Compare the two most recent runs
     agentguard diff --last --json              Output comparison as JSON
 
@@ -962,9 +962,9 @@ function printHelp(): void {
     agentguard simulate ... --json             Output raw JSON result
 
   \x1b[1mPortability:\x1b[0m
-    agentguard export <runId>                 Export a governance session to JSONL
+    agentguard export <runId>                 Export a safety session to JSONL
     agentguard export --last                  Export the most recent run
-    agentguard import <file>                  Import a governance session from JSONL
+    agentguard import <file>                  Import a safety session from JSONL
     agentguard migrate                        Bulk-import JSONL files into SQLite
     agentguard migrate --dry-run              Preview migration without writing
 
@@ -1003,17 +1003,17 @@ function printHelp(): void {
     agentguard audit-verify ... --json        Output as JSON
 
   \x1b[1mEvidence:\x1b[0m
-    agentguard evidence-pr                    Attach governance evidence to a PR
+    agentguard evidence-pr                    Attach safety evidence to a PR
     agentguard evidence-pr --pr <number>      Post evidence to a specific PR
     agentguard evidence-pr --dry-run          Preview the evidence report
 
   \x1b[1mScaffolding:\x1b[0m
-    agentguard init --extension <type>        Scaffold a new governance extension
+    agentguard init --extension <type>        Scaffold a new AgentGuard extension
     agentguard init --extension <type> -n X   Name the extension
 
 
   \x1b[1mCI/CD:\x1b[0m
-    agentguard ci-check <session>             Verify governance session in CI
+    agentguard ci-check <session>             Verify agent session safety in CI
     agentguard ci-check --last                Check most recent run locally
 
 
@@ -1025,9 +1025,9 @@ function printHelp(): void {
     agentguard auto-setup --dry-run           Detect without installing
     agentguard claude-hook                    Claude Code hook handler (internal)
     agentguard copilot-hook                   Copilot CLI hook handler (internal)
-    agentguard status                         Check governance readiness (hooks, policy, dirs)
+    agentguard status                         Check safety readiness (hooks, policy, dirs)
     agentguard status --quiet                 Machine-readable check (exit code only)
-    agentguard demo                           See governance in action (interactive showcase)
+    agentguard demo                           See AgentGuard in action (interactive showcase)
 
   \x1b[1mConfiguration:\x1b[0m
     agentguard config show                    Display resolved configuration
@@ -1042,8 +1042,8 @@ function printHelp(): void {
     agentguard cloud connect ... --endpoint   Use a custom cloud endpoint
     agentguard cloud status                   Show cloud connection status
     agentguard cloud disconnect               Remove cloud connection
-    agentguard cloud events                   Query governance events from cloud
-    agentguard cloud runs                     Query governance runs from cloud
+    agentguard cloud events                   Query agent events from cloud
+    agentguard cloud runs                     Query agent runs from cloud
     agentguard cloud summary                  Show cloud analytics summary
 
   \x1b[1mMeta:\x1b[0m

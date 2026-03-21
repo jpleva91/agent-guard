@@ -10,6 +10,11 @@ const externalDeps = [
   ...Object.keys(pkg.optionalDependencies || {}),
 ];
 
+// ESM bundles can't use require(), but externalized CJS native addons
+// (e.g. better-sqlite3) need it. Inject a createRequire shim at the top.
+const esmRequireBanner = `import { createRequire as __agCR } from 'node:module';
+const require = __agCR(import.meta.url);`;
+
 const shared: esbuild.BuildOptions = {
   bundle: true,
   platform: 'node',
@@ -18,6 +23,7 @@ const shared: esbuild.BuildOptions = {
   sourcemap: true,
   outdir: 'dist',
   external: externalDeps,
+  banner: { js: esmRequireBanner },
   define: {
     AGENTGUARD_VERSION: JSON.stringify(pkg.version),
   },
