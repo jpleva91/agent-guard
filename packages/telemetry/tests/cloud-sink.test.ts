@@ -283,7 +283,46 @@ describe('CloudSinkBundle', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 5. DecisionSink.write maps GovernanceDecisionRecord
+  // 5. Decision-covered domain events are deduplicated
+  // -------------------------------------------------------------------------
+
+  it('skips DecisionRecorded, ActionAllowed, ActionDenied, ActionEscalated domain events', async () => {
+    const config: CloudSinkConfig = {
+      mode: 'verified',
+      serverUrl: 'https://api.example.com',
+      runId: 'run-dedup',
+      agentId: 'agent-1',
+      queueDir: tmpDir,
+      batchSize: 50,
+    };
+
+    const bundle = await createCloudSinks(config);
+
+    // These should be silently skipped (covered by decisionSink)
+    bundle.eventSink.write(makeDomainEvent({ kind: 'DecisionRecorded' }));
+    bundle.eventSink.write(makeDomainEvent({ kind: 'ActionAllowed' }));
+    bundle.eventSink.write(makeDomainEvent({ kind: 'ActionDenied' }));
+    bundle.eventSink.write(makeDomainEvent({ kind: 'ActionEscalated' }));
+
+    // This should still go through
+    bundle.eventSink.write(makeDomainEvent({ kind: 'ActionExecuted' }));
+
+    await bundle.flush();
+    bundle.stop();
+
+    const eventsCall = fetchMock.mock.calls.find(
+      ([url]: [string]) => typeof url === 'string' && url.includes('/v1/events')
+    );
+    expect(eventsCall).toBeDefined();
+
+    const body = JSON.parse(eventsCall![1].body);
+    // Only the ActionExecuted event should have been enqueued
+    expect(body.events).toHaveLength(1);
+    expect(body.events[0].eventType).toBe('tool_call');
+  });
+
+  // -------------------------------------------------------------------------
+  // 6. DecisionSink.write maps GovernanceDecisionRecord
   // -------------------------------------------------------------------------
 
   it('handles decisionSink.write for GovernanceDecisionRecord', async () => {

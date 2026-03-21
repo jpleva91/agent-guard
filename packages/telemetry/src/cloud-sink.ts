@@ -14,6 +14,7 @@ import { homedir } from 'node:os';
 import type {
   DomainEvent,
   DecisionSink,
+  EventKind,
   EventSink,
   GovernanceDecisionRecord,
 } from '@red-codes/core';
@@ -128,9 +129,20 @@ export async function createCloudSinks(config: CloudSinkConfig): Promise<CloudSi
     return prepared;
   }
 
+  // Domain event kinds whose decision information is already captured by the
+  // richer GovernanceDecisionRecord via the decisionSink.  Emitting them from
+  // both sinks produces duplicate 'decision'-typed rows in cloud telemetry.
+  const DECISION_SINK_COVERED: ReadonlySet<EventKind> = new Set([
+    'DecisionRecorded',
+    'ActionAllowed',
+    'ActionDenied',
+    'ActionEscalated',
+  ]);
+
   const eventSink: EventSink = {
     write(event: DomainEvent): void {
       try {
+        if (DECISION_SINK_COVERED.has(event.kind)) return;
         const agentEvent = mapDomainEventToAgentEvent(event);
         queue.enqueue(prepareEvent(agentEvent));
       } catch {
