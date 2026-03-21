@@ -94,12 +94,17 @@ const COMMANDS: Record<string, CommandHelp> = {
         flag: '--manifest <file>',
         description: 'RunManifest YAML file for declarative session configuration',
       },
+      {
+        flag: '--agent-name <name>',
+        description: 'Agent identity for this session (or set AGENTGUARD_AGENT_NAME env var)',
+      },
     ],
     examples: [
       'agentguard guard',
       'agentguard guard --policy agentguard.yaml',
       'agentguard guard --policy base.yaml --policy overrides.yaml',
       'agentguard guard --manifest session.yaml',
+      'agentguard guard --agent-name "claude-opus"',
       'agentguard guard --dry-run',
       'echo \'{"tool":"Bash","command":"rm -rf /"}\' | agentguard guard',
     ],
@@ -577,6 +582,13 @@ async function main() {
         manifestPath = flags[manifestIdx + 1];
       }
 
+      // Parse --agent-name flag
+      let agentName: string | undefined;
+      const agentNameIdx = flags.indexOf('--agent-name');
+      if (agentNameIdx !== -1 && flags[agentNameIdx + 1]) {
+        agentName = flags[agentNameIdx + 1];
+      }
+
       const { guard } = await import('./commands/guard.js');
       const storageConfig = resolveStorageConfig(flags);
       const code = await guard(args.slice(1), {
@@ -589,6 +601,7 @@ async function main() {
         stdin: true,
         store: storageConfig,
         noOpen,
+        agentName,
       });
       process.exit(code);
       break;

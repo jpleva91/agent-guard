@@ -34,11 +34,24 @@ rules:
     target: .env
     reason: Secrets files must not be modified
 
-  # Worktree enforcement — agents should use worktrees, not checkout in main tree
+  # Worktree enforcement — agents should use worktrees, not direct checkout in main tree.
+  # requireWorktree: true means the deny is bypassed if the agent is already in a worktree.
   - action: git.checkout
     effect: deny
+    conditions:
+      requireWorktree: true
     reason: Use git worktree instead of checkout — isolates agent work from main working tree
 
   - action: git.reset
     effect: deny
+    conditions:
+      requireWorktree: true
     reason: Git reset is destructive — use a worktree for experimental work
+
+  - action: [git.worktree.add, git.worktree.list]
+    effect: allow
+    reason: Worktree operations are encouraged for isolated agent work
+
+  - action: git.worktree.remove
+    effect: deny
+    reason: Worktree cleanup should be done by the orchestrator, not the agent

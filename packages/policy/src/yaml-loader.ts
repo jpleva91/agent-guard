@@ -46,6 +46,7 @@ interface YamlRule {
   limit?: number;
   requireTests?: boolean;
   requireFormat?: boolean;
+  requireWorktree?: boolean;
   persona?: PersonaCondition;
   intervention?: string;
   forecast?: ForecastCondition;
@@ -496,6 +497,9 @@ function applyRuleField(rule: YamlRule, key: string, val: string): void {
     case 'requireFormat':
       rule.requireFormat = val === 'true';
       break;
+    case 'requireWorktree':
+      rule.requireWorktree = val === 'true';
+      break;
     case 'branches': {
       const arr = parseInlineArray(val);
       if (arr.length > 0) rule.branches = arr;
@@ -533,6 +537,11 @@ function convertRule(yamlRule: YamlRule): PolicyRule {
 
   if (yamlRule.requireFormat !== undefined) {
     conditions.requireFormat = yamlRule.requireFormat;
+    hasConditions = true;
+  }
+
+  if (yamlRule.requireWorktree !== undefined) {
+    conditions.requireWorktree = yamlRule.requireWorktree;
     hasConditions = true;
   }
 

@@ -29,6 +29,8 @@ import type { PolicyTracePayload } from '@red-codes/renderers';
 import { createCloudSinks } from '@red-codes/telemetry';
 import type { CloudSinkBundle } from '@red-codes/telemetry';
 import { loadIdentity, resolveMode } from '@red-codes/telemetry-client';
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 export interface GuardOptions {
   /** Single policy path (backwards compatible) */
@@ -48,6 +50,8 @@ export interface GuardOptions {
   store?: StorageConfig;
   /** Skip auto-opening session viewer in browser after run */
   noOpen?: boolean;
+  /** Agent name for this session */
+  agentName?: string;
 }
 
 export async function guard(_args: string[], options: GuardOptions = {}): Promise<number> {
@@ -143,8 +147,62 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     }
   }
 
+  // Resolve agent identity (hard gate)
+  // Blank the identity file first to prevent stale values from previous sessions
+  const identityPath = join(process.cwd(), '.agentguard-identity');
+  try {
+    writeFileSync(identityPath, '');
+  } catch {
+    /* non-fatal */
+  }
+
+  let agentName = options.agentName;
+  if (!agentName) {
+    agentName = process.env.AGENTGUARD_AGENT_NAME;
+  }
+  if (!agentName && process.stdin.isTTY) {
+    // Interactive prompt
+    const { createInterface } = await import('node:readline');
+    const rl = createInterface({ input: process.stdin, output: process.stderr });
+    agentName = await new Promise<string>((resolve) => {
+      process.stderr.write('\n  \u26A0 No agent identity set.\n');
+      rl.question('  Agent name: ', (answer) => {
+        rl.close();
+        resolve(answer.trim());
+      });
+    });
+  }
+  if (!agentName) {
+    process.stderr.write(
+      '\n  \u2717 Agent identity required. Set --agent-name, AGENTGUARD_AGENT_NAME env var, or .agentguard-identity file.\n\n'
+    );
+    return 1;
+  }
+
+  // Write resolved identity for this session (file was already blanked above)
+  try {
+    writeFileSync(identityPath, agentName);
+  } catch {
+    /* non-fatal */
+  }
+
+  process.stderr.write(`  \u2713 Agent identity: ${agentName}\n`);
+
   // Load manifest if provided
   const manifest = options.manifest ? loadManifestFile(options.manifest) : undefined;
+
+  // Inject agentName into manifest
+  const effectiveManifest = manifest
+    ? { ...manifest, agentName }
+    : agentName
+      ? {
+          sessionId: runId,
+          role: 'builder' as const,
+          grants: [] as const,
+          scope: { allowedPaths: ['**'] as readonly string[] },
+          agentName,
+        }
+      : undefined;
 
   // Build kernel config
   const kernelConfig: KernelConfig = {
@@ -156,7 +214,7 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     sinks: [eventSink, cloudSinks.eventSink],
     decisionSinks: [decisionSink, cloudSinks.decisionSink],
     simulators: simulators.all().length > 0 ? simulators : undefined,
-    manifest,
+    manifest: effectiveManifest,
   };
 
   const kernel = createKernel(kernelConfig);

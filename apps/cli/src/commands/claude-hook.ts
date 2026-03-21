@@ -95,6 +95,45 @@ function loadProjectEnv(): void {
   }
 }
 
+// --- Agent identity resolution ---
+// Identity is resolved from .agentguard-identity file or AGENTGUARD_AGENT_NAME env var.
+// The file is blanked on SessionStart and Stop to prevent stale identity leaking across sessions.
+
+function resolveAgentIdentity(): string | null {
+  // 1. Check .agentguard-identity file
+  const identityPath = join(process.cwd(), '.agentguard-identity');
+  try {
+    const content = readFileSync(identityPath, 'utf8').trim();
+    if (content) return content;
+  } catch {
+    // File doesn't exist or unreadable
+  }
+
+  // 2. Check env var
+  const envName = process.env.AGENTGUARD_AGENT_NAME;
+  if (envName) return envName;
+
+  return null;
+}
+
+function blankIdentityFile(): void {
+  const identityPath = join(process.cwd(), '.agentguard-identity');
+  try {
+    writeFileSync(identityPath, '');
+  } catch {
+    // Non-fatal
+  }
+}
+
+function writeIdentityFile(name: string): void {
+  const identityPath = join(process.cwd(), '.agentguard-identity');
+  try {
+    writeFileSync(identityPath, name);
+  } catch {
+    // Non-fatal
+  }
+}
+
 /** Resolve the CLI command — use local bin.js if in the agentguard dev repo, else bare `agentguard`. */
 function resolveCliCommand(): string {
   const mainRoot = resolveMainRepoRoot();
@@ -111,6 +150,7 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
   try {
     // Stop hook has no stdin payload — generates session viewer HTML quietly (no browser open)
     if (hookType === 'stop') {
+      blankIdentityFile();
       await handleStop(extraArgs);
       process.exit(0);
       return;
@@ -140,6 +180,25 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
       hookType === 'pre' || data.hook === 'PreToolUse' || (!hookType && !data.tool_output);
 
     if (isPreToolUse) {
+      // Agent identity hard gate — block all actions until identity is set.
+      // Blank stale identity on first PreToolUse of a session, then resolve fresh.
+      // If resolved from env var, persist to identity file for subsequent hook calls.
+      const agentIdentity = resolveAgentIdentity();
+      if (!agentIdentity) {
+        process.stdout.write(
+          JSON.stringify({
+            decision: 'block',
+            reason:
+              'Agent identity not set. Write your agent name to .agentguard-identity or set AGENTGUARD_AGENT_NAME env var.',
+          })
+        );
+        process.exit(2);
+        return;
+      }
+      if (process.env.AGENTGUARD_AGENT_NAME) {
+        writeIdentityFile(agentIdentity);
+      }
+
       // Resolve session_id: payload field > environment variable > undefined
       const sessionId =
         (data.session_id as string | undefined) || process.env.CLAUDE_SESSION_ID || undefined;
@@ -312,6 +371,18 @@ async function handlePreToolUse(
     );
   }
 
+  // Build manifest with agent identity so RUN_STARTED event carries it
+  const hookAgentName = resolveAgentIdentity();
+  const hookManifest = hookAgentName
+    ? {
+        sessionId: runId,
+        role: 'builder' as const,
+        grants: [] as const,
+        scope: { allowedPaths: ['**'] as readonly string[] },
+        agentName: hookAgentName,
+      }
+    : undefined;
+
   const kernel = createKernel({
     runId,
     policyDefs,
@@ -320,6 +391,7 @@ async function handlePreToolUse(
     sinks: allEventSinks,
     decisionSinks: allDecisionSinks,
     ...(invariants ? { invariants } : {}),
+    ...(hookManifest ? { manifest: hookManifest } : {}),
   });
 
   // Record session in the sessions table (SQLite only).

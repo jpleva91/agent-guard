@@ -638,6 +638,8 @@ export interface RunManifest {
   readonly maxDurationMs?: number;
   /** Optional metadata for audit trail */
   readonly metadata?: Record<string, unknown>;
+  /** Agent identity for this session — required for all governance sessions */
+  readonly agentName?: string;
 }
 
 /** Policy definition */
