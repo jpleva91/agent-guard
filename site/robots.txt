@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://agentguardhq.github.io/agentguard/sitemap.xml
