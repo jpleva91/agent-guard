@@ -33,3 +33,12 @@ rules:
     effect: deny
     target: .env
     reason: Secrets files must not be modified
+
+  # Worktree enforcement — agents should use worktrees, not checkout in main tree
+  - action: git.checkout
+    effect: deny
+    reason: Use git worktree instead of checkout — isolates agent work from main working tree
+
+  - action: git.reset
+    effect: deny
+    reason: Git reset is destructive — use a worktree for experimental work
