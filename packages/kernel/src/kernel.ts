@@ -40,6 +40,7 @@ import {
   DECISION_RECORDED,
   SIMULATION_COMPLETED,
   INTENT_DRIFT_DETECTED,
+  CAPABILITY_VALIDATED,
 } from '@red-codes/events';
 import { INTERVENTION } from './decision.js';
 import type { InterventionType } from './decision.js';
@@ -292,6 +293,84 @@ export function createKernel(config: KernelConfig = {}): Kernel {
           {
             const cached = tierRouter.getCached(intent.action, intent.target);
             if (cached) {
+              // Capability gate: if a manifest is provided, enforce capability grants
+              if (manifest) {
+                const capGrant = resolveCapabilityGrant(manifest, intent.action, intent.target);
+                if (!capGrant) {
+                  tierRouter.recordTiming('fast', performance.now() - outerTierStart);
+                  const deniedEvent = createEvent(ACTION_DENIED, {
+                    actionType: intent.action,
+                    target: intent.target,
+                    reason: 'capability_not_granted',
+                    actionId: undefined,
+                    agentRole,
+                    metadata: { runId, tier: 'fast', capabilityEnforcement: true },
+                  });
+                  allEvents.push(deniedEvent);
+                  sinkEvents(allEvents);
+
+                  const capDeniedDecision: MonitorDecision = {
+                    allowed: false,
+                    intent,
+                    decision: {
+                      allowed: false,
+                      decision: 'deny',
+                      matchedRule: null,
+                      matchedPolicy: null,
+                      reason: 'capability_not_granted',
+                      severity: 0,
+                    },
+                    violations: [],
+                    events: [],
+                    evidencePack: null,
+                    intervention: null,
+                    monitor: {
+                      escalationLevel: monitor.getEscalationLevel(),
+                      totalEvaluations: 0,
+                      totalDenials: 0,
+                      totalViolations: 0,
+                      windowedDenials: 0,
+                      windowedViolations: 0,
+                    },
+                  };
+
+                  const decisionRecord = buildDecisionRecord({
+                    runId,
+                    decision: capDeniedDecision,
+                    execution: null,
+                    executionDurationMs: null,
+                    simulation: null,
+                    capabilityGrant: null,
+                    agentRole,
+                  });
+                  sinkDecision(decisionRecord);
+
+                  const decisionEvent = createEvent(DECISION_RECORDED, {
+                    recordId: decisionRecord.recordId,
+                    outcome: 'deny',
+                    actionType: intent.action,
+                    target: intent.target,
+                    reason: 'capability_not_granted',
+                    agentRole,
+                  });
+                  sinkEvent(decisionEvent);
+
+                  const result: KernelResult = {
+                    allowed: false,
+                    executed: false,
+                    decision: capDeniedDecision,
+                    execution: null,
+                    action: null,
+                    events: allEvents,
+                    runId,
+                    decisionRecord,
+                    tier: 'fast',
+                  };
+                  actionLog.push(result);
+                  return result;
+                }
+              }
+
               tierRouter.recordTiming('fast', performance.now() - outerTierStart);
 
               // Construct minimal allow result without full policy evaluation
@@ -1020,6 +1099,88 @@ export function createKernel(config: KernelConfig = {}): Kernel {
             actionLog.push(result);
             return result;
           }
+        }
+
+        // 5b-pre. Capability validation gate — enforce session capability grants
+        if (manifest) {
+          const capGrant = resolveCapabilityGrant(
+            manifest,
+            decision.intent.action,
+            decision.intent.target
+          );
+          if (!capGrant) {
+            // No matching capability grant — deny the action
+            const capDeniedEvent = createEvent(ACTION_DENIED, {
+              actionType: decision.intent.action,
+              target: decision.intent.target,
+              reason: 'capability_not_granted',
+              actionId: action?.id,
+              agentRole,
+              metadata: { runId, capabilityEnforcement: true },
+            });
+            allEvents.push(capDeniedEvent);
+            sinkEvents(allEvents);
+
+            const capDeniedRecord = buildDecisionRecord({
+              runId,
+              decision: {
+                ...decision,
+                allowed: false,
+                decision: {
+                  ...decision.decision,
+                  reason: 'capability_not_granted',
+                },
+              },
+              execution: null,
+              executionDurationMs: null,
+              simulation: null,
+              capabilityGrant: null,
+              agentRole,
+            });
+            sinkDecision(capDeniedRecord);
+
+            const capDecisionEvent = createEvent(DECISION_RECORDED, {
+              recordId: capDeniedRecord.recordId,
+              outcome: 'deny',
+              actionType: capDeniedRecord.action.type,
+              target: capDeniedRecord.action.target,
+              reason: 'capability_not_granted',
+              agentRole,
+            });
+            sinkEvent(capDecisionEvent);
+
+            const capDeniedResult: KernelResult = {
+              allowed: false,
+              executed: false,
+              decision: {
+                ...decision,
+                allowed: false,
+                decision: {
+                  ...decision.decision,
+                  reason: 'capability_not_granted',
+                },
+              },
+              execution: null,
+              action,
+              events: allEvents,
+              runId,
+              decisionRecord: capDeniedRecord,
+            };
+            actionLog.push(capDeniedResult);
+            return capDeniedResult;
+          }
+
+          // Capability check passed — emit CapabilityValidated event for audit trail
+          const capValidatedEvent = createEvent(CAPABILITY_VALIDATED, {
+            actionType: decision.intent.action,
+            target: decision.intent.target,
+            grantIndex: capGrant.grantIndex,
+            grant: capGrant.grant,
+            agentRole,
+            metadata: { runId },
+          });
+          allEvents.push(capValidatedEvent);
+          sinkEvent(capValidatedEvent);
         }
 
         // 5b. ALLOWED — run simulation if available, then re-check

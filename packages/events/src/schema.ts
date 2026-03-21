@@ -82,6 +82,9 @@ export const DENIAL_PATTERN_DETECTED: EventKind = 'DenialPatternDetected';
 // Intent Drift
 export const INTENT_DRIFT_DETECTED: EventKind = 'IntentDriftDetected';
 
+// Capability Validation
+export const CAPABILITY_VALIDATED: EventKind = 'CapabilityValidated';
+
 // Environmental Enforcement
 // TODO(issue-225): Reserved for future direct emission from the shell adapter when IDE
 // context variables are stripped. Currently the kernel emits InvariantViolation when the
@@ -276,6 +279,10 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   [INTENT_DRIFT_DETECTED]: {
     required: ['actionType', 'target', 'driftType'],
     optional: ['intentSpec', 'reason', 'severity', 'metadata'],
+  },
+  [CAPABILITY_VALIDATED]: {
+    required: ['actionType', 'target', 'grantIndex'],
+    optional: ['grant', 'agentRole', 'metadata'],
   },
   [IDE_SOCKET_ACCESS_BLOCKED]: {
     required: ['socketPattern', 'source'],

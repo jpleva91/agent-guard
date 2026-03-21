@@ -156,7 +156,7 @@ describe('Capability Grant Tracking', () => {
     expect(sinkRecords[0].capabilityGrant).toBeNull();
   });
 
-  it('decision record has null capabilityGrant when no grant matches', async () => {
+  it('decision record has null capabilityGrant and deny outcome when no grant matches', async () => {
     const sinkRecords: GovernanceDecisionRecord[] = [];
     const manifest = makeManifest({
       grants: [
@@ -173,14 +173,18 @@ describe('Capability Grant Tracking', () => {
       decisionSinks: [{ write: (r) => sinkRecords.push(r) }],
     });
 
-    await kernel.propose({
+    const result = await kernel.propose({
       tool: 'Read',
       file: 'src/index.ts',
       agent: 'test-agent',
     });
 
+    // With capability enforcement, no matching grant means denied
+    expect(result.allowed).toBe(false);
     expect(sinkRecords).toHaveLength(1);
     expect(sinkRecords[0].capabilityGrant).toBeNull();
+    expect(sinkRecords[0].outcome).toBe('deny');
+    expect(sinkRecords[0].reason).toBe('capability_not_granted');
   });
 
   it('denied actions have null capabilityGrant in decision record', async () => {
