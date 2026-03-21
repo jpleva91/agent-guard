@@ -1,0 +1,67 @@
+#!/bin/sh
+# AgentGuard Git Hook - pre-push
+# Enforces branch protection rules from agentguard.yaml.
+# Blocks direct pushes to protected branches (main, master).
+#
+# Install: cp hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+# Or set: git config core.hooksPath hooks
+
+REPO_ROOT="$(git worktree list --porcelain | head -1 | sed 's/^worktree //')"
+POLICY_FILE="$REPO_ROOT/agentguard.yaml"
+
+# If no policy file, allow (fail-open for repos without AgentGuard)
+if [ ! -f "$POLICY_FILE" ]; then
+  exit 0
+fi
+
+# Extract protected branches from policy
+# Looks for: branches: [main, master] under git.push deny rules
+PROTECTED_BRANCHES=""
+if command -v python3 > /dev/null 2>&1; then
+  PROTECTED_BRANCHES=$(python3 -c "
+import re, sys
+with open('$POLICY_FILE') as f:
+    content = f.read()
+# Find deny rules for git.push with branches
+pattern = r'action:\s*git\.push\s*\n\s*effect:\s*deny\s*\n\s*branches:\s*\[([^\]]+)\]'
+m = re.search(pattern, content)
+if m:
+    branches = [b.strip() for b in m.group(1).split(',')]
+    print(' '.join(branches))
+" 2>/dev/null)
+elif command -v node > /dev/null 2>&1; then
+  PROTECTED_BRANCHES=$(node -e "
+const fs = require('fs');
+const content = fs.readFileSync('$POLICY_FILE', 'utf8');
+const m = content.match(/action:\s*git\.push\s*\n\s*effect:\s*deny\s*\n\s*branches:\s*\[([^\]]+)\]/);
+if (m) {
+  const branches = m[1].split(',').map(b => b.trim());
+  process.stdout.write(branches.join(' '));
+}
+" 2>/dev/null)
+fi
+
+# If no protected branches found, allow
+if [ -z "$PROTECTED_BRANCHES" ]; then
+  exit 0
+fi
+
+# Git pre-push hook receives: <remote> <url>
+# and reads lines on stdin: <local ref> <local sha> <remote ref> <remote sha>
+while read local_ref local_sha remote_ref remote_sha; do
+  # Extract branch name from remote ref (refs/heads/main -> main)
+  remote_branch=$(echo "$remote_ref" | sed 's|refs/heads/||')
+
+  for protected in $PROTECTED_BRANCHES; do
+    if [ "$remote_branch" = "$protected" ]; then
+      echo ""
+      echo "  [AgentGuard] DENIED: Direct push to '$protected' blocked by policy."
+      echo "  Rule: git.push → deny on branches [$PROTECTED_BRANCHES]"
+      echo "  Use a pull request instead."
+      echo ""
+      exit 1
+    fi
+  done
+done
+
+exit 0
