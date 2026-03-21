@@ -32,7 +32,7 @@ All system activity — agent tool calls, governance decisions, invariant violat
 │       ▼                                      │
 │  ┌──────────────────────┐                    │
 │  │   Event Stream       │                    │
-│  │   (JSONL audit trail)│                    │
+│  │  (SQLite audit trail)│                    │
 │  └──────────────────────┘                    │
 └──────────────────────────────────────────────┘
 ```
@@ -83,10 +83,25 @@ Package boundaries enforce these dependency rules via `package.json` workspace d
 - **@red-codes/telemetry** may import from core only
 - **@red-codes/core** has no project imports (leaf layer)
 
+## Policy Format
+
+Policies are defined in YAML (`agentguard.yaml`). The format supports:
+
+- **`mode`**: `monitor` (warn but allow) or `enforce` (block) — top-level enforcement mode
+- **`pack`**: Named policy pack shorthand (`essentials`, `strict`, etc.)
+- **`extends`**: Compose multiple policies with precedence (paths or built-in pack names)
+- **`rules`**: Deny/allow rules with action types, target globs, branch conditions, blast radius limits
+- **`invariants`**: Per-invariant mode overrides (`enforce` or `monitor`)
+- **`persona`**: Agent persona conditions (model, trust tier, autonomy level)
+- **`forecast`**: Predictive conditions (test risk score, blast radius, risk level)
+
+The `claude-init` command provides an interactive wizard that generates a starter policy with mode and pack selection.
+
 ## Key Design Decisions
 
 1. **Action as primary unit** — Every agent tool call becomes a canonical Action with type, target, and justification
 2. **Deterministic evaluation** — Policy matching and invariant checking are pure functions with no side effects
-3. **Event-sourced audit** — Every decision is recorded; runs are fully replayable from JSONL
+3. **Event-sourced audit** — Every decision is recorded in SQLite; runs are fully replayable (JSONL export supported)
 4. **Escalation state machine** — Repeated violations escalate: NORMAL → ELEVATED → HIGH → LOCKDOWN
 5. **Adapter pattern** — Execution is abstracted behind adapters, making the kernel testable without real file/git operations
+6. **YAML-first policy** — Human-readable policy-as-code, version-controlled alongside the project

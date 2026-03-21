@@ -45,7 +45,7 @@ simulate impact (predict blast radius, risk level)
     ↓
 if allowed: execute via adapter
     ↓
-emit lifecycle events (JSONL audit trail)
+emit lifecycle events (SQLite audit trail)
 ```
 
 ---
@@ -81,7 +81,9 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Claude Code Hook Integration | Implemented | `packages/adapters/src/claude-code.ts` |
 | VS Code Extension (sidebar panels, event reader, inline diagnostics) | Implemented | `apps/vscode-extension/` |
 | Policy Pack Loader | Implemented | `packages/policy/src/pack-loader.ts` |
-| YAML Policy Parser | Implemented | `packages/policy/src/yaml-loader.ts` |
+| YAML Policy Parser (full schema: mode, pack, invariants, extends, persona, forecast) | Implemented | `packages/policy/src/yaml-loader.ts` |
+| Interactive CLI Wizard (claude-init: mode + pack selection) | Implemented | `apps/cli/src/commands/claude-init.ts` |
+| Essentials Policy Pack | Implemented | `policies/essentials.yaml` |
 
 ### Advanced Roadmap Items — Status
 
@@ -183,7 +185,7 @@ Monitor escalation state transitions are now persisted as `StateChanged` DomainE
 > **Theme:** Deterministic agent governance
 
 - [x] Action Authorization Boundary (AAB) implementation (`packages/kernel/src/aab.ts`)
-- [x] Policy definition format (JSON + YAML) (`policy/action_rules.json`)
+- [x] Policy definition format (YAML-first with full schema: mode, pack, extends, invariants, persona, forecast) (`agentguard.yaml`)
 - [x] Policy loader and parser (`packages/policy/src/loader.ts`)
 - [x] Deterministic policy evaluator (`packages/policy/src/evaluator.ts`)
 - [x] Invariant monitoring engine (`packages/invariants/src/checker.ts`)
@@ -386,8 +388,12 @@ Prior art: Kubernetes Capability Primitives (KCP), OS capability-based security 
 - [x] Policy templates for common scenarios (`policies/strict`, `policies/ci-safe`, `policies/enterprise`, `policies/open-source`)
 - [x] Policy composition (multiple policy files merged with precedence) (`packages/policy/src/composer.ts`, `guard --policy a --policy b`)
 - [x] Policy validation CLI (`agentguard policy validate <file>`)
-- [x] Community policy packs (SOC2, HIPAA, engineering standards) (`policies/soc2/`, `policies/hipaa/`, `policies/engineering-standards/`)
+- [x] Community policy packs (SOC2, HIPAA, engineering standards, essentials) (`policies/soc2/`, `policies/hipaa/`, `policies/engineering-standards/`, `policies/essentials.yaml`)
 - [x] Policy pack versioning and compatibility (`packages/policy/src/pack-version.ts`)
+- [x] `pack` shorthand in YAML policy format — curated invariant enforcement profiles (`packages/policy/src/yaml-loader.ts`)
+- [x] `mode` field in YAML policy — `monitor` (warn) or `enforce` (block) top-level enforcement
+- [x] Per-invariant mode overrides in YAML (`invariants` block with per-ID `monitor`/`enforce`)
+- [x] Interactive setup wizard in `claude-init` — mode and pack selection with starter policy generation
 - [ ] **Policy provider interface** — Pluggable evaluation backends for non-hot-path policy types. The Evaluator plane stays pure (custom matchers, zero I/O, sub-ms). External providers (OPA/Rego, custom DSL, enterprise policy engines) evaluate business-rule policies via async or pre-cached paths. Provider results are cached in-memory; unreachable providers fall back to native rules. External providers can ADD restrictions but NEVER relax native rule decisions. OPA integration provides instant credibility with security teams using OPA in K8s/service-mesh stacks.
 - [ ] **Remediation mode in decision model** — Expand kernel decision responses beyond ALLOW/DENY/ESCALATE to include MODIFY (rewrite action to safe equivalent, e.g. add `--dry-run` flag) and SUGGEST (return recommended alternative with human-readable explanation). Example: `terraform destroy prod` → DENY + SUGGEST: "Run `terraform plan` in staging, or request approval." Remediation suggestions are surfaced to the agent runtime and logged in telemetry. Pattern: Validate → Diagnose → Repair → Enforce. This is the key differentiator vs hyperscaler guardrails that only binary block.
 

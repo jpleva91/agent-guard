@@ -584,7 +584,7 @@
               <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             </div>
             <h3 class="font-mono font-semibold text-text mb-2">YAML Policies</h3>
-            <p class="text-muted text-sm leading-relaxed">Version-controlled boundaries. Compose multiple policies with precedence. 7 built-in policy packs.</p>
+            <p class="text-muted text-sm leading-relaxed">Version-controlled boundaries. <code class="text-cta text-xs">mode</code> + <code class="text-cta text-xs">pack</code> for quick setup. Compose with <code class="text-cta text-xs">extends</code>. Per-invariant overrides. 8 built-in packs.</p>
           </div>
 
           <!-- Card 6: Full Audit Trail -->
@@ -716,7 +716,7 @@
     <section id="invariants" class="py-24" aria-labelledby="inv-heading">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-16 reveal">
-          <h2 id="inv-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">20 Built-in Invariants</h2>
+          <h2 id="inv-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">21 Built-in Invariants</h2>
           <p class="text-muted text-lg max-w-2xl mx-auto">Safety checks that run on every action. Zero configuration. Always on.</p>
         </div>
 
@@ -848,7 +848,7 @@
       <div class="max-w-4xl mx-auto px-6">
         <div class="text-center mb-16 reveal">
           <h2 id="qs-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Quick Start</h2>
-          <p class="text-muted text-lg">Three commands. That's it.</p>
+          <p class="text-muted text-lg">Install, run the setup wizard, and you're governed.</p>
         </div>
 
         <div class="space-y-8">
@@ -870,27 +870,13 @@
           <div class="reveal" style="transition-delay: 80ms">
             <div class="flex items-center gap-2 mb-3">
               <span class="font-mono text-cta text-sm font-semibold">02</span>
-              <span class="text-text font-semibold text-sm">Initialize governance policy</span>
+              <span class="text-text font-semibold text-sm">Run the setup wizard</span>
             </div>
             <div class="relative group">
               <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">cd your-project</span>
-<span class="text-muted">$</span> <span class="text-text">agentguard init</span>
-<span class="text-muted"># Creates agentguard.yaml with sensible defaults</span></code></pre>
-              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="agentguard init" aria-label="Copy to clipboard">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Hook into Claude Code -->
-          <div class="reveal" style="transition-delay: 160ms">
-            <div class="flex items-center gap-2 mb-3">
-              <span class="font-mono text-cta text-sm font-semibold">03</span>
-              <span class="text-text font-semibold text-sm">Hook into Claude Code</span>
-            </div>
-            <div class="relative group">
-              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">agentguard claude-init</span>
-<span class="text-muted"># Governance is active &mdash; every tool call is now governed</span></code></pre>
+<span class="text-muted">$</span> <span class="text-text">agentguard claude-init</span>
+<span class="text-muted"># Wizard: choose monitor/enforce mode + policy pack</span>
+<span class="text-muted"># Creates agentguard.yaml + installs Claude Code hooks</span></code></pre>
               <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="agentguard claude-init" aria-label="Copy to clipboard">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
@@ -898,9 +884,9 @@
           </div>
 
           <!-- Cloud login (optional) -->
-          <div class="reveal" style="transition-delay: 240ms">
+          <div class="reveal" style="transition-delay: 160ms">
             <div class="flex items-center gap-2 mb-3">
-              <span class="font-mono text-cta text-sm font-semibold">04</span>
+              <span class="font-mono text-cta text-sm font-semibold">03</span>
               <span class="text-text font-semibold text-sm">Connect to cloud dashboard <span class="text-muted font-normal">(optional)</span></span>
             </div>
             <div class="relative group">
@@ -914,9 +900,9 @@
           </div>
 
           <!-- Status -->
-          <div class="reveal" style="transition-delay: 320ms">
+          <div class="reveal" style="transition-delay: 240ms">
             <div class="flex items-center gap-2 mb-3">
-              <span class="font-mono text-cta text-sm font-semibold">05</span>
+              <span class="font-mono text-cta text-sm font-semibold">04</span>
               <span class="text-text font-semibold text-sm">Verify governance is active</span>
             </div>
             <div class="relative group">
@@ -1077,9 +1063,15 @@ agentguard cloud status <span class="text-cta"># check connection</span></code><
           <div class="reveal">
             <div class="relative group">
               <pre class="bg-surface border border-surface-light rounded-xl p-6 font-mono text-sm leading-relaxed overflow-x-auto"><code><span class="text-muted"># agentguard.yaml</span>
-<span class="text-cta">id</span>: default-policy
-<span class="text-cta">name</span>: Default Safety Policy
-<span class="text-cta">severity</span>: <span class="text-warning">4</span>
+<span class="text-cta">id</span>: my-project
+<span class="text-cta">name</span>: My Project Policy
+<span class="text-cta">mode</span>: <span class="text-warning">enforce</span>          <span class="text-muted"># monitor | enforce</span>
+<span class="text-cta">pack</span>: essentials        <span class="text-muted"># curated invariant profile</span>
+
+<span class="text-muted"># Per-invariant overrides</span>
+<span class="text-cta">invariants</span>:
+  <span class="text-cta">blast-radius-limit</span>: monitor
+  <span class="text-cta">no-secret-exposure</span>: enforce
 
 <span class="text-cta">rules</span>:
   - <span class="text-cta">action</span>: git.push
@@ -1087,21 +1079,22 @@ agentguard cloud status <span class="text-cta"># check connection</span></code><
     <span class="text-cta">branches</span>: [main, master]
     <span class="text-cta">reason</span>: Direct push to protected branch
 
-  - <span class="text-cta">action</span>: git.force-push
-    <span class="text-cta">effect</span>: <span class="text-danger">deny</span>
-    <span class="text-cta">reason</span>: Force push rewrites shared history
-
   - <span class="text-cta">action</span>: file.write
     <span class="text-cta">effect</span>: <span class="text-danger">deny</span>
-    <span class="text-cta">target</span>: .env
+    <span class="text-cta">target</span>: "**/.env"
     <span class="text-cta">reason</span>: Secrets files must not be modified
 
   - <span class="text-cta">action</span>: file.read
     <span class="text-cta">effect</span>: <span class="text-cta">allow</span>
     <span class="text-cta">reason</span>: Reading is always safe</code></pre>
-              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="id: default-policy
-name: Default Safety Policy
-severity: 4
+              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="id: my-project
+name: My Project Policy
+mode: enforce
+pack: essentials
+
+invariants:
+  blast-radius-limit: monitor
+  no-secret-exposure: enforce
 
 rules:
   - action: git.push
@@ -1109,13 +1102,9 @@ rules:
     branches: [main, master]
     reason: Direct push to protected branch
 
-  - action: git.force-push
-    effect: deny
-    reason: Force push rewrites shared history
-
   - action: file.write
     effect: deny
-    target: .env
+    target: &quot;**/.env&quot;
     reason: Secrets files must not be modified
 
   - action: file.read
@@ -1164,8 +1153,8 @@ rules:
                   <svg class="w-4 h-4 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
                 </div>
                 <div>
-                  <h3 class="font-mono font-semibold text-text mb-1">7 built-in policy packs</h3>
-                  <p class="text-muted text-sm leading-relaxed">Pre-built packs for common scenarios: <code class="text-cta bg-cta/10 px-1.5 py-0.5 rounded text-xs">ci-safe</code>, <code class="text-cta bg-cta/10 px-1.5 py-0.5 rounded text-xs">enterprise</code>, <code class="text-cta bg-cta/10 px-1.5 py-0.5 rounded text-xs">open-source</code>, <code class="text-cta bg-cta/10 px-1.5 py-0.5 rounded text-xs">strict</code>.</p>
+                  <h3 class="font-mono font-semibold text-text mb-1">8 built-in policy packs</h3>
+                  <p class="text-muted text-sm leading-relaxed">Use <code class="text-cta bg-cta/10 px-1.5 py-0.5 rounded text-xs">pack: essentials</code> for quick setup. Compose with <code class="text-cta bg-cta/10 px-1.5 py-0.5 rounded text-xs">extends</code> for <code class="text-cta bg-cta/10 px-1.5 py-0.5 rounded text-xs">soc2</code>, <code class="text-cta bg-cta/10 px-1.5 py-0.5 rounded text-xs">hipaa</code>, <code class="text-cta bg-cta/10 px-1.5 py-0.5 rounded text-xs">enterprise</code>, and more.</p>
                 </div>
               </div>
             </div>
