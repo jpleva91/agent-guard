@@ -45,15 +45,18 @@ function assertWithinBoundary(target: string): string {
   // 2. Fully decode URL-encoded characters (%2e%2e → .., %252e → %2e → .)
   const decoded = fullyDecode(target);
 
+  // 2a. Re-check for null bytes after decoding (%00 / %2500 can decode to \0)
+  if (decoded.includes('\0')) {
+    throw new Error('Path traversal blocked: null byte in decoded path');
+  }
+
   // 3. Resolve to absolute path relative to project root
   const resolved = resolve(PROJECT_ROOT, decoded);
 
   // 4. Check lexical boundary (catches ../ and absolute paths)
   const rel = relative(PROJECT_ROOT, resolved);
   if (rel.startsWith('..') || isAbsolute(rel)) {
-    throw new Error(
-      `Path traversal blocked: "${target}" resolves outside project boundary`
-    );
+    throw new Error(`Path traversal blocked: "${target}" resolves outside project boundary`);
   }
 
   // 5. Follow symlinks and re-check boundary
@@ -66,14 +69,15 @@ function assertWithinBoundary(target: string): string {
       );
     }
   } catch (err: unknown) {
+    const code = (err as NodeJS.ErrnoException).code;
+    // Re-throw our own traversal errors immediately
+    if (err instanceof Error && /path traversal/i.test(err.message)) {
+      throw err;
+    }
     // ENOENT is fine — file doesn't exist yet (e.g., file.write to new path).
-    // Any other error (EACCES, etc.) should propagate.
-    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-      // Re-throw our own traversal errors
-      if (err instanceof Error && /path traversal/i.test(err.message)) {
-        throw err;
-      }
-      // For other fs errors, let the downstream operation handle them
+    // All other errors (EACCES, ELOOP, etc.) mean we cannot verify the path — deny access.
+    if (code !== 'ENOENT') {
+      throw new Error(`Path traversal blocked: cannot verify "${target}" (${code})`);
     }
   }
 

@@ -1,9 +1,24 @@
 // Tests for path traversal prevention in the file adapter (issue #636)
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { fileAdapter } from '../src/file.js';
-import { mkdirSync, writeFileSync, symlinkSync, rmSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync, symlinkSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+
+/** Detect whether the current process can create symlinks (fails on Windows without privileges). */
+const canSymlink = (() => {
+  const probe = join(tmpdir(), `ag-symlink-probe-${Date.now()}`);
+  const probeTarget = join(tmpdir(), `ag-symlink-probe-target-${Date.now()}.txt`);
+  try {
+    writeFileSync(probeTarget, '');
+    symlinkSync(probeTarget, probe);
+    rmSync(probe);
+    rmSync(probeTarget);
+    return true;
+  } catch {
+    return false;
+  }
+})();
 
 function makeAction(overrides: { type: string; target: string; [key: string]: unknown }) {
   return {
@@ -50,9 +65,7 @@ describe('file adapter path traversal protection', () => {
 
     it('rejects C:\\Windows\\System32\\config\\SAM on Windows', async () => {
       await expect(
-        fileAdapter(
-          makeAction({ type: 'file.read', target: 'C:\\Windows\\System32\\config\\SAM' })
-        )
+        fileAdapter(makeAction({ type: 'file.read', target: 'C:\\Windows\\System32\\config\\SAM' }))
       ).rejects.toThrow(TRAVERSAL_PATTERN);
     });
   });
@@ -134,26 +147,19 @@ describe('file adapter path traversal protection', () => {
     const linkPath = join(testDir, 'evil-link');
 
     beforeAll(() => {
+      if (!canSymlink) return;
       mkdirSync(testDir, { recursive: true });
       // Create a file outside testDir to link to
       const outsideFile = join(tmpdir(), `ag-outside-${Date.now()}.txt`);
       writeFileSync(outsideFile, 'secret data');
-      try {
-        symlinkSync(outsideFile, linkPath);
-      } catch {
-        // Symlink creation may fail on Windows without privileges — skip gracefully
-      }
+      symlinkSync(outsideFile, linkPath);
     });
 
     afterAll(() => {
       rmSync(testDir, { recursive: true, force: true });
     });
 
-    it('rejects symlinks that resolve outside project root', async () => {
-      if (!existsSync(linkPath)) {
-        // Symlinks not available (e.g., Windows without SeCreateSymbolicLinkPrivilege)
-        return;
-      }
+    it.skipIf(!canSymlink)('rejects symlinks that resolve outside project root', async () => {
       // The adapter should detect that the symlink resolves outside boundary
       await expect(
         fileAdapter(makeAction({ type: 'file.read', target: linkPath }))
