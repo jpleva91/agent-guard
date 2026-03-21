@@ -251,13 +251,18 @@ async function handlePreToolUse(
     const telemetryMode = resolveMode(identity);
     if (telemetryMode !== 'off') {
       const apiKey = process.env.AGENTGUARD_API_KEY ?? identity?.enrollment_token;
+      // Use Claude Code's session_id for cloud run grouping so multiple hook
+      // invocations within one session share a single governance run, rather
+      // than creating hundreds of orphan runs.  Fall back to the per-hook
+      // runId when no session_id is available (e.g. manual CLI usage).
+      const cloudSessionId = payload.session_id || runId;
       cloudSinks = await createCloudSinks({
         mode: telemetryMode,
         serverUrl:
           process.env.AGENTGUARD_TELEMETRY_URL ??
           identity?.server_url ??
           'https://telemetry.agentguard.dev',
-        runId,
+        runId: cloudSessionId,
         agentId: 'claude-code',
         installId: identity?.install_id,
         apiKey,
