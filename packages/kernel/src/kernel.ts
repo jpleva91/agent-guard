@@ -41,6 +41,7 @@ import {
   SIMULATION_COMPLETED,
   INTENT_DRIFT_DETECTED,
   CAPABILITY_VALIDATED,
+  RUN_STARTED,
 } from '@red-codes/events';
 import { INTERVENTION } from './decision.js';
 import type { InterventionType } from './decision.js';
@@ -243,6 +244,17 @@ export function createKernel(config: KernelConfig = {}): Kernel {
     for (const sink of decisionSinks) {
       sink.write(record);
     }
+  }
+
+  // Emit RUN_STARTED event with agent identity
+  if (manifest?.agentName) {
+    const runStartedEvent = createEvent(RUN_STARTED, {
+      runId,
+      agentName: manifest.agentName,
+      sessionStart: new Date().toISOString(),
+      seed: rng.seed ?? undefined,
+    });
+    sinkEvent(runStartedEvent);
   }
 
   return {

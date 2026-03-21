@@ -2,6 +2,8 @@
 // Handles PreToolUse and PostToolUse hook events.
 // Propagates agent session identity for audit correlation.
 
+import { statSync } from 'node:fs';
+import { dirname, join, parse as parsePath } from 'node:path';
 import type { RawAgentAction } from '@red-codes/kernel';
 import type { Kernel, KernelResult } from '@red-codes/kernel';
 import type { AgentPersona } from '@red-codes/core';
@@ -60,6 +62,27 @@ function normalizeFilePath(filePath: string | undefined, projectRoot?: string): 
   // Fallback: use basename so .env still matches regardless of full path
   const lastSlash = normalized.lastIndexOf('/');
   return lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
+}
+
+/**
+ * Detect if the current working directory is inside a git worktree.
+ * In a worktree, `.git` is a file (containing `gitdir: ...`) rather than a directory.
+ * Walks up from cwd to find the nearest `.git` entry, since hooks may run from subdirectories.
+ */
+function detectWorktree(): boolean {
+  let dir = process.cwd();
+  const { root } = parsePath(dir);
+  while (dir !== root) {
+    try {
+      const gitPath = join(dir, '.git');
+      const stat = statSync(gitPath);
+      return stat.isFile(); // file = worktree, directory = main repo
+    } catch {
+      // No .git here, walk up
+    }
+    dir = dirname(dir);
+  }
+  return false;
 }
 
 export function normalizeClaudeCodeAction(
@@ -208,6 +231,15 @@ export function normalizeClaudeCodeAction(
         metadata: { hook: payload.hook, input, sessionId: payload.session_id },
       };
       break;
+  }
+
+  // Enrich metadata with worktree detection for policy evaluation
+  const inWorktree = detectWorktree();
+  if (inWorktree) {
+    baseAction = {
+      ...baseAction,
+      metadata: { ...baseAction.metadata, inWorktree: true },
+    };
   }
 
   if (resolvedPersona) {

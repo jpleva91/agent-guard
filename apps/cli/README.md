@@ -62,9 +62,26 @@ agentguard claude-init    # Installs PreToolUse + PostToolUse + SessionStart hoo
 
 | Hook | Purpose |
 |------|---------|
-| **PreToolUse** | Evaluates every tool call against policies and invariants before execution |
+| **PreToolUse** | Evaluates every tool call against policies and invariants before execution. Enforces agent identity hard gate. |
 | **PostToolUse** | Reports Bash stderr errors (informational) |
 | **SessionStart** | Ensures build is ready, shows governance status |
+| **Stop** | Blanks `.agentguard-identity` to prevent stale identity leaking |
+
+### Agent Identity
+
+Every governance session requires an agent identity. Resolution order:
+
+1. `AGENTGUARD_AGENT_NAME` env var (per-process)
+2. `.agentguard-identity` file (written by orchestrator or previous resolution)
+3. Interactive prompt (guard command only)
+
+If no identity is set, PreToolUse hooks **block all actions** with a message directing the agent to identify itself. The `.agentguard-identity` file is session-scoped and gitignored — it is blanked on session start/stop to prevent stale values.
+
+For autonomous agent swarms, pass identity via env var per-process or `--agent-name` flag:
+
+```bash
+agentguard guard --agent-name "builder-agent-3" --policy agentguard.yaml
+```
 
 Tool call mapping:
 
@@ -94,6 +111,27 @@ rules:
 
 Drop an `agentguard.yaml` in your repo root — the CLI picks it up automatically.
 
+### Worktree Enforcement
+
+Use the `requireWorktree` condition to force agents to use git worktrees instead of direct checkout:
+
+```yaml
+rules:
+  - action: git.checkout
+    effect: deny
+    conditions:
+      requireWorktree: true
+    reason: "Use 'git worktree add <path> <branch>' instead of checkout"
+
+  - action: git.worktree.add
+    effect: allow
+
+  - action: git.worktree.list
+    effect: allow
+```
+
+When `requireWorktree: true` is set, the deny rule is bypassed if the agent is already operating inside a worktree. New action types: `git.worktree.add`, `git.worktree.remove`, `git.worktree.list`.
+
 ## Built-in Invariants
 
 20 safety invariants run on every action:
@@ -119,7 +157,7 @@ Drop an `agentguard.yaml` in your repo root — the CLI picks it up automaticall
 
 ```bash
 # Governance
-agentguard guard [--policy <file>] [--dry-run]   # Start governed runtime
+agentguard guard [--policy <file>] [--dry-run] [--agent-name <name>]  # Start governed runtime
 agentguard inspect [--last]                       # Inspect action graph
 agentguard events [--last]                        # Raw event stream
 agentguard analytics                              # Violation patterns

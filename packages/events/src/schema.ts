@@ -106,7 +106,7 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   },
   [RUN_STARTED]: {
     required: ['runId'],
-    optional: ['seed', 'sessionStart', 'playerLevel'],
+    optional: ['seed', 'sessionStart', 'playerLevel', 'agentName', 'policy', 'manifest'],
   },
   [RUN_ENDED]: {
     required: ['runId', 'result'],

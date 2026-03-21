@@ -69,6 +69,7 @@ export interface PolicyRule {
     branches?: string[];
     requireTests?: boolean;
     requireFormat?: boolean;
+    requireWorktree?: boolean;
     persona?: PersonaCondition;
     forecast?: ForecastCondition;
   };
@@ -129,6 +130,7 @@ export interface RuleEvaluation {
     forecastMatched?: boolean;
     /** Actual vs. threshold values for each evaluated forecast field */
     forecastValues?: ForecastMatchValues;
+    requireWorktreeMatched?: boolean;
   };
   outcome: 'match' | 'no-match' | 'skipped';
 }
@@ -185,6 +187,7 @@ interface ConditionMatchResult {
   personaMatched?: boolean;
   forecastMatched?: boolean;
   forecastValues?: ForecastMatchValues;
+  requireWorktreeMatched?: boolean;
 }
 
 function matchPersonaCondition(
@@ -289,6 +292,10 @@ function matchConditions(
     return { matched: false };
   }
 
+  if (conditions.requireWorktree && intent.metadata?.inWorktree === true) {
+    return { matched: false, requireWorktreeMatched: true };
+  }
+
   if (conditions.scope && !matchScope(conditions.scope, intent.target)) {
     return { matched: false, scopeMatched: false };
   }
@@ -390,6 +397,7 @@ function createRuleEval(
           personaMatched: conditionResult.personaMatched,
           forecastMatched: conditionResult.forecastMatched,
           forecastValues: conditionResult.forecastValues,
+          requireWorktreeMatched: conditionResult.requireWorktreeMatched,
         }
       : {},
     outcome,

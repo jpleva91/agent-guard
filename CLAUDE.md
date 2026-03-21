@@ -43,7 +43,7 @@ This is a **pnpm monorepo** orchestrated by **Turbo**. Workspace packages live i
 packages/
 ├── core/src/                   # @red-codes/core — Shared utilities
 │   ├── types.ts                # Shared TypeScript type definitions (includes RunManifest)
-│   ├── actions.ts              # 24 canonical action types across 9 classes
+│   ├── actions.ts              # 27 canonical action types across 9 classes
 │   ├── governance-data.ts      # Governance data loader (typed access to shared JSON data)
 │   ├── data/                   # JSON governance data (actions, blast-radius, destructive-patterns, escalation, git-action-patterns, invariant-patterns, tool-action-map)
 │   ├── hash.ts                 # Content hashing utilities
@@ -256,6 +256,7 @@ Each workspace package maps to a single architectural concept:
 - `agentguard guard` — Start the governed action runtime (policy + invariant enforcement)
 - `agentguard guard --policy <file>` — Use a specific policy file (YAML or JSON)
 - `agentguard guard --dry-run` — Evaluate without executing actions
+- `agentguard guard --agent-name <name>` — Set agent identity for this session (required; prompts if not set)
 - `agentguard inspect [runId]` — Show action graph and decisions for a run
 - `agentguard events [runId]` — Show raw event stream for a run
 - `agentguard export <runId>` — Export a governance session to a portable JSONL file
@@ -308,10 +309,10 @@ The canonical event model is the architectural spine. Event kinds defined in `pa
 - **Environmental Enforcement**: `IdeSocketAccessBlocked`
 
 ### Action Classes & Types
-24 canonical action types across 9 classes, defined in `packages/core/src/actions.ts`:
+27 canonical action types across 9 classes, defined in `packages/core/src/actions.ts`:
 - **file**: `file.read`, `file.write`, `file.delete`, `file.move`
 - **test**: `test.run`, `test.run.unit`, `test.run.integration`
-- **git**: `git.diff`, `git.commit`, `git.push`, `git.branch.create`, `git.branch.delete`, `git.checkout`, `git.reset`, `git.merge`
+- **git**: `git.diff`, `git.commit`, `git.push`, `git.branch.create`, `git.branch.delete`, `git.checkout`, `git.reset`, `git.merge`, `git.worktree.add`, `git.worktree.remove`, `git.worktree.list`
 - **shell**: `shell.exec`
 - **npm**: `npm.install`, `npm.script.run`, `npm.publish`
 - **http**: `http.request`
