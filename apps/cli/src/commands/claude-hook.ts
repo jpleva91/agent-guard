@@ -9,7 +9,7 @@
 import { randomUUID } from 'node:crypto';
 import { execSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, parse as parsePath } from 'node:path';
+import { dirname, join, parse as parsePath } from 'node:path';
 import { tmpdir } from 'node:os';
 import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
 import type { LoadedPolicy } from '@red-codes/policy';
@@ -89,7 +89,7 @@ function loadProjectEnv(): void {
       }
       return; // Stop at the first .env found
     }
-    dir = require('node:path').dirname(dir);
+    dir = dirname(dir);
   }
 }
 
