@@ -35,7 +35,8 @@ describe('fileAdapter', () => {
       vi.mocked(readFile).mockResolvedValue('hello world');
       const result = await fileAdapter(makeAction({ type: 'file.read', target: 'src/index.ts' }));
       expect(result).toEqual({ path: 'src/index.ts', size: 11 });
-      expect(readFile).toHaveBeenCalledWith('src/index.ts', 'utf8');
+      // assertWithinBoundary resolves to an absolute path before calling fs
+      expect(readFile).toHaveBeenCalledWith(expect.stringMatching(/src[/\\]index\.ts/), 'utf8');
     });
 
     it('propagates error when file does not exist', async () => {
@@ -56,7 +57,8 @@ describe('fileAdapter', () => {
       } as never);
       const result = await fileAdapter(action);
       expect(result).toEqual({ path: 'out.txt', written: 4 });
-      expect(writeFile).toHaveBeenCalledWith('out.txt', 'data', 'utf8');
+      // assertWithinBoundary resolves to an absolute path before calling fs
+      expect(writeFile).toHaveBeenCalledWith(expect.stringContaining('out.txt'), 'data', 'utf8');
     });
 
     it('throws when content is missing', async () => {
@@ -71,7 +73,8 @@ describe('fileAdapter', () => {
       vi.mocked(unlink).mockResolvedValue();
       const result = await fileAdapter(makeAction({ type: 'file.delete', target: 'tmp.txt' }));
       expect(result).toEqual({ path: 'tmp.txt', deleted: true });
-      expect(unlink).toHaveBeenCalledWith('tmp.txt');
+      // assertWithinBoundary resolves to an absolute path before calling fs
+      expect(unlink).toHaveBeenCalledWith(expect.stringContaining('tmp.txt'));
     });
 
     it('propagates error when file does not exist', async () => {
@@ -92,7 +95,11 @@ describe('fileAdapter', () => {
       } as never);
       const result = await fileAdapter(action);
       expect(result).toEqual({ from: 'old.txt', to: 'new.txt' });
-      expect(rename).toHaveBeenCalledWith('old.txt', 'new.txt');
+      // assertWithinBoundary resolves to absolute paths before calling fs
+      expect(rename).toHaveBeenCalledWith(
+        expect.stringContaining('old.txt'),
+        expect.stringContaining('new.txt')
+      );
     });
 
     it('throws when destination is missing', async () => {
