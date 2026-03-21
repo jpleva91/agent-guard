@@ -26,6 +26,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bash -c 'M=$(git rev-parse --path-format=absolute --git-common-dir); M=${M%/.git}; [ -f \"$M/.env\" ] && [ ! -f .env ] && cp \"$M/.env\" .env || true'",
+            "timeout": 5000,
+            "blocking": true
+          },
+          {
+            "type": "command",
             "command": "test -d node_modules || pnpm install --frozen-lockfile",
             "timeout": 120000,
             "blocking": true
