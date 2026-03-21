@@ -24,9 +24,22 @@ AI coding agents (Claude Code, GitHub Copilot, any MCP client) execute file writ
 ```bash
 npm install -g @red-codes/agentguard
 cd your-project
-agentguard init
 agentguard claude-init
-# Governance is active — every Claude Code tool call is now governed
+# Interactive wizard: choose monitor/enforce mode and a policy pack
+# → Creates agentguard.yaml, installs Claude Code hooks, and activates governance
+```
+
+The `claude-init` wizard walks you through setup interactively:
+
+```
+  Start in monitor mode or enforce mode?
+    ❯ 1) Monitor — log threats, don't block (recommended)
+      2) Enforce — block dangerous actions immediately
+
+  Enable a policy pack?
+    ❯ 1) essentials — secrets, force push, protected branches, credentials
+      2) strict — all 21 invariants enforced
+      3) none — monitor only, configure later
 ```
 
 Verify it's running:
@@ -43,6 +56,12 @@ Test a deny rule without executing anything:
 ```bash
 echo '{"tool":"Bash","command":"git push origin main"}' | agentguard guard --dry-run
 # ✗ git.push main → DENIED (protect-main)
+```
+
+Non-interactive setup (CI or scripted installs):
+
+```bash
+agentguard claude-init --mode monitor --pack essentials
 ```
 
 ## Cloud Dashboard
@@ -72,43 +91,144 @@ agentguard cloud login
 | **Agent SDK** | Programmatic governance for custom integrations and RunManifest-driven workflows |
 | **Works with** | Claude Code, GitHub Copilot, any MCP client |
 
-## Policy Example
+## Policy Format (YAML)
 
-Drop `agentguard.yaml` in your repo root. It's picked up automatically:
+Drop `agentguard.yaml` in your repo root. It's picked up automatically.
+
+### Minimal policy
 
 ```yaml
-id: my-project
-name: My Project Policy
-severity: 4
+mode: monitor      # monitor (warn) or enforce (block)
+pack: essentials   # curated invariant profile
 
 rules:
   - action: git.push
     effect: deny
     branches: [main, master]
     reason: Protected branch — use a PR
+```
 
+### Full schema reference
+
+```yaml
+# Metadata
+id: my-project
+name: My Project Policy
+description: Governance for the Acme repo
+severity: 4                   # 1 (lowest) – 5 (highest)
+version: "1.0.0"
+agentguardVersion: ">=2.3.0"  # minimum AgentGuard version
+
+# Enforcement mode
+mode: enforce                 # monitor | enforce
+
+# Policy pack (curated invariant profiles)
+pack: essentials              # essentials | strict | or a named pack
+
+# Compose with other policies (paths or built-in pack names)
+extends:
+  - soc2
+  - hipaa
+  - ./policies/team-overrides
+
+# Per-invariant mode overrides
+invariants:
+  no-secret-exposure: enforce
+  blast-radius-limit: monitor
+  no-force-push: enforce
+
+# Disable specific invariants entirely
+disabledInvariants:
+  - lockfile-integrity
+
+# Default persona (conditions for the agent running this policy)
+persona:
+  model: claude-sonnet-4-6
+  provider: anthropic
+  trustTier: verified
+  autonomy: supervised
+  riskTolerance: low
+  role: developer
+  tags: [internal, ci]
+
+# Rules
+rules:
+  # Basic deny rule
+  - action: git.push
+    effect: deny
+    branches: [main, master]
+    reason: Protected branch — use a PR
+
+  # Target glob pattern
   - action: file.write
     effect: deny
     target: "**/.env"
     reason: No secrets modification
 
-  - action: shell.exec
+  # Multiple action types in one rule
+  - action:
+      - file.write
+      - file.delete
     effect: deny
-    pattern: "rm -rf"
-    reason: Destructive shell commands blocked
+    target: "*.key"
+    reason: Cryptographic key files are protected
 
+  # Blast radius limit
+  - action: file.write
+    effect: deny
+    limit: 20
+    reason: Too many files modified at once
+
+  # Require tests before push
+  - action: git.push
+    effect: deny
+    requireTests: true
+    reason: Tests must pass before pushing
+
+  # Persona-scoped rule
+  - action: deploy.trigger
+    effect: deny
+    persona:
+      trustTier: [unverified, unknown]
+      autonomy: [autonomous]
+    reason: Only verified agents can deploy
+
+  # Forecast-conditioned rule (predictive governance)
+  - action: git.push
+    effect: deny
+    forecast:
+      testRiskScore: 70
+      blastRadiusScore: 80
+      riskLevel: [high]
+    reason: Predicted risk too high
+
+  # Intervention type
+  - action: infra.destroy
+    effect: deny
+    intervention: PAUSE
+    reason: Infrastructure destruction requires human approval
+
+  # Allow rule
   - action: file.read
     effect: allow
     reason: Read access is unrestricted
 ```
 
-Compose multiple policies with `extends`:
+### Supported rule fields
 
-```yaml
-extends:
-  - soc2
-  - hipaa
-```
+| Field | Type | Description |
+|-------|------|-------------|
+| `action` | `string \| string[]` | Action type(s): `file.read`, `git.push`, `shell.exec`, etc. (23 types across 8 classes) |
+| `effect` | `string` | `deny` or `allow` |
+| `target` | `string` | Glob pattern for file paths or command patterns |
+| `branches` | `string[]` | Git branch names this rule applies to |
+| `reason` | `string` | Human-readable explanation |
+| `limit` | `number` | Max file count (blast radius) |
+| `requireTests` | `boolean` | Require passing tests |
+| `requireFormat` | `boolean` | Require passing format check |
+| `persona` | `object` | Agent persona conditions (`trustTier`, `role`, `autonomy`, `riskTolerance`, `tags`) |
+| `forecast` | `object` | Predictive conditions (`testRiskScore`, `blastRadiusScore`, `predictedFileCount`, `dependencyCount`, `riskLevel`) |
+| `intervention` | `string` | Intervention type: `DENY`, `PAUSE`, `ROLLBACK`, `TEST_ONLY` |
 
 ## Built-in Invariants
 
@@ -171,10 +291,11 @@ AgentGuard Kernel
 ## CLI Reference
 
 ```bash
-# Setup
-agentguard init                           # Initialize policy in current project
-agentguard claude-init                    # Install Claude Code hooks
+# Setup (interactive wizard)
+agentguard claude-init                    # Interactive wizard: mode + pack → creates policy + hooks
 agentguard claude-init --global           # Install hooks globally (~/.claude/settings.json)
+agentguard claude-init --mode monitor --pack essentials  # Non-interactive setup
+agentguard init --template strict         # Scaffold policy from a template
 agentguard status                         # Show governance status
 
 # Runtime
@@ -203,6 +324,8 @@ agentguard analytics                      # Violation pattern analysis
 
 # Policy
 agentguard policy validate <file>         # Validate a policy file
+agentguard policy-verify <file>           # Verify policy structure and rules
+agentguard init --template <name>         # Scaffold from template (strict/permissive/ci-only/development)
 ```
 
 ## Agent SDK
@@ -224,24 +347,30 @@ const decision = await kernel.propose({
 // decision.effect === 'deny'
 ```
 
-## Compliance Policy Packs
+## Policy Packs
+
+Use `pack` for quick setup or `extends` for composition:
 
 ```yaml
-# agentguard.yaml
+# Quick: single pack with the pack shorthand
+pack: essentials
+
+# Advanced: compose multiple policies
 extends:
-  - soc2              # CC6.1, CC6.6, CC7.1-7.2
-  - hipaa             # 164.312(a)-(e) technical safeguards
-  - engineering-standards
+  - soc2
+  - hipaa
+  - ./policies/team-overrides
 ```
 
-| Pack | Controls |
-|------|----------|
-| `soc2` | SOC 2 Type II access controls and change management |
-| `hipaa` | HIPAA technical safeguards for PHI protection |
-| `engineering-standards` | Balanced dev-friendly guardrails |
+| Pack | Description |
+|------|-------------|
+| `essentials` | Core safety: secrets, force push, protected branches, credentials, blast radius (default for new installs) |
+| `soc2` | SOC 2 Type II access controls and change management (CC6.1, CC6.6, CC7.1-7.2) |
+| `hipaa` | HIPAA technical safeguards for PHI protection (164.312(a)-(e)) |
+| `engineering-standards` | Balanced dev-friendly guardrails: test-before-push, format checks, safe deps |
 | `ci-safe` | Strict CI/CD pipeline protection |
 | `enterprise` | Full enterprise governance |
-| `strict` | Maximum restriction |
+| `strict` | Maximum restriction — all 21 invariants enforced |
 | `open-source` | OSS contribution-friendly defaults |
 
 ## Links
