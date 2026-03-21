@@ -1,14 +1,19 @@
-# AgentGuard — self-governed with engineering-standards policy pack.
+# AgentGuard — self-governed with essentials + engineering-standards policy packs.
 # This project dogfoods its own governance system.
 #
-# The engineering-standards pack enforces:
+# The essentials pack enforces:
+#   - Core safety invariants (secrets, force push, protected branches, credentials)
+#   - Worktree enforcement (requireWorktree on checkout/reset)
+#   - Blast radius limits
+#
+# The engineering-standards pack adds:
 #   - Test-before-push
 #   - Format-before-push
-#   - No force push / git reset
 #   - Credential file protection
 #   - Safe dependency management
 
 extends:
+  - ./policies/essentials
   - ./policies/engineering-standards
 
 # Project-specific overrides
