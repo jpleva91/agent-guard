@@ -3,7 +3,7 @@
 
 import type { GovernanceDecisionRecord, SimulationSummary } from './types.js';
 import type { MonitorDecision } from '../monitor.js';
-import type { ExecutionResult } from '@red-codes/core';
+import type { ExecutionResult, CapabilityGrant } from '@red-codes/core';
 import { simpleHash } from '@red-codes/core';
 
 export interface DecisionFactoryInput {
@@ -12,6 +12,8 @@ export interface DecisionFactoryInput {
   execution: ExecutionResult | null;
   executionDurationMs: number | null;
   simulation: SimulationSummary | null;
+  /** Resolved capability grant from RunManifest (null if no manifest or no matching grant) */
+  capabilityGrant?: { grantIndex: number; grant: CapabilityGrant } | null;
 }
 
 function generateRecordId(timestamp: number, runId: string, action: string): string {
@@ -20,7 +22,7 @@ function generateRecordId(timestamp: number, runId: string, action: string): str
 }
 
 export function buildDecisionRecord(input: DecisionFactoryInput): GovernanceDecisionRecord {
-  const { runId, decision, execution, executionDurationMs, simulation } = input;
+  const { runId, decision, execution, executionDurationMs, simulation, capabilityGrant } = input;
   const timestamp = Date.now();
   const intent = decision.intent;
 
@@ -54,6 +56,7 @@ export function buildDecisionRecord(input: DecisionFactoryInput): GovernanceDeci
         actual: v.actual,
       })),
     },
+    capabilityGrant: capabilityGrant ?? null,
     simulation,
     evidencePackId: decision.evidencePack?.packId ?? null,
     monitor: {

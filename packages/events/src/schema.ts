@@ -143,7 +143,7 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   },
   [ACTION_ALLOWED]: {
     required: ['actionType', 'target', 'capability'],
-    optional: ['actionId', 'reason', 'policyHash', 'metadata'],
+    optional: ['actionId', 'reason', 'policyHash', 'capabilityGrant', 'metadata'],
   },
   [ACTION_DENIED]: {
     required: ['actionType', 'target', 'reason'],
@@ -155,7 +155,7 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   },
   [ACTION_EXECUTED]: {
     required: ['actionType', 'target', 'result'],
-    optional: ['actionId', 'duration', 'metadata'],
+    optional: ['actionId', 'duration', 'capabilityGrant', 'metadata'],
   },
   [ACTION_FAILED]: {
     required: ['actionType', 'target', 'error'],

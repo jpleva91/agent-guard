@@ -26,6 +26,7 @@ import {
   simpleHash,
   generateSeed,
   createSeededRng,
+  resolveCapabilityGrant,
 } from '@red-codes/core';
 import {
   createEvent,
@@ -291,12 +292,16 @@ export function createKernel(config: KernelConfig = {}): Kernel {
               tierRouter.recordTiming('fast', performance.now() - outerTierStart);
 
               // Construct minimal allow result without full policy evaluation
+              const resolved = resolveCapabilityGrant(manifest, intent.action, intent.target);
               const allowedEvent = createEvent(ACTION_ALLOWED, {
                 actionType: intent.action,
                 target: intent.target,
                 capability: 'fast-path-cache',
                 actionId: undefined,
                 reason: cached.reason,
+                capabilityGrant: resolved
+                  ? { grantIndex: resolved.grantIndex, grant: resolved.grant }
+                  : null,
                 metadata: { runId, tier: 'fast', cacheHitCount: cached.hitCount },
               });
               allEvents.push(allowedEvent);
@@ -340,6 +345,9 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                           result: 'success',
                           actionId: fastAction.id,
                           duration: executionDurationMs,
+                          capabilityGrant: resolved
+                            ? { grantIndex: resolved.grantIndex, grant: resolved.grant }
+                            : null,
                           metadata: { runId, tier: 'fast' },
                         })
                       );
@@ -407,6 +415,9 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                 execution,
                 executionDurationMs,
                 simulation: null,
+                capabilityGrant: resolved
+                  ? { grantIndex: resolved.grantIndex, grant: resolved.grant }
+                  : null,
               });
               sinkDecision(decisionRecord);
 
@@ -842,6 +853,11 @@ export function createKernel(config: KernelConfig = {}): Kernel {
               }
             }
 
+            const rollbackGrant = resolveCapabilityGrant(
+              manifest,
+              decision.intent.action,
+              decision.intent.target
+            );
             const executedEvent =
               execution?.success && !rolledBack
                 ? createEvent(ACTION_EXECUTED, {
@@ -850,6 +866,9 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                     result: 'success',
                     actionId: action?.id,
                     duration: executionDurationMs,
+                    capabilityGrant: rollbackGrant
+                      ? { grantIndex: rollbackGrant.grantIndex, grant: rollbackGrant.grant }
+                      : null,
                     metadata: { runId, intervention: interventionType, snapshotId },
                   })
                 : execution?.success && rolledBack
@@ -890,6 +909,9 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                 execution,
                 executionDurationMs,
                 simulation: null,
+                capabilityGrant: rollbackGrant
+                  ? { grantIndex: rollbackGrant.grantIndex, grant: rollbackGrant.grant }
+                  : null,
               }),
               // Use 'rollback' outcome so audit consumers reading decision records
               // directly from JSONL/SQLite see the correct governance disposition —
@@ -1129,13 +1151,21 @@ export function createKernel(config: KernelConfig = {}): Kernel {
           }
         }
 
-        // Emit allowed event
+        // Emit allowed event (with capability grant provenance from manifest)
+        const resolvedGrant = resolveCapabilityGrant(
+          manifest,
+          decision.intent.action,
+          decision.intent.target
+        );
         const allowedEvent = createEvent(ACTION_ALLOWED, {
           actionType: decision.intent.action,
           target: decision.intent.target,
           capability: decision.decision.matchedPolicy?.id || 'default-allow',
           actionId: action?.id,
           reason: decision.decision.reason,
+          capabilityGrant: resolvedGrant
+            ? { grantIndex: resolvedGrant.grantIndex, grant: resolvedGrant.grant }
+            : null,
           metadata: { runId },
         });
         allEvents.push(allowedEvent);
@@ -1201,6 +1231,9 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                   result: 'success',
                   actionId: action.id,
                   duration: executionDurationMs,
+                  capabilityGrant: resolvedGrant
+                    ? { grantIndex: resolvedGrant.grantIndex, grant: resolvedGrant.grant }
+                    : null,
                   metadata: { runId },
                 });
                 allEvents.push(executedEvent);
@@ -1320,6 +1353,9 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                 execution,
                 executionDurationMs,
                 simulation: simSummary,
+                capabilityGrant: resolvedGrant
+                  ? { grantIndex: resolvedGrant.grantIndex, grant: resolvedGrant.grant }
+                  : null,
               }),
               outcome: 'modify' as const,
             }
@@ -1329,6 +1365,9 @@ export function createKernel(config: KernelConfig = {}): Kernel {
               execution,
               executionDurationMs,
               simulation: simSummary,
+              capabilityGrant: resolvedGrant
+                ? { grantIndex: resolvedGrant.grantIndex, grant: resolvedGrant.grant }
+                : null,
             });
         sinkDecision(decisionRecord);
 

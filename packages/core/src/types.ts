@@ -1119,6 +1119,11 @@ export interface GovernanceDecisionRecord {
       actual: string;
     }>;
   };
+  /** Capability grant that authorized this action (null if no manifest or no matching grant) */
+  capabilityGrant: {
+    grantIndex: number;
+    grant: CapabilityGrant;
+  } | null;
   /** Pre-execution simulation results */
   simulation: SimulationSummary | null;
   /** Evidence pack ID if generated */

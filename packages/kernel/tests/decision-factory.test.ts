@@ -171,4 +171,27 @@ describe('buildDecisionRecord', () => {
     const record2 = buildDecisionRecord(makeInput({ runId: 'run_other' }));
     expect(record1.recordId).not.toBe(record2.recordId);
   });
+
+  it('includes capabilityGrant when provided', () => {
+    const grant = {
+      grantIndex: 2,
+      grant: {
+        permissions: ['read', 'write'] as const,
+        actions: ['file.*'],
+        filePatterns: ['src/**'],
+      },
+    };
+    const record = buildDecisionRecord(makeInput({ capabilityGrant: grant }));
+    expect(record.capabilityGrant).toEqual(grant);
+  });
+
+  it('sets capabilityGrant to null when not provided', () => {
+    const record = buildDecisionRecord(makeInput());
+    expect(record.capabilityGrant).toBeNull();
+  });
+
+  it('sets capabilityGrant to null when explicitly null', () => {
+    const record = buildDecisionRecord(makeInput({ capabilityGrant: null }));
+    expect(record.capabilityGrant).toBeNull();
+  });
 });
