@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { isAbsolute } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { resolveMainRepoRoot, isWorktree, _resetRepoRootCache } from '../src/repo-root.js';
 
 beforeEach(() => {
@@ -39,8 +40,20 @@ describe('isWorktree', () => {
     expect(typeof result).toBe('boolean');
   });
 
-  it('returns false in the main repo checkout', () => {
-    // This test runs in the main repo, so it should return false
-    expect(isWorktree()).toBe(false);
+  it('correctly detects worktree status based on environment', () => {
+    // When tests run inside a linked worktree (e.g., .claude/worktrees/*),
+    // isWorktree() correctly returns true. In the main checkout it returns false.
+    // Determine expected result from git's own worktree detection.
+    let expectedWorktree = false;
+    try {
+      const gitDir = execFileSync('git', ['rev-parse', '--git-dir'], {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }).trim();
+      expectedWorktree = gitDir.includes('worktrees');
+    } catch {
+      // Not in a git repo — default to false
+    }
+    expect(isWorktree()).toBe(expectedWorktree);
   });
 });
