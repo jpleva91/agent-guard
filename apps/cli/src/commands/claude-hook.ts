@@ -401,6 +401,13 @@ async function handlePreToolUse(
     Boolean
   ) as import('@red-codes/core').DecisionSink[];
 
+  // Optional JSONL streaming sink (for real-time tailing via `tail -f`)
+  if (storageConfig.jsonlPath) {
+    const { createJsonlEventSink, createJsonlDecisionSink } = await import('@red-codes/storage');
+    allEventSinks.push(createJsonlEventSink(storageConfig.jsonlPath, runId));
+    allDecisionSinks.push(createJsonlDecisionSink(storageConfig.jsonlPath, runId));
+  }
+
   // Collect disabledInvariants from loaded policies (human-operator override).
   // Multiple policies may each disable different invariants — merge them all.
   const disabledIds = new Set<string>();

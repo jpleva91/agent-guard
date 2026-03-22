@@ -22,7 +22,11 @@ import type { RendererRegistry } from '@red-codes/renderers';
 import { createTuiRenderer } from '@red-codes/renderers';
 import { createEvent, POLICY_COMPOSED, POLICY_TRACE_RECORDED } from '@red-codes/events';
 
-import { createStorageBundle } from '@red-codes/storage';
+import {
+  createStorageBundle,
+  createJsonlEventSink,
+  createJsonlDecisionSink,
+} from '@red-codes/storage';
 import type { StorageBundle } from '@red-codes/storage';
 import type { StorageConfig } from '@red-codes/storage';
 import type { PolicyTracePayload } from '@red-codes/renderers';
@@ -204,6 +208,14 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
         }
       : undefined;
 
+  // Optional JSONL streaming sink (for real-time tailing via `tail -f`)
+  const allEventSinks = [eventSink, cloudSinks.eventSink];
+  const allDecisionSinks = [decisionSink, cloudSinks.decisionSink];
+  if (storeConfig.jsonlPath) {
+    allEventSinks.push(createJsonlEventSink(storeConfig.jsonlPath, runId));
+    allDecisionSinks.push(createJsonlDecisionSink(storeConfig.jsonlPath, runId));
+  }
+
   // Build kernel config
   const kernelConfig: KernelConfig = {
     runId,
@@ -211,8 +223,8 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     policyDefs,
     dryRun: options.dryRun ?? false,
     adapters: options.dryRun ? undefined : createLiveRegistry(),
-    sinks: [eventSink, cloudSinks.eventSink],
-    decisionSinks: [decisionSink, cloudSinks.decisionSink],
+    sinks: allEventSinks,
+    decisionSinks: allDecisionSinks,
     simulators: simulators.all().length > 0 ? simulators : undefined,
     manifest: effectiveManifest,
   };
