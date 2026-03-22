@@ -15,6 +15,8 @@ import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
 import type { LoadedPolicy } from '@red-codes/policy';
 import { resolveMainRepoRoot } from '@red-codes/core';
 import type { CloudSinkBundle } from '@red-codes/telemetry';
+import { detectDriver, detectModel, VALID_ROLES } from '../identity.js';
+import type { Driver } from '../identity.js';
 
 // --- Session state: persist formatPass/testsPass across hook invocations ----
 // Each Claude Code session is stateless per hook call. We bridge this by writing
@@ -134,6 +136,36 @@ function writeIdentityFile(name: string): void {
   }
 }
 
+/**
+ * Build the identity wizard prompt shown when .agentguard-identity is missing.
+ * Auto-detects driver/model and presents a structured prompt so the agent can
+ * ask the user and write the identity file.
+ */
+function buildIdentityWizardPrompt(driver: Driver, model: string, suggested: string): string {
+  const roles = VALID_ROLES.join(', ');
+  return [
+    'AgentGuard Identity Setup',
+    '═════════════════════════',
+    '',
+    'No agent identity found. Ask the user for their identity, then write it to .agentguard-identity in the project root.',
+    '',
+    'Auto-detected:',
+    `  Driver: ${driver}`,
+    `  Model:  ${model}`,
+    '',
+    `Suggested default: ${suggested}`,
+    '',
+    'Format: <driver>:<user-or-model>:<role>',
+    `  Roles: ${roles}`,
+    '  Examples: claude-code:opus:developer, human:jared:reviewer, ci:github-actions:ops',
+    '',
+    'Ask the user:',
+    `  "AgentGuard needs an identity for this session. I detected ${driver}:${model}. What identity should I use? (default: ${suggested})"`,
+    '',
+    'Then write their answer (or the default) to .agentguard-identity in the project root.',
+  ].join('\n');
+}
+
 /** Resolve the CLI command — use local bin.js if in the agentguard dev repo, else bare `agentguard`. */
 function resolveCliCommand(): string {
   const mainRoot = resolveMainRepoRoot();
@@ -180,34 +212,38 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
       hookType === 'pre' || data.hook === 'PreToolUse' || (!hookType && !data.tool_output);
 
     if (isPreToolUse) {
-      // Agent identity hard gate — block all actions until identity is set.
-      // If resolved from env var, persist to identity file for subsequent hook calls.
-      // Exception: allow Write/Bash calls targeting .agentguard-identity so the agent
-      // can prompt the user for their name and write it — breaking the chicken-and-egg lockout.
+      // Agent identity — wizard prompt on first miss.
+      // Fresh worktrees/clones won't have .agentguard-identity (gitignored).
+      // We auto-detect what we can and prompt the agent to confirm via a wizard,
+      // while allowing writes to the identity file so the agent can set it.
       const agentIdentity = resolveAgentIdentity();
       if (!agentIdentity) {
+        // Allow writes targeting .agentguard-identity — the agent needs to set it.
         const toolInput = (data.tool_input || {}) as Record<string, unknown>;
         const isIdentityWrite =
-          // Write tool targeting the identity file
           ((data.tool_name === 'Write' || data.tool_name === 'Edit') &&
             typeof toolInput.file_path === 'string' &&
             toolInput.file_path.replace(/\\/g, '/').endsWith('.agentguard-identity')) ||
-          // Bash writing to the identity file
           (data.tool_name === 'Bash' &&
             typeof toolInput.command === 'string' &&
             toolInput.command.includes('.agentguard-identity'));
 
         if (isIdentityWrite) {
-          // Allow through — agent is setting the identity file. Skip kernel evaluation.
           process.exit(0);
           return;
         }
 
+        // Auto-detect driver and model from environment
+        const detected: { driver: Driver; model: string } = {
+          driver: detectDriver(),
+          model: detectModel(),
+        };
+        const suggestedDefault = `${detected.driver}:${detected.model}:developer`;
+
         process.stdout.write(
           JSON.stringify({
             decision: 'block',
-            reason:
-              'Agent identity not set. Ask the user for their agent name (e.g. "claude-code", their name, or a team identifier), then write it to the file .agentguard-identity in the project root. This is required before any other actions can proceed.',
+            reason: buildIdentityWizardPrompt(detected.driver, detected.model, suggestedDefault),
           })
         );
         process.exit(2);
