@@ -322,11 +322,40 @@ agentguard evidence-pr                    # Attach evidence summary to PR
 agentguard audit-verify                   # Verify tamper-resistant audit chain
 agentguard analytics                      # Violation pattern analysis
 
+# Code Review (requires: pip install code-review-graph)
+agentguard review status                  # Check if code-review-graph is installed
+agentguard review build                   # Build/update the code knowledge graph
+agentguard review delta                   # Review changed files using structural analysis
+agentguard review delta --json            # Output delta analysis as JSON
+agentguard review pr --pr 42              # Review a pull request with graph context
+
 # Policy
 agentguard policy validate <file>         # Validate a policy file
 agentguard policy-verify <file>           # Verify policy structure and rules
 agentguard init --template <name>         # Scaffold from template (strict/permissive/ci-only/development)
 ```
+
+## Code Review Integration
+
+AgentGuard optionally integrates with [code-review-graph](https://github.com/tirth8205/code-review-graph), a Python tool that builds a structural knowledge graph of your codebase for smarter code reviews.
+
+**Setup:**
+
+```bash
+pip install code-review-graph   # Install the Python tool
+agentguard review status        # Verify it's detected
+agentguard review build         # Build the code knowledge graph for your repo
+```
+
+**Usage:**
+
+```bash
+agentguard review delta         # Analyze uncommitted changes — shows affected functions, blast radius
+agentguard review pr --pr 42    # Analyze a PR with graph-informed minimal review context
+agentguard review delta --json  # Machine-readable output
+```
+
+The `review` command emits `CodeReviewed` events into AgentGuard's event stream, so review data automatically appears in `agentguard evidence-pr` reports. The Python dependency is **optional** — all other AgentGuard features work without it. If `code-review-graph` is not installed, the command prints install instructions and exits cleanly.
 
 ## Agent SDK
 
