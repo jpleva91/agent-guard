@@ -7,6 +7,16 @@ import { homedir } from 'node:os';
 export type BackendType = 'local' | 'remote';
 export type LocalStoreType = 'sqlite';
 
+export interface PersonaConfig {
+  driver: string;
+  model: string;
+  role: string;
+  project: string;
+  trustTier?: string;
+  autonomy?: string;
+  compositeId: string;
+}
+
 export interface McpConfig {
   backend: BackendType;
   localStore: LocalStoreType;
@@ -17,6 +27,7 @@ export interface McpConfig {
   policyPath?: string;
   cloudEndpoint?: string;
   cloudApiKey?: string;
+  persona?: PersonaConfig;
 }
 
 /** Read ~/.agentguard/config.json, returning an empty object on any failure. */
@@ -40,6 +51,19 @@ function readCloudConfigFile(): { endpoint?: string; apiKey?: string } {
 export function resolveConfig(): McpConfig {
   const fileCloud = readCloudConfigFile();
 
+  const personaDriver = process.env.AGENTGUARD_PERSONA_DRIVER;
+  const persona: PersonaConfig | undefined = personaDriver
+    ? {
+        driver: personaDriver,
+        model: process.env.AGENTGUARD_PERSONA_MODEL ?? 'unknown',
+        role: process.env.AGENTGUARD_PERSONA_ROLE ?? 'developer',
+        project: process.env.AGENTGUARD_PERSONA_PROJECT ?? 'unknown',
+        trustTier: process.env.AGENTGUARD_PERSONA_TRUST_TIER,
+        autonomy: process.env.AGENTGUARD_PERSONA_AUTONOMY,
+        compositeId: `${personaDriver}:${process.env.AGENTGUARD_PERSONA_MODEL ?? 'unknown'}:${process.env.AGENTGUARD_PERSONA_ROLE ?? 'developer'}`,
+      }
+    : undefined;
+
   return {
     backend: (process.env.AGENTGUARD_MCP_BACKEND as BackendType) || 'local',
     localStore: (process.env.AGENTGUARD_STORE as LocalStoreType) || 'sqlite',
@@ -50,5 +74,6 @@ export function resolveConfig(): McpConfig {
     policyPath: process.env.AGENTGUARD_POLICY,
     cloudEndpoint: process.env.AGENTGUARD_CLOUD_ENDPOINT || fileCloud.endpoint,
     cloudApiKey: process.env.AGENTGUARD_CLOUD_API_KEY || fileCloud.apiKey,
+    persona,
   };
 }
