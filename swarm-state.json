@@ -1,48 +1,48 @@
 {
   "schemaVersion": "1.0",
-  "updatedAt": "2026-03-22T11:45:00Z",
+  "updatedAt": "2026-03-22T17:30:00Z",
   "updatedBy": "risk-escalation-agent",
   "mode": "conservative",
   "recommendedMode": "conservative",
-  "modeReason": "ELEVATED risk (score 30/100). Two new risk signals detected since 08:30Z assessment: (1) Systemic CI regression (#723) — identity gate breaks cli-claude-hook tests on every PR until fixed; (2) New conflicted PR #731 (1076 additions, CONFLICTING, no CI). Security gaps #638/#637 persist without PRs. Prior recommendation to switch to 'normal' reversed — maintain conservative mode until CI regression #723 is resolved.",
+  "modeReason": "ELEVATED risk (score 35/100, +5 since 11:45Z). PR queue deteriorated: 3 open PRs, 2 CONFLICTING (#731 persisting ~7hr, #739 fresh), new PR #740 has lint failure. Recovery-controller set mode→normal at 12:00Z but risk signal warrants maintaining conservative. Conditions to return to normal: (1) CI regression #723 resolved, (2) conflict rate reduced to 0, (3) PR #740 lint failure fixed, (4) score ≤20.",
   "riskAssessment": {
-    "compositeScore": 30,
+    "compositeScore": 35,
     "escalationLevel": "ELEVATED",
-    "assessedAt": "2026-03-22T11:45:00Z",
+    "assessedAt": "2026-03-22T17:30:00Z",
     "dimensions": {
       "prBlastRadius": {
-        "score": 8,
+        "score": 12,
         "max": 25,
-        "openPRs": 1,
-        "note": "1 open PR (#731): feat(issue-328) team observability analytics — 1076 additions, 23 deletions, 6 files. CONFLICTING (merge conflict). No CI checks run yet. Large feature PR (analytics CLI + SQL aggregation queries). PR #724 (refspec fix) appears merged — no longer in open PRs. Labeled #731 conflict:needs-human."
+        "openPRs": 3,
+        "note": "3 open PRs: #731 (CONFLICTING, 1001 additions/390 deletions, 8 files — analytics + storage aggregation, HIGH blast), #740 (MERGEABLE but LINT FAIL, 309 additions/4 deletions, 8 files — new JSONL sink feature, MEDIUM blast), #739 (CONFLICTING, 105 additions/70 deletions, swarm-state.json only, TRIVIAL blast). 2/3 PRs conflicting, 1 with CI failure. Blast radius increased from 8→12 due to 3 PRs (was 1) with 2 conflicting and 1 CI-failing."
       },
       "testFailureRate": {
-        "score": 10,
+        "score": 8,
         "max": 25,
-        "ciRunsAnalyzed": 20,
+        "ciRunsAnalyzed": 25,
         "failures": 1,
-        "failureRate": "5% (raw) — but SYSTEMIC CI REGRESSION detected",
-        "note": "CRITICAL NEW SIGNAL: Issue #723 (priority:high, 2026-03-22T08:18Z) reveals that the identity gate system (#706-#715, merged today) breaks cli-claude-hook tests in CI on EVERY PR. Root causes: (1) Tests expect process.exit(0) for allowed actions but get exit(2) because no .agentguard-identity fixture exists in CI; (2) Identity driver detection returns 'ci' in CI environment but tests expect 'copilot'/'claude-code'; (3) Rust test count mismatch (same family as #659). These failures will recur on ALL future PRs until fixed. Current raw CI: 1 failure on abandoned branch (paperclip), rest all-green. But systemic regression means all active PRs will fail."
+        "failureRate": "33% active PR lint failure (PR #740)",
+        "note": "IMPROVEMENT: PR #731 CI now GREEN (all 5 checks pass: lint, test-and-build, rust-kernel, analyze, CodeQL). NEW FAILURE: PR #740 has LINT FAILURE (1/5 checks failing). Systemic regression #723 (identity gate breaks cli-claude-hook tests) still open — will affect any PR touching test fixtures. Main branch CI: green (Deploy Pages, 23397926783, latest). Score reduced 10→8 because #731 going green partially offsets the new #740 lint fail and persistent #723 systemic risk."
       },
       "governanceDenialRate": {
         "score": 7,
         "max": 25,
-        "note": "Persistent: #638 (HIGH security: policy evaluator fail-open, no PR), #637 (HIGH security: AAB regex bypass, no PR), #646 (HIGH: CI/CD invariant too broad), #648 (HIGH: read-only operations blocked), #650 (HIGH: pattern-matches command body text), #643 (HIGH: missing test coverage), #659 (CRITICAL technical debt: Rust count assertion). No new critical security regressions since 08:30Z. Note: #627 resolved via merged PR #724."
+        "note": "Persistent HIGH security gaps without PRs: #638 (fail-open policy evaluator), #637 (AAB regex bypass), #618 (credential write bypass), #646 (CI/CD invariant too broad), #648 (read-only operations blocked), #650 (pattern-matches command body text), #643 (missing test coverage), #723 (identity gate CI regression). No new critical security regressions since prior assessment. Issue #627 remains resolved (PR #724 merged at ~10:00Z)."
       },
       "mergeConflictRate": {
-        "score": 5,
+        "score": 8,
         "max": 25,
-        "conflictedPRs": 1,
-        "openPRs": 1,
-        "note": "1/1 open PRs is CONFLICTING (100%). PR #731 created at 10:29Z, immediately conflicting. Conflict dimension regressed from 0 (prior) to 1 conflicted PR. Small sample size but 100% conflict rate is signal."
+        "conflictedPRs": 2,
+        "openPRs": 3,
+        "note": "2/3 open PRs CONFLICTING (67%). PR #731 CONFLICTING since 10:29Z (~7 hours ago) — large feature PR needs rebase, labeled conflict:needs-human. PR #739 CONFLICTING since 16:11Z (~1.5 hours ago) — swarm-state.json only, trivially resolvable. Conflict rate increased from 1→2 PRs. Neither is technically 'stuck' (<24hr) but #731 is aging."
       }
     },
     "deltaFromPrior": {
-      "priorScore": 8,
-      "currentScore": 30,
-      "delta": 22,
+      "priorScore": 30,
+      "currentScore": 35,
+      "delta": 5,
       "direction": "deteriorating",
-      "cause": "Two new risk signals: (1) Systemic CI regression #723 — identity gate breaks all future PR CI runs until test fixtures are updated (+9 test dimension); (2) New CONFLICTING PR #731 with 1076 additions (+8 PR blast radius, +5 conflict dimension). Security gaps #638/#637 persist. Prior recommendation to switch to normal mode reversed."
+      "cause": "Slow deterioration since 11:45Z: (1) New PR #740 added with LINT FAILURE (+4 blast, +2 test rate); (2) New CONFLICTING PR #739 added (+1 conflict dimension); (3) Partly offset by PR #731 CI going GREEN (-2 test rate). Systemic CI regression #723 persists. Recovery-controller changed mode to 'normal' at 12:00Z but risk conditions do not support normal operation."
     }
   },
   "phaseTracking": {
@@ -174,46 +174,79 @@
   },
   "healthChecks": {
     "prQueue": {
-      "status": "improved",
-      "openPRs": 1,
-      "conflictedPRs": 0,
+      "status": "warning",
+      "openPRs": 3,
+      "conflictedPRs": 2,
       "stuckPRs": 0,
-      "ciFailingPRs": 0,
-      "note": "Clean PR queue: 1 open PR (#724), MERGEABLE, all CI green. PR #670 (conflicted) and PR #681 (capability grants) both resolved since prior assessment.",
+      "ciFailingPRs": 1,
+      "note": "3 open PRs, 2 CONFLICTING, 1 lint-failing. PR #724 merged (~10:00Z). New PRs: #740 (JSONL sink, lint fail, created 16:22Z), #739 (swarm-state, conflicting, created 16:11Z). PR #731 still conflicting since 10:29Z (~7 hours, labeled conflict:needs-human).",
       "details": [
         {
-          "number": 724,
-          "title": "fix(aab): handle refspec syntax and git flags in branch extraction (#627)",
-          "branch": "fix/issue-627-refspec-branch-extraction",
+          "number": 740,
+          "title": "feat(storage): optional JSONL streaming sink (#203)",
+          "branch": "agent/implementation/issue-203",
           "mergeable": true,
-          "ciStatus": "all-green",
-          "ciChecks": ["bench", "lint", "test-and-build", "rust-kernel", "CodeQL", "analyze"],
-          "lastCIRun": "2026-03-22T08:24:07Z",
+          "mergeableState": "MERGEABLE",
+          "ciStatus": "lint-fail",
+          "ciChecks": { "lint": "FAILURE", "test-and-build": "SUCCESS", "rust-kernel": "SUCCESS", "analyze": "SUCCESS", "CodeQL": "SUCCESS" },
+          "createdAt": "2026-03-22T16:22:36Z",
           "stuck": false,
-          "blastRadius": "small",
-          "additions": 208,
-          "deletions": 2,
-          "changedFiles": 2,
-          "closesIssue": 627,
-          "recommendation": "READY TO MERGE — all checks green. Security fix for HIGH issue #627. Small blast radius."
+          "blastRadius": "medium",
+          "additions": 309,
+          "deletions": 4,
+          "changedFiles": 8,
+          "recommendation": "FIX LINT BEFORE MERGE — MERGEABLE but lint check failing. Medium blast radius (new JSONL sink feature, 8 files)."
+        },
+        {
+          "number": 739,
+          "title": "chore(swarm): recovery controller run 2026-03-22 — mode conservative→normal (score 13/100)",
+          "branch": "claude/festive-brahmagupta",
+          "mergeable": false,
+          "mergeableState": "CONFLICTING",
+          "ciStatus": "all-green",
+          "createdAt": "2026-03-22T16:11:59Z",
+          "stuck": false,
+          "blastRadius": "trivial",
+          "additions": 105,
+          "deletions": 70,
+          "changedFiles": 1,
+          "recommendation": "NEEDS REBASE — swarm-state.json conflict (multiple agents updating this file). Trivial to resolve. May be superseded by this risk-escalation-agent assessment."
+        },
+        {
+          "number": 731,
+          "title": "feat(issue-328): team observability analytics",
+          "branch": "agent/implementation/issue-328",
+          "mergeable": false,
+          "mergeableState": "CONFLICTING",
+          "ciStatus": "all-green",
+          "ciChecks": ["lint", "test-and-build", "rust-kernel", "analyze", "CodeQL"],
+          "createdAt": "2026-03-22T10:29:55Z",
+          "stuck": false,
+          "blastRadius": "high",
+          "additions": 1001,
+          "deletions": 390,
+          "changedFiles": 8,
+          "labels": ["conflict:needs-human"],
+          "recommendation": "NEEDS REBASE — conflicting for ~7 hours. Large feature PR (analytics + storage aggregation). CI is GREEN once rebased. Assign to resolve-merge-conflicts agent."
         }
       ]
     },
     "ciOnMain": {
       "status": "healthy",
-      "note": "Main branch CI green. 10 PRs merged today: #721 (docs), #719 (test fix), #715 (identity wizard), #714 (cloud sinks), #713 (identity gate escape hatch), #712, #709, #708 (site redesign), #707 (session identity), #706 (identity hard gate). Very active and healthy merge pace."
+      "note": "Main branch CI green. Most recent: Deploy Pages (23397926783, latest — all passing). Active CI runs on PRs only. No main branch failures detected. 11 PRs merged today through 10:00Z (including PR #724 at ~10:00Z resolving HIGH issue #627)."
     },
     "agentLiveness": {
       "status": "active",
-      "note": "High swarm activity today — 10 PRs merged. Identity system fully landed. Risk-escalation-agent running this assessment (08:30Z)."
+      "note": "Strong agent activity today: coder-agent (PR #740, 16:22Z), recovery-controller (PR #739, 16:11Z), product-agent (issue #732, 11:25Z), coder-agent (PR #731, 10:29Z), planning-agent (issue #730, 10:11Z), backlog-steward (issues #727-#729, 09:08Z). Risk-escalation-agent running this assessment (17:30Z)."
     },
     "mergeConflicts": {
-      "status": "healthy",
-      "note": "No conflicted PRs. PR #670 closed (was the only conflicted PR). PR #724 is MERGEABLE. Conflict dimension cleared."
+      "status": "warning",
+      "conflictedPRs": 2,
+      "note": "2 conflicted PRs: #731 (feat: team observability analytics, conflicting ~7hr, large blast, labeled conflict:needs-human) and #739 (chore: recovery controller swarm-state update, conflicting ~1.5hr, trivial blast). Both need rebase. Neither is stuck (<24hr). #739 may be superseded by this risk-escalation assessment."
     },
     "swarmStateFreshness": {
       "status": "healthy",
-      "note": "Prior update: 2026-03-21T11:35Z (recovery-controller-agent). This update: 2026-03-22T08:30Z (~21hr gap). Risk-escalation-agent run."
+      "note": "Prior update: 2026-03-22T11:45Z (risk-escalation-agent). This update: 2026-03-22T17:30Z (~5.75hr gap). Risk-escalation-agent run."
     },
     "roadmapProgress": {
       "status": "active",
@@ -226,11 +259,17 @@
           "severity": "priority:critical",
           "hasAssignedPR": false,
           "note": "Technical debt — test count assertion. Not a security regression."
+        },
+        {
+          "number": 723,
+          "title": "fix(tests): identity gate causes cli-claude-hook + identity tests to fail in CI",
+          "severity": "priority:high",
+          "hasAssignedPR": false,
+          "note": "Systemic CI regression — blocks all future PRs touching test files until fixture is added. Highest priority fix needed."
         }
       ],
       "resolvedSinceLastAssessment": [
-        { "number": 647, "title": "Protected branch bypass regression", "resolvedAt": "2026-03-22" },
-        { "number": 636, "title": "CRITICAL: File adapter path traversal protection", "resolvedAt": "2026-03-22" }
+        { "number": 627, "title": "refspec syntax bypasses protected branch", "resolvedAt": "2026-03-22", "resolvedBy": "PR #724 merged ~10:00Z" }
       ]
     }
   },
@@ -251,6 +290,12 @@
       "type": "swarm-state-update",
       "timestamp": "2026-03-22T11:45:00Z",
       "description": "Updated swarm-state.json: Risk score 8→30, escalation NORMAL→ELEVATED, mode recommendation normal→conservative. New signals: systemic CI regression #723 (identity gate breaks all future PR CI), CONFLICTING PR #731 (1076 additions, labeled conflict:needs-human). PR #724 confirmed merged.",
+      "agent": "risk-escalation-agent"
+    },
+    {
+      "type": "swarm-state-update",
+      "timestamp": "2026-03-22T17:30:00Z",
+      "description": "Updated swarm-state.json: Risk score 30→35 (+5, still ELEVATED). 3 open PRs now (was 1): #740 (JSONL sink, lint fail, MERGEABLE), #739 (swarm-state, CONFLICTING, trivial), #731 (team analytics, CONFLICTING, 7hr aging). PR #731 CI now GREEN. Mode recommendation: conservative (maintained — risk conditions do not support normal). Recovery-controller changed mode to normal at 12:00Z but swarm risk warrants conservative until #723 and conflicts resolved.",
       "agent": "risk-escalation-agent"
     }
   ],
@@ -278,30 +323,57 @@
       "description": "Rust test count assertion outdated after #657 — CI will fail for rust-kernel if any agent touches that assertion.",
       "recommendation": "Fix the count assertion in the rust test file.",
       "hasAssignedPR": false
+    },
+    {
+      "type": "merge-conflict",
+      "severity": "medium",
+      "issueNumbers": [731, 739],
+      "description": "2 CONFLICTING PRs: #731 (team observability analytics, 1001 additions, conflicting ~7 hours, labeled conflict:needs-human) and #739 (recovery controller swarm-state update, trivially resolvable).",
+      "recommendation": "Assign #731 to resolve-merge-conflicts agent. #739 may self-resolve when this assessment PR merges.",
+      "hasAssignedPR": false,
+      "detectedAt": "2026-03-22T17:30:00Z"
+    },
+    {
+      "type": "ci-failure",
+      "severity": "medium",
+      "issueNumbers": [],
+      "description": "PR #740 (feat: optional JSONL streaming sink) has LINT FAILURE. MERGEABLE but blocked by lint check.",
+      "recommendation": "Assign coder-agent to fix lint errors on PR #740. Likely formatting issue (test-and-build passed).",
+      "hasAssignedPR": true,
+      "assignedPR": 740,
+      "detectedAt": "2026-03-22T17:30:00Z"
+    },
+    {
+      "type": "technical-debt",
+      "severity": "high",
+      "issueNumbers": [723],
+      "description": "Identity gate causes cli-claude-hook and identity tests to fail in CI. Will affect every future PR until test fixture added.",
+      "recommendation": "Assign to triage-failing-ci-agent or coder-agent. Add .agentguard-identity test fixture in beforeEach.",
+      "hasAssignedPR": false
     }
   ],
   "systemSummary": {
     "overallHealth": "elevated-risk",
     "escalationLevel": "ELEVATED",
-    "riskScore": 30,
+    "riskScore": 35,
     "riskTrend": "deteriorating",
     "mainBranchCI": "green",
-    "openPRsCount": 1,
-    "conflictedPRsCount": 1,
+    "openPRsCount": 3,
+    "conflictedPRsCount": 2,
     "stuckPRsCount": 0,
-    "ciFailingPRsCount": 0,
-    "criticalIssuesWithoutPR": 1,
+    "ciFailingPRsCount": 1,
+    "criticalIssuesWithoutPR": 0,
     "criticalIssuesWithPR": 0,
     "highIssuesWithoutPR": 6,
-    "highIssuesWithPR": 0,
+    "highIssuesWithPR": 1,
     "regressionDetected": true,
-    "regressionDetails": "Identity gate merged today (#706-#715) breaks cli-claude-hook + identity tests in CI on every future PR. Issue #723 tracks fix.",
+    "regressionDetails": "Identity gate (#723) still unresolved — systemic CI test failure. PR #740 lint failure blocks JSONL sink merge.",
     "completedPhaseCount": 7,
     "activePhaseCount": 3,
-    "progressSinceLastRun": "Risk score 8→30 (+22, deteriorating). PR #724 merged (refspec fix, closes #627). New CONFLICTING PR #731 (1076 additions, team analytics, labeled conflict:needs-human). Systemic CI regression discovered (#723 — identity gate breaks cli-claude-hook+identity tests on all future PRs). Security gaps #638/#637 persist without PRs. Prior recommendation to switch to 'normal' mode REVERSED.",
+    "progressSinceLastRun": "Risk score 30→35 (+5, continued ELEVATED). 2 new PRs since 11:45Z: #740 (JSONL sink, MERGEABLE but lint fail, 16:22Z) and #739 (recovery controller swarm-state, CONFLICTING, 16:11Z). PR #731 CI now GREEN (improvement). Recovery-controller set mode→normal at 12:00Z but risk conditions warrant conservative. Security gaps #638/#637 persist without PRs.",
     "modeChangeConditions": {
-      "toNormal": "Requires: CI regression #723 resolved + risk score ≤20. Currently BLOCKED by systemic test failure.",
-      "toElevated": "CURRENT STATE — systemic CI regression + conflicted PR with large blast radius.",
+      "toNormal": "Requires: CI regression #723 resolved + conflict rate 0 + PR #740 lint fixed + score ≤20.",
+      "toConservative": "CURRENT RECOMMENDED STATE — 2 conflicted PRs, 1 CI-failing PR, systemic CI regression (#723) open.",
       "toCritical": "New security regression on main, main CI failure rate >30%, or 2+ unresolved critical issues without PRs."
     }
   }
