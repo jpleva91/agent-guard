@@ -14,6 +14,9 @@ export interface StorageConfig {
   readonly dbPath?: string;
   /** Base directory for storage data. Default: .agentguard (repo-local) */
   readonly baseDir?: string;
+  /** Directory for optional JSONL streaming sink. When set, events and decisions
+   *  are also written as JSONL files for real-time tailing (`tail -f`). */
+  readonly jsonlPath?: string;
 }
 
 /** Default paths */

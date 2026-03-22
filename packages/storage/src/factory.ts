@@ -115,5 +115,10 @@ export function resolveStorageConfig(args: string[]): StorageConfig {
   const dbPathArg = dbPathIdx !== -1 ? args[dbPathIdx + 1] : undefined;
   const dbPath = dbPathArg ?? process.env.AGENTGUARD_DB_PATH ?? undefined;
 
-  return { backend: 'sqlite', baseDir, dbPath };
+  // --jsonl flag or AGENTGUARD_JSONL_PATH env var for optional JSONL streaming sink
+  const jsonlIdx = args.findIndex((a) => a === '--jsonl');
+  const jsonlArg = jsonlIdx !== -1 ? args[jsonlIdx + 1] : undefined;
+  const jsonlPath = jsonlArg ?? process.env.AGENTGUARD_JSONL_PATH ?? undefined;
+
+  return { backend: 'sqlite', baseDir, dbPath, jsonlPath };
 }

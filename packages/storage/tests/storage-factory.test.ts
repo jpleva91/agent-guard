@@ -69,6 +69,30 @@ describe('resolveStorageConfig', () => {
     const config = resolveStorageConfig(['--db-path', '/tmp/flag.db']);
     expect(config.dbPath).toBe('/tmp/flag.db');
   });
+
+  it('parses --jsonl flag', () => {
+    const config = resolveStorageConfig(['--jsonl', '/tmp/jsonl-out']);
+    expect(config.jsonlPath).toBe('/tmp/jsonl-out');
+  });
+
+  it('reads AGENTGUARD_JSONL_PATH env var', () => {
+    process.env.AGENTGUARD_JSONL_PATH = '/tmp/env-jsonl';
+    const config = resolveStorageConfig([]);
+    expect(config.jsonlPath).toBe('/tmp/env-jsonl');
+    delete process.env.AGENTGUARD_JSONL_PATH;
+  });
+
+  it('--jsonl flag takes precedence over AGENTGUARD_JSONL_PATH env var', () => {
+    process.env.AGENTGUARD_JSONL_PATH = '/tmp/env-jsonl';
+    const config = resolveStorageConfig(['--jsonl', '/tmp/flag-jsonl']);
+    expect(config.jsonlPath).toBe('/tmp/flag-jsonl');
+    delete process.env.AGENTGUARD_JSONL_PATH;
+  });
+
+  it('jsonlPath is undefined when not specified', () => {
+    const config = resolveStorageConfig([]);
+    expect(config.jsonlPath).toBeUndefined();
+  });
 });
 
 describe('resolveSqlitePath', () => {
