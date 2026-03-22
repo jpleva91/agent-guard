@@ -102,14 +102,53 @@ function getDestructiveDetails(command: string): DestructivePattern | null {
   };
 }
 
+/**
+ * Extracts the target branch name from a refspec or plain branch token.
+ * Handles: "main", "HEAD:main", "HEAD:refs/heads/main", "+main", ":main"
+ */
+function branchFromRefspec(ref: string): string {
+  // Strip leading '+' (force-push prefix for individual refs)
+  const cleaned = ref.startsWith('+') ? ref.slice(1) : ref;
+  // Refspec syntax: src:dst — extract the destination
+  if (cleaned.includes(':')) {
+    const dst = cleaned.split(':').pop()!;
+    return dst.replace(/^refs\/heads\//, '');
+  }
+  return cleaned;
+}
+
+// Flags that consume the next token as their value argument
+const PUSH_VALUE_FLAGS = new Set(['-o', '--push-option', '--receive-pack', '--exec', '--repo']);
+
 function extractBranch(command: string | undefined): string | null {
   if (!command) return null;
   // Split on shell chain operators so we can extract branches from commands
   // wrapped in chains like `cd /repo && git push origin main`
   const segments = command.split(/\s*(?:&&|\|\||;)\s*/);
   for (const segment of segments) {
-    const match = segment.match(/\bgit\s+push\s+\S+\s+(\S+)/);
-    if (match) return match[1]!;
+    const pushMatch = segment.match(/\bgit\s+push\b/);
+    if (!pushMatch) continue;
+
+    // Tokenize everything after 'git push', skipping flags to find positional args
+    const afterPush = segment.slice(pushMatch.index! + pushMatch[0].length).trim();
+    const tokens = afterPush.split(/\s+/).filter(Boolean);
+    const positionalArgs: string[] = [];
+
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i]!;
+      if (t.startsWith('-')) {
+        // --flag=value style doesn't consume the next token
+        if (!t.includes('=') && PUSH_VALUE_FLAGS.has(t) && i + 1 < tokens.length) {
+          i++; // skip the value token
+        }
+        continue;
+      }
+      positionalArgs.push(t);
+    }
+
+    // positionalArgs: [remote, branch/refspec, ...]
+    if (positionalArgs.length < 2) continue;
+    return branchFromRefspec(positionalArgs[1]!);
   }
   return null;
 }

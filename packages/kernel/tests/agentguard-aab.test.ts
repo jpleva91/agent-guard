@@ -745,6 +745,97 @@ describe('agentguard/core/aab', () => {
       expect(intent.branch).toBe('main');
     });
 
+    // --- Issue #627: refspec and flag handling ---
+    it('extracts branch when -f flag precedes remote', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'git push -f origin main',
+      });
+      // -f is classified as git.force-push by the git action scanner
+      expect(intent.action).toBe('git.force-push');
+      expect(intent.branch).toBe('main');
+    });
+
+    it('extracts branch when --force flag precedes remote', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'git push --force origin main',
+      });
+      expect(intent.branch).toBe('main');
+    });
+
+    it('extracts branch when -u flag precedes remote', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'git push -u origin main',
+      });
+      expect(intent.branch).toBe('main');
+    });
+
+    it('extracts branch when --force-with-lease flag precedes remote', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'git push --force-with-lease origin main',
+      });
+      expect(intent.branch).toBe('main');
+    });
+
+    it('extracts branch from refspec HEAD:branch', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'git push origin HEAD:main',
+      });
+      expect(intent.branch).toBe('main');
+    });
+
+    it('extracts branch from refspec HEAD:refs/heads/branch', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'git push origin HEAD:refs/heads/main',
+      });
+      expect(intent.branch).toBe('main');
+    });
+
+    it('extracts branch from force-push refspec +HEAD:main', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'git push origin +HEAD:main',
+      });
+      expect(intent.branch).toBe('main');
+    });
+
+    it('extracts branch from delete refspec :main', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'git push origin :main',
+      });
+      expect(intent.branch).toBe('main');
+    });
+
+    it('extracts branch with -o flag that consumes next token', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'git push -o ci.skip origin main',
+      });
+      expect(intent.branch).toBe('main');
+    });
+
+    it('extracts branch with multiple flags and refspec in chain', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'cd /repo && git push --force -u origin HEAD:refs/heads/production',
+      });
+      expect(intent.branch).toBe('production');
+    });
+
+    it('returns undefined branch when only remote is specified (no branch)', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'git push origin',
+      });
+      expect(intent.branch).toBeUndefined();
+    });
+
     it('marks destructive shell commands', () => {
       const intent = normalizeIntent({ tool: 'Bash', command: 'rm -rf /' });
       expect(intent.destructive).toBe(true);
@@ -846,6 +937,82 @@ describe('agentguard/core/aab', () => {
       // Read action with 1 file: score = 1 * 0.1 = 0.1, should not exceed limit 100
       expect(result.blastRadius).toBeDefined();
       expect(result.blastRadius!.exceeded).toBe(false);
+    });
+
+    // --- Issue #627: deny rule fires for refspec push to protected branch ---
+    it('denies refspec push to protected branch via policy', () => {
+      const policies = [
+        {
+          id: 'protected-branches',
+          name: 'Protected Branches',
+          rules: [
+            {
+              action: 'git.push',
+              effect: 'deny' as const,
+              conditions: { branches: ['main', 'master'] },
+              reason: 'Direct push to protected branch',
+            },
+            { action: '*', effect: 'allow' as const },
+          ],
+          severity: 5,
+        },
+      ];
+      const result = authorize(
+        { tool: 'Bash', command: 'git push origin HEAD:refs/heads/main' },
+        policies
+      );
+      expect(result.result.allowed).toBe(false);
+      expect(result.result.reason).toContain('protected branch');
+    });
+
+    it('denies flagged push to protected branch via policy', () => {
+      const policies = [
+        {
+          id: 'protected-branches',
+          name: 'Protected Branches',
+          rules: [
+            {
+              // git push --force is classified as git.force-push, so both must be denied
+              action: ['git.push', 'git.force-push'],
+              effect: 'deny' as const,
+              conditions: { branches: ['main', 'master'] },
+              reason: 'Direct push to protected branch',
+            },
+            { action: '*', effect: 'allow' as const },
+          ],
+          severity: 5,
+        },
+      ];
+      const result = authorize(
+        { tool: 'Bash', command: 'git push --force origin main' },
+        policies
+      );
+      expect(result.result.allowed).toBe(false);
+      expect(result.result.reason).toContain('protected branch');
+    });
+
+    it('allows flagged push to non-protected branch via policy', () => {
+      const policies = [
+        {
+          id: 'protected-branches',
+          name: 'Protected Branches',
+          rules: [
+            {
+              action: 'git.push',
+              effect: 'deny' as const,
+              conditions: { branches: ['main', 'master'] },
+              reason: 'Direct push to protected branch',
+            },
+            { action: '*', effect: 'allow' as const },
+          ],
+          severity: 5,
+        },
+      ];
+      const result = authorize(
+        { tool: 'Bash', command: 'git push -u origin feature/my-branch' },
+        policies
+      );
+      expect(result.result.allowed).toBe(true);
     });
   });
 });
