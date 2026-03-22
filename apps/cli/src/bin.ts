@@ -882,6 +882,18 @@ async function main() {
       break;
     }
 
+    case 'paperclip-init': {
+      const { paperclipInit } = await import('./commands/paperclip-init.js');
+      await paperclipInit(args.slice(1));
+      break;
+    }
+
+    case 'paperclip-hook': {
+      const { paperclipHook } = await import('./commands/paperclip-hook.js');
+      await paperclipHook(args[1], args.slice(2)); // 'pre' or 'post', then remaining flags
+      break;
+    }
+
     case 'auto-setup': {
       if (wantsHelp) {
         console.log(formatHelp(COMMANDS['auto-setup']));
@@ -1034,10 +1046,13 @@ function printHelp(): void {
     agentguard claude-init                    Set up Claude Code hook integration
     agentguard copilot-init                   Set up Copilot CLI hook integration
     agentguard copilot-init --global          Install hooks globally (~/.copilot/hooks/)
+    agentguard paperclip-init                 Set up Paperclip orchestration integration
+    agentguard paperclip-init --remove        Remove Paperclip hooks
     agentguard auto-setup                     Auto-detect and configure hooks
     agentguard auto-setup --dry-run           Detect without installing
     agentguard claude-hook                    Claude Code hook handler (internal)
     agentguard copilot-hook                   Copilot CLI hook handler (internal)
+    agentguard paperclip-hook                 Paperclip hook handler (internal)
     agentguard status                         Check safety readiness (hooks, policy, dirs)
     agentguard status --quiet                 Machine-readable check (exit code only)
     agentguard demo                           See AgentGuard in action (interactive showcase)
