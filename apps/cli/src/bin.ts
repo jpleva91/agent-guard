@@ -51,14 +51,19 @@ const COMMANDS: Record<string, CommandHelp> = {
   },
   analytics: {
     name: 'agentguard analytics',
-    description: 'Analyze blocked action patterns across safety sessions',
+    description: 'Analyze governance patterns across sessions with team observability',
     usage: 'agentguard analytics [flags]',
     flags: [
       { flag: '--format, -f <format>', description: 'Output format: terminal, json, markdown' },
       { flag: '--json', description: 'Output as JSON' },
-      { flag: '--markdown, --md', description: 'Output as Markdown' },
-      { flag: '--dir, -d <path>', description: 'Base directory for event data' },
-      { flag: '--min-cluster <n>', description: 'Minimum cluster size (default: 2)' },
+      { flag: '--team', description: 'Team view: per-agent breakdowns and patterns' },
+      {
+        flag: '--rollup <period>',
+        description: 'Time rollup: daily, weekly, or monthly',
+      },
+      { flag: '--since <date>', description: 'Filter events after this ISO date' },
+      { flag: '--until <date>', description: 'Filter events before this ISO date' },
+      { flag: '--sessions <n>', description: 'Limit to N most recent sessions' },
       { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       {
         flag: '--db-path <path>',
@@ -68,8 +73,9 @@ const COMMANDS: Record<string, CommandHelp> = {
     examples: [
       'agentguard analytics',
       'agentguard analytics --json',
-      'agentguard analytics --markdown',
-      'agentguard analytics --min-cluster 3',
+      'agentguard analytics --team',
+      'agentguard analytics --team --rollup weekly',
+      'agentguard analytics --team --format markdown > report.md',
     ],
   },
   guard: {
