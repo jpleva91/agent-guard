@@ -6,6 +6,7 @@ import {
   isDestructiveCommand,
   getDestructiveDetails,
   DESTRUCTIVE_PATTERNS,
+  canonicalizeCommand,
 } from '@red-codes/kernel';
 import type { RawAgentAction as _RawAgentAction } from '@red-codes/kernel';
 
@@ -778,6 +779,103 @@ describe('agentguard/core/aab', () => {
       });
       expect(intent.action).toBe('mcp.call');
       expect(intent.target).toBe('explicit-target');
+    });
+  });
+
+  describe('canonicalizeCommand', () => {
+    it('strips rtk prefix', () => {
+      const result = canonicalizeCommand('rtk git push origin main');
+      expect(result.canonical).toBe('git push origin main');
+      expect(result.wrappers).toEqual(['rtk']);
+    });
+
+    it('returns original when no wrapper present', () => {
+      const result = canonicalizeCommand('git push origin main');
+      expect(result.canonical).toBe('git push origin main');
+      expect(result.wrappers).toEqual([]);
+    });
+
+    it('handles empty string', () => {
+      const result = canonicalizeCommand('');
+      expect(result.canonical).toBe('');
+      expect(result.wrappers).toEqual([]);
+    });
+
+    it('does not strip rtk from mid-command', () => {
+      const result = canonicalizeCommand('echo rtk is cool');
+      expect(result.canonical).toBe('echo rtk is cool');
+      expect(result.wrappers).toEqual([]);
+    });
+  });
+
+  describe('normalizeIntent — wrapper canonicalization', () => {
+    it('detects git push through rtk wrapper', () => {
+      const intent = normalizeIntent({ tool: 'Bash', command: 'rtk git push origin main' });
+      expect(intent.action).toBe('git.push');
+      expect(intent.target).toBe('main');
+      expect(intent.command).toBe('git push origin main');
+    });
+
+    it('detects git force push through rtk wrapper', () => {
+      const intent = normalizeIntent({ tool: 'Bash', command: 'rtk git push --force origin main' });
+      expect(intent.action).toBe('git.force-push');
+    });
+
+    it('marks destructive commands through rtk wrapper', () => {
+      const intent = normalizeIntent({ tool: 'Bash', command: 'rtk rm -rf /' });
+      expect(intent.destructive).toBe(true);
+    });
+
+    it('detects git branch delete through rtk wrapper', () => {
+      const intent = normalizeIntent({ tool: 'Bash', command: 'rtk git branch -D feature' });
+      expect(intent.action).toBe('git.branch.delete');
+    });
+
+    it('preserves wrapper metadata for audit', () => {
+      const intent = normalizeIntent({ tool: 'Bash', command: 'rtk git status' });
+      expect(intent.metadata?._wrappers).toEqual(['rtk']);
+      expect(intent.metadata?._rawCommand).toBe('rtk git status');
+    });
+
+    it('does not add wrapper metadata when no wrapper present', () => {
+      const intent = normalizeIntent({ tool: 'Bash', command: 'git status' });
+      expect(intent.metadata?._wrappers).toBeUndefined();
+    });
+
+    it('extracts branch from rtk-wrapped git push in chain', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'rtk git push origin production',
+      });
+      expect(intent.action).toBe('git.push');
+      expect(intent.target).toBe('production');
+    });
+  });
+
+  describe('authorize — wrapper canonicalization', () => {
+    it('denies rtk-wrapped destructive commands', () => {
+      const result = authorize({ tool: 'Bash', command: 'rtk rm -rf /' }, []);
+      expect(result.result.allowed).toBe(false);
+      expect(result.events.length).toBeGreaterThan(0);
+    });
+
+    it('denies rtk-wrapped force push with policy', () => {
+      const policies = [
+        {
+          id: 'no-force-push',
+          name: 'No Force Push',
+          rules: [
+            { action: 'git.force-push', effect: 'deny' as const, reason: 'Force push blocked' },
+            { action: '*', effect: 'allow' as const },
+          ],
+          severity: 5,
+        },
+      ];
+      const result = authorize(
+        { tool: 'Bash', command: 'rtk git push --force origin main' },
+        policies
+      );
+      expect(result.result.allowed).toBe(false);
     });
   });
 

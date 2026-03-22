@@ -114,6 +114,56 @@ function extractBranch(command: string | undefined): string | null {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Pre-classification command canonicalization
+// ---------------------------------------------------------------------------
+// Strips known execution wrappers (rtk, future proxies) so that the AAB
+// classifies semantic intent based on the underlying command, not its
+// transport syntax.  Without this, `rtk git push --force` would bypass
+// governance rules that block `git push --force`.
+//
+// Contract:
+//   raw command → unwrap wrappers → canonical command → classify → evaluate
+//
+// The raw command is preserved in the intent for audit; all classification
+// (detectGitAction, isDestructiveCommand, extractBranch) operates on the
+// canonical form.
+// ---------------------------------------------------------------------------
+
+/** Known command-wrapper prefixes that should be stripped before classification. */
+const EXECUTION_WRAPPERS: RegExp[] = [
+  /^rtk\s+/,
+];
+
+interface CanonicalCommand {
+  /** The command after stripping all wrapper prefixes. */
+  canonical: string;
+  /** Ordered list of wrapper prefixes that were removed. */
+  wrappers: string[];
+}
+
+/**
+ * Strip execution wrapper prefixes from a raw command string.
+ * Applies each wrapper pattern iteratively so nested wrappers are handled.
+ */
+function canonicalizeCommand(raw: string): CanonicalCommand {
+  let command = raw;
+  const wrappers: string[] = [];
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const re of EXECUTION_WRAPPERS) {
+      const match = command.match(re);
+      if (match) {
+        wrappers.push(match[0].trimEnd());
+        command = command.slice(match[0].length);
+        changed = true;
+      }
+    }
+  }
+  return { canonical: command, wrappers };
+}
+
 export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedIntent {
   if (!rawAction || typeof rawAction !== 'object') {
     return { action: 'unknown', target: '', agent: 'unknown', destructive: false };
@@ -133,28 +183,45 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
     }
   }
 
-  if (action === 'shell.exec' && rawAction.command) {
-    const gitAction = detectGitAction(rawAction.command);
+  // Canonicalize shell commands: strip execution wrappers before classification
+  // so governance operates on semantic intent, not transport syntax.
+  const rawCommand = rawAction.command;
+  const canonicalized = rawCommand ? canonicalizeCommand(rawCommand) : undefined;
+  const classifyCommand = canonicalized?.canonical ?? rawCommand;
+
+  if (action === 'shell.exec' && classifyCommand) {
+    const gitAction = detectGitAction(classifyCommand);
     if (gitAction) {
       action = gitAction;
-      target = extractBranch(rawAction.command) || target;
+      target = extractBranch(classifyCommand) || target;
     } else if (!target) {
       // Use command as target for non-git shell actions so scope-based
       // policy rules can match against the command text.
-      target = rawAction.command;
+      target = classifyCommand;
     }
+  }
+
+  // Build metadata with wrapper chain info when wrappers were stripped
+  let metadata = rawAction.metadata;
+  if (canonicalized && canonicalized.wrappers.length > 0) {
+    metadata = {
+      ...metadata,
+      _wrappers: canonicalized.wrappers,
+      _rawCommand: rawCommand,
+    };
   }
 
   return {
     action,
     target,
     agent: rawAction.agent || 'unknown',
-    branch: rawAction.branch || extractBranch(rawAction.command) || undefined,
-    command: rawAction.command || undefined,
+    branch: rawAction.branch || extractBranch(classifyCommand) || undefined,
+    command: classifyCommand || undefined,
     filesAffected: rawAction.filesAffected || undefined,
-    metadata: rawAction.metadata || undefined,
+    metadata,
     persona: rawAction.persona || undefined,
-    destructive: action === 'shell.exec' && isDestructiveCommand(rawAction.command || ''),
+    destructive:
+      action === 'shell.exec' && isDestructiveCommand(classifyCommand || ''),
   };
 }
 
@@ -247,4 +314,10 @@ export function authorize(
   return { intent, result, events, blastRadius };
 }
 
-export { detectGitAction, isDestructiveCommand, getDestructiveDetails, DESTRUCTIVE_PATTERNS };
+export {
+  detectGitAction,
+  isDestructiveCommand,
+  getDestructiveDetails,
+  DESTRUCTIVE_PATTERNS,
+  canonicalizeCommand,
+};
