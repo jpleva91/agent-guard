@@ -31,6 +31,9 @@ logs/*
 # Agent identity (session-scoped, never committed)
 .agentguard-identity
 
+# Agent operational state (runtime artifact, regenerated each run)
+swarm-state.json
+
 # Environment
 .env
 .env.local

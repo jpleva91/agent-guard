@@ -167,7 +167,7 @@ function markdownTeamReport(
 
 export async function analytics(args: string[], storageConfig?: StorageConfig): Promise<number> {
   const parsed = parseArgs(args, {
-    boolean: ['--json', '--help', '-h', '--team'],
+    boolean: ['--json', '--help', '-h', '--team', '--markdown', '--md'],
     string: ['--since', '--until', '--sessions', '--db-path', '--format', '--rollup'],
   });
 
@@ -181,6 +181,7 @@ export async function analytics(args: string[], storageConfig?: StorageConfig): 
         '    --team              Team view: per-agent breakdowns and patterns\n' +
         '    --rollup <period>   Time rollup: daily, weekly, or monthly\n' +
         '    --format <type>     Output format: terminal (default), json, or markdown\n' +
+        '    --markdown, --md    [deprecated] Alias for --format markdown\n' +
         '    --since <date>      Filter events after this ISO date\n' +
         '    --until <date>      Filter events before this ISO date\n' +
         '    --sessions <n>      Limit to N most recent sessions\n' +
@@ -195,7 +196,13 @@ export async function analytics(args: string[], storageConfig?: StorageConfig): 
 
   const teamMode = parsed.flags['team'] === true;
   const jsonOutput = parsed.flags['json'] === true;
-  const formatFlag = parsed.flags['format'] as string | undefined;
+  const legacyMarkdown = parsed.flags['markdown'] === true || parsed.flags['md'] === true;
+  if (legacyMarkdown) {
+    process.stderr.write(
+      '  [deprecated] --markdown/--md is deprecated. Use --format markdown instead.\n'
+    );
+  }
+  const formatFlag = legacyMarkdown ? 'markdown' : (parsed.flags['format'] as string | undefined);
   const rollupFlag = parsed.flags['rollup'] as string | undefined;
   const sinceStr = parsed.flags['since'] as string | undefined;
   const untilStr = parsed.flags['until'] as string | undefined;
