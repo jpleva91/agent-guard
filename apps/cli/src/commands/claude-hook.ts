@@ -342,7 +342,7 @@ async function handlePreToolUse(
           identity?.server_url ??
           'https://telemetry.agentguard.dev',
         runId: cloudSessionId,
-        agentId: 'claude-code',
+        agentId: resolveAgentIdentity() ?? 'claude-code',
         installId: identity?.install_id,
         apiKey,
         flushIntervalMs: 0, // No interval — we flush manually before exit
