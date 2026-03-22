@@ -199,4 +199,38 @@ describe('analytics()', () => {
     expect(output).toContain('Team-Wide Violation Patterns');
     expect(output).toContain('no-force-push');
   });
+
+  it('outputs markdown without --team using "Governance Report" title (not "Team")', async () => {
+    seedTeamData(storageConfig.dbPath!);
+
+    const { analytics } = await import('../src/commands/analytics.js');
+    const code = await analytics(['--format', 'markdown'], storageConfig);
+
+    expect(code).toBe(0);
+    const md = stdoutChunks.join('');
+    expect(md).toContain('# Governance Report');
+    expect(md).not.toContain('# Team Governance Report');
+    // Per-agent section should be absent since --team was not passed
+    expect(md).not.toContain('## Per-Agent Breakdown');
+  });
+
+  it('returns exit code 1 for invalid --format value', async () => {
+    const { analytics } = await import('../src/commands/analytics.js');
+    const code = await analytics(['--format', 'csv'], storageConfig);
+
+    expect(code).toBe(1);
+    const err = stderrChunks.join('');
+    expect(err).toContain('unsupported --format value');
+    expect(err).toContain('csv');
+  });
+
+  it('returns exit code 1 for invalid --rollup value', async () => {
+    const { analytics } = await import('../src/commands/analytics.js');
+    const code = await analytics(['--rollup', 'hourly'], storageConfig);
+
+    expect(code).toBe(1);
+    const err = stderrChunks.join('');
+    expect(err).toContain('unsupported --rollup value');
+    expect(err).toContain('hourly');
+  });
 });
