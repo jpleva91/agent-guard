@@ -22,7 +22,11 @@ import type { RendererRegistry } from '@red-codes/renderers';
 import { createTuiRenderer } from '@red-codes/renderers';
 import { createEvent, POLICY_COMPOSED, POLICY_TRACE_RECORDED } from '@red-codes/events';
 
-import { createStorageBundle, createJsonlEventSink, createJsonlDecisionSink } from '@red-codes/storage';
+import {
+  createStorageBundle,
+  createJsonlEventSink,
+  createJsonlDecisionSink,
+} from '@red-codes/storage';
 import type { StorageBundle } from '@red-codes/storage';
 import type { StorageConfig } from '@red-codes/storage';
 import type { PolicyTracePayload } from '@red-codes/renderers';
