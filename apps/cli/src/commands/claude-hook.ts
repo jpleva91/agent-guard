@@ -371,17 +371,9 @@ async function handlePreToolUse(
     );
   }
 
-  // Build manifest with agent identity so RUN_STARTED event carries it
-  const hookAgentName = resolveAgentIdentity();
-  const hookManifest = hookAgentName
-    ? {
-        sessionId: runId,
-        role: 'builder' as const,
-        grants: [] as const,
-        scope: { allowedPaths: ['**'] as readonly string[] },
-        agentName: hookAgentName,
-      }
-    : undefined;
+  // Do NOT pass a manifest here. A manifest with empty grants would trigger capability
+  // enforcement and deny ALL actions. The hook's role is policy/invariant enforcement,
+  // not capability gating. Agent identity is tracked via the session table and events.
 
   const kernel = createKernel({
     runId,
@@ -391,7 +383,6 @@ async function handlePreToolUse(
     sinks: allEventSinks,
     decisionSinks: allDecisionSinks,
     ...(invariants ? { invariants } : {}),
-    ...(hookManifest ? { manifest: hookManifest } : {}),
   });
 
   // Record session in the sessions table (SQLite only).

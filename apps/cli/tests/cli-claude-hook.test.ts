@@ -2,10 +2,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { claudeHook } from '../src/commands/claude-hook.js';
 
+
 beforeEach(() => {
   vi.clearAllMocks();
   // Disable cloud telemetry in tests to avoid network-dependent flush delays
   process.env.AGENTGUARD_TELEMETRY = 'off';
+  // Set agent identity so PreToolUse tests pass the identity hard gate
+  process.env.AGENTGUARD_AGENT_NAME = 'test-agent';
   vi.spyOn(process, 'exit').mockImplementation((() => {}) as never);
   vi.spyOn(process.stdout, 'write').mockImplementation((...args: unknown[]) => {
     const lastArg = args[args.length - 1];

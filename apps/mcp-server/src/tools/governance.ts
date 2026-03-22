@@ -89,6 +89,8 @@ export function registerGovernanceTools(server: McpServer, config: McpConfig): v
       try {
         const policies = loadPoliciesFromPath(args.policyPath || config.policyPath);
 
+        const agentId = args.agent ?? config.persona?.compositeId ?? 'mcp-client';
+
         const rawAction: RawAgentAction = {
           tool: args.tool,
           command: args.command,
@@ -96,7 +98,7 @@ export function registerGovernanceTools(server: McpServer, config: McpConfig): v
           content: args.content,
           target: args.target,
           branch: args.branch,
-          agent: args.agent || 'mcp-client',
+          agent: agentId,
         };
 
         const kernel = createKernel({

@@ -1,12 +1,20 @@
 // agentguard claude-init — set up Claude Code integration
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { createInterface } from 'node:readline';
 import { RESET, BOLD, DIM, FG } from '../colors.js';
 import { resolveMainRepoRoot } from '@red-codes/core';
+import { detectDriver, detectModel, detectProject, VALID_ROLES, type Role } from '../identity.js';
+import {
+  AGENT_IDENTITY_BRIDGE,
+  WRITE_PERSONA,
+  SESSION_PERSONA_CHECK,
+  claudeHookWrapper,
+} from '../templates/scripts.js';
+import { STARTER_SKILLS } from '../templates/skills.js';
 
 const HOOK_MARKER = 'claude-hook';
 const BUILD_MARKER = 'apps/cli/dist/bin.js';
@@ -80,6 +88,17 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   const dbPathIdx = args.findIndex((a) => a === '--db-path');
   const dbPathValue = dbPathIdx !== -1 ? args[dbPathIdx + 1] : undefined;
   const dbPathSuffix = dbPathValue ? ` --db-path "${dbPathValue}"` : '';
+
+  // Parse --role flag
+  const roleArgIdx = args.findIndex((a) => a === '--role');
+  const roleArg = roleArgIdx !== -1 ? (args[roleArgIdx + 1] as Role) : undefined;
+
+  // Parse --driver flag (override auto-detection)
+  const driverArgIdx = args.findIndex((a) => a === '--driver');
+  const driverArg = driverArgIdx !== -1 ? args[driverArgIdx + 1] : undefined;
+
+  // Parse --no-skills flag
+  const noSkills = args.includes('--no-skills');
 
   const settingsDir = isGlobal ? join(homedir(), '.claude') : join(process.cwd(), '.claude');
   const settingsPath = join(settingsDir, 'settings.json');
@@ -164,6 +183,25 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     selectedPack = packChoice === 2 ? undefined : packChoice === 1 ? 'strict' : 'essentials';
   }
 
+  let selectedRole: Role = 'developer';
+
+  if (roleArg && VALID_ROLES.includes(roleArg)) {
+    selectedRole = roleArg;
+  } else if (process.stdin.isTTY && !isRefresh) {
+    const roleChoice = await promptChoice(
+      'Your role (for governance telemetry)',
+      [
+        `developer ${DIM}— writing and shipping code${RESET}`,
+        `reviewer ${DIM}— reviewing PRs and auditing${RESET}`,
+        `ops ${DIM}— deployment, releases, infrastructure${RESET}`,
+        `security ${DIM}— security scanning and hardening${RESET}`,
+        `planner ${DIM}— sprint planning and roadmap${RESET}`,
+      ],
+      0
+    );
+    selectedRole = VALID_ROLES[roleChoice] ?? 'developer';
+  }
+
   if (!settings.hooks) settings.hooks = {};
 
   const { cli, isLocal } = resolveCliPrefix();
@@ -174,7 +212,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `${cli} claude-hook pre${storeSuffix}${dbPathSuffix}`,
+        command: `bash scripts/claude-hook-wrapper.sh`,
       },
     ],
   });
@@ -210,6 +248,12 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   }
   sessionStartHooks.push({
     type: 'command',
+    command: 'bash scripts/session-persona-check.sh',
+    timeout: 5000,
+    blocking: true,
+  });
+  sessionStartHooks.push({
+    type: 'command',
     command: `${cli} status`,
     timeout: 10000,
     blocking: false,
@@ -242,7 +286,93 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     ],
   });
 
+  // Resolve repo root early — needed for script installation and telemetry dirs
+  const repoRoot = resolveMainRepoRoot();
+
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+
+  // Install identity scripts
+  const scriptsDir = join(repoRoot, 'scripts');
+  if (!existsSync(scriptsDir)) {
+    mkdirSync(scriptsDir, { recursive: true });
+  }
+
+  const scriptFiles: Array<{ name: string; content: string }> = [
+    { name: 'agent-identity-bridge.sh', content: AGENT_IDENTITY_BRIDGE },
+    { name: 'write-persona.sh', content: WRITE_PERSONA },
+    { name: 'session-persona-check.sh', content: SESSION_PERSONA_CHECK },
+    { name: 'claude-hook-wrapper.sh', content: claudeHookWrapper(cli, storeSuffix, dbPathSuffix) },
+  ];
+
+  for (const { name, content } of scriptFiles) {
+    const scriptPath = join(scriptsDir, name);
+    if (existsSync(scriptPath) && !isRefresh) {
+      continue;
+    }
+    writeFileSync(scriptPath, content, { mode: 0o755 });
+  }
+
+  // Write initial persona
+  const driver = driverArg ?? detectDriver();
+  const model = detectModel();
+  const project = detectProject();
+  try {
+    const { execFileSync } = await import('node:child_process');
+    execFileSync('bash', ['scripts/write-persona.sh', driver, selectedRole], {
+      cwd: repoRoot,
+      stdio: 'pipe',
+    });
+  } catch {
+    // Non-fatal — persona can be set later via SessionStart hook
+  }
+
+  process.stderr.write(
+    `  ${FG.green}✓${RESET}  Identity set: ${FG.cyan}${driver}:${model}:${selectedRole}${RESET} (project: ${project})\n`
+  );
+
+  // Scaffold starter skills
+  if (!noSkills) {
+    const skillsDir = join(settingsDir, 'skills');
+    if (!existsSync(skillsDir)) {
+      mkdirSync(skillsDir, { recursive: true });
+    }
+
+    let skillCount = 0;
+    for (const skill of STARTER_SKILLS) {
+      const skillPath = join(skillsDir, skill.filename);
+      if (!existsSync(skillPath)) {
+        writeFileSync(skillPath, skill.content);
+        skillCount++;
+      }
+    }
+
+    if (skillCount > 0) {
+      process.stderr.write(
+        `  ${FG.green}✓${RESET}  Starter skills: ${FG.cyan}.claude/skills/${RESET} (${skillCount} files)\n`
+      );
+    }
+  }
+
+  // Append identity instructions to CLAUDE.md
+  const claudeMdPath = join(repoRoot, 'CLAUDE.md');
+  const identityBlock = `
+## Agent Identity
+
+At session start, if you see \`[AgentGuard] No agent identity set\`, ask the user:
+1. **Role**: developer / reviewer / ops / security / planner
+2. **Driver**: human / claude-code / copilot / ci
+
+Then run: \`scripts/write-persona.sh <driver> <role>\`
+`;
+
+  if (existsSync(claudeMdPath)) {
+    const existing = readFileSync(claudeMdPath, 'utf8');
+    if (!existing.includes('Agent Identity')) {
+      writeFileSync(claudeMdPath, existing + '\n' + identityBlock);
+    }
+  } else {
+    writeFileSync(claudeMdPath, identityBlock.trimStart());
+  }
 
   // Store hook integrity baseline
   try {
@@ -289,7 +419,6 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   }
 
   // Ensure telemetry directories exist (use main repo root so worktrees share them)
-  const repoRoot = resolveMainRepoRoot();
   const dirs = ['.agentguard/events', '.agentguard/decisions', 'logs'];
   for (const dir of dirs) {
     const dirPath = join(repoRoot, dir);
@@ -352,8 +481,11 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
       return !hooks.some((h) => h.command && h.command.includes(marker));
     });
 
+  const WRAPPER_MARKER = 'claude-hook-wrapper';
   const preToolUse = settings.hooks?.PreToolUse || [];
   settings.hooks!.PreToolUse = filterByCommand(preToolUse, HOOK_MARKER);
+  // Also remove wrapper-based hooks
+  settings.hooks!.PreToolUse = filterByCommand(settings.hooks!.PreToolUse, WRAPPER_MARKER);
   if (settings.hooks!.PreToolUse!.length === 0) {
     delete settings.hooks!.PreToolUse;
   }
@@ -369,6 +501,12 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
   (settings.hooks as Record<string, unknown>).SessionStart = filterByCommand(
     sessionStart,
     BUILD_MARKER
+  );
+  // Also remove persona check hook
+  const PERSONA_MARKER = 'session-persona-check';
+  (settings.hooks as Record<string, unknown>).SessionStart = filterByCommand(
+    (settings.hooks as Record<string, unknown>).SessionStart as HookEntry[],
+    PERSONA_MARKER
   );
   if (((settings.hooks as Record<string, unknown>).SessionStart as HookEntry[]).length === 0) {
     delete (settings.hooks as Record<string, unknown>).SessionStart;
@@ -397,6 +535,35 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
   }
 
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+
+  // Clean up identity scripts
+  const repoRoot = resolveMainRepoRoot();
+  const identityScripts = [
+    'agent-identity-bridge.sh',
+    'write-persona.sh',
+    'session-persona-check.sh',
+    'claude-hook-wrapper.sh',
+  ];
+  for (const name of identityScripts) {
+    const scriptPath = join(repoRoot, 'scripts', name);
+    if (existsSync(scriptPath)) {
+      try {
+        unlinkSync(scriptPath);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  // Clean up persona file
+  const personaPath = join(repoRoot, '.agentguard', 'persona.env');
+  if (existsSync(personaPath)) {
+    try {
+      unlinkSync(personaPath);
+    } catch {
+      /* ignore */
+    }
+  }
 
   process.stderr.write(
     `  ${FG.green}✓${RESET}  Hook removed from ${FG.cyan}${settingsLabel}${RESET}\n`
@@ -548,6 +715,7 @@ function showProtectionSummary(
       `\n  ${FG.yellow}Tip:${RESET} Run ${FG.cyan}agentguard claude-init --global${RESET} to install hooks globally.\n`
     );
   }
+  process.stderr.write(`\n  ${DIM}ℹ Claude Desktop support coming soon.${RESET}\n`);
   process.stderr.write('\n');
 }
 

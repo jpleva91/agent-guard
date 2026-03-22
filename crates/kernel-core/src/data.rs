@@ -153,8 +153,8 @@ mod tests {
 
     #[test]
     fn test_git_patterns_compile() {
-        assert_eq!(GIT_ACTION_PATTERNS.len(), 5);
-        assert_eq!(GIT_ACTION_PATTERNS[0].action_type, "git.force-push");
+        assert_eq!(GIT_ACTION_PATTERNS.len(), 8);
+        assert_eq!(GIT_ACTION_PATTERNS[0].action_type, "git.worktree.add");
     }
 
     #[test]

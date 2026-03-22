@@ -49,6 +49,28 @@ export function createTelemetrySender(
       headers['X-Agent-Name'] = agentName;
     }
 
+    // Forward persona dimensions as JSON header for metadata enrichment
+    // These env vars are set by the agent-identity-bridge or write-persona scripts
+    if (typeof process !== 'undefined' && process.env?.AGENTGUARD_PERSONA_DRIVER) {
+      const persona: Record<string, string> = {};
+      for (const key of [
+        'DRIVER',
+        'MODEL',
+        'ROLE',
+        'PROJECT',
+        'TRUST_TIER',
+        'AUTONOMY',
+        'RISK_TOLERANCE',
+        'RUNTIME',
+        'PROVIDER',
+        'TAGS',
+      ]) {
+        const val = process.env[`AGENTGUARD_PERSONA_${key}`];
+        if (val) persona[key.toLowerCase()] = val;
+      }
+      headers['X-Agent-Persona'] = JSON.stringify(persona);
+    }
+
     // Cloud API key auth (from config.json or env var)
     if (cloudApiKey) {
       headers['X-API-Key'] = cloudApiKey;
