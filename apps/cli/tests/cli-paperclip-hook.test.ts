@@ -2,6 +2,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { paperclipHook } from '../src/commands/paperclip-hook.js';
 
+// Block .agentguard-identity file reads so tests control identity via AGENTGUARD_AGENT_NAME env var.
+// Without this, a real .agentguard-identity file in the test CWD bypasses the identity gate.
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return {
+    ...actual,
+    readFileSync: vi.fn((path: unknown, ...args: unknown[]) => {
+      if (typeof path === 'string' && path.endsWith('.agentguard-identity')) {
+        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+      }
+      return (actual.readFileSync as (...a: unknown[]) => unknown)(path, ...args);
+    }),
+  };
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(process, 'exit').mockImplementation((() => {}) as never);

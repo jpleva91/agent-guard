@@ -51,10 +51,10 @@ export function readPaperclipEnv(): PaperclipContext | null {
   const budgetStr = process.env.PAPERCLIP_BUDGET_REMAINING_CENTS;
 
   // If no Paperclip env vars are set, this isn't a Paperclip-managed agent
-  if (!workspaceId && !companyId && !agentId && !runId) return null;
+  if (!workspaceId && !companyId && !agentId && !projectId && !runId && !agentRole && !budgetStr)
+    return null;
 
-  const budgetRemainingCents =
-    budgetStr !== undefined ? parseInt(budgetStr, 10) : undefined;
+  const budgetRemainingCents = budgetStr !== undefined ? parseInt(budgetStr, 10) : undefined;
 
   return {
     workspaceId,
@@ -63,9 +63,7 @@ export function readPaperclipEnv(): PaperclipContext | null {
     projectId,
     runId,
     agentRole,
-    budgetRemainingCents: Number.isFinite(budgetRemainingCents)
-      ? budgetRemainingCents
-      : undefined,
+    budgetRemainingCents: Number.isFinite(budgetRemainingCents) ? budgetRemainingCents : undefined,
   };
 }
 
@@ -182,10 +180,7 @@ export function normalizePaperclipAction(
     case 'Write':
       baseAction = {
         tool: 'Write',
-        file: normalizeFilePath(
-          (input.file_path ?? input.path) as string | undefined,
-          projectRoot
-        ),
+        file: normalizeFilePath((input.file_path ?? input.path) as string | undefined, projectRoot),
         content: input.content as string | undefined,
         agent,
         metadata: paperclipMeta,
@@ -195,10 +190,7 @@ export function normalizePaperclipAction(
     case 'Edit':
       baseAction = {
         tool: 'Edit',
-        file: normalizeFilePath(
-          (input.file_path ?? input.path) as string | undefined,
-          projectRoot
-        ),
+        file: normalizeFilePath((input.file_path ?? input.path) as string | undefined, projectRoot),
         content: input.new_string as string | undefined,
         agent,
         metadata: { ...paperclipMeta, old_string: input.old_string },
@@ -208,10 +200,7 @@ export function normalizePaperclipAction(
     case 'Read':
       baseAction = {
         tool: 'Read',
-        file: normalizeFilePath(
-          (input.file_path ?? input.path) as string | undefined,
-          projectRoot
-        ),
+        file: normalizeFilePath((input.file_path ?? input.path) as string | undefined, projectRoot),
         agent,
         metadata: paperclipMeta,
       };

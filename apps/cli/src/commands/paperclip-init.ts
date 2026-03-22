@@ -114,6 +114,7 @@ export async function paperclipInit(args: string[] = []): Promise<void> {
   // PostToolUse — error monitoring (bash stderr reporting)
   if (!settings.hooks.PostToolUse) settings.hooks.PostToolUse = [];
   settings.hooks.PostToolUse.push({
+    matcher: 'Bash',
     hooks: [
       {
         type: 'command',
@@ -123,6 +124,15 @@ export async function paperclipInit(args: string[] = []): Promise<void> {
   });
 
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+
+  // Store a hook integrity baseline so `agentguard status` can detect tampering.
+  // Matches the baseline stored by `claude-init` for consistency.
+  try {
+    const { storeHookBaseline } = await import('@red-codes/adapters');
+    storeHookBaseline(settingsPath);
+  } catch {
+    // Non-fatal — baseline is a best-effort integrity check
+  }
 
   process.stderr.write(
     `  ${FG.green}\u2713${RESET}  Hooks installed in ${FG.cyan}.claude/settings.json${RESET}\n`
@@ -154,9 +164,7 @@ function removeHooks(): void {
   const settingsPath = join(process.cwd(), '.claude', 'settings.json');
 
   if (!existsSync(settingsPath)) {
-    process.stderr.write(
-      `  ${DIM}No .claude/settings.json found. Nothing to remove.${RESET}\n\n`
-    );
+    process.stderr.write(`  ${DIM}No .claude/settings.json found. Nothing to remove.${RESET}\n\n`);
     return;
   }
 

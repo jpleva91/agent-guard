@@ -135,7 +135,8 @@ export async function paperclipHook(hookType?: string, extraArgs: string[] = [])
 function parsePaperclipPayload(data: Record<string, unknown>): PaperclipHookPayload {
   // Read Paperclip context from env vars (injected by Paperclip when spawning agents)
   const paperclipCtx: PaperclipContext = {};
-  if (process.env.PAPERCLIP_WORKSPACE_ID) paperclipCtx.workspaceId = process.env.PAPERCLIP_WORKSPACE_ID;
+  if (process.env.PAPERCLIP_WORKSPACE_ID)
+    paperclipCtx.workspaceId = process.env.PAPERCLIP_WORKSPACE_ID;
   if (process.env.PAPERCLIP_COMPANY_ID) paperclipCtx.companyId = process.env.PAPERCLIP_COMPANY_ID;
   if (process.env.PAPERCLIP_AGENT_ID) paperclipCtx.agentId = process.env.PAPERCLIP_AGENT_ID;
   if (process.env.PAPERCLIP_PROJECT_ID) paperclipCtx.projectId = process.env.PAPERCLIP_PROJECT_ID;
@@ -156,7 +157,8 @@ function parsePaperclipPayload(data: Record<string, unknown>): PaperclipHookPayl
     ...(inlineCtx.projectId ? { projectId: String(inlineCtx.projectId) } : {}),
     ...(inlineCtx.runId ? { runId: String(inlineCtx.runId) } : {}),
     ...(inlineCtx.agentRole ? { agentRole: String(inlineCtx.agentRole) } : {}),
-    ...(inlineCtx.budgetRemainingCents !== undefined
+    ...(inlineCtx.budgetRemainingCents !== undefined &&
+    Number.isFinite(Number(inlineCtx.budgetRemainingCents))
       ? { budgetRemainingCents: Number(inlineCtx.budgetRemainingCents) }
       : {}),
   };
@@ -175,9 +177,7 @@ async function handlePreToolUse(
   payload: PaperclipHookPayload,
   cliArgs: string[]
 ): Promise<boolean> {
-  const { processPaperclipHook, formatPaperclipHookResponse } = await import(
-    '@red-codes/adapters'
-  );
+  const { processPaperclipHook, formatPaperclipHookResponse } = await import('@red-codes/adapters');
   const { createKernel } = await import('@red-codes/kernel');
   const { loadPolicyDefs } = await import('../policy-resolver.js');
   const { resolveStorageConfig, createStorageBundle } = await import('@red-codes/storage');
