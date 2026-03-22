@@ -1,0 +1,85 @@
+// apps/cli/src/templates/skills.ts
+// Starter skill templates — scaffolded during claude-init
+
+export interface SkillTemplate {
+  filename: string;
+  content: string;
+}
+
+export const STARTER_SKILLS: SkillTemplate[] = [
+  {
+    filename: 'run-tests.md',
+    content: [
+      '---',
+      'name: run-tests',
+      'description: "Run the project test suite"',
+      '---',
+      '# Run Tests',
+      '',
+      '## Agent Identity',
+      '',
+      '```bash',
+      'source scripts/agent-identity-bridge.sh "run-tests"',
+      '```',
+      '',
+      '## Steps',
+      '',
+      '1. Detect the project test framework (package.json scripts, Cargo.toml, pytest, etc.)',
+      '2. Run the full test suite',
+      '3. Report failures with file paths and line numbers',
+      '4. If all tests pass, report success with count',
+      '',
+    ].join('\n'),
+  },
+  {
+    filename: 'implement-issue.md',
+    content: [
+      '---',
+      'name: implement-issue',
+      'description: "Implement a GitHub issue end-to-end"',
+      '---',
+      '# Implement Issue',
+      '',
+      '## Agent Identity',
+      '',
+      '```bash',
+      'source scripts/agent-identity-bridge.sh "implement-issue"',
+      '```',
+      '',
+      '## Steps',
+      '',
+      '1. Read the GitHub issue (use `gh issue view`)',
+      '2. Understand the requirements and acceptance criteria',
+      '3. Plan the implementation',
+      '4. Write code and tests',
+      '5. Run tests to verify',
+      '6. Open a PR linking the issue',
+      '',
+    ].join('\n'),
+  },
+  {
+    filename: 'governance-audit.md',
+    content: [
+      '---',
+      'name: governance-audit',
+      'description: "Analyze governance logs for violations and trends"',
+      '---',
+      '# Governance Audit',
+      '',
+      '## Agent Identity',
+      '',
+      '```bash',
+      'source scripts/agent-identity-bridge.sh "governance-audit" standard semi-autonomous',
+      '```',
+      '',
+      '## Steps',
+      '',
+      '1. Check for governance log files: `ls .agentguard/events/*.jsonl`',
+      '2. Count events by type (ActionDenied, PolicyDenied, InvariantViolation)',
+      '3. Compute denial rate and risk score trends',
+      '4. If violations found, create a GitHub issue with findings',
+      '5. Report "Governance logs nominal" if no actionable findings',
+      '',
+    ].join('\n'),
+  },
+];
