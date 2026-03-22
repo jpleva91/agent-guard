@@ -48,9 +48,10 @@ function markdownTeamReport(
   violations: ViolationByInvariant[],
   runs: RunSummary[],
   granularity: Granularity,
+  teamMode: boolean = false
 ): string {
   const lines: string[] = [];
-  lines.push('# Team Governance Report\n');
+  lines.push(`# ${teamMode ? 'Team Governance Report' : 'Governance Report'}\n`);
 
   // Overview
   lines.push('## Overview\n');
@@ -103,9 +104,7 @@ function markdownTeamReport(
     lines.push('| Invariant | Count | Agents | Sessions |');
     lines.push('|-----------|-------|--------|----------|');
     for (const p of teamPatterns) {
-      lines.push(
-        `| ${p.invariant} | ${p.count} | ${p.distinctAgents} | ${p.distinctSessions} |`
-      );
+      lines.push(`| ${p.invariant} | ${p.count} | ${p.distinctAgents} | ${p.distinctSessions} |`);
     }
     lines.push('');
   }
@@ -208,6 +207,22 @@ export async function analytics(args: string[], storageConfig?: StorageConfig): 
   const untilStr = parsed.flags['until'] as string | undefined;
   const sessionsStr = parsed.flags['sessions'] as string | undefined;
   const dbPathFlag = parsed.flags['db-path'] as string | undefined;
+
+  // Validate --format value
+  if (formatFlag !== undefined && !['terminal', 'json', 'markdown'].includes(formatFlag)) {
+    process.stderr.write(
+      `  Error: unsupported --format value "${formatFlag}". Valid values: terminal, json, markdown\n`
+    );
+    return 1;
+  }
+
+  // Validate --rollup value
+  if (rollupFlag !== undefined && !['daily', 'weekly', 'monthly'].includes(rollupFlag)) {
+    process.stderr.write(
+      `  Error: unsupported --rollup value "${rollupFlag}". Valid values: daily, weekly, monthly\n`
+    );
+    return 1;
+  }
 
   const outputFormat: 'terminal' | 'json' | 'markdown' = jsonOutput
     ? 'json'
@@ -320,6 +335,7 @@ export async function analytics(args: string[], storageConfig?: StorageConfig): 
         violations,
         runs,
         granularity ?? 'daily',
+        teamMode
       );
       process.stdout.write(md);
       return 0;

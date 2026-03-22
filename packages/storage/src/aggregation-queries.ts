@@ -277,10 +277,7 @@ export function denialPatterns(
  * Governance statistics grouped by agent identity.
  * Extracts agent from the decisions data JSON ($.action.agent).
  */
-export function statsByAgent(
-  db: Database.Database,
-  filter?: AggregationTimeFilter
-): AgentStats[] {
+export function statsByAgent(db: Database.Database, filter?: AggregationTimeFilter): AgentStats[] {
   const { where, params } = buildTimeConditions(filter, 'decisions');
   const sql = `
     SELECT
@@ -404,7 +401,7 @@ export function teamViolationPatterns(
     SELECT
       COALESCE(json_extract(data, '$.invariant'), json_extract(data, '$.invariantId'), 'unknown') as invariant,
       COUNT(*) as count,
-      COUNT(DISTINCT json_extract(data, '$.agent')) as distinctAgents,
+      COUNT(DISTINCT COALESCE(json_extract(data, '$.agent'), 'unknown')) as distinctAgents,
       COUNT(DISTINCT run_id) as distinctSessions
     FROM events
     ${kindCondition}
