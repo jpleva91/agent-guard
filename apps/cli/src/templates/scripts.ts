@@ -177,10 +177,14 @@ export function claudeHookWrapper(
   return `#!/usr/bin/env bash
 # claude-hook-wrapper.sh — Sources persona identity before running governance hook
 
+# Resolve project root (hook CWD may not match the project directory)
+AGENTGUARD_WORKSPACE="\$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+export AGENTGUARD_WORKSPACE
+
 # Source persona env vars if available (set -a exports all sourced vars)
-if [ -f .agentguard/persona.env ]; then
+if [ -f "\$AGENTGUARD_WORKSPACE/.agentguard/persona.env" ]; then
   set -a
-  source .agentguard/persona.env
+  source "\$AGENTGUARD_WORKSPACE/.agentguard/persona.env"
   set +a
 fi
 

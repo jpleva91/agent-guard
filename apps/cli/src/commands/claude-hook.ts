@@ -7,7 +7,7 @@
 // Supports both JSONL (default) and SQLite storage backends via --store flag or AGENTGUARD_STORE env var.
 
 import { randomUUID } from 'node:crypto';
-import { execSync, spawn } from 'node:child_process';
+import { execFileSync, execSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, parse as parsePath } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -61,7 +61,7 @@ function writeSessionState(sessionId: string | undefined, patch: Partial<Session
  * hardcoding secrets in the hook command or global config files.
  */
 function loadProjectEnv(): void {
-  let dir = process.cwd();
+  let dir = process.env.AGENTGUARD_WORKSPACE || process.cwd();
   const { root } = parsePath(dir);
 
   while (dir !== root) {
@@ -99,11 +99,39 @@ function loadProjectEnv(): void {
 
 // --- Agent identity resolution ---
 // Identity is resolved from .agentguard-identity file or AGENTGUARD_AGENT_NAME env var.
-// The file is blanked on SessionStart and Stop to prevent stale identity leaking across sessions.
+// Identity persists across sessions — no blanking on stop. Users set it once via the wizard.
+
+/** Resolve the project root for identity file placement.
+ *  Priority: AGENTGUARD_WORKSPACE env > .agentguard-identity walk > .git walk > git rev-parse > cwd.
+ *  Hook subprocesses may run with arbitrary CWD, so we can't rely on process.cwd(). */
+function resolveIdentityDir(): string {
+  if (process.env.AGENTGUARD_WORKSPACE) return process.env.AGENTGUARD_WORKSPACE;
+
+  // Walk up from the script's location to find the project root.
+  // Prioritize .agentguard-identity (exact match) over .git (may be a nested repo).
+  const scriptPath = process.argv[1];
+  if (scriptPath) {
+    let dir = dirname(scriptPath);
+    const fsRoot = parsePath(dir).root;
+    let firstGitDir: string | undefined;
+    while (dir !== fsRoot) {
+      if (existsSync(join(dir, '.agentguard-identity'))) return dir;
+      if (!firstGitDir && existsSync(join(dir, '.git'))) firstGitDir = dir;
+      dir = dirname(dir);
+    }
+    if (firstGitDir) return firstGitDir;
+  }
+
+  try {
+    return execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+  } catch {
+    return process.cwd();
+  }
+}
 
 function resolveAgentIdentity(): string | null {
-  // 1. Check .agentguard-identity file
-  const identityPath = join(process.cwd(), '.agentguard-identity');
+  // 1. Check .agentguard-identity file at project root (not cwd — hook subprocess cwd may differ)
+  const identityPath = join(resolveIdentityDir(), '.agentguard-identity');
   try {
     const content = readFileSync(identityPath, 'utf8').trim();
     if (content) return content;
@@ -118,17 +146,8 @@ function resolveAgentIdentity(): string | null {
   return null;
 }
 
-function blankIdentityFile(): void {
-  const identityPath = join(process.cwd(), '.agentguard-identity');
-  try {
-    writeFileSync(identityPath, '');
-  } catch {
-    // Non-fatal
-  }
-}
-
 function writeIdentityFile(name: string): void {
-  const identityPath = join(process.cwd(), '.agentguard-identity');
+  const identityPath = join(resolveIdentityDir(), '.agentguard-identity');
   try {
     writeFileSync(identityPath, name);
   } catch {
@@ -182,7 +201,6 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
   try {
     // Stop hook has no stdin payload — generates session viewer HTML quietly (no browser open)
     if (hookType === 'stop') {
-      blankIdentityFile();
       await handleStop(extraArgs);
       process.exit(0);
       return;
