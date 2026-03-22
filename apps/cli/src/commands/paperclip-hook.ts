@@ -1,7 +1,7 @@
 // AgentGuard Paperclip hook — PreToolUse governance + PostToolUse error monitoring.
 // PreToolUse: routes actions through the kernel for policy/invariant enforcement.
 // PostToolUse: reports Bash stderr errors (informational only).
-// Always exits 0 — hooks must never crash the agent.
+// Always exits 0 — hooks must never fail. Exit 2 = governance deny (intentional block).
 // Supports both JSONL (default) and SQLite storage backends via --store flag or AGENTGUARD_STORE env var.
 //
 // Paperclip (https://github.com/paperclipai/paperclip) spawns agents with PAPERCLIP_* env vars.
@@ -9,10 +9,68 @@
 // (company, project, agent role, budget state, workspace).
 
 import { randomUUID } from 'node:crypto';
-import { fileURLToPath } from 'node:url';
-import type { PaperclipHookPayload, PaperclipContext } from '@red-codes/adapters';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join, parse as parsePath } from 'node:path';
+import type { PaperclipContext, PaperclipHookPayload } from '@red-codes/adapters';
+
+/**
+ * Load AGENTGUARD_* env vars from the nearest .env file.
+ * Walks up from cwd to find the first .env, loads only AGENTGUARD_* keys.
+ * Existing env vars take precedence — .env is a fallback, not an override.
+ */
+function loadProjectEnv(): void {
+  let dir = process.cwd();
+  const { root } = parsePath(dir);
+
+  while (dir !== root) {
+    const envPath = join(dir, '.env');
+    if (existsSync(envPath)) {
+      try {
+        const content = readFileSync(envPath, 'utf8');
+        for (const line of content.split('\n')) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const eqIdx = trimmed.indexOf('=');
+          if (eqIdx < 0) continue;
+          const key = trimmed.slice(0, eqIdx).trim();
+          if (!key.startsWith('AGENTGUARD_')) continue;
+          if (process.env[key] !== undefined) continue;
+          let value = trimmed.slice(eqIdx + 1).trim();
+          if (
+            (value.startsWith('"') && value.endsWith('"')) ||
+            (value.startsWith("'") && value.endsWith("'"))
+          ) {
+            value = value.slice(1, -1);
+          }
+          process.env[key] = value;
+        }
+      } catch {
+        // Non-fatal
+      }
+      return;
+    }
+    dir = dirname(dir);
+  }
+}
+
+/** Resolve agent identity from .agentguard-identity file or AGENTGUARD_AGENT_NAME env var. */
+function resolveAgentIdentity(): string | null {
+  const identityPath = join(process.cwd(), '.agentguard-identity');
+  try {
+    const content = readFileSync(identityPath, 'utf8').trim();
+    if (content) return content;
+  } catch {
+    // File doesn't exist or unreadable
+  }
+  const envName = process.env.AGENTGUARD_AGENT_NAME;
+  if (envName) return envName;
+  return null;
+}
 
 export async function paperclipHook(hookType?: string, extraArgs: string[] = []): Promise<void> {
+  // Load AGENTGUARD_* env vars from the project's .env file before anything reads them.
+  loadProjectEnv();
+
   try {
     const input = await readStdin();
     if (!input) process.exit(0);
@@ -30,6 +88,36 @@ export async function paperclipHook(hookType?: string, extraArgs: string[] = [])
       hookType === 'pre' || data.hook === 'PreToolUse' || (!hookType && !data.tool_output);
 
     if (isPreToolUse) {
+      // Agent identity hard gate — block all actions until identity is set.
+      // Exception: allow Write/Bash calls targeting .agentguard-identity so the agent
+      // can prompt the user for their name and write it.
+      const agentIdentity = resolveAgentIdentity();
+      if (!agentIdentity) {
+        const toolInput = (data.tool_input || {}) as Record<string, unknown>;
+        const isIdentityWrite =
+          ((data.tool_name === 'Write' || data.tool_name === 'Edit') &&
+            typeof toolInput.file_path === 'string' &&
+            toolInput.file_path.replace(/\\/g, '/').endsWith('.agentguard-identity')) ||
+          (data.tool_name === 'Bash' &&
+            typeof toolInput.command === 'string' &&
+            toolInput.command.includes('.agentguard-identity'));
+
+        if (isIdentityWrite) {
+          process.exit(0);
+          return;
+        }
+
+        process.stdout.write(
+          JSON.stringify({
+            decision: 'block',
+            reason:
+              'Agent identity not set. Write your agent name to .agentguard-identity or set AGENTGUARD_AGENT_NAME env var.',
+          })
+        );
+        process.exit(2);
+        return;
+      }
+
       const payload = parsePaperclipPayload(data);
       const denied = await handlePreToolUse(payload, extraArgs);
       // Exit code 2 tells the hook caller to block the action
@@ -181,14 +269,15 @@ function handlePostToolUse(data: Record<string, unknown>): void {
   if (toolName !== 'Bash' && toolName !== 'bash' && toolName !== 'shell') return;
 
   const toolOutput = (data.tool_output || {}) as Record<string, unknown>;
+  const exitCode = (toolOutput.exit_code ?? toolOutput.exitCode ?? 0) as number;
   const stderr = (toolOutput.stderr || '') as string;
 
-  if (stderr.trim()) {
-    process.stderr.write('\n');
-    process.stderr.write(
+  if (exitCode !== 0 && stderr.trim()) {
+    process.stdout.write('\n');
+    process.stdout.write(
       `  \x1b[1m\x1b[31mError detected:\x1b[0m ${stderr.trim().split('\n')[0].slice(0, 80)}\n`
     );
-    process.stderr.write('\n');
+    process.stdout.write('\n');
   }
 }
 
@@ -205,9 +294,7 @@ function readStdin(): Promise<string> {
   });
 }
 
-// Entry point: when run directly via `node paperclip-hook.js pre|post`, invoke paperclipHook().
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const hookArg = process.argv[2];
-  const extra = process.argv.slice(3);
-  paperclipHook(hookArg, extra);
-}
+// Note: Self-execution guard removed. In the esbuild bundle, all modules share one
+// import.meta.url, so the guard always fired — racing with bin.ts's dispatcher,
+// consuming stdin, and calling process.exit() before the real invocation could run.
+// The CLI dispatcher (bin.ts) handles invocation via `case 'paperclip-hook':`.

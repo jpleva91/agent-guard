@@ -11,6 +11,8 @@ beforeEach(() => {
     return true;
   });
   vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+  // Set agent identity so the hard gate doesn't block PreToolUse tests
+  process.env.AGENTGUARD_AGENT_NAME = 'test-agent';
 });
 
 function mockStdin(data: string) {
@@ -97,17 +99,35 @@ describe('paperclipHook', () => {
     }
   });
 
-  it('prints error summary for Bash with stderr (post)', async () => {
+  it('prints error summary for Bash with non-zero exit and stderr (post)', async () => {
     const input = JSON.stringify({
       hook: 'PostToolUse',
       tool_name: 'Bash',
-      tool_output: { stderr: 'Permission denied: /etc/hosts' },
+      tool_output: { exit_code: 1, stderr: 'Permission denied: /etc/hosts' },
     });
     const restore = mockStdin(input);
     try {
       await paperclipHook('post');
       expect(process.exit).toHaveBeenCalledWith(0);
-      expect(process.stderr.write).toHaveBeenCalledWith(
+      expect(process.stdout.write).toHaveBeenCalledWith(
+        expect.stringContaining('Error detected')
+      );
+    } finally {
+      restore();
+    }
+  });
+
+  it('does not print error when exit code is 0 despite stderr (post)', async () => {
+    const input = JSON.stringify({
+      hook: 'PostToolUse',
+      tool_name: 'Bash',
+      tool_output: { exit_code: 0, stderr: 'npm warn deprecated' },
+    });
+    const restore = mockStdin(input);
+    try {
+      await paperclipHook('post');
+      expect(process.exit).toHaveBeenCalledWith(0);
+      expect(process.stdout.write).not.toHaveBeenCalledWith(
         expect.stringContaining('Error detected')
       );
     } finally {
@@ -119,13 +139,13 @@ describe('paperclipHook', () => {
     const input = JSON.stringify({
       hook: 'PostToolUse',
       tool_name: 'Bash',
-      tool_output: { stderr: '' },
+      tool_output: { exit_code: 1, stderr: '' },
     });
     const restore = mockStdin(input);
     try {
       await paperclipHook('post');
       expect(process.exit).toHaveBeenCalledWith(0);
-      expect(process.stderr.write).not.toHaveBeenCalledWith(
+      expect(process.stdout.write).not.toHaveBeenCalledWith(
         expect.stringContaining('Error detected')
       );
     } finally {
@@ -136,16 +156,55 @@ describe('paperclipHook', () => {
   it('infers PostToolUse when tool_output is present', async () => {
     const input = JSON.stringify({
       tool_name: 'Bash',
-      tool_output: { stderr: 'error occurred' },
+      tool_output: { exit_code: 1, stderr: 'error occurred' },
     });
     const restore = mockStdin(input);
     try {
       await paperclipHook(); // no hookType — infer from tool_output
-      expect(process.stderr.write).toHaveBeenCalledWith(
+      expect(process.stdout.write).toHaveBeenCalledWith(
         expect.stringContaining('Error detected')
       );
     } finally {
       restore();
+    }
+  });
+
+  // --- Agent identity gate ---
+
+  it('blocks with exit 2 when agent identity is not set (pre)', async () => {
+    delete process.env.AGENTGUARD_AGENT_NAME;
+    const input = JSON.stringify({
+      hook: 'PreToolUse',
+      tool_name: 'Read',
+      tool_input: { file_path: 'src/index.ts' },
+    });
+    const restore = mockStdin(input);
+    try {
+      await paperclipHook('pre');
+      expect(process.exit).toHaveBeenCalledWith(2);
+      expect(process.stdout.write).toHaveBeenCalledWith(
+        expect.stringContaining('Agent identity not set')
+      );
+    } finally {
+      restore();
+      process.env.AGENTGUARD_AGENT_NAME = 'test-agent';
+    }
+  });
+
+  it('allows identity file writes through the gate (pre)', async () => {
+    delete process.env.AGENTGUARD_AGENT_NAME;
+    const input = JSON.stringify({
+      hook: 'PreToolUse',
+      tool_name: 'Write',
+      tool_input: { file_path: '/project/.agentguard-identity', content: 'my-agent' },
+    });
+    const restore = mockStdin(input);
+    try {
+      await paperclipHook('pre');
+      expect(process.exit).toHaveBeenCalledWith(0);
+    } finally {
+      restore();
+      process.env.AGENTGUARD_AGENT_NAME = 'test-agent';
     }
   });
 

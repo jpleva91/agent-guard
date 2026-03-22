@@ -46,12 +46,17 @@ export async function paperclipInit(args: string[] = []): Promise<void> {
   // Parse --store flag for storage backend (embedded into hook commands)
   const storeIdx = args.findIndex((a) => a === '--store');
   const storeBackend = storeIdx !== -1 ? args[storeIdx + 1] : undefined;
-  const storeSuffix = storeBackend ? ` --store ${storeBackend}` : '';
 
   // Parse --db-path flag for SQLite database path
   const dbPathIdx = args.findIndex((a) => a === '--db-path');
   const dbPathValue = dbPathIdx !== -1 ? args[dbPathIdx + 1] : undefined;
-  const dbPathSuffix = dbPathValue ? ` --db-path "${dbPathValue}"` : '';
+
+  // Sanitize values before embedding into hook command strings written to settings.json.
+  // These commands are executed by Claude Code on every tool call — unsanitized values
+  // could allow command injection via shell metacharacters.
+  const sanitize = (v: string) => v.replace(/[^\w.:/\\-]/g, '');
+  const storeSuffix = storeBackend ? ` --store ${sanitize(storeBackend)}` : '';
+  const dbPathSuffix = dbPathValue ? ` --db-path "${sanitize(dbPathValue)}"` : '';
 
   process.stderr.write('\n');
   process.stderr.write(`  ${BOLD}AgentGuard × Paperclip Integration${RESET}\n\n`);
