@@ -231,7 +231,7 @@ rules:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `action` | `string \| string[]` | Action type(s): `file.read`, `git.push`, `shell.exec`, `mcp.call`, etc. (24 types across 9 classes) |
+| `action` | `string \| string[]` | Action type(s): `file.read`, `git.push`, `shell.exec`, `mcp.call`, etc. (27 types across 9 classes) |
 | `effect` | `string` | `deny` or `allow` |
 | `target` | `string` | Glob pattern for file paths or command patterns |
 | `branches` | `string[]` | Git branch names this rule applies to |

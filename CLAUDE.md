@@ -180,7 +180,7 @@ apps/
 
 tests/
 └── *.test.js               # 14 JS test files (custom zero-dependency harness)
-# 157 TS test files (vitest) distributed across packages/ and apps/ directories
+# 159 TS test files (vitest) distributed across packages/ and apps/ directories
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
 policies/                   # Policy packs (YAML: ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
 docs/                       # System documentation (architecture, event model, specs)
@@ -284,7 +284,7 @@ Each workspace package maps to a single architectural concept:
 - `agentguard learn` — Interactive tutorials and learning paths
 - `agentguard migrate` — Migrate configuration between versions
 - `agentguard trust` — Manage policy and hook trust verification
-- `agentguard cloud connect|status|events|runs|summary|disconnect` — Cloud governance analytics
+- `agentguard cloud login|connect|status|events|runs|summary|disconnect` — Cloud governance analytics
 - `agentguard copilot-hook` — Handle GitHub Copilot PreToolUse/PostToolUse hook events
 - `agentguard copilot-init` — Set up GitHub Copilot hook integration
 

@@ -58,7 +58,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 
 | Component | Status | Key Files |
 |-----------|--------|-----------|
-| Canonical Action Representation (24 types, 9 classes) | Implemented | `packages/core/src/actions.ts` |
+| Canonical Action Representation (27 types, 9 classes) | Implemented | `packages/core/src/actions.ts` |
 | Action Authorization Boundary (AAB) | Implemented (2 bypass vectors) | `packages/kernel/src/aab.ts` |
 | Policy Evaluator (two-phase deny/allow) | Implemented | `packages/policy/src/evaluator.ts` |
 | 21 Built-in Invariants | Fully Implemented | `packages/invariants/src/definitions.ts`, `packages/invariants/src/checker.ts` |
