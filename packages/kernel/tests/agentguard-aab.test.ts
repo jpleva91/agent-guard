@@ -303,9 +303,14 @@ describe('agentguard/core/aab', () => {
     });
 
     // Git destructive operations
-    it('detects git reset --hard', () => {
-      expect(isDestructiveCommand('git reset --hard HEAD~3')).toBe(true);
-      expect(isDestructiveCommand('git reset --hard origin/main')).toBe(true);
+    it('detects git reset --hard (no ref or dot)', () => {
+      expect(isDestructiveCommand('git reset --hard')).toBe(true);
+      expect(isDestructiveCommand('git reset --hard .')).toBe(true);
+    });
+
+    it('allows git reset --hard with known ref (not destructive)', () => {
+      expect(isDestructiveCommand('git reset --hard HEAD~3')).toBe(false);
+      expect(isDestructiveCommand('git reset --hard origin/main')).toBe(false);
     });
 
     it('detects git clean -fd', () => {
