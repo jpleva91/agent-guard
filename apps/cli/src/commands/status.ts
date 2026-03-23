@@ -183,9 +183,9 @@ async function checkHookIntegrity(): Promise<{
       case 'verified':
         return { result, detail: '(verified — settings.json matches baseline)' };
       case 'tampered':
-        return { result, detail: '(TAMPERED — run "agentguard claude-init --refresh")' };
+        return { result, detail: '(TAMPERED — run "agentguard trust --hooks" to accept current state)' };
       case 'no_baseline':
-        return { result, detail: '(no baseline — run "agentguard claude-init --refresh")' };
+        return { result, detail: '(no baseline — run "agentguard trust --hooks" to set baseline)' };
       case 'hooks_missing':
         return { result, detail: '(hooks not found)' };
     }

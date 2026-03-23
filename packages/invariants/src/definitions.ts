@@ -72,6 +72,35 @@ export const CREDENTIAL_PATH_PATTERNS: string[] = INVARIANT_CREDENTIAL_PATH_PATT
 /** Exact basenames (case-insensitive) that are credential files at any depth. */
 export const CREDENTIAL_BASENAME_PATTERNS: string[] = INVARIANT_CREDENTIAL_BASENAME_PATTERNS;
 
+/** File extensions/patterns that are non-code (docs, config, metadata).
+ * Used by test-before-push to exempt commits that only change these files. */
+const NON_CODE_EXTENSIONS = new Set([
+  '.md', '.mdx', '.txt', '.rst', '.adoc',           // documentation
+  '.yaml', '.yml', '.toml',                          // config
+  '.json',                                           // metadata/state
+  '.csv', '.tsv',                                    // data
+  '.svg', '.png', '.jpg', '.jpeg', '.gif', '.ico',   // images
+  '.lock',                                           // lockfiles
+]);
+
+const NON_CODE_BASENAMES = new Set([
+  'license', 'changelog', 'roadmap', 'authors',
+  '.gitignore', '.gitattributes', '.editorconfig', '.prettierrc', '.prettierignore',
+  '.eslintignore', '.npmrc', '.nvmrc',
+]);
+
+function isNonCodeFile(filePath: string): boolean {
+  const lower = filePath.toLowerCase();
+  const basename = lower.split('/').pop() ?? lower;
+  if (NON_CODE_BASENAMES.has(basename)) return true;
+  const dotIdx = basename.lastIndexOf('.');
+  if (dotIdx >= 0) {
+    const ext = basename.slice(dotIdx);
+    if (NON_CODE_EXTENSIONS.has(ext)) return true;
+  }
+  return false;
+}
+
 // ─── Precompiled PathMatcher instances ────────────────────────────────────────
 // These replace ad-hoc `.includes()`/`.endsWith()` chains with compiled
 // picomatch globs that are both faster and more expressive.
@@ -551,6 +580,12 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     check(state) {
       if (!state.isPush) {
         return { holds: true, expected: 'N/A', actual: 'Not a push operation' };
+      }
+      // Exempt non-code commits: if all modified files are docs/config/metadata,
+      // test verification adds no safety value.
+      const files = state.modifiedFiles ?? [];
+      if (files.length > 0 && files.every(isNonCodeFile)) {
+        return { holds: true, expected: 'N/A', actual: 'Only non-code files modified' };
       }
       return {
         holds: state.testsPass === true,

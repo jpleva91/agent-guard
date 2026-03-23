@@ -1,23 +1,64 @@
-// CLI command: agentguard trust — interactive policy trust flow.
+// CLI command: agentguard trust — interactive policy trust flow + hook baseline.
 //
 // Usage:
 //   agentguard trust <policy-file>        Interactive trust flow with risk review
 //   agentguard trust <policy-file> --yes  Skip confirmation prompt (for scripts/CI)
+//   agentguard trust --hooks              Re-baseline hook integrity (accept current settings.json)
 
 import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, join } from 'node:path';
 import { createInterface } from 'node:readline';
+import { homedir } from 'node:os';
 import { FG, RESET, DIM, BOLD } from '../colors.js';
 
 const MAX_DISPLAY_LINES = 40;
 
 function printUsage(): void {
   process.stderr.write('\n  Usage: agentguard trust <policy-file> [flags]\n');
+  process.stderr.write('         agentguard trust --hooks\n');
   process.stderr.write('\n  Flags:\n');
   process.stderr.write('    --yes, -y   Skip confirmation prompt\n');
+  process.stderr.write('    --hooks     Re-baseline hook integrity (accept current settings.json)\n');
   process.stderr.write('\n  Examples:\n');
   process.stderr.write('    agentguard trust agentguard.yaml\n');
-  process.stderr.write('    agentguard trust .agentguard/policy.yaml --yes\n\n');
+  process.stderr.write('    agentguard trust .agentguard/policy.yaml --yes\n');
+  process.stderr.write('    agentguard trust --hooks\n\n');
+}
+
+async function trustHooks(): Promise<number> {
+  const { storeHookBaseline, verifyHookIntegrity } = await import('@red-codes/adapters');
+
+  // Check both local and global settings
+  const candidates = [
+    join(process.cwd(), '.claude', 'settings.json'),
+    join(homedir(), '.claude', 'settings.json'),
+  ];
+
+  let baselined = 0;
+  for (const settingsPath of candidates) {
+    if (!existsSync(settingsPath)) continue;
+    storeHookBaseline(settingsPath);
+    const result = verifyHookIntegrity(settingsPath);
+    if (result === 'verified') {
+      process.stderr.write(
+        `  ${FG.green}✓${RESET}  Hook baseline updated: ${DIM}${settingsPath}${RESET}\n`
+      );
+      baselined++;
+    }
+  }
+
+  if (baselined === 0) {
+    process.stderr.write(
+      `  ${FG.yellow}No settings.json with AgentGuard hooks found.${RESET}\n`
+    );
+    process.stderr.write(
+      `  ${DIM}Run "agentguard claude-init" first.${RESET}\n`
+    );
+    return 1;
+  }
+
+  process.stderr.write(`\n  ${DIM}Hook integrity status will now show "verified".${RESET}\n\n`);
+  return 0;
 }
 
 /**
@@ -25,6 +66,11 @@ function printUsage(): void {
  * Reads the policy file, analyzes risks, prompts for confirmation, then records trust.
  */
 export async function trust(args: string[]): Promise<number> {
+  // Handle --hooks subcommand
+  if (args.includes('--hooks')) {
+    return trustHooks();
+  }
+
   // Parse flags
   const yes = args.includes('--yes') || args.includes('-y');
 
