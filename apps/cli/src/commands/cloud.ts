@@ -125,7 +125,7 @@ export async function cloud(args: string[]): Promise<number> {
 
   switch (sub) {
     case 'connect':
-      return cloudConnect(args.slice(1));
+      return await cloudConnect(args.slice(1));
     case 'status':
       return cloudStatus();
     case 'disconnect':
@@ -146,46 +146,123 @@ export async function cloud(args: string[]): Promise<number> {
   }
 }
 
-function cloudConnect(args: string[]): number {
-  // Parse --endpoint flag
+async function cloudConnect(args: string[]): Promise<number> {
   let endpoint = DEFAULT_ENDPOINT;
   let apiKey: string | undefined;
+  let tenantId: string | undefined;
+  let authKey: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--endpoint' && args[i + 1]) {
-      endpoint = args[i + 1];
-      i++; // skip value
-    } else if (!args[i]!.startsWith('-')) {
-      apiKey = args[i];
+    const arg = args[i]!;
+    if (arg === '--endpoint' && args[i + 1]) {
+      endpoint = args[i + 1]!;
+      i++;
+    } else if (arg === '--api' && args[i + 1]) {
+      endpoint = args[i + 1]!;
+      i++;
+    } else if (arg === '--tenant' && args[i + 1]) {
+      tenantId = args[i + 1]!;
+      i++;
+    } else if (arg === '--key' && args[i + 1]) {
+      authKey = args[i + 1]!;
+      i++;
+    } else if (arg.startsWith('-')) {
+      process.stderr.write(`  ${FG.red}Error:${RESET} Unknown flag: ${arg}\n`);
+      process.stderr.write(`  ${DIM}Run "agentguard cloud help" for usage.${RESET}\n`);
+      return 1;
+    } else {
+      apiKey = arg;
     }
   }
 
-  if (!apiKey) {
-    process.stderr.write(
-      `  ${FG.red}Error:${RESET} Missing API key. Usage: agentguard cloud connect <api-key>\n`
-    );
-    return 1;
+  // Mode 1: Direct API key — just save it (existing behavior)
+  if (apiKey && !tenantId) {
+    const validationError = validateApiKey(apiKey);
+    if (validationError) {
+      process.stderr.write(`  ${FG.red}Error:${RESET} ${validationError}\n`);
+      return 1;
+    }
+
+    const envPath = getEnvPath();
+    upsertEnvVar(envPath, 'AGENTGUARD_API_KEY', apiKey);
+    upsertEnvVar(envPath, 'AGENTGUARD_TELEMETRY_URL', endpoint);
+
+    process.stderr.write('\n');
+    process.stderr.write(`  ${FG.green}✓${RESET}  Connected to AgentGuard Cloud\n`);
+    process.stderr.write(`  ${DIM}Endpoint:${RESET}  ${endpoint}\n`);
+    process.stderr.write(`  ${DIM}API Key:${RESET}   ${maskApiKey(apiKey)}\n`);
+    process.stderr.write(`  ${DIM}Saved to:${RESET}  ${envPath}\n`);
+    process.stderr.write('\n');
+    return 0;
   }
 
-  const validationError = validateApiKey(apiKey);
-  if (validationError) {
-    process.stderr.write(`  ${FG.red}Error:${RESET} ${validationError}\n`);
-    return 1;
+  // Mode 2: Provision a new key by tenant ID
+  if (tenantId) {
+    // Resolve auth key: --key flag → current .env → error
+    if (!authKey) {
+      const existing = loadCloudConfig();
+      authKey = existing?.apiKey;
+    }
+
+    if (!authKey) {
+      process.stderr.write(`  ${FG.red}Error:${RESET} No API key found for authentication.\n`);
+      process.stderr.write(
+        `  ${DIM}Provide --key <key> or run "agentguard cloud login" first.${RESET}\n`
+      );
+      return 1;
+    }
+
+    const base = endpoint.replace(/\/+$/, '');
+    process.stderr.write(`  ${DIM}Provisioning key for tenant ${tenantId}...${RESET}\n`);
+
+    try {
+      const res = await fetch(`${base}/v1/cli/provision-key`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': authKey,
+        },
+        body: JSON.stringify({ tenantId }),
+        signal: AbortSignal.timeout(15_000),
+      });
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        process.stderr.write(
+          `  ${FG.red}Error:${RESET} Provision failed (${res.status})${body ? `: ${body}` : ''}\n`
+        );
+        return 1;
+      }
+
+      const data = (await res.json()) as { apiKey: string; tenantName: string };
+
+      const envPath = getEnvPath();
+      upsertEnvVar(envPath, 'AGENTGUARD_API_KEY', data.apiKey);
+      upsertEnvVar(envPath, 'AGENTGUARD_TELEMETRY_URL', endpoint);
+
+      process.stderr.write('\n');
+      process.stderr.write(
+        `  ${FG.green}✓${RESET}  Connected to ${BOLD}${data.tenantName}${RESET}\n`
+      );
+      process.stderr.write(`  ${DIM}Endpoint:${RESET}  ${endpoint}\n`);
+      process.stderr.write(`  ${DIM}API Key:${RESET}   ${maskApiKey(data.apiKey)}\n`);
+      process.stderr.write(`  ${DIM}Saved to:${RESET}  ${envPath}\n`);
+      process.stderr.write('\n');
+      return 0;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      process.stderr.write(`  ${FG.red}Error:${RESET} ${message}\n`);
+      return 1;
+    }
   }
 
-  // Save to project .env
-  const envPath = getEnvPath();
-  upsertEnvVar(envPath, 'AGENTGUARD_API_KEY', apiKey);
-  upsertEnvVar(envPath, 'AGENTGUARD_TELEMETRY_URL', endpoint);
-
-  process.stderr.write('\n');
-  process.stderr.write(`  ${FG.green}✓${RESET}  Connected to AgentGuard Cloud\n`);
-  process.stderr.write(`  ${DIM}Endpoint:${RESET}  ${endpoint}\n`);
-  process.stderr.write(`  ${DIM}API Key:${RESET}   ${maskApiKey(apiKey)}\n`);
-  process.stderr.write(`  ${DIM}Saved to:${RESET}  ${envPath}\n`);
-  process.stderr.write('\n');
-
-  return 0;
+  // Neither key nor tenant provided
+  process.stderr.write(
+    `  ${FG.red}Error:${RESET} Provide an API key or use --tenant <id> to provision one.\n`
+  );
+  process.stderr.write(`  ${DIM}Usage: agentguard cloud connect <api-key>\n`);
+  process.stderr.write(`         agentguard cloud connect --tenant <id> --api <url>${RESET}\n`);
+  return 1;
 }
 
 function cloudStatus(): number {
@@ -506,8 +583,9 @@ function showCloudHelp(): number {
   ${BOLD}agentguard cloud${RESET} — Manage AgentGuard Cloud connection and query data
 
   ${BOLD}Usage:${RESET}
-    agentguard cloud connect <api-key>              Connect to cloud
-    agentguard cloud connect <api-key> --endpoint <url>  Use custom endpoint
+    agentguard cloud connect <api-key>              Connect with existing key
+    agentguard cloud connect <api-key> --api <url>  Connect with custom endpoint
+    agentguard cloud connect --tenant <id> --api <url>  Provision new key for tenant
     agentguard cloud status                         Show connection status
     agentguard cloud disconnect                     Remove cloud connection
     agentguard cloud events [flags]                 Query governance events
@@ -528,9 +606,15 @@ function showCloudHelp(): number {
   ${BOLD}API Key format:${RESET}
     Keys must start with "ag_" and be at least 20 characters.
 
+  ${BOLD}Connect flags:${RESET}
+    --api <url>           Cloud API endpoint (alias: --endpoint)
+    --tenant <uuid>       Provision a new key for this tenant
+    --key <api-key>       Auth key for provisioning (default: reads from .env)
+
   ${BOLD}Examples:${RESET}
     agentguard cloud connect ag_live_abc123def456xyz
-    agentguard cloud connect ag_test_key1234567890 --endpoint https://custom.example.com
+    agentguard cloud connect ag_live_abc123def456xyz --api https://custom.example.com
+    agentguard cloud connect --tenant 0c478e74-... --api https://agentguard-cloud.vercel.app
     agentguard cloud status
     agentguard cloud disconnect
     agentguard cloud events

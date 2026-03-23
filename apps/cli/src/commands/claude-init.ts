@@ -28,6 +28,12 @@ function resolveCliPrefix(): { cli: string; isLocal: boolean } {
   if (existsSync(localMarker)) {
     return { cli: LOCAL_BIN, isLocal: true };
   }
+  // If agentguard is a local devDependency (node_modules/.bin/agentguard exists),
+  // use npx to invoke it — bare 'agentguard' won't be on PATH.
+  const localBin = join(mainRoot, 'node_modules', '.bin', 'agentguard');
+  if (existsSync(localBin)) {
+    return { cli: 'npx agentguard', isLocal: false };
+  }
   return { cli: 'agentguard', isLocal: false };
 }
 
