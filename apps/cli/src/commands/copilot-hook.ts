@@ -8,7 +8,6 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { CopilotCliHookPayload } from '@red-codes/adapters';
 import type { CloudSinkBundle } from '@red-codes/telemetry';
 
@@ -251,9 +250,7 @@ function resolveAgentIdentity(): string | null {
   return null;
 }
 
-// Entry point: when run directly via `node copilot-hook.js pre|post`, invoke copilotHook().
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const hookArg = process.argv[2];
-  const extra = process.argv.slice(3);
-  copilotHook(hookArg, extra);
-}
+// NOTE: No direct entry point here. When bundled by esbuild into bin.js,
+// import.meta.url matches bin.js — causing a false-positive that steals stdin
+// before the CLI router invokes copilotHook(). All invocations go through
+// the CLI router in bin.ts: `case "copilot-hook": copilotHook(args[1], ...)`
