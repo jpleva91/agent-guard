@@ -26,6 +26,8 @@ import type { Driver } from '../identity.js';
 interface SessionState extends Record<string, unknown> {
   formatPass?: boolean;
   testsPass?: boolean;
+  /** File paths written/modified in this session — for commit-scope-guard invariant */
+  writtenFiles?: string[];
 }
 
 function sessionStatePath(sessionId: string): string {
@@ -481,14 +483,37 @@ async function handlePreToolUse(
 
   const sessionState = readSessionState(normalizedPayload.session_id);
 
+  // Inject session write log for commit-scope-guard invariant.
+  // On git.commit, the kernel's invariant needs to know which files this session wrote.
+  const enrichedState: Record<string, unknown> = { ...sessionState };
+  if (sessionState.writtenFiles && sessionState.writtenFiles.length > 0) {
+    enrichedState.sessionWrittenFiles = sessionState.writtenFiles;
+  }
+
   const result = await processClaudeCodeHook(
     kernel,
     normalizedPayload,
-    sessionState,
+    enrichedState,
     resolvedPersona,
     projectRoot
   );
   kernel.shutdown();
+
+  // Track file writes in session state so commit-scope-guard knows what this session touched.
+  const toolName = normalizedPayload.tool_name;
+  if (
+    result.allowed &&
+    (toolName === 'Write' || toolName === 'Edit') &&
+    normalizedPayload.tool_input?.file_path
+  ) {
+    const filePath = normalizedPayload.tool_input.file_path as string;
+    const existing = sessionState.writtenFiles ?? [];
+    if (!existing.includes(filePath)) {
+      writeSessionState(normalizedPayload.session_id, {
+        writtenFiles: [...existing, filePath],
+      });
+    }
+  }
 
   // Flush cloud telemetry before exit — hook is short-lived so we can't rely on intervals.
   // Cap at 2s to avoid blocking the agent on network issues.

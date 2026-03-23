@@ -550,8 +550,10 @@ export function createKernel(config: KernelConfig = {}): Kernel {
 
         // 2. Pre-fetch staged files for commit-scope-guard invariant.
         // Must happen before monitor.process() so the invariant has the data synchronously.
+        // Runs even in dryRun mode — fetchStagedFiles is read-only (git diff --cached --name-only)
+        // and hooks always use dryRun: true.
         let enrichedContext = systemContext;
-        if (!dryRun) {
+        {
           const preIntent = normalizeIntent(rawAction);
           if (preIntent.action === 'git.commit') {
             const stagedFiles = await fetchStagedFiles(
@@ -1709,17 +1711,24 @@ export function createKernel(config: KernelConfig = {}): Kernel {
 // fetchStagedFiles — pre-fetch for commit-scope-guard invariant
 // ---------------------------------------------------------------------------
 
-/** Run `git diff --cached --name-only` to get files staged for the next commit. */
+/** Run `git diff --cached --name-only` and resolve to absolute paths for comparison with session write log. */
 async function fetchStagedFiles(cwd?: string): Promise<string[]> {
   const { execFile } = await import('node:child_process');
   const { promisify } = await import('node:util');
+  const { resolve } = await import('node:path');
   const execFileAsync = promisify(execFile);
+  const workDir = cwd || process.cwd();
   try {
     const { stdout } = await execFileAsync('git', ['diff', '--cached', '--name-only'], {
-      cwd: cwd || process.cwd(),
+      cwd: workDir,
       timeout: 5000,
     });
-    return stdout.trim().split('\n').filter(Boolean);
+    // Resolve repo-relative paths to absolute so they match session write log entries
+    return stdout
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((f) => resolve(workDir, f));
   } catch {
     return [];
   }
