@@ -38,7 +38,10 @@ function readSessionState(sessionId: string | undefined): CopilotSessionState {
   }
 }
 
-function writeSessionState(sessionId: string | undefined, patch: Partial<CopilotSessionState>): void {
+function writeSessionState(
+  sessionId: string | undefined,
+  patch: Partial<CopilotSessionState>
+): void {
   const key = sessionId || String(process.ppid) || 'default';
   try {
     mkdirSync(join(tmpdir(), 'agentguard'), { recursive: true });
@@ -467,7 +470,7 @@ function handlePostToolUse(data: Record<string, unknown>): void {
   // This satisfies the `requireFormat` policy condition on subsequent git.commit actions.
   const sessionId =
     (data.sessionId as string | undefined) || process.env.COPILOT_SESSION_ID || undefined;
-  const resolvedExitCode = exitCode !== -1 ? exitCode : (resultType === 'failure' ? 1 : 0);
+  const resolvedExitCode = exitCode !== -1 ? exitCode : resultType === 'failure' ? 1 : 0;
 
   if (resolvedExitCode === 0 && sessionId) {
     const isFormatCmd =
