@@ -14,7 +14,7 @@ Install in 30 seconds. Your agents can't break what matters.</p>
 
 ---
 
-AI coding agents (Claude Code, GitHub Copilot, any MCP client) run autonomously — writing files, executing commands, pushing code. AgentGuard prevents them from doing catastrophic things: no accidental pushes to main, no credential leaks, no runaway destructive loops. 21 built-in safety checks, zero config required.
+AI coding agents (Claude Code, GitHub Copilot, any MCP client) run autonomously — writing files, executing commands, pushing code. AgentGuard prevents them from doing catastrophic things: no accidental pushes to main, no credential leaks, no runaway destructive loops. 22 built-in safety checks, zero config required.
 
 **For individuals:** stop your AI from wrecking your machine or repo.
 **For teams:** run fleets of agents safely at scale, with audit trails that pass compliance.
@@ -38,7 +38,7 @@ The `claude-init` wizard walks you through setup interactively:
 
   Enable a policy pack?
     ❯ 1) essentials — secrets, force push, protected branches, credentials
-      2) strict — all 21 invariants enforced
+      2) strict — all 22 invariants enforced
       3) none — monitor only, configure later
 ```
 
@@ -94,7 +94,7 @@ Identity consists of a **role** (`developer`, `reviewer`, `ops`, `security`, `pl
 | Capability | Details |
 |------------|---------|
 | **Policy enforcement** | YAML rules with deny / allow / escalate — drop `agentguard.yaml` in your repo |
-| **21 built-in invariants** | Secret exposure, protected branches, blast radius, path traversal, CI/CD config, package script injection, and more |
+| **22 built-in invariants** | Secret exposure, protected branches, blast radius, path traversal, CI/CD config, package script injection, and more |
 | **47 event kinds** | Full lifecycle telemetry: `ActionRequested → ActionAllowed/Denied → ActionExecuted` |
 | **Real-time cloud dashboard** | Telemetry streams to your team dashboard; opt-in, anonymous by default |
 | **Multi-tenant** | Team workspaces, GitHub/Google OAuth, SSO-ready |
@@ -245,7 +245,7 @@ rules:
 
 ## Built-in Invariants
 
-21 safety invariants run on every action evaluation:
+22 safety invariants run on every action evaluation:
 
 | Invariant | Severity | What it blocks |
 |-----------|----------|----------------|
@@ -262,6 +262,7 @@ rules:
 | `no-package-script-injection` | High | `package.json` lifecycle script changes |
 | `transitive-effect-analysis` | High | Downstream policy violations from a file write |
 | `no-ide-socket-access` | High | VS Code IPC socket files |
+| `commit-scope-guard` | High | Staged files not written by the current session |
 | `blast-radius-limit` | Medium | Caps file modification count per action (default: 20) |
 | `no-container-config-modification` | Medium | Dockerfile, docker-compose.yml |
 | `no-env-var-modification` | Medium | Shell profile and env var files |
@@ -280,7 +281,7 @@ Agent tool call
 AgentGuard Kernel
   1. Normalize   — map tool call to canonical action type
   2. Evaluate    — match policy rules (deny / allow / escalate)
-  3. Check       — run 21 built-in invariants
+  3. Check       — run 22 built-in invariants
   4. Execute     — run action via adapter (file, shell, git)
   5. Emit        — 47 event kinds → SQLite audit trail + cloud telemetry
 ```
@@ -385,7 +386,7 @@ extends:
 | `engineering-standards` | Balanced dev-friendly guardrails: test-before-push, format checks, safe deps |
 | `ci-safe` | Strict CI/CD pipeline protection |
 | `enterprise` | Full enterprise governance |
-| `strict` | Maximum restriction — all 21 invariants enforced |
+| `strict` | Maximum restriction — all 22 invariants enforced |
 | `open-source` | OSS contribution-friendly defaults |
 
 ## Links
