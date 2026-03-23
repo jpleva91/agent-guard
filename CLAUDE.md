@@ -126,11 +126,13 @@ packages/
 │   ├── tui-renderer.ts         # TUI renderer implementation
 │   ├── types.ts                # Renderer type definitions
 │   └── index.ts                # Module re-exports
-├── storage/src/                # @red-codes/storage — Storage backends (SQLite, opt-in)
+├── storage/src/                # @red-codes/storage — Storage backends (SQLite + optional JSONL streaming)
 │   ├── adoption-analytics.ts   # Adoption analytics engine
+│   ├── aggregation-queries.ts  # SQL aggregation queries (agent summaries, team reports)
 │   ├── denial-learner.ts       # Denial pattern learning
 │   ├── factory.ts              # Storage bundle factory
 │   ├── index.ts                # Module re-exports
+│   ├── jsonl-sink.ts           # JSONL streaming event/decision sink (append-only, real-time tailing)
 │   ├── migrations.ts           # Schema migrations (version-based)
 │   ├── sqlite-session.ts       # SQLite session lifecycle (insert on start, update on end)
 │   ├── sqlite-sink.ts          # SQLite event/decision sink
@@ -166,7 +168,7 @@ apps/
 │   ├── session-store.ts        # Session management
 │   ├── file-event-store.ts     # File-based event persistence
 │   ├── evidence-summary.ts     # Evidence summary generator for PR reports
-│   └── commands/               # guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, policy-verify, claude-hook, claude-init, copilot-hook, copilot-init, cloud, init, diff, evidence-pr, traces, session-viewer, status, analytics, auto-setup, config, audit-verify, demo, adoption, learn, migrate, trust
+│   └── commands/               # guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, policy-verify, claude-hook, claude-init, copilot-hook, copilot-init, cloud, init, diff, evidence-pr, traces, session-viewer, status, analytics, auto-setup, config, audit-verify, demo, adoption, learn, migrate, trust, team-report
 ├── mcp-server/src/             # @red-codes/mcp-server — MCP governance server
 │   ├── index.ts                # Entry point
 │   ├── server.ts               # MCP server implementation
@@ -227,7 +229,7 @@ The kernel loop is the core of AgentGuard. Every agent action passes through it:
 4. Invariant checker verifies system state (21 defaults)
 5. If allowed: execute via adapter (file/shell/git handlers)
 6. Emit lifecycle events: `ACTION_REQUESTED` → `ACTION_ALLOWED/DENIED` → `ACTION_EXECUTED/FAILED`
-7. Sink all events to SQLite for audit trail
+7. Sink all events to SQLite for audit trail (optional JSONL streaming sink via `--jsonl`)
 
 Key files: `packages/kernel/src/kernel.ts`, `packages/kernel/src/aab.ts`, `packages/kernel/src/decision.ts`, `packages/kernel/src/monitor.ts`
 See `docs/unified-architecture.md` for the full model.
@@ -243,7 +245,7 @@ Each workspace package maps to a single architectural concept:
 - **packages/plugins/** — Plugin ecosystem (discovery, registry, validation, sandboxing)
 - **packages/renderers/** — Renderer plugin system (registry, TUI renderer)
 - **packages/core/** — Shared utilities (types, actions, hash, execution-log)
-- **packages/storage/** — Storage backend: SQLite (indexed queries, the only storage backend)
+- **packages/storage/** — Storage backends: SQLite (primary, indexed queries) + optional JSONL streaming sink; team aggregation queries
 - **packages/telemetry/** — Runtime telemetry and logging
 - **packages/telemetry-client/** — Telemetry client (identity, signing, queue, sender)
 - **packages/sdk/** — Agent SDK for programmatic governance integration
@@ -257,6 +259,7 @@ Each workspace package maps to a single architectural concept:
 - `agentguard guard --policy <file>` — Use a specific policy file (YAML or JSON)
 - `agentguard guard --dry-run` — Evaluate without executing actions
 - `agentguard guard --agent-name <name>` — Set agent identity for this session (required; prompts if not set)
+- `agentguard guard --jsonl <dir>` — Stream events/decisions as JSONL files for real-time tailing (also via `AGENTGUARD_JSONL_PATH` env var)
 - `agentguard inspect [runId]` — Show action graph and decisions for a run
 - `agentguard events [runId]` — Show raw event stream for a run
 - `agentguard export <runId>` — Export a governance session to a portable JSONL file
@@ -287,6 +290,7 @@ Each workspace package maps to a single architectural concept:
 - `agentguard cloud login|connect|status|events|runs|summary|disconnect` — Cloud governance analytics
 - `agentguard copilot-hook` — Handle GitHub Copilot PreToolUse/PostToolUse hook events
 - `agentguard copilot-init` — Set up GitHub Copilot hook integration
+- `agentguard team-report` — Team-level governance observability (per-agent metrics, compliance rates, denial trends; supports text, JSON, CSV, Markdown output)
 
 ### Event Model
 The canonical event model is the architectural spine. Event kinds defined in `packages/events/src/schema.ts`:

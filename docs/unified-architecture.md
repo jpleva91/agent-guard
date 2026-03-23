@@ -36,7 +36,7 @@ The system has one architectural spine: the **canonical event model**. All syste
          │  1. ACTION_REQUESTED event                          │
          │  2. AAB normalizes intent                           │
          │  3. Policy evaluation (match → allow/deny)          │
-         │  4. Invariant checking (6 default invariants)       │
+         │  4. Invariant checking (21 built-in invariants)      │
          │  5. Evidence pack generation                        │
          │  6. If allowed: execute via adapter                 │
          │  7. ACTION_ALLOWED/DENIED + ACTION_EXECUTED/FAILED  │
@@ -48,13 +48,13 @@ The system has one architectural spine: the **canonical event model**. All syste
                ┌────────────────┼────────────────┐
                │                │                │
                ▼                ▼                ▼
-     ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-     │ TUI Renderer │  │ JSONL Sink   │  │  EventBus   │
-     │              │  │              │  │             │
-     │ Terminal     │  │ .agentguard/ │  │ Pub/sub     │
-     │ action       │  │ events/      │  │ broadcast   │
-     │ stream       │  │ <runId>.jsonl│  │             │
-     └──────────────┘  └──────────────┘  └──────┬──────┘
+     ┌─────────────┐  ┌──────────────┐  ┌─────────────┐  ┌─────────────┐
+     │ TUI Renderer │  │ SQLite Sink  │  │ JSONL Sink  │  │  EventBus   │
+     │              │  │  (primary)   │  │ (optional)  │  │             │
+     │ Terminal     │  │ .agentguard/ │  │ --jsonl dir │  │ Pub/sub     │
+     │ action       │  │ agentguard.db│  │ <runId>.jsonl│  │ broadcast   │
+     │ stream       │  │              │  │             │  │             │
+     └──────────────┘  └──────────────┘  └─────────────┘  └──────┬──────┘
                                                 │
                                                 ▼
                                     ┌───────────────────┐
@@ -79,7 +79,7 @@ Agent proposes action (RawAgentAction)
     │
     ▼ Engine.evaluate() → EngineDecision
     │   ├── Policy evaluator: match rules, check deny/allow
-    │   ├── Invariant checker: 6 defaults + custom invariants
+    │   ├── Invariant checker: 21 defaults + custom invariants
     │   └── Evidence pack: structured audit record
     │
     ▼ Monitor.process() → MonitorDecision
@@ -88,14 +88,14 @@ Agent proposes action (RawAgentAction)
     │
     ├── If DENIED:
     │   ├── emit ACTION_DENIED
-    │   ├── sink events to JSONL
+    │   ├── sink events to SQLite (+ optional JSONL)
     │   └── return { allowed: false, intervention }
     │
     └── If ALLOWED:
         ├── emit ACTION_ALLOWED
         ├── Execute via adapter registry (file/shell/git handlers)
         ├── emit ACTION_EXECUTED or ACTION_FAILED
-        ├── sink events to JSONL
+        ├── sink events to SQLite (+ optional JSONL)
         └── return { allowed: true, executed: true/false, execution result }
 ```
 
@@ -121,7 +121,8 @@ The kernel is the **governance producer and action executor**. It is the core of
 | Git adapter | `packages/adapters/src/git.ts` | Git operations with validation |
 | Claude Code adapter | `packages/adapters/src/claude-code.ts` | Hook payload normalization |
 | TUI renderer | `packages/renderers/src/tui-renderer.ts` | Terminal action stream display |
-| JSONL sink | `packages/events/src/jsonl.ts` | Event persistence |
+| SQLite sink | `packages/storage/src/sqlite-sink.ts` | Primary event/decision persistence |
+| JSONL sink | `packages/storage/src/jsonl-sink.ts` | Optional streaming event persistence (real-time tailing) |
 
 ### Domain Layer (Shared)
 
@@ -129,7 +130,7 @@ Pure domain logic with no environment dependencies.
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
-| Canonical actions | `packages/core/src/actions.ts` | 23 action types, 8 classes |
+| Canonical actions | `packages/core/src/actions.ts` | 27 action types, 9 classes |
 | Canonical events | `packages/events/src/schema.ts` | 50+ event kinds, factory, validation |
 | Reference monitor | `packages/kernel/src/decision.ts` | Action authorization with decision trail |
 | Adapter registry | `packages/adapters/src/registry.ts` | Action class → handler mapping |
@@ -142,6 +143,7 @@ Pure domain logic with no environment dependencies.
 | `agentguard guard` | `apps/cli/src/commands/guard.ts` | Start governed action runtime |
 | `agentguard inspect` | `apps/cli/src/commands/inspect.ts` | Show action graph for a run |
 | `agentguard events` | `apps/cli/src/commands/inspect.ts` | Show raw event stream for a run |
+| `agentguard team-report` | `apps/cli/src/commands/team-report.ts` | Team-level governance observability across agents |
 
 ## Integration Guarantees
 
@@ -153,6 +155,6 @@ Pure domain logic with no environment dependencies.
 
 4. **Deterministic evaluation.** Same action + same policy + same state = same decision. No inference, no heuristics.
 
-5. **Observable.** Every decision produces events. Every event is sunk to JSONL. Every run is inspectable.
+5. **Observable.** Every decision produces events. Every event is sunk to SQLite (with optional JSONL streaming). Every run is inspectable.
 
 6. **Default-deny (complete mediation).** When a policy file is loaded, any action without an explicit `allow` rule is denied. Agents cannot escalate privileges by requesting action types absent from the policy. Fail-open only applies when no policy is configured, preserving zero-friction onboarding while enforcing closed posture in governed environments.
