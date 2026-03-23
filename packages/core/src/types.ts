@@ -552,6 +552,9 @@ export interface RunSummaryEntry extends RunSummary {
 /** Action class categories */
 export type ActionClass = 'file' | 'test' | 'git' | 'shell' | 'npm' | 'http' | 'deploy' | 'infra';
 
+/** Extended action class including MCP and unknown categories */
+export type ActionClassExtended = ActionClass | 'mcp' | 'unknown';
+
 /** Action type definition */
 export interface ActionDefinition {
   readonly class: ActionClass;
@@ -560,6 +563,81 @@ export interface ActionDefinition {
 
 /** Authorization decision */
 export type Decision = 'allow' | 'deny' | 'escalate';
+
+// ---------------------------------------------------------------------------
+// ActionContext — KE-2: Canonical Action Normalization
+// ---------------------------------------------------------------------------
+
+/** Actor identity — who is performing the action */
+export interface ActorIdentity {
+  /** Agent identity string (e.g., 'claude-code:abc123', 'copilot-cli:xyz') */
+  readonly agentId: string;
+  /** Session identifier for audit correlation */
+  readonly sessionId?: string;
+  /** Whether the agent is running in a git worktree */
+  readonly inWorktree?: boolean;
+  /** Agent persona metadata (trust tier, role, autonomy) */
+  readonly persona?: AgentPersona;
+}
+
+/** Structured action arguments — typed data extracted from the raw tool call */
+export interface ActionArguments {
+  /** File path target (for file/git actions) */
+  readonly filePath?: string;
+  /** Shell command (for shell.exec actions) */
+  readonly command?: string;
+  /** Branch name (for git actions) */
+  readonly branch?: string;
+  /** File content (for file.write/edit actions) */
+  readonly content?: string;
+  /** Number of files affected by this action */
+  readonly filesAffected?: number;
+  /** Additional tool-specific metadata */
+  readonly metadata?: Record<string, unknown>;
+}
+
+/**
+ * ActionContext — the vendor-neutral, normalized representation of an agent action.
+ *
+ * This is the canonical input to the governance evaluation pipeline, decoupling
+ * the policy engine from provider-specific payloads. Every runtime adapter
+ * (Claude Code, Copilot, LangGraph) normalizes its tool calls into this format.
+ *
+ * Structurally compatible with NormalizedIntent — can be passed directly to the
+ * policy evaluator without conversion.
+ */
+export interface ActionContext {
+  /** Normalized action type (e.g., 'file.write', 'shell.exec', 'git.push') */
+  readonly action: string;
+  /** Action class category */
+  readonly actionClass: ActionClassExtended;
+  /** Primary target of the action (file path, branch name, URL, etc.) */
+  readonly target: string;
+  /** Actor identity — who is performing the action */
+  readonly actor: ActorIdentity;
+  /** Structured action arguments */
+  readonly args: ActionArguments;
+  /** Whether the action is destructive (e.g., rm -rf, force push) */
+  readonly destructive: boolean;
+  /** Source runtime that produced this action (e.g., 'claude-code', 'copilot-cli') */
+  readonly source: string;
+  /** Timestamp when normalization completed (epoch ms, for benchmarking) */
+  readonly normalizedAt: number;
+
+  // --- NormalizedIntent-compatible fields (structural compatibility) ---
+  /** Agent identity (mirrors actor.agentId for NormalizedIntent compatibility) */
+  readonly agent: string;
+  /** Branch (mirrors args.branch for NormalizedIntent compatibility) */
+  readonly branch?: string;
+  /** Command (mirrors args.command for NormalizedIntent compatibility) */
+  readonly command?: string;
+  /** Files affected (mirrors args.filesAffected for NormalizedIntent compatibility) */
+  readonly filesAffected?: number;
+  /** Metadata (mirrors args.metadata for NormalizedIntent compatibility) */
+  readonly metadata?: Record<string, unknown>;
+  /** Persona (mirrors actor.persona for NormalizedIntent compatibility) */
+  readonly persona?: AgentPersona;
+}
 
 /** A canonical action object */
 export interface CanonicalAction {

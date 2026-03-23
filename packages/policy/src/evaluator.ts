@@ -1,7 +1,8 @@
 // Policy evaluator — matches actions against loaded policies.
 // Pure domain logic. No DOM, no Node.js-specific APIs.
+// Accepts both NormalizedIntent and ActionContext (KE-2) as input.
 
-import type { AgentPersona } from '@red-codes/core';
+import type { AgentPersona, ActionContext } from '@red-codes/core';
 import { PolicyMatcher } from '@red-codes/matchers';
 
 export interface PersonaCondition {
@@ -404,8 +405,13 @@ function createRuleEval(
   };
 }
 
+/**
+ * Evaluate an action intent against loaded policies.
+ * Accepts either a NormalizedIntent or an ActionContext (KE-2).
+ * ActionContext is structurally compatible — all required NormalizedIntent fields are present.
+ */
 export function evaluate(
-  intent: NormalizedIntent,
+  intent: NormalizedIntent | ActionContext,
   policies: LoadedPolicy[],
   options?: EvaluateOptions
 ): EvalResult {

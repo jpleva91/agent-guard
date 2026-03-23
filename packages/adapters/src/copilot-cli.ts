@@ -4,8 +4,9 @@
 // Response format (preToolUse only): { permissionDecision: 'allow'|'deny', permissionDecisionReason }
 
 import type { RawAgentAction } from '@red-codes/kernel';
+import { normalizeToActionContext } from '@red-codes/kernel';
 import type { Kernel, KernelResult } from '@red-codes/kernel';
-import type { AgentPersona } from '@red-codes/core';
+import type { AgentPersona, ActionContext } from '@red-codes/core';
 import { simpleHash, personaFromEnv } from '@red-codes/core';
 
 export interface CopilotCliHookPayload {
@@ -205,6 +206,18 @@ export function normalizeCopilotCliAction(
     return { ...baseAction, persona: resolvedPersona };
   }
   return baseAction;
+}
+
+/**
+ * Convert a Copilot CLI hook payload directly into a vendor-neutral ActionContext.
+ * This is the KE-2 adapter mapping: Copilot tool-calls → ActionContext.
+ */
+export function copilotToActionContext(
+  payload: CopilotCliHookPayload,
+  persona?: AgentPersona
+): ActionContext {
+  const rawAction = normalizeCopilotCliAction(payload, persona);
+  return normalizeToActionContext(rawAction, 'copilot-cli');
 }
 
 export async function processCopilotCliHook(

@@ -2,11 +2,18 @@
 // The central gatekeeper in the Runtime Assurance Architecture.
 // Pure domain logic. No DOM, no Node.js-specific APIs.
 
-import type { DomainEvent, AgentPersona, CompiledDestructivePattern } from '@red-codes/core';
+import type {
+  DomainEvent,
+  AgentPersona,
+  CompiledDestructivePattern,
+  ActionContext,
+  ActionClassExtended,
+} from '@red-codes/core';
 import {
   TOOL_ACTION_MAP_DATA,
   DESTRUCTIVE_PATTERNS_DATA,
   GIT_ACTION_PATTERNS_DATA,
+  getActionClass,
 } from '@red-codes/core';
 import { CommandScanner } from '@red-codes/matchers';
 import { evaluate } from '@red-codes/policy';
@@ -284,6 +291,67 @@ export function authorize(
   }
 
   return { intent, result, events, blastRadius };
+}
+
+/**
+ * Resolve the ActionClassExtended for a normalized action type.
+ * MCP actions get 'mcp', unknown actions get 'unknown', everything else
+ * is resolved from the canonical ACTION_TYPES registry.
+ */
+function resolveActionClass(action: string): ActionClassExtended {
+  if (action === 'mcp.call') return 'mcp';
+  const cls = getActionClass(action);
+  return cls ?? 'unknown';
+}
+
+/**
+ * Normalize a raw agent action into a vendor-neutral ActionContext.
+ *
+ * This is the KE-2 canonical normalization entry point. Every runtime adapter
+ * should call this (directly or via a convenience wrapper) to produce the
+ * ActionContext that flows through the governance pipeline.
+ *
+ * Performance target: 50–100µs (p50).
+ */
+export function normalizeToActionContext(
+  rawAction: RawAgentAction | null,
+  source: string = 'unknown'
+): ActionContext {
+  const intent = normalizeIntent(rawAction);
+  const actionClass = resolveActionClass(intent.action);
+  const now = Date.now();
+
+  return {
+    // ActionContext-specific enrichment
+    actionClass,
+    actor: {
+      agentId: intent.agent,
+      sessionId: (rawAction?.metadata?.sessionId as string) ?? undefined,
+      inWorktree: (rawAction?.metadata?.inWorktree as boolean) ?? undefined,
+      persona: intent.persona,
+    },
+    args: {
+      filePath: rawAction?.file || rawAction?.target || undefined,
+      command: intent.command,
+      branch: intent.branch,
+      content: rawAction?.content || undefined,
+      filesAffected: intent.filesAffected,
+      metadata: intent.metadata,
+    },
+    source,
+    normalizedAt: now,
+
+    // NormalizedIntent-compatible fields (structural compatibility)
+    action: intent.action,
+    target: intent.target,
+    agent: intent.agent,
+    branch: intent.branch,
+    command: intent.command,
+    filesAffected: intent.filesAffected,
+    metadata: intent.metadata,
+    persona: intent.persona,
+    destructive: intent.destructive,
+  };
 }
 
 export { detectGitAction, isDestructiveCommand, getDestructiveDetails, DESTRUCTIVE_PATTERNS };

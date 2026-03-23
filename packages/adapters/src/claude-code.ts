@@ -5,8 +5,9 @@
 import { statSync } from 'node:fs';
 import { dirname, join, parse as parsePath } from 'node:path';
 import type { RawAgentAction } from '@red-codes/kernel';
+import { normalizeToActionContext } from '@red-codes/kernel';
 import type { Kernel, KernelResult } from '@red-codes/kernel';
-import type { AgentPersona } from '@red-codes/core';
+import type { AgentPersona, ActionContext } from '@red-codes/core';
 import { simpleHash, personaFromEnv } from '@red-codes/core';
 
 export interface ClaudeCodeToolUse {
@@ -246,6 +247,19 @@ export function normalizeClaudeCodeAction(
     return { ...baseAction, persona: resolvedPersona };
   }
   return baseAction;
+}
+
+/**
+ * Convert a Claude Code hook payload directly into a vendor-neutral ActionContext.
+ * This is the KE-2 adapter mapping: Claude tool-calls → ActionContext.
+ */
+export function toActionContext(
+  payload: ClaudeCodeHookPayload,
+  persona?: AgentPersona,
+  projectRoot?: string
+): ActionContext {
+  const rawAction = normalizeClaudeCodeAction(payload, persona, projectRoot);
+  return normalizeToActionContext(rawAction, 'claude-code');
 }
 
 export async function processClaudeCodeHook(
