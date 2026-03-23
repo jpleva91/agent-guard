@@ -70,7 +70,7 @@ This is the architectural hinge that transforms AgentGuard from advisory interce
 - [x] ~~Expand destructive command patterns~~ — 87 patterns (sudo, pkill, docker, systemctl, DB commands, etc.)
 - [x] ~~Governance self-modification invariant~~ — Agents cannot modify `agentguard.yaml` or policies/
 - [x] ~~Path traversal prevention in file adapter~~ — ✅ Done 2026-03-21 (v2.3.0)
-- [ ] **Enforce PAUSE and ROLLBACK** — Currently metadata labels only; implement as enforced kernel behaviors
+- [x] ~~Enforce PAUSE and ROLLBACK~~ — ✅ Done 2026-03-18 — Enforced ROLLBACK post-execution invariant checks (PR #617)
 - [x] ~~Performance benchmark suite~~ — ✅ Done 2026-03-21 — CI regression gate operational (bench-regression-gate.yml)
 
 ---
