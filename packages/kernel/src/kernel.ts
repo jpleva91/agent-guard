@@ -557,7 +557,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
           const preIntent = normalizeIntent(rawAction);
           if (preIntent.action === 'git.commit') {
             const stagedFiles = await fetchStagedFiles(
-              (rawAction as Record<string, unknown>)?.cwd as string | undefined,
+              (rawAction as Record<string, unknown>)?.cwd as string | undefined
             );
             enrichedContext = {
               ...systemContext,
