@@ -1,0 +1,49 @@
+<idea-plugin>
+    <id>com.agentguard.jetbrains</id>
+    <name>AgentGuard</name>
+    <vendor email="support@agentguard.dev" url="https://agentguard.dev">AgentGuard</vendor>
+
+    <description><![CDATA[
+        <p>Governance observability for AI coding agents.</p>
+        <p>AgentGuard monitors AI agent tool calls, enforces policies and invariants, and surfaces
+        governance events directly in your JetBrains IDE. See real-time run status, event history,
+        and violation diagnostics without leaving your editor.</p>
+        <ul>
+            <li>Run status panel — live governance metrics for the current session</li>
+            <li>Run history — browse past governance sessions with decision summaries</li>
+            <li>Recent events — stream of allowed, denied, and escalated actions</li>
+            <li>Violation notifications — instant alerts for policy denials and invariant breaches</li>
+            <li>Inline diagnostics — violation indicators in the editor gutter and Problems panel</li>
+        </ul>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <projectService
+            serviceImplementation="com.agentguard.jetbrains.services.EventReaderService"/>
+        <projectService
+            serviceImplementation="com.agentguard.jetbrains.services.GovernanceWatcherService"/>
+
+        <toolWindow
+            id="AgentGuard"
+            anchor="right"
+            icon="AllIcons.General.Shield"
+            factoryClass="com.agentguard.jetbrains.toolwindow.AgentGuardToolWindowFactory"/>
+
+        <notificationGroup
+            id="AgentGuard"
+            displayType="BALLOON"
+            toolWindowId="AgentGuard"/>
+
+        <externalAnnotator
+            language=""
+            implementationClass="com.agentguard.jetbrains.services.GovernanceAnnotator"/>
+    </extensions>
+
+    <projectListeners>
+        <listener
+            class="com.agentguard.jetbrains.services.GovernanceFileListener"
+            topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"/>
+    </projectListeners>
+</idea-plugin>

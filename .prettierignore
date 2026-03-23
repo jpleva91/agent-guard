@@ -6,3 +6,7 @@ dist/
 *.yaml
 *.html
 *.cjs
+*.kt
+*.kts
+*.gradle
+apps/jetbrains-extension/
