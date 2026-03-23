@@ -309,3 +309,185 @@ export function denialPatterns(
     distinctSessions: number;
   }>;
 }
+
+// ─── Team-Level Aggregation Queries ───────────────────────────────────────────
+
+/** Per-agent governance summary */
+export interface AgentSummary {
+  readonly agent: string;
+  readonly sessions: number;
+  readonly totalActions: number;
+  readonly allowed: number;
+  readonly denied: number;
+  readonly escalated: number;
+  readonly violations: number;
+  readonly complianceRate: number;
+  readonly firstSeen: number;
+  readonly lastSeen: number;
+}
+
+/** Team-wide governance report */
+export interface TeamReport {
+  readonly overview: GovernanceStats;
+  readonly agents: AgentSummary[];
+  readonly topDeniedActions: DeniedActionCount[];
+  readonly topViolatedInvariants: ViolationByInvariant[];
+  readonly denialTrends: DenialPatternEntry[];
+}
+
+/** Denial pattern entry for team reports */
+export interface DenialPatternEntry {
+  readonly actionType: string;
+  readonly reason: string;
+  readonly occurrences: number;
+  readonly distinctSessions: number;
+}
+
+/**
+ * Per-agent governance summaries.
+ *
+ * Resolves agent identity from RunStarted events (agentName field in JSON data),
+ * then joins with decision outcomes to compute per-agent compliance metrics.
+ */
+export function agentSummaries(
+  db: Database.Database,
+  filter?: AggregationTimeFilter
+): AgentSummary[] {
+  const { where, params } = buildTimeConditions(filter, 'events');
+
+  // Step 1: Map run_id → agent name from RunStarted events
+  const agentMapSql = `
+    SELECT
+      run_id,
+      COALESCE(
+        json_extract(data, '$.agentName'),
+        json_extract(data, '$.agentId'),
+        'unknown'
+      ) as agent
+    FROM events
+    ${where ? `${where} AND kind = 'RunStarted'` : "WHERE kind = 'RunStarted'"}
+  `;
+  const agentMap = db.prepare(agentMapSql).all(...params) as Array<{
+    run_id: string;
+    agent: string;
+  }>;
+
+  // Build a lookup of run_id → agent
+  const runToAgent = new Map<string, string>();
+  for (const row of agentMap) {
+    runToAgent.set(row.run_id, row.agent);
+  }
+
+  // Step 2: Get per-run decision summaries
+  const runSummarySql = `
+    SELECT
+      run_id as runId,
+      COUNT(*) as totalActions,
+      SUM(CASE WHEN outcome = 'allowed' THEN 1 ELSE 0 END) as allowed,
+      SUM(CASE WHEN outcome = 'denied' THEN 1 ELSE 0 END) as denied,
+      SUM(CASE WHEN outcome = 'escalated' THEN 1 ELSE 0 END) as escalated,
+      MIN(timestamp) as firstSeen,
+      MAX(timestamp) as lastSeen
+    FROM decisions
+    ${buildTimeConditions(filter, 'decisions').where}
+    GROUP BY run_id
+  `;
+  const runSummaries = db
+    .prepare(runSummarySql)
+    .all(...buildTimeConditions(filter, 'decisions').params) as Array<{
+    runId: string;
+    totalActions: number;
+    allowed: number;
+    denied: number;
+    escalated: number;
+    firstSeen: number;
+    lastSeen: number;
+  }>;
+
+  // Step 3: Get per-run violation counts
+  const violationSql = `
+    SELECT
+      run_id,
+      COUNT(*) as violations
+    FROM events
+    ${where ? `${where} AND kind = 'InvariantViolation'` : "WHERE kind = 'InvariantViolation'"}
+    GROUP BY run_id
+  `;
+  const violationRows = db.prepare(violationSql).all(...params) as Array<{
+    run_id: string;
+    violations: number;
+  }>;
+  const runViolations = new Map<string, number>();
+  for (const row of violationRows) {
+    runViolations.set(row.run_id, row.violations);
+  }
+
+  // Step 4: Aggregate by agent
+  const agentData = new Map<
+    string,
+    {
+      sessions: number;
+      totalActions: number;
+      allowed: number;
+      denied: number;
+      escalated: number;
+      violations: number;
+      firstSeen: number;
+      lastSeen: number;
+    }
+  >();
+
+  for (const run of runSummaries) {
+    const agent = runToAgent.get(run.runId) ?? 'unknown';
+    const existing = agentData.get(agent);
+    const violations = runViolations.get(run.runId) ?? 0;
+
+    if (existing) {
+      existing.sessions += 1;
+      existing.totalActions += run.totalActions;
+      existing.allowed += run.allowed;
+      existing.denied += run.denied;
+      existing.escalated += run.escalated;
+      existing.violations += violations;
+      existing.firstSeen = Math.min(existing.firstSeen, run.firstSeen);
+      existing.lastSeen = Math.max(existing.lastSeen, run.lastSeen);
+    } else {
+      agentData.set(agent, {
+        sessions: 1,
+        totalActions: run.totalActions,
+        allowed: run.allowed,
+        denied: run.denied,
+        escalated: run.escalated,
+        violations,
+        firstSeen: run.firstSeen,
+        lastSeen: run.lastSeen,
+      });
+    }
+  }
+
+  // Convert to sorted array
+  return [...agentData.entries()]
+    .map(([agent, data]) => ({
+      agent,
+      ...data,
+      complianceRate:
+        data.totalActions > 0 ? Math.round((data.allowed / data.totalActions) * 1000) / 10 : 100,
+    }))
+    .sort((a, b) => b.sessions - a.sessions);
+}
+
+/**
+ * Build a complete team governance report.
+ *
+ * Aggregates per-agent summaries, overall stats, top denied actions,
+ * most violated invariants, and denial patterns.
+ */
+export function teamReport(db: Database.Database, filter?: AggregationTimeFilter): TeamReport {
+  return {
+    overview: governanceStats(db, filter),
+    agents: agentSummaries(db, filter),
+    topDeniedActions: topDeniedActions(db, 10, filter),
+    topViolatedInvariants: countViolationsByInvariant(db, filter),
+    denialTrends: denialPatterns(db, 15, filter) as DenialPatternEntry[],
+  };
+}

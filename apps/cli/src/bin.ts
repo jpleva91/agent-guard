@@ -554,6 +554,13 @@ async function main() {
       break;
     }
 
+    case 'team-report': {
+      const { teamReportCommand } = await import('./commands/team-report.js');
+      const code = await teamReportCommand(args.slice(1), resolveStorageConfig(args.slice(1)));
+      process.exit(code);
+      break;
+    }
+
     case 'guard': {
       if (wantsHelp) {
         console.log(formatHelp(COMMANDS.guard));
@@ -953,6 +960,7 @@ function printHelp(): void {
     agentguard inspect [runId]                Inspect action graph and decisions
     agentguard events [runId]                 Show raw event stream for a run
     agentguard analytics                      Analyze blocked action patterns across sessions
+    agentguard team-report                    Team-level governance observability across agents
     agentguard adoption                       Show how much agent activity is protected
     agentguard learn                          Analyze denial patterns and suggest policy improvements
 
