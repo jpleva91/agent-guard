@@ -38,18 +38,32 @@ function fmtDuration(ms: number): string {
 
 // ── Markdown output helpers ──
 
-function markdownTeamReport(
-  stats: GovernanceStats,
-  agents: AgentStats[],
-  rollups: TimeRollup[],
-  teamPatterns: TeamViolationPattern[],
-  outcomes: DecisionOutcomeCount[],
-  denied: DeniedActionCount[],
-  violations: ViolationByInvariant[],
-  runs: RunSummary[],
-  granularity: Granularity,
-  teamMode: boolean = false
-): string {
+interface MarkdownReportOptions {
+  stats: GovernanceStats;
+  agents: AgentStats[];
+  rollups: TimeRollup[];
+  teamPatterns: TeamViolationPattern[];
+  outcomes: DecisionOutcomeCount[];
+  denied: DeniedActionCount[];
+  violations: ViolationByInvariant[];
+  runs: RunSummary[];
+  granularity: Granularity;
+  teamMode?: boolean;
+}
+
+function markdownTeamReport(opts: MarkdownReportOptions): string {
+  const {
+    stats,
+    agents,
+    rollups,
+    teamPatterns,
+    outcomes,
+    denied,
+    violations,
+    runs,
+    granularity,
+    teamMode = false,
+  } = opts;
   const lines: string[] = [];
   lines.push(`# ${teamMode ? 'Team Governance Report' : 'Governance Report'}\n`);
 
@@ -325,7 +339,7 @@ export async function analytics(args: string[], storageConfig?: StorageConfig): 
 
     // ── Markdown output ──
     if (outputFormat === 'markdown') {
-      const md = markdownTeamReport(
+      const md = markdownTeamReport({
         stats,
         agents,
         rollups,
@@ -334,9 +348,9 @@ export async function analytics(args: string[], storageConfig?: StorageConfig): 
         denied,
         violations,
         runs,
-        granularity ?? 'daily',
-        teamMode
-      );
+        granularity: granularity ?? 'daily',
+        teamMode,
+      });
       process.stdout.write(md);
       return 0;
     }
