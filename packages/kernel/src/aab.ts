@@ -131,7 +131,8 @@ function extractBranch(command: string | undefined): string | null {
   if (!command) return null;
   // Split on shell chain operators so we can extract branches from commands
   // wrapped in chains like `cd /repo && git push origin main`
-  const segments = command.split(/\s*(?:&&|\|\||;)\s*/);
+  // Note: trim segments instead of using \s* in the regex to avoid polynomial backtracking (CodeQL js/polynomial-redos)
+  const segments = command.split(/&&|\|\||;/).map((s) => s.trim());
   for (const segment of segments) {
     const pushMatch = segment.match(/\bgit\s+push\b/);
     if (!pushMatch) continue;
