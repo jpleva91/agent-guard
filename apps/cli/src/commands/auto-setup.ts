@@ -94,13 +94,15 @@ export function detectExistingHooks(cwd: string = process.cwd()): boolean {
   const copilotHooksPath = join(cwd, '.github', 'hooks', 'hooks.json');
   if (existsSync(copilotHooksPath)) {
     try {
-      const config = JSON.parse(readFileSync(copilotHooksPath, 'utf8')) as { hooks?: { preToolUse?: Array<{ bash?: string }> } };
+      const config = JSON.parse(readFileSync(copilotHooksPath, 'utf8')) as {
+        hooks?: { preToolUse?: Array<{ bash?: string }> };
+      };
       const preToolUse = config?.hooks?.preToolUse ?? [];
-      const hasCopilotHook = preToolUse.some((entry) =>
-        entry.bash?.includes('copilot-hook')
-      );
+      const hasCopilotHook = preToolUse.some((entry) => entry.bash?.includes('copilot-hook'));
       if (hasCopilotHook) return true;
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   return false;
