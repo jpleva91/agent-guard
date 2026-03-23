@@ -360,6 +360,8 @@ function printSummary(
   projectRoot: string
 ): void {
   const tag = (r: HookResult): string => (r === 'created' ? '[created]' : '[skipped]');
+  const claudeDetected = existsSync(join(projectRoot, '.claude'));
+
   process.stderr.write('\n');
   process.stderr.write('  AgentGuard postinstall\n');
   process.stderr.write(`  Project: ${projectRoot}\n\n`);
@@ -368,9 +370,24 @@ function printSummary(
   process.stderr.write(`  Starter policy:     ${tag(policyResult)}\n`);
   process.stderr.write('\n');
 
+  if (!claudeDetected) {
+    process.stderr.write(
+      '  \u26a0 Claude Code not detected \u2014 hooks ready for when you start\n\n'
+    );
+  }
+
   if (claudeResult === 'created' || copilotResult === 'created') {
     process.stderr.write('  Governance is active. Run: agentguard inspect --last\n\n');
   }
+
+  process.stderr.write(
+    '  Customize:  npx agentguard claude-init   (full Claude Code wizard)\n'
+  );
+  process.stderr.write(
+    '              npx agentguard copilot-init  (full Copilot CLI wizard)\n'
+  );
+  process.stderr.write('  Enforce:    set mode: enforce in agentguard.yaml\n');
+  process.stderr.write('\n');
 }
 
 function main(): void {
