@@ -149,13 +149,12 @@ importers:
       '@red-codes/core':
         specifier: workspace:*
         version: link:../core
-      '@red-codes/kernel':
-        specifier: workspace:*
-        version: link:../kernel
-    devDependencies:
       '@red-codes/events':
         specifier: workspace:*
         version: link:../events
+      '@red-codes/kernel':
+        specifier: workspace:*
+        version: link:../kernel
 
   packages/core: {}
 
