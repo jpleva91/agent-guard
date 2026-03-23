@@ -1,6 +1,6 @@
 {
   "name": "@red-codes/agentguard",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Run AI agents without fear — CLI safety layer",
   "type": "module",
   "license": "Apache-2.0",
