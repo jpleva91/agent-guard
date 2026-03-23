@@ -161,6 +161,23 @@ function extractBranch(command: string | undefined): string | null {
   return null;
 }
 
+/**
+ * Strip quoted string content from a command, leaving only the executable and flags.
+ * Replaces content inside single quotes, double quotes, heredocs, and backticks
+ * with empty strings. This prevents false positive pattern matches on argument text.
+ */
+function stripQuotedContent(command: string): string {
+  // Remove heredoc content: <<'EOF'...EOF or <<"EOF"...EOF or <<EOF...EOF
+  let stripped = command.replace(/<<['"]?(\w+)['"]?[\s\S]*?\n\1/g, '');
+  // Remove single-quoted strings
+  stripped = stripped.replace(/'[^']*'/g, "''");
+  // Remove double-quoted strings
+  stripped = stripped.replace(/"[^"]*"/g, '""');
+  // Remove backtick strings
+  stripped = stripped.replace(/`[^`]*`/g, '``');
+  return stripped;
+}
+
 export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedIntent {
   if (!rawAction || typeof rawAction !== 'object') {
     return { action: 'unknown', target: '', agent: 'unknown', destructive: false };
@@ -181,9 +198,11 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
   }
 
   if (action === 'shell.exec' && rawAction.command) {
-    const gitAction = detectGitAction(rawAction.command);
+    const scannable = stripQuotedContent(rawAction.command);
+    const gitAction = detectGitAction(scannable);
     if (gitAction) {
       action = gitAction;
+      // Use original command for branch extraction (needs the actual branch name)
       target = extractBranch(rawAction.command) || target;
     } else if (!target) {
       // Use command as target for non-git shell actions so scope-based
@@ -201,6 +220,9 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
     filesAffected: rawAction.filesAffected || undefined,
     metadata: rawAction.metadata || undefined,
     persona: rawAction.persona || undefined,
+    // Destructive detection scans the FULL command (including quotes) because
+    // destructive SQL inside quotes (e.g. psql -c 'DROP TABLE') is still dangerous.
+    // Only git action detection strips quotes to prevent heredoc false positives.
     destructive: action === 'shell.exec' && isDestructiveCommand(rawAction.command || ''),
   };
 }
@@ -355,4 +377,10 @@ export function normalizeToActionContext(
   };
 }
 
-export { detectGitAction, isDestructiveCommand, getDestructiveDetails, DESTRUCTIVE_PATTERNS };
+export {
+  detectGitAction,
+  isDestructiveCommand,
+  getDestructiveDetails,
+  stripQuotedContent,
+  DESTRUCTIVE_PATTERNS,
+};

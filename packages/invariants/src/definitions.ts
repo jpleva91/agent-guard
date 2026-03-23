@@ -272,6 +272,17 @@ const READ_ONLY_CMDS: string[] = [
   'diff',
 ];
 
+/** Strip known command wrappers (rtk, npx, env, sudo) to find the actual base command. */
+export function extractBaseCommand(command: string): string {
+  const tokens = command.split(/\s+/);
+  const WRAPPER_CMDS = ['rtk', 'npx', 'env', 'sudo', 'time', 'nice'];
+  let idx = 0;
+  while (idx < tokens.length && WRAPPER_CMDS.includes(tokens[idx]?.replace(/^.*\//, '') || '')) {
+    idx++;
+  }
+  return tokens[idx]?.replace(/^.*\//, '') || '';
+}
+
 /** Shell profile file basenames (case-insensitive) that establish persistent environment changes. */
 const SHELL_PROFILE_BASENAMES = [
   '.bashrc',
@@ -550,12 +561,23 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
   {
     id: 'test-before-push',
     name: 'Tests Before Push',
-    description: 'Tests must pass before pushing code',
+    description: 'Tests must pass before pushing to protected branches',
     severity: 3,
     check(state) {
       if (!state.isPush) {
         return { holds: true, expected: 'N/A', actual: 'Not a push operation' };
       }
+
+      // Only enforce on protected branches — feature branch pushes don't need test gating
+      const protectedBranches = (state.protectedBranches as string[] | undefined) || [
+        'main',
+        'master',
+      ];
+      const targetBranch = (state.targetBranch as string) || '';
+      if (targetBranch && !protectedBranches.includes(targetBranch)) {
+        return { holds: true, expected: 'N/A', actual: `Feature branch: ${targetBranch}` };
+      }
+
       return {
         holds: state.testsPass === true,
         expected: 'Tests passing',
@@ -594,7 +616,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       // For shell.exec, skip read-only commands (ls, cat, find, etc.)
       if (actionType === 'shell.exec') {
         const command = (state.currentCommand || '').trim();
-        const baseCmd = command.split(/\s+/)[0]?.replace(/^.*\//, '') || '';
+        const baseCmd = extractBaseCommand(command);
         if (READ_ONLY_CMDS.includes(baseCmd) && !hasFileRedirect(command)) {
           return { holds: true, expected: 'N/A', actual: 'Read-only shell command' };
         }
@@ -645,7 +667,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       // For shell.exec, skip read-only commands (ls, cat, find, etc.)
       if (actionType === 'shell.exec') {
         const command = (state.currentCommand || '').trim();
-        const baseCmd = command.split(/\s+/)[0]?.replace(/^.*\//, '') || '';
+        const baseCmd = extractBaseCommand(command);
         if (READ_ONLY_CMDS.includes(baseCmd) && !hasFileRedirect(command)) {
           return { holds: true, expected: 'N/A', actual: 'Read-only shell command' };
         }
@@ -918,7 +940,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       // For shell.exec, skip read-only commands (ls, cat, find, etc.)
       if (actionType === 'shell.exec') {
         const command = (state.currentCommand || '').trim();
-        const baseCmd = command.split(/\s+/)[0]?.replace(/^.*\//, '') || '';
+        const baseCmd = extractBaseCommand(command);
         if (READ_ONLY_CMDS.includes(baseCmd) && !hasFileRedirect(command)) {
           return { holds: true, expected: 'N/A', actual: 'Read-only shell command' };
         }
@@ -1076,7 +1098,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       // For shell.exec, skip read-only commands (ls, cat, find, etc.)
       if (actionType === 'shell.exec') {
         const command = (state.currentCommand || '').trim();
-        const baseCmd = command.split(/\s+/)[0]?.replace(/^.*\//, '') || '';
+        const baseCmd = extractBaseCommand(command);
         if (READ_ONLY_CMDS.includes(baseCmd) && !hasFileRedirect(command)) {
           return { holds: true, expected: 'N/A', actual: 'Read-only shell command' };
         }
