@@ -579,8 +579,7 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
   );
 }
 
-const STARTER_POLICY_TEMPLATE = (mode: 'monitor' | 'enforce', pack?: string) => {
-  const packLine = pack ? `pack: ${pack}` : '# pack: essentials';
+const STARTER_POLICY_TEMPLATE = (mode: 'monitor' | 'enforce', _pack?: string) => {
   return `# AgentGuard policy — runtime protection for AI coding agents.
 # Docs: https://github.com/AgentGuardHQ/agent-guard
 
@@ -590,9 +589,6 @@ description: Baseline safety rules for AI coding agents
 
 # Enforcement mode: monitor (warn but allow) or enforce (block)
 mode: ${mode}
-
-# Policy pack — curated invariant enforcement profiles
-${packLine}
 
 rules:
   # Protected branches — prevent direct push to main/master
@@ -626,6 +622,10 @@ rules:
   - action: infra.destroy
     effect: deny
     reason: Infrastructure destruction requires explicit authorization
+
+  # Default allow — all actions not matching a deny rule above are permitted
+  - action: "*"
+    effect: allow
 `;
 };
 

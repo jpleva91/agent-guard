@@ -147,7 +147,15 @@ echo "[AgentGuard] Identity set: \$DRIVER:\$MODEL:\$ROLE (project: \$PROJECT, tr
 export const SESSION_PERSONA_CHECK = `#!/usr/bin/env bash
 # session-persona-check.sh — SessionStart hook: checks for agent identity
 
-PERSONA_FILE=".agentguard/persona.env"
+# Resolve main repo root (works in worktrees)
+GIT_COMMON_DIR="\$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+if [ -n "\$GIT_COMMON_DIR" ] && [ "\$GIT_COMMON_DIR" != ".git" ]; then
+  REPO_ROOT="\$(dirname "\$GIT_COMMON_DIR")"
+else
+  REPO_ROOT="\$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+fi
+
+PERSONA_FILE="\$REPO_ROOT/.agentguard/persona.env"
 
 if [ -f "\$PERSONA_FILE" ]; then
   source "\$PERSONA_FILE"
@@ -156,7 +164,7 @@ if [ -f "\$PERSONA_FILE" ]; then
 fi
 
 # Auto-detect what we can
-PROJECT=\$(basename "\$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")
+PROJECT=\$(basename "\$REPO_ROOT" 2>/dev/null || echo "unknown")
 MODEL="\${CLAUDE_MODEL:-unknown}"
 
 echo "[AgentGuard] No agent identity set for this session."
@@ -177,8 +185,13 @@ export function claudeHookWrapper(
   return `#!/usr/bin/env bash
 # claude-hook-wrapper.sh — Sources persona identity before running governance hook
 
-# Resolve project root (hook CWD may not match the project directory)
-AGENTGUARD_WORKSPACE="\$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+# Resolve main repo root (works in worktrees — scripts live in the main repo)
+GIT_COMMON_DIR="\$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+if [ -n "\$GIT_COMMON_DIR" ] && [ "\$GIT_COMMON_DIR" != ".git" ]; then
+  AGENTGUARD_WORKSPACE="\$(dirname "\$GIT_COMMON_DIR")"
+else
+  AGENTGUARD_WORKSPACE="\$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+fi
 export AGENTGUARD_WORKSPACE
 
 # Source persona env vars if available (set -a exports all sourced vars)
@@ -188,7 +201,8 @@ if [ -f "\$AGENTGUARD_WORKSPACE/.agentguard/persona.env" ]; then
   set +a
 fi
 
-# Pass through to the actual hook
+# Pass through to the actual hook (run from main repo so scripts/ is found)
+cd "\$AGENTGUARD_WORKSPACE"
 exec ${cliPrefix} claude-hook pre${storeSuffix}${dbPathSuffix}
 `;
 }

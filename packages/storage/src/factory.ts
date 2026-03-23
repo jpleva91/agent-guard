@@ -35,7 +35,9 @@ async function createSqliteBundle(config: StorageConfig): Promise<StorageBundle>
     Database = mod.default ?? mod;
   } catch {
     throw new Error(
-      'SQLite backend requires better-sqlite3. Install it with: npm install better-sqlite3'
+      'SQLite backend requires better-sqlite3. Install it with: npm install better-sqlite3\n' +
+      'pnpm users: run `pnpm approve-builds` to allow native builds, or add to package.json:\n' +
+      '  "pnpm": { "onlyBuiltDependencies": ["better-sqlite3"] }'
     );
   }
 
