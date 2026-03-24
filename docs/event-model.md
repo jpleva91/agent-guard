@@ -82,19 +82,6 @@ Events produced by AgentGuard when evaluating agent actions.
 | `MergeGuardFailure` | 4 | Protected branch modification attempted |
 | `EvidencePackGenerated` | 1 | Governance evaluation completed (informational) |
 
-### Reference Monitor Events
-
-Events produced by the kernel's reference monitor during action lifecycle.
-
-| Type | Severity | Description |
-|------|----------|-------------|
-| `ActionRequested` | 0 | Agent proposed an action |
-| `ActionAllowed` | 0 | Action passed governance evaluation |
-| `ActionDenied` | 3 | Action blocked by policy or invariant |
-| `ActionEscalated` | 2 | Action triggered escalation |
-| `ActionExecuted` | 0 | Action completed execution |
-| `ActionFailed` | 3 | Action execution failed |
-
 ### Session Events
 
 Events tracking run lifecycle. Not directly mapped to encounters.
@@ -104,7 +91,6 @@ Events tracking run lifecycle. Not directly mapped to encounters.
 | `RunStarted` | 0 | Coding session / run began |
 | `RunEnded` | 0 | Coding session / run concluded |
 | `CheckpointReached` | 0 | Stability milestone during run |
-| `StateChanged` | 0 | Escalation state change (NORMAL → ELEVATED → HIGH → LOCKDOWN) |
 
 ## Severity Scale
 
@@ -170,63 +156,6 @@ Events are immutable and ordered. A stored event stream can be replayed to recon
 - Ordering is by `timestamp`. Ties are broken by `id`.
 - Replay produces identical event sequences given the same event stream.
 - This enables: post-session analysis, debugging governance decisions, and audit trail verification.
-
-## Governance Event Envelope (KE-3)
-
-All governance events produced by runtime adapters are wrapped in a `GovernanceEventEnvelope` — a versioned, runtime-agnostic wrapper that adds cross-cutting metadata to the inner `DomainEvent`.
-
-### Envelope Structure
-
-```json
-{
-  "schemaVersion": "1.0.0",
-  "envelopeId": "env_1711238400000_1",
-  "timestamp": "2026-03-24T00:00:00.000Z",
-  "source": "claude-code",
-  "policyVersion": "abc123",
-  "decisionCodes": ["deny", "escalate"],
-  "performanceMetrics": {
-    "hookLatencyUs": 450,
-    "evaluationLatencyUs": 120
-  },
-  "event": { /* inner DomainEvent — unchanged */ }
-}
-```
-
-### Envelope Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `schemaVersion` | string | Semver version of the envelope schema (currently `1.0.0`) |
-| `envelopeId` | string | Unique envelope identifier |
-| `timestamp` | string | ISO 8601 creation time |
-| `source` | string | Runtime that produced the event (`claude-code`, `copilot-cli`, etc.) |
-| `policyVersion` | string \| null | Policy version or content hash active at event time |
-| `decisionCodes` | string[] | Decision codes (e.g., `['allow']`, `['deny', 'escalate']`) |
-| `performanceMetrics` | object | Hook and evaluation latency in microseconds |
-| `event` | DomainEvent | The wrapped domain event (unmodified) |
-
-### Why Envelopes?
-
-Raw `DomainEvent` objects carry the governance payload but lack runtime context. The envelope adds:
-
-1. **Schema versioning** — Forward compatibility as the event model evolves
-2. **Runtime identification** — Cloud ingestion can attribute events without special-casing
-3. **Performance observability** — Hook latency and evaluation latency are captured per-event
-4. **Policy traceability** — Which policy version was active when the decision was made
-
-### Key Functions
-
-| Function | Location | Purpose |
-|----------|----------|---------|
-| `createEnvelope()` | `packages/events/src/schema.ts` | Create envelope from DomainEvent + options |
-| `isEnvelope()` | `packages/events/src/schema.ts` | Type guard for runtime checking |
-| `unwrapEnvelope()` | `packages/events/src/schema.ts` | Extract inner event (or return unchanged) |
-| `validateEnvelope()` | `packages/events/src/schema.ts` | Validate envelope structure |
-| `claudeCodeToEnvelope()` | `packages/adapters/src/claude-code.ts` | Create envelope with `source: 'claude-code'` |
-| `copilotCliToEnvelope()` | `packages/adapters/src/copilot-cli.ts` | Create envelope with `source: 'copilot-cli'` |
-| `createSqliteEnvelopeSink()` | `packages/storage/src/sqlite-sink.ts` | Persist full envelope to SQLite |
-| `mapEnvelopeToAgentEvent()` | `packages/telemetry/src/event-mapper.ts` | Map envelope to cloud AgentEvent format |
 
 ## Current Implementation
 

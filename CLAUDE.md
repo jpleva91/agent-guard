@@ -103,8 +103,6 @@ packages/
 │       ├── filesystem-simulator.ts  # File system impact simulation
 │       ├── git-simulator.ts         # Git operation simulation
 │       ├── package-simulator.ts     # Package change simulation
-│       ├── dependency-graph-simulator.ts # Dependency graph impact simulation
-│       ├── plan-simulator.ts        # Plan-level impact simulation
 │       ├── forecast.ts              # Impact forecast builder
 │       ├── registry.ts              # Simulator registry
 │       └── types.ts                 # Simulation type definitions
@@ -130,11 +128,9 @@ packages/
 │   └── index.ts                # Module re-exports
 ├── storage/src/                # @red-codes/storage — Storage backends (SQLite, opt-in)
 │   ├── adoption-analytics.ts   # Adoption analytics engine
-│   ├── aggregation-queries.ts  # Aggregation query helpers
 │   ├── denial-learner.ts       # Denial pattern learning
 │   ├── factory.ts              # Storage bundle factory
 │   ├── index.ts                # Module re-exports
-│   ├── jsonl-sink.ts           # JSONL event sink (export format)
 │   ├── migrations.ts           # Schema migrations (version-based)
 │   ├── sqlite-session.ts       # SQLite session lifecycle (insert on start, update on end)
 │   ├── sqlite-sink.ts          # SQLite event/decision sink
@@ -184,7 +180,7 @@ apps/
 
 # TS test files (vitest) distributed across packages/ and apps/ directories
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
-policies/                   # Policy packs (YAML: essentials, ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
+policies/                   # Policy packs (YAML: ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
 docs/                       # System documentation (architecture, event model, specs)
 hooks/                      # Git hooks (post-commit, post-merge)
 examples/                   # Example governance scenarios and error demos
@@ -226,7 +222,7 @@ The kernel loop is the core of AgentGuard. Every agent action passes through it:
 1. Agent proposes action (Claude Code tool call → `RawAgentAction`)
 2. AAB normalizes intent (tool → action type, detect git/destructive commands)
 3. Policy evaluator matches rules (deny/allow with scopes, branches, limits)
-4. Invariant checker verifies system state (22 defaults)
+4. Invariant checker verifies system state (21 defaults)
 5. If allowed: execute via adapter (file/shell/git handlers)
 6. Emit lifecycle events: `ACTION_REQUESTED` → `ACTION_ALLOWED/DENIED` → `ACTION_EXECUTED/FAILED`
 7. Sink all events to SQLite for audit trail
@@ -289,7 +285,6 @@ Each workspace package maps to a single architectural concept:
 - `agentguard cloud login|connect|status|events|runs|summary|disconnect` — Cloud governance analytics
 - `agentguard copilot-hook` — Handle GitHub Copilot PreToolUse/PostToolUse hook events
 - `agentguard copilot-init` — Set up GitHub Copilot hook integration
-- `agentguard team-report` — Team-level governance observability across agents
 
 ### Event Model
 The canonical event model is the architectural spine. Event kinds defined in `packages/events/src/schema.ts`:

@@ -52,7 +52,7 @@
     }
   },
   "phaseTracking": {
-    "assessedAt": "2026-03-24T14:10:00Z",
+    "assessedAt": "2026-03-22T15:20:00Z",
     "completedPhases": [
       { "phase": "Phase 0", "name": "Architecture Clarity", "status": "STABLE", "completion": 1.0, "checkboxes": "6/6" },
       { "phase": "Phase 1", "name": "Canonical Event Model", "status": "STABLE", "completion": 1.0, "checkboxes": "8/8" },
@@ -74,32 +74,32 @@
           { "number": 331, "title": "ROADMAP: Claude Code deep integration", "status": "in-progress", "lastUpdated": "2026-03-17" }
         ],
         "stallWarning": true,
-        "stallNote": "Both items (#310, #331) in-progress but no new PR activity. Now 6 days without progress on #310, 7 days on #331. Stall threshold 14 days — alert if no activity by 2026-04-04.",
+        "stallNote": "Both open items (#310, #331) marked in-progress but no new PR activity. Now 4 days without progress on #310, 5 days on #331. Stall threshold (14 days) not reached yet. Monitor closely.",
         "transitionReady": false
       },
       {
         "phase": "Phase 6",
         "name": "Reference Monitor Hardening",
         "status": "IN PROGRESS",
-        "completion": 0.86,
-        "checkboxes": "6/7",
+        "completion": 0.75,
+        "checkboxes": "6/8",
         "remaining": [
-          "Default-deny unknown actions in policy evaluator — issue #815 (new tracking issue)"
-        ],
-        "closedSinceLastUpdate": [
-          { "number": 638, "title": "HIGH: Policy evaluator fail-open mode", "closedAt": "since 2026-03-22" },
-          { "number": 637, "title": "HIGH: AAB regex-based detection bypassable", "closedAt": "since 2026-03-22" },
-          { "number": 608, "title": "Enforce non-DENY intervention types", "closedAt": "since 2026-03-22" },
-          { "number": 646, "title": "CI/CD invariant too broad", "closedAt": "since 2026-03-22" },
-          { "number": 650, "title": "Pattern-matches command body text", "closedAt": "since 2026-03-22" }
+          "Default-deny unknown actions in policy evaluator (evaluator.ts fail-open) — issue #638",
+          "Enforce intervention types beyond DENY (PAUSE/ROLLBACK behaviors) — issue #608"
         ],
         "openIssues": [
-          { "number": 815, "title": "ROADMAP: Default-deny unknown actions", "severity": "high", "hasAssignedPR": false },
-          { "number": 618, "title": "Claude hook: Bash tool bypasses credential write protection", "severity": "high", "hasAssignedPR": false, "label": "needs:refinement" },
-          { "number": 648, "title": "Governance hook blocks read-only operations", "severity": "high", "hasAssignedPR": false }
+          { "number": 638, "title": "HIGH: Policy evaluator fail-open mode", "severity": "high", "hasAssignedPR": false },
+          { "number": 608, "title": "ROADMAP: Enforce non-DENY intervention types", "severity": "medium", "hasAssignedPR": false },
+          { "number": 637, "title": "HIGH: AAB regex-based detection bypassable", "severity": "high", "hasAssignedPR": false },
+          { "number": 618, "title": "Claude hook: Bash tool bypasses credential write protection", "severity": "high", "hasAssignedPR": false, "label": "needs:refinement" }
+        ],
+        "closedIssues": [
+          { "number": 647, "title": "Protected branch bypass regression", "severity": "critical", "closedAt": "2026-03-22", "note": "CLOSED — was primary Phase 6 mode blocker" },
+          { "number": 636, "title": "CRITICAL: File adapter path traversal protection", "severity": "critical", "closedAt": "2026-03-22", "note": "CLOSED — resolved via another approach; PR #670 closed without merge" },
+          { "number": 627, "title": "refspec syntax bypasses protected branch", "severity": "high", "closedAt": "2026-03-22", "note": "RESOLVED — PR #724 merged (fix/issue-627-refspec-branch-extraction)" }
         ],
         "transitionReady": false,
-        "blockingReason": "Default-deny (#815) is the last unchecked Phase 6 ROADMAP item. #618 and #648 are related enforcement bugs."
+        "blockingReason": "Phase 6 cannot complete while fail-open evaluator (#638) remains unaddressed. All critical regressions resolved. #627 closed via merged PR #724."
       },
       {
         "phase": "KE Sprint",
@@ -107,14 +107,15 @@
         "status": "IN PROGRESS",
         "kePhases": {
           "KE-1": { "status": "DONE", "completion": 1.0, "checkboxes": "6/6", "shippedAt": "2026-03-21" },
-          "KE-2": { "status": "PLANNED", "completion": 0.0, "checkboxes": "0/4", "trackingIssue": 817 },
-          "KE-3": { "status": "DONE", "completion": 1.0, "shippedAt": "2026-03-24", "mergedPR": 812, "note": "PR #812 merged 2026-03-24T01:40Z. ROADMAP checkboxes not yet updated by documentation agent." },
+          "KE-2": { "status": "PLANNED", "completion": 0.0, "checkboxes": "0/4", "trackingIssue": 685 },
+          "KE-3": { "status": "PLANNED", "completion": 0.0, "checkboxes": "0/4", "trackingIssue": 686 },
           "KE-4": { "status": "PLANNED", "completion": 0.0, "checkboxes": "0/5", "trackingIssue": 687 },
           "KE-5": { "status": "PLANNED", "completion": 0.0, "checkboxes": "0/6" },
           "KE-6": { "status": "PLANNED", "completion": 0.0, "checkboxes": "0/5" }
         },
-        "overallCompletion": 0.33,
-        "note": "KE-1 and KE-3 shipped. 2/6 KE phases complete. KE-2 (#817) is next in sequence. KE Sprint must complete before Phase 7 can fully execute."
+        "overallCompletion": 0.20,
+        "checkboxes": "6/30",
+        "note": "KE-1 shipped. KE-2, KE-3, KE-4 tracking issues created 2026-03-21. KE Sprint must complete before Phase 7 can fully execute."
       },
       {
         "phase": "Phase 10",
@@ -144,62 +145,22 @@
         "phase": "Phase 7",
         "item": "Wire existing AgentRole and RoleDefinition types to enforcement layer",
         "status": "shipped",
-        "evidence": "PR #674 merged 2026-03-21",
-        "action": "ROADMAP item should be checked — documentation agent should update"
-      },
-      {
-        "phase": "KE-3",
-        "item": "All KE-3 checkboxes",
-        "status": "shipped",
-        "evidence": "PR #812 (feat(issue-686): implement KE-3 Governance Event Envelope) merged 2026-03-24T01:40Z",
-        "action": "ROADMAP KE-3 checkboxes should be checked — documentation agent should update"
-      },
-      {
-        "phase": "Phase 6",
-        "item": "Enforce PAUSE and ROLLBACK",
-        "status": "likely-shipped",
-        "evidence": "Issue #608 (Enforce non-DENY intervention types) is CLOSED",
-        "action": "Verify if #608 closure means this ROADMAP checkbox should be checked"
+        "evidence": "PR #674 (feat(issue-185): wire AgentRole to enforcement layer) merged 2026-03-21T04:13:01Z",
+        "action": "ROADMAP item should be checked — backlog steward or documentation agent should update"
       }
     ]
   },
   "backlogExpansionRate": {
-    "assessedAt": "2026-03-24T14:10:00Z",
-    "openHighPriorityIssues": [
-      { "number": 830, "title": "Configure required status checks and PR approval on main", "labels": ["security", "priority:high"], "new": true },
-      { "number": 829, "title": "Pin all GitHub Actions to SHA digests", "labels": ["security", "priority:high"], "new": true },
-      { "number": 817, "title": "ROADMAP: KE-2 Canonical Action Normalization", "labels": ["priority:high"], "new": true },
-      { "number": 815, "title": "ROADMAP: Default-deny unknown actions", "labels": ["priority:high"], "new": true },
-      { "number": 749, "title": "ROADMAP: v3.0 Major Release preparation", "labels": ["priority:high", "status:review"], "hasOpenPR": 822 },
-      { "number": 654, "title": "Write blog post: Building governance platform", "labels": ["priority:high", "needs:refinement"] },
-      { "number": 648, "title": "Governance hook blocks read-only operations", "labels": ["priority:high"] },
-      { "number": 643, "title": "Add missing test coverage for critical untested files", "labels": ["priority:high"] },
-      { "number": 618, "title": "Claude hook: Bash tool bypasses credential write protection", "labels": ["priority:high", "needs:refinement"] },
-      { "number": 331, "title": "ROADMAP: Claude Code deep integration", "labels": ["priority:high"] }
+    "assessedAt": "2026-03-22T15:20:00Z",
+    "openImplementationIssues": 28,
+    "recentlyCreated": [
+      { "number": 723, "title": "fix(tests): identity gate causes cli-claude-hook + identity tests to fail in CI", "note": "Open but functionally resolved by #715 (wizard prompt replaced hard gate). PRs passing CI. Should be closed." }
     ],
     "recentlyClosed": [
-      { "number": 638, "title": "Policy evaluator fail-open mode", "note": "Primary Phase 6 blocker — CLOSED" },
-      { "number": 637, "title": "AAB regex-based detection bypassable", "note": "Security bypass — CLOSED" },
-      { "number": 646, "title": "CI/CD invariant too broad", "note": "False positive — CLOSED" },
-      { "number": 650, "title": "Pattern-matches command body text", "note": "False positive — CLOSED" },
-      { "number": 608, "title": "Enforce non-DENY intervention types", "note": "ROADMAP item — CLOSED" },
-      { "number": 723, "title": "Identity gate CI regression", "note": "Functionally resolved — CLOSED" },
-      { "number": 659, "title": "Rust test count assertion", "note": "Technical debt — CLOSED" }
+      { "number": 627, "title": "refspec syntax bypasses protected branch", "mergedPR": 724, "note": "Closed via merged PR #724" }
     ],
-    "recentlyMergedPRs": [
-      { "number": 833, "title": "docs: sync roadmap — Studio Runtime, conference, attribution", "mergedAt": "2026-03-24T13:53Z" },
-      { "number": 813, "title": "docs: update roadmap with AEG positioning", "mergedAt": "2026-03-24T02:17Z" },
-      { "number": 812, "title": "feat(issue-686): KE-3 Governance Event Envelope", "mergedAt": "2026-03-24T01:40Z" },
-      { "number": 811, "title": "build(deps-dev): bump eslint 10.0.3 to 10.1.0", "mergedAt": "2026-03-24T01:40Z" },
-      { "number": 810, "title": "fix: resolve 5 kernel false positives (#800-803, #805)", "mergedAt": "2026-03-23T22:46Z" },
-      { "number": 809, "title": "build(deps): bump picomatch 4.0.3 to 4.0.4", "mergedAt": "2026-03-23T22:01Z" },
-      { "number": 806, "title": "build(deps-dev): bump typescript-eslint to 8.57.2", "mergedAt": "2026-03-23T22:01Z" },
-      { "number": 804, "title": "build(deps): bump yaml 2.8.2 to 2.8.3", "mergedAt": "2026-03-23T22:01Z" },
-      { "number": 799, "title": "build(deps): bump pnpm/action-setup from 4 to 5", "mergedAt": "2026-03-23T22:01Z" },
-      { "number": 797, "title": "feat: postinstall dual-hook auto-setup", "mergedAt": "2026-03-23T21:36Z" }
-    ],
-    "expansionTrend": "contracting",
-    "note": "7 issues closed, 4 new high-priority issues opened. Net reduction. 10 PRs merged in 48 hours. Backlog is contracting — healthy sign."
+    "expansionTrend": "stable",
+    "note": "Steady implementation progress. Issue #723 should be closed by human or CI-triage-agent — it's functionally resolved."
   },
   "stallDetection": {
     "stalledPhases": [],
@@ -208,9 +169,9 @@
         "phase": "Phase 5",
         "name": "Editor Integrations",
         "lastProgressAt": "2026-03-18",
-        "daysSinceProgress": 6,
+        "daysSinceProgress": 4,
         "threshold": 14,
-        "note": "JetBrains plugin (#310) last updated 6 days ago, Claude Code deep integration (#331) last updated 7 days ago. No PRs in flight. Still within monitoring window. Alert if no activity by 2026-04-04.",
+        "note": "JetBrains plugin (#310) last updated 4 days ago, Claude Code deep integration (#331) last updated 5 days ago. No PRs in flight. Still within monitoring window (stall at 14 days). Alert if no activity by 2026-04-04.",
         "recommendation": "If no PR activity on #310 or #331 by 2026-04-04, flag as stalled and escalate."
       }
     ]
@@ -321,43 +282,37 @@
     {
       "type": "swarm-state-update",
       "timestamp": "2026-03-21T11:35:00Z",
-      "description": "Updated swarm-state.json: PR #682 now MERGED, risk score 24→22, open PRs 3→2. Mode unchanged (conservative).",
+      "description": "Updated swarm-state.json: PR #682 now MERGED (progress since 10:30Z), risk score 24→22, open PRs 3→2. Mode unchanged (conservative).",
       "agent": "recovery-controller-agent"
     },
     {
       "type": "swarm-state-update",
       "timestamp": "2026-03-22T08:30:00Z",
-      "description": "Updated swarm-state.json: Issues #647 and #636 CLOSED, risk score 22→8, escalation ELEVATED→NORMAL, mode recommendation conservative→normal.",
+      "description": "Updated swarm-state.json: Issues #647 and #636 CLOSED, PR #670 closed, risk score 22→8, escalation ELEVATED→NORMAL, mode recommendation conservative→normal. 10 PRs merged today. 1 open PR (#724, MERGEABLE, all CI green).",
       "agent": "risk-escalation-agent"
     },
     {
       "type": "mode-change",
       "timestamp": "2026-03-22T12:00:00Z",
-      "description": "Mode changed conservative→normal. PR #724 merged (issue #627 resolved). Main CI healthy.",
+      "description": "Mode changed conservative→normal. Accepted risk-escalation-agent recommendation from 08:30Z. PR #724 merged (issue #627 resolved). Main CI healthy. 1 new conflicted PR #731 (needs rebase, not stuck). No critical blockers.",
       "agent": "recovery-controller-agent"
     },
     {
       "type": "pr-closed",
       "timestamp": "2026-03-22T15:20:00Z",
-      "description": "Closed PR #735 (prior recovery controller run). Superseded.",
+      "description": "Closed PR #735 (chore: recovery controller run 2026-03-22 — mode conservative→normal). Superseded by this run. Both runs reached the same mode conclusion (normal) but this run has a more current assessment.",
       "agent": "recovery-controller-agent"
     },
     {
       "type": "label-removed",
       "timestamp": "2026-03-22T15:20:00Z",
-      "description": "Removed stale conflict:needs-human label from PR #731.",
+      "description": "Removed stale conflict:needs-human label from PR #731. Conflict was resolved — PR is now MERGEABLE with 5/5 CI checks green. Label break-conflict-cascade remediation.",
       "agent": "recovery-controller-agent"
     },
     {
       "type": "swarm-state-update",
       "timestamp": "2026-03-22T15:20:00Z",
-      "description": "Updated swarm-state.json: mode conservative→normal. Risk score 8→13. Overrides unpushed 11:45Z ELEVATED local assessment.",
-      "agent": "recovery-controller-agent"
-    },
-    {
-      "type": "swarm-state-update",
-      "timestamp": "2026-03-24T14:10:00Z",
-      "description": "Comprehensive refresh after 47-hour gap. Key changes: 7 issues closed (including primary Phase 6 blockers #638, #637), KE-3 shipped (PR #812), 10 PRs merged, risk score 13→12. Phase 6 completion 75%→86%. KE Sprint 20%→33%. Mode unchanged (normal). No remediation actions needed — system healthy.",
+      "description": "Updated swarm-state.json: mode conservative→normal. Risk score 8→13 (3 open PRs including large #731). Overrides unpushed 11:45Z ELEVATED local assessment from risk-escalation-agent — current GitHub reality shows all PRs MERGEABLE, CI-green, CI regression #723 functionally resolved. Mode change approved.",
       "agent": "recovery-controller-agent"
     },
     {
@@ -405,15 +360,7 @@
       "hasAssignedPR": false
     },
     {
-      "type": "enforcement-bugs",
-      "severity": "high",
-      "issueNumbers": [618, 648],
-      "description": "Remaining enforcement false-positive bugs: credential write bypass via Bash (#618), read-only operations blocked (#648).",
-      "recommendation": "Group into enforcement-fix sprint. Both have needs:refinement label on #618.",
-      "hasAssignedPR": false
-    },
-    {
-      "type": "roadmap",
+      "type": "technical-debt",
       "severity": "medium",
       "issueNumber": 659,
       "description": "Rust test count assertion outdated after #657 — CI will fail for rust-kernel if any agent touches that assertion.",

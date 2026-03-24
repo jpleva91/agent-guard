@@ -1,75 +1,46 @@
-# Hook Architecture — How AgentGuard Integrates with AI Runtimes
-
-AgentGuard supports multiple AI runtimes through a unified hook architecture. Both **Claude Code** and **GitHub Copilot CLI** are governed through the same kernel pipeline, with adapter-specific hooks that normalize tool calls into canonical actions.
+# Hook Architecture — How AgentGuard Integrates with Claude Code
 
 ## Design: Inline Hooks, Not a Daemon
 
-AgentGuard does **not** run as a separate long-lived process. Instead, it integrates with AI runtimes via **inline hooks** — lightweight commands that fire on every tool call and evaluate governance in-process.
+AgentGuard does **not** run as a separate long-lived process. Instead, it integrates with Claude Code via **inline hooks** — lightweight commands that fire on every tool call and evaluate governance in-process.
 
 This is intentional. A daemon-based approach would require process management, health checks, IPC, and would risk silently crashing mid-session. The hook-based design is:
 
 - **Stateless per invocation** — each hook call is self-contained (load policy, evaluate, respond, exit)
-- **Fail-open by default** — if policy loading or storage fails, the hook exits cleanly and the runtime continues
-- **Zero infrastructure** — no daemon, no sidecar, no port binding. Just a CLI command wired into the runtime's hook system
-- **Always exits 0** — hooks must never block the runtime. Denial is communicated via stdout; errors are swallowed
+- **Fail-open by default** — if policy loading or storage fails, the hook exits cleanly and Claude Code continues
+- **Zero infrastructure** — no daemon, no sidecar, no port binding. Just a CLI command wired into Claude Code's hook system
+- **Always exits 0** — hooks must never block Claude Code. Denial is communicated via stdout; errors are swallowed
 
-## Hook Patterns
+## The Three-Hook Pattern
 
-### Claude Code — Four-Hook Pattern
+AgentGuard registers three hooks in `.claude/settings.json`:
 
-AgentGuard registers four hooks in `.claude/settings.json`:
-
-#### 1. `PreToolUse` — Governance Enforcement
+### 1. `PreToolUse` — Governance Enforcement
 
 Fires **before** every Claude Code tool call (Bash, Write, Edit, Read, Glob, Grep). The hook:
 
 1. Reads the tool call payload from stdin (JSON with tool name, parameters)
-2. Normalizes it into a vendor-neutral `ActionContext` via the AAB (Action Authorization Boundary)
+2. Normalizes it into a canonical action type via the AAB (Action Authorization Boundary)
 3. Evaluates policies and invariants through the kernel
 4. If **denied**: writes a block response to stdout, which tells Claude Code to prevent execution
 5. If **allowed**: exits silently, Claude Code proceeds normally
-6. Wraps decisions in a `GovernanceEventEnvelope` and emits to storage (SQLite or JSONL)
+6. Emits governance events to the configured storage backend (JSONL, SQLite, or webhook)
 
 ```
-Claude Code tool call → stdin (JSON) → ActionContext → Kernel → stdout (deny) or silent (allow)
+Claude Code tool call → stdin (JSON) → AgentGuard kernel → stdout (deny) or silent (allow)
 ```
 
-#### 2. `PostToolUse` — Error Monitoring
+### 2. `PostToolUse` — Error Monitoring
 
-Fires **after** Bash tool calls complete. Detects test/format pass/fail from command output and stores results in session state for subsequent policy checks (e.g., `test-before-push`).
+Fires **after** Bash tool calls complete. Reports stderr errors for visibility. This hook is informational only — it does not block or modify behavior.
 
-#### 3. `Notification` — Session Lifecycle
+### 3. `SessionStart` — Build & Status Check
 
-Fires on session lifecycle notifications. Records governance events for session tracking and telemetry.
-
-#### 4. `Stop` — Session Cleanup
-
-Fires when a Claude Code session ends. Finalizes session records and flushes pending events.
-
-### GitHub Copilot CLI — Two-Hook Pattern
-
-AgentGuard registers two hooks in `.github/hooks/hooks.json`:
-
-#### 1. `preToolUse` — Governance Enforcement
-
-Identical governance pipeline to Claude Code's PreToolUse. Copilot sends tool calls as JSON with lowercase tool names and JSON-string `toolArgs`. The hook:
-
-1. Reads the tool call payload (Copilot format)
-2. Maps Copilot tool names to AgentGuard canonical names (see tool mapping below)
-3. Normalizes into `ActionContext` via `copilotToActionContext()`
-4. Evaluates policies and invariants
-5. If **denied**: returns JSON `{ permissionDecision: 'deny', permissionDecisionReason: '...' }` to stdout
-6. If **allowed**: exits silently
-
-#### 2. `postToolUse` — Error Monitoring
-
-Same as Claude Code — detects test/format results from command output and stores in session state.
+Fires once when a Claude Code session begins. Ensures the CLI is built and displays governance status. The build step is blocking (waits up to 2 minutes); the status check is non-blocking.
 
 ## Hook Configuration
 
-### Claude Code
-
-Running `agentguard claude-init` writes hooks to `.claude/settings.json`:
+Running `agentguard claude-init` writes this to `.claude/settings.json`:
 
 ```json
 {
@@ -79,8 +50,7 @@ Running `agentguard claude-init` writes hooks to `.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "agentguard claude-hook pre --store sqlite",
-            "timeout": 30000
+            "command": "agentguard claude-hook pre"
           }
         ]
       }
@@ -91,30 +61,25 @@ Running `agentguard claude-init` writes hooks to `.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "agentguard claude-hook post --store sqlite",
-            "timeout": 10000
+            "command": "agentguard claude-hook post"
           }
         ]
       }
     ],
-    "Notification": [
+    "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "agentguard claude-hook notification --store sqlite",
-            "timeout": 10000
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
+            "command": "test -f apps/cli/dist/bin.js || npm run build",
+            "timeout": 120000,
+            "blocking": true
+          },
           {
             "type": "command",
-            "command": "agentguard claude-hook stop --store sqlite",
-            "timeout": 10000
+            "command": "agentguard status",
+            "timeout": 10000,
+            "blocking": false
           }
         ]
       }
@@ -129,47 +94,6 @@ Options:
 - `agentguard claude-init --store sqlite` — use SQLite storage backend
 - `agentguard claude-init --remove` — uninstall hooks
 
-### GitHub Copilot CLI
-
-Running `agentguard copilot-init` writes hooks to `.github/hooks/hooks.json`:
-
-```json
-{
-  "hooks": {
-    "preToolUse": [
-      {
-        "type": "command",
-        "command": "agentguard copilot-hook pre --store sqlite",
-        "timeout": 30000
-      }
-    ],
-    "postToolUse": [
-      {
-        "type": "command",
-        "command": "agentguard copilot-hook post --store sqlite",
-        "timeout": 10000
-      }
-    ]
-  }
-}
-```
-
-Options:
-
-- `agentguard copilot-init --global` — install to `~/.copilot/hooks/` (all projects)
-- `agentguard copilot-init --store sqlite` — use SQLite storage backend
-- `agentguard copilot-init --remove` — uninstall hooks
-
-### Postinstall Auto-Setup
-
-When `@red-codes/agentguard` is installed as a dependency, the `postinstall` script automatically configures both hook integrations and creates a starter policy:
-
-1. **Claude Code hooks** → `.claude/settings.json`
-2. **Copilot CLI hooks** → `.github/hooks/hooks.json`
-3. **Starter policy** → `agentguard.yaml` (monitor mode with baseline safety rules)
-
-The postinstall is idempotent (skips if hooks already exist), non-destructive (merges with existing configs), and never fails the install (all errors caught). See `apps/cli/src/postinstall.ts`.
-
 ## How PreToolUse Governance Works
 
 Each PreToolUse invocation runs through this sequence:
@@ -179,27 +103,25 @@ stdin JSON payload
   ↓
 Parse tool call (tool name, input parameters)
   ↓
-ActionContext normalization (vendor-neutral: Bash → shell.exec or git.push, Write → file.write, etc.)
+AAB normalization (Bash → shell.exec or git.push, Write → file.write, etc.)
   ↓
 Policy evaluation (match rules from agentguard.yaml)
   ↓
-Invariant checks (22 built-in safety checks)
+Invariant checks (17 built-in safety checks)
   ↓
 Decision: ALLOW or DENY
   ↓
-Wrap in GovernanceEventEnvelope → emit to storage (SQLite / JSONL) + cloud telemetry
+Emit events to storage (JSONL / SQLite / webhook)
   ↓
-If denied → stdout response (runtime blocks the action)
-If allowed → silent exit (runtime proceeds)
+If denied → stdout response (Claude Code blocks the action)
+If allowed → silent exit (Claude Code proceeds)
 ```
 
-The kernel runs with `dryRun: true` — it evaluates policies and invariants but does not execute the action itself. The AI runtime handles actual execution; AgentGuard only governs.
+The kernel runs with `dryRun: true` — it evaluates policies and invariants but does not execute the action itself. Claude Code handles actual execution; AgentGuard only governs.
 
 ## Tool-to-Action Mapping
 
-The AAB normalizes tool calls from each runtime into canonical action types:
-
-### Claude Code
+The AAB normalizes Claude Code tool calls into canonical action types:
 
 | Claude Code Tool | AgentGuard Action | Notes |
 |-----------------|-------------------|-------|
@@ -211,28 +133,12 @@ The AAB normalizes tool calls from each runtime into canonical action types:
 | Glob | `file.read` | |
 | Grep | `file.read` | |
 
-### GitHub Copilot CLI
-
-| Copilot CLI Tool | AgentGuard Action | Notes |
-|-----------------|-------------------|-------|
-| bash | `shell.exec` | Default; git commands auto-detected |
-| powershell | `shell.exec` | Tracked via `metadata.shell` |
-| edit | `file.write` | |
-| create | `file.write` | |
-| view | `file.read` | |
-| glob | `file.read` | |
-| grep | `file.read` | |
-| web_fetch | `http.request` | |
-| task | `shell.exec` | Agent-spawned tasks |
-
 ## Session Identity
 
 Hook invocations are correlated by session ID:
 
-- **Claude Code**: Resolved from the payload's `session_id` field, or the `CLAUDE_SESSION_ID` environment variable
-- **Copilot CLI**: Resolved from the `COPILOT_SESSION_ID` environment variable
-- Multiple tool calls in the same session share one session record
-- Session state (format pass, test pass, written files) is persisted across hook invocations for governance decisions like `test-before-push` and `commit-scope-guard`
+- Resolved from the payload's `session_id` field, or the `CLAUDE_SESSION_ID` environment variable
+- Multiple tool calls in the same Claude Code session share one session record
 - Enables cross-tool governance decisions and session-level analytics
 
 ## Storage Backends
@@ -281,12 +187,8 @@ echo '{"tool":"Bash","input":{"command":"git push origin main"}}' | agentguard c
 
 | File | Purpose |
 |------|---------|
-| `apps/cli/src/commands/claude-hook.ts` | Claude Code hook command (PreToolUse, PostToolUse, Notification, Stop) |
-| `apps/cli/src/commands/claude-init.ts` | Claude Code hook setup and teardown |
-| `apps/cli/src/commands/copilot-hook.ts` | Copilot CLI hook command (preToolUse, postToolUse) |
-| `apps/cli/src/commands/copilot-init.ts` | Copilot CLI hook setup and teardown |
-| `apps/cli/src/postinstall.ts` | Postinstall auto-setup (both runtimes + starter policy) |
-| `packages/adapters/src/claude-code.ts` | Claude Code payload normalization, `toActionContext()`, `claudeCodeToEnvelope()` |
-| `packages/adapters/src/copilot-cli.ts` | Copilot CLI payload normalization, `copilotToActionContext()`, `copilotCliToEnvelope()` |
+| `apps/cli/src/commands/claude-hook.ts` | Hook command (PreToolUse governance + PostToolUse monitoring) |
+| `apps/cli/src/commands/claude-init.ts` | Hook setup and teardown |
+| `packages/adapters/src/claude-code.ts` | Payload normalization and action mapping |
 | `packages/kernel/src/kernel.ts` | Governed action kernel (policy + invariant evaluation) |
-| `packages/kernel/src/aab.ts` | Action Authorization Boundary (tool → `ActionContext`) |
+| `packages/kernel/src/aab.ts` | Action Authorization Boundary (tool → action type) |

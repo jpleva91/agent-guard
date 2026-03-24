@@ -337,7 +337,7 @@ interface SystemState {
 
 ### 6.2 Default System Invariants
 
-The reference implementation ships with 22 default invariants spanning six categories: secret protection, branch safety, blast radius control, supply chain integrity, governance self-protection, and environmental enforcement.
+The reference implementation ships with 20 default invariants spanning six categories: secret protection, branch safety, blast radius control, supply chain integrity, governance self-protection, and environmental enforcement.
 
 **Core safety invariants:**
 
@@ -352,36 +352,34 @@ The reference implementation ships with 22 default invariants spanning six categ
 
 **Agent containment invariants:**
 
-| ID | Name | Severity | Condition |
-|----|------|----------|-----------|
-| `no-skill-modification` | No Skill Modification | 4 (high) | Agent cannot modify its own skill definitions |
-| `no-scheduled-task-modification` | No Scheduled Task Modification | 5 (critical) | Agent cannot modify scheduled task configurations |
-| `no-credential-file-creation` | No Credential File Creation | 5 (critical) | Agent cannot create or overwrite well-known credential files |
-| `no-governance-self-modification` | No Governance Self-Modification | 5 (critical) | Agent cannot modify governance policy or invariant source |
-| `no-permission-escalation` | No Permission Escalation | 4 (high) | Agent cannot escalate filesystem permissions |
-| `no-ide-socket-access` | No IDE Socket Access | 4 (high) | Agent cannot access IDE inter-process communication sockets (VS Code, JetBrains, Cursor) |
-| `commit-scope-guard` | Commit Scope Guard | 4 (high) | All files in a git commit must have been written or modified by the current session |
+| ID | Severity | Condition |
+|----|----------|-----------|
+| `no-skill-modification` | 5 (critical) | Agent cannot modify its own skill definitions |
+| `no-scheduled-task-modification` | 5 (critical) | Agent cannot modify scheduled task configurations |
+| `no-credential-file-creation` | 4 (high) | Agent cannot create credential or key files |
+| `no-governance-self-modification` | 5 (critical) | Agent cannot modify governance policy or invariant source |
+| `no-permission-escalation` | 4 (high) | Agent cannot escalate its own permissions |
 
 **Supply chain and infrastructure invariants:**
 
-| ID | Name | Severity | Condition |
-|----|------|----------|-----------|
-| `no-package-script-injection` | No Package Script Injection | 4 (high) | No injection of scripts into package.json |
-| `no-cicd-config-modification` | No CI/CD Config Modification | 5 (critical) | CI/CD pipeline configurations are protected from modification |
-| `no-container-config-modification` | No Container Config Modification | 3 (medium) | Container configuration files are protected |
-| `no-env-var-modification` | No Environment Variable Modification | 3 (medium) | Environment variable and shell profile files are protected |
-| `no-destructive-migration` | No Destructive Migration | 3 (medium) | Database migrations cannot contain destructive DDL (DROP, TRUNCATE) |
+| ID | Severity | Condition |
+|----|----------|-----------|
+| `no-package-script-injection` | 4 (high) | No injection of scripts into package.json |
+| `no-cicd-config-modification` | 3 (medium) | CI/CD configuration files are protected |
+| `no-container-config-modification` | 3 (medium) | Container configuration files are protected |
+| `no-env-var-modification` | 3 (medium) | Environment variable files are protected |
+| `no-destructive-migration` | 4 (high) | Database migrations cannot contain destructive operations |
 
 **Operational safety invariants:**
 
-| ID | Name | Severity | Condition |
-|----|------|----------|-----------|
-| `recursive-operation-guard` | Recursive Operation Guard | 2 (low) | Detects recursive operations combined with write/delete that could cause widespread damage |
-| `large-file-write` | Large File Write Limit | 3 (medium) | Single file writes must not exceed a size threshold |
-| `transitive-effect-analysis` | Transitive Effect Analysis | 4 (high) | Detects when written scripts or config files would produce effects denied if executed directly |
-| `no-network-egress` | No Network Egress | 4 (high) | Denies HTTP requests to non-allowlisted domains |
+| ID | Severity | Condition |
+|----|----------|-----------|
+| `recursive-operation-guard` | 3 (medium) | Detects recursive or self-referential operations |
+| `large-file-write` | 2 (low) | Flags writes exceeding size thresholds |
+| `transitive-effect-analysis` | 2 (low) | Analyzes cascading effects of file modifications |
+| `no-network-egress` | 3 (medium) | Blocks unauthorized outbound network requests |
 
-> *Implementation: `packages/invariants/src/definitions.ts` --- `DEFAULT_INVARIANTS` array (22 invariants).*
+> *Implementation: `packages/invariants/src/definitions.ts` --- `DEFAULT_INVARIANTS` array (20 invariants).*
 
 ### 6.3 Severity-Based Intervention
 
@@ -499,7 +497,7 @@ AgentGuard is a TypeScript implementation of the execution governance architectu
 | RTA Decision Engine | `packages/kernel/src/decision.ts` | `createEngine()`, `evaluate()`, `INTERVENTION` |
 | Policy Evaluation | `packages/policy/src/evaluator.ts` | `evaluate()`, `matchAction()`, `matchScope()` |
 | Policy Loading & Validation | `packages/policy/src/loader.ts` | `loadPolicies()`, `validatePolicy()` |
-| System Invariants | `packages/invariants/src/definitions.ts` | `DEFAULT_INVARIANTS` (22 invariants) |
+| System Invariants | `packages/invariants/src/definitions.ts` | `DEFAULT_INVARIANTS` (20 invariants) |
 | Invariant Checking | `packages/invariants/src/checker.ts` | `checkAllInvariants()`, `buildSystemState()` |
 | Evidence Packs | `packages/kernel/src/evidence.ts` | `createEvidencePack()`, `ExplainableEvidencePack` |
 | Escalation Monitor | `packages/kernel/src/monitor.ts` | `createMonitor()`, `ESCALATION` (4 levels) |

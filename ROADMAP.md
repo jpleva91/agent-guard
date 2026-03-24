@@ -35,7 +35,7 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | SQLite persistence (events, decisions, sessions) | Implemented | Production |
 | Replay engine with deterministic comparison | Implemented | Production |
 | Evidence pack generation | Implemented | Production |
-| CLI (32 commands) | Implemented | Production |
+| CLI (40+ commands) | Implemented | Production |
 | Claude Code adapter (PreToolUse/PostToolUse) | Implemented | Production |
 | VS Code extension | Implemented | Production |
 | MCP governance server (15 tools) | Implemented | Production |
@@ -43,7 +43,7 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | 8 policy packs (essentials, strict, ci-safe, enterprise, open-source, soc2, hipaa, eng-standards) | Implemented | Production |
 | 26-agent autonomous swarm templates | Implemented | Production |
 | KE-1 Structured matchers (Aho-Corasick, globs, reason codes) | **Shipped v2.3.0** | `packages/matchers/` |
-| All 47 event kinds mapped to cloud AgentEvent | **Shipped v2.3.0** | `packages/telemetry/src/event-mapper.ts` |
+| All 46 event kinds mapped to cloud AgentEvent | **Shipped v2.3.0** | `packages/telemetry/src/event-mapper.ts` |
 | Agent SDK for programmatic governance | **Shipped v2.3.0** | Programmatic governance integration |
 | RunManifest YAML loader | **Shipped v2.3.0** | Declarative session configuration |
 | Monitor mode for claude-hook | **Shipped v2.3.0** | `apps/cli/src/commands/claude-hook.ts` |
@@ -55,12 +55,11 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | Capability grants enforcement before adapter execution | **Shipped v2.4.0** | `packages/kernel/` |
 | Cloud credential storage in project .env | **Shipped v2.4.0** | Per-project instead of global config |
 | Copilot CLI adapter | **Shipped v2.4.0** | `packages/adapters/src/copilot-cli.ts` |
-| Postinstall dual-hook auto-setup (Claude Code + Copilot CLI) | **Shipped v2.4.0** | `apps/cli/src/postinstall.ts` |
-| KE-2 ActionContext (vendor-neutral action normalization) | **Shipped v2.4.0** | `packages/core/src/types.ts`, `packages/kernel/src/aab.ts` |
 | PAUSE and ROLLBACK enforcement | **Shipped v2.4.0** | `packages/kernel/` (PRs #475, #617) |
 | KE-3 Governance Event Envelope | **Shipped v2.5.0** | `packages/events/src/schema.ts` (#686) |
 | Commit scope guard invariant (#22) | **Shipped v2.5.0** | `packages/invariants/src/definitions.ts` |
-| Rust kernel (Phase 1 — types, AAB, policy) | In Progress | Experimental |
+| Go kernel rewrite (Phase 1 — velocity-first) | Planned | Architecture phase |
+| Rust kernel research (types, AAB, policy) | Paused | Experimental — informs Go design |
 
 ---
 
@@ -92,7 +91,7 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 - **Zero I/O Sync Path** — No network or disk I/O in the synchronous enforcement loop
 - **Algorithmic Determinism** — Replace regex-first logic with structured matchers (Tries, Bitmasks, Hash Sets)
 - **Asynchronous Telemetry** — Memory Queue → SQLite (WAL) → Cloud Ingest; telemetry failures never alter enforcement
-- **Zero-Allocation Hot Path** — Stack-allocated structs, fixed-size buffers, borrowed slices where possible
+- **Minimal-Allocation Hot Path** — Pre-allocated structs, pooled buffers, avoid unnecessary heap allocation in enforcement loop
 - **No JSON in the Hot Path** — Compact internal contexts and bitmask flags for policy checks
 
 **Performance SLOs (enforced via CI regression gate):**
@@ -115,14 +114,14 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 - [x] ~~Produce machine-readable reason codes for all match results~~ — `packages/matchers/src/reason-codes.ts`
 - [x] ~~Benchmark: total evaluation p50 < 0.25ms~~ — benchmark suite in CI
 
-#### KE-2: Canonical Action Normalization (ActionContext) ✅ Done 2026-03-23
+#### KE-2: Canonical Action Normalization (ActionContext)
 
 > Formalize a vendor-neutral action representation that decouples the policy engine from provider-specific payloads.
 
-- [x] ~~Design `ActionContext` contract: actor identity (agent/session/worktree), action category, structured arguments~~ — `ActorIdentity`, `ActionArguments`, `ActionContext` types in `packages/core/src/types.ts`
-- [x] ~~Build specialized adapter for Claude tool-calls → `ActionContext` mapping~~ — `toActionContext()` in claude-code adapter, `copilotToActionContext()` in copilot-cli adapter
-- [x] ~~Ensure policy engine consumes only normalized `ActionContext` (no provider-specific logic)~~ — `evaluate()` accepts `NormalizedIntent | ActionContext` (backward-compatible)
-- [x] ~~Benchmark: context normalization in 50–100µs~~ — `normalizeToActionContext()` in `packages/kernel/src/aab.ts`
+- [ ] Design `ActionContext` contract: actor identity (agent/session/worktree), action category, structured arguments
+- [ ] Build specialized adapter for Claude tool-calls → `ActionContext` mapping
+- [ ] Ensure policy engine consumes only normalized `ActionContext` (no provider-specific logic)
+- [ ] Benchmark: context normalization in 50–100µs
 
 #### KE-3: Governance Event Envelope ✅ Done 2026-03-24
 
@@ -171,7 +170,7 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 
 > Ship the governance kernel to the world. Default-deny + KE-2 = production-grade enforcement.
 
-- [x] ~~Default-deny finalized + KE-2 ActionContext shipped~~ — ✅ Done (#638, #685 closed)
+- [ ] Default-deny finalized + KE-2 ActionContext shipped
 - [ ] **Stranger test validation** — Have someone with zero context install and configure AgentGuard from the README alone. Every friction point found is a v3.0 blocker. The individual governance experience (`npm install → agentguard claude-init → governance active`) must work flawlessly before anything else is promoted.
 - [ ] **User capture funnel** — Without this, installs vanish into the void:
   - README call-to-action: "Join early access / updates" link
@@ -185,7 +184,7 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
   - Enables answering: "How many real humans vs CI pipelines install this? Which versions? Which environments?"
   - Note: npm download stats are unreliable for attribution — Vercel/CI ephemeral builds inflate counts (see traction note below)
 - [ ] 30-second demo video (install → configure → govern → Cloud dashboard)
-- [x] ~~Site update with demo embed~~ — ✅ Done (v3.0 section, demo placeholder, updated stats)
+- [ ] Site update with demo embed
 - [ ] LinkedIn + dev community announcement
 - [ ] npm publish v3.0
 
@@ -268,6 +267,9 @@ Depends on: KE-2 (ActionContext provides vendor-neutral normalization).
 - [ ] Framework-specific adapters (LangGraph, CrewAI, AutoGen, OpenAI Agents SDK)
 - [x] ~~Agent SDK for programmatic governance integration~~ — ✅ Done 2026-03-21 (v2.3.0)
 - [ ] Generic MCP adapter for any MCP-compatible tool
+- [ ] **Runtime sandbox adapters** — Optional modules that enrich governance with sandbox metadata. Integrate, don't depend:
+  - `@agentguard/runtime-nemoclaw` — NVIDIA NemoClaw adapter: detect sandbox environment, map sandbox permissions → governance rules, fuse behavioral telemetry (AgentGuard) with system constraints (NemoClaw) for full-stack audit trail. Enterprise credibility multiplier — "contained + governed" covers prevent/detect/contain/audit. **Not a dependency** — kernel remains runtime-independent.
+  - Future: Docker/Podman, Firecracker, Bubblewrap adapters via same pattern
 
 ### Later — Policy Ecosystem (Phase 8)
 
@@ -312,13 +314,28 @@ Depends on: KE-2 (ActionContext provides vendor-neutral normalization).
 - [ ] Formal verification via Z3/SMT solver (liveness, safety, least privilege)
 - [ ] Remote governance runtime (`agentguard serve`)
 
-### Ongoing — Rust Kernel
+### Ongoing — Go Kernel Rewrite (Velocity-First)
 
-> Lower-latency, smaller-footprint governance kernel.
+> Ship a production-worthy kernel fast without painting into a corner.
 
-Phase 1 (complete): Rust type definitions, AAB, policy evaluator, data loader, hashing.
+**Decision (2026-03-24)**: Kernel rewrite language changed from Rust-first to **Go-first**. The enforcement workload (policy evaluation, command inspection, process mediation, file/network checks, telemetry) does not require Rust's deepest advantages on day one. Go's learning curve (days vs weeks-months for Rust) maximizes shipping velocity for a solo builder.
 
-**Strategic note**: If GC pauses impact determinism or cold-start targets (>15ms) are not met after the Kernel Evolution Sprint's algorithmic optimizations, the Rust kernel becomes the primary path for Layer 0 enforcement. Future phases: full kernel loop, WASM compilation target, embedded systems support.
+**Architecture for replaceability**: The kernel is a specification, not just code. Canonical Action Model (CAR), policy engine semantics, enforcement contract, decision outputs, event schema, and invariants are all language-independent. The kernel exposes a narrow boundary (gRPC / local socket / WASM / FFI / CLI contract) so implementations can be swapped.
+
+**Phase 1 — Go Kernel (Ship Fast)**:
+- [ ] Validate architecture end-to-end in Go
+- [ ] Harden semantics and find edge cases with real users
+- [ ] Achieve sub-millisecond enforcement targets
+- [ ] Build telemetry pipeline
+- [ ] Iterate quickly on policy engine
+
+**Phase 2 — Rust Core Rewrite (Selective, Later)**:
+Rewrite only what earns it — hot-path components, security-critical modules, performance bottlenecks, attack surface areas. Not the whole system.
+
+**Phase 3 — Hybrid System (End State)**:
+Rust enforcement core + Go control plane + TypeScript dashboards. Many production systems run this way.
+
+**Rust research preserved**: Phase 1 Rust work (type definitions, AAB, policy evaluator) informs the Go design and remains available for Phase 2. Go systems skills transfer directly to Rust later.
 
 ---
 

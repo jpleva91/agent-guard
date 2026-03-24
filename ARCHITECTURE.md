@@ -10,7 +10,7 @@ All system activity — agent tool calls, governance decisions, invariant violat
 
 ```
 ┌──────────────┐
-│  AI Agent     │  (Claude Code, Copilot CLI, etc.)
+│  AI Agent     │  (Claude Code, etc.)
 │  Tool Call    │
 └──────┬───────┘
        │
@@ -51,7 +51,7 @@ packages/
 ├── core/          @red-codes/core — Shared utilities (types, actions, hash, execution-log)
 ├── events/        @red-codes/events — Canonical event model (schema, bus, store)
 ├── policy/        @red-codes/policy — Policy system (composer, evaluator, loaders, pack loader)
-├── invariants/    @red-codes/invariants — Invariant system (22 built-in definitions, checker)
+├── invariants/    @red-codes/invariants — Invariant system (21 built-in definitions, checker)
 ├── invariant-data-protection/ @red-codes/invariant-data-protection — Data protection invariant plugin
 ├── matchers/      @red-codes/matchers — Structured matchers (Aho-Corasick, globs, hash sets)
 ├── kernel/        @red-codes/kernel — Governed action kernel (orchestrate, normalize, decide, escalate)
@@ -69,7 +69,7 @@ apps/
 ├── mcp-server/    @red-codes/mcp-server — MCP governance server (15 governance tools)
 └── vscode-extension/  agentguard-vscode — VS Code extension (sidebar panels, notifications, diagnostics)
 
-policies/          Policy packs (YAML: essentials, ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
+policies/          Policy packs (YAML: ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
 ```
 
 ## Layer Rules
@@ -81,7 +81,7 @@ Package boundaries enforce these dependency rules via `package.json` workspace d
 - **@red-codes/policy** may import from core only
 - **@red-codes/invariants** may import from core, events, matchers only
 - **@red-codes/matchers** may import from core only
-- **@red-codes/adapters** may import from core, events, kernel
+- **@red-codes/adapters** may import from core, kernel only
 - **@red-codes/plugins** may import from core only
 - **@red-codes/renderers** may import from core, kernel, plugins only
 - **@red-codes/storage** may import from core, events, kernel, telemetry only
@@ -111,53 +111,6 @@ The `claude-init` command provides an interactive wizard that generates a starte
 4. **Escalation state machine** — Repeated violations escalate: NORMAL → ELEVATED → HIGH → LOCKDOWN
 5. **Adapter pattern** — Execution is abstracted behind adapters, making the kernel testable without real file/git operations
 6. **YAML-first policy** — Human-readable policy-as-code, version-controlled alongside the project
-
-## Vendor-Neutral Action Normalization (KE-2)
-
-The kernel decouples governance evaluation from provider-specific payloads via `ActionContext` — a vendor-neutral, canonicalized action representation.
-
-```
-Raw Tool Call (Claude Code / Copilot CLI / LangGraph)
-    ↓
-normalizeToActionContext(rawAction, 'runtime-name')
-    ↓
-ActionContext (vendor-neutral)
-    ↓
-Policy Evaluator + Invariant Checker
-    ↓
-Decision (allow / deny / escalate)
-```
-
-`ActionContext` captures structured metadata that `NormalizedIntent` did not: actor identity (`ActorIdentity`), typed action arguments (`ActionArguments`), action class, source runtime, and normalization timestamp. The policy evaluator accepts both types (`NormalizedIntent | ActionContext`) for backward compatibility.
-
-Key types are defined in `packages/core/src/types.ts`. The normalization entry point is `normalizeToActionContext()` in `packages/kernel/src/aab.ts`. Each adapter provides a convenience wrapper: `toActionContext()` (Claude Code), `copilotToActionContext()` (Copilot CLI).
-
-## Governance Event Envelope (KE-3)
-
-All governance telemetry is wrapped in a `GovernanceEventEnvelope` — a versioned, runtime-agnostic wrapper around the inner `DomainEvent`. The envelope adds cross-cutting metadata that raw events do not carry:
-
-- **Schema version** (`ENVELOPE_SCHEMA_VERSION = '1.0.0'`) for forward compatibility
-- **Source runtime** (`claude-code`, `copilot-cli`, etc.)
-- **Policy version/hash** active at event time
-- **Decision codes** (e.g., `['allow']`, `['deny', 'escalate']`)
-- **Performance metrics** (hook latency, evaluation latency in microseconds)
-
-```
-DomainEvent (inner) → GovernanceEventEnvelope (outer wrapper) → Storage / Cloud
-```
-
-All adapters produce identical envelope structures — differences only in the `source` field. Cloud ingestion consumes envelopes without special-casing. Envelope types are in `packages/core/src/types.ts`; factory and utilities (`createEnvelope()`, `isEnvelope()`, `unwrapEnvelope()`, `validateEnvelope()`) are in `packages/events/src/schema.ts`.
-
-## Multi-Runtime Integration
-
-AgentGuard governs multiple AI runtimes through adapter-specific hooks that converge on the same kernel pipeline:
-
-| Runtime | Hook Setup | Adapter | Hook Config |
-|---------|-----------|---------|-------------|
-| Claude Code | `agentguard claude-init` | `packages/adapters/src/claude-code.ts` | `.claude/settings.json` |
-| GitHub Copilot CLI | `agentguard copilot-init` | `packages/adapters/src/copilot-cli.ts` | `.github/hooks/hooks.json` |
-
-Both runtimes have full feature parity: policy evaluation, invariant checking, session state tracking, cloud telemetry, and SQLite persistence. The `postinstall` script (`apps/cli/src/postinstall.ts`) auto-configures both hooks on `npm install` — zero manual setup required.
 
 ## Agent Identity
 

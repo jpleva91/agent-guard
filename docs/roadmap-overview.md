@@ -53,7 +53,8 @@ AgentGuard is the **mandatory execution control plane for AI agents** — the ru
 | Capability grants enforcement before adapter execution | **Shipped v2.4.0** | `packages/kernel/` |
 | Cloud credential storage in project .env | **Shipped v2.4.0** | Per-project instead of global config |
 | Copilot CLI adapter | **Shipped v2.4.0** | `packages/adapters/src/copilot-cli.ts` |
-| Rust kernel (Phase 1 — types, AAB, policy) | In Progress | Experimental |
+| Go kernel rewrite (Phase 1 — velocity-first) | Planned | Architecture phase |
+| Rust kernel research (types, AAB, policy) | Paused | Experimental — informs Go design |
 
 ---
 
@@ -262,13 +263,13 @@ Depends on: KE-2 (ActionContext provides vendor-neutral normalization).
 - [ ] Formal verification via Z3/SMT solver (liveness, safety, least privilege)
 - [ ] Remote governance runtime (`agentguard serve`)
 
-### Ongoing — Rust Kernel
+### Ongoing — Go Kernel Rewrite (Velocity-First)
 
-> Lower-latency, smaller-footprint governance kernel.
+> Ship a production-worthy kernel fast without painting into a corner.
 
-Phase 1 (complete): Rust type definitions, AAB, policy evaluator, data loader, hashing.
+**Decision (2026-03-24)**: Kernel rewrite language changed from Rust-first to **Go-first**. Go's learning curve maximizes shipping velocity. Architecture enforces clean boundaries (gRPC / local socket / WASM / FFI) so implementations can be swapped. Rust reserved for selective hot-path hardening later.
 
-**Strategic note**: If GC pauses impact determinism or cold-start targets (>15ms) are not met after the Kernel Evolution Sprint's algorithmic optimizations, the Rust kernel becomes the primary path for Layer 0 enforcement. Future phases: full kernel loop, WASM compilation target, embedded systems support.
+**Rust research preserved**: Phase 1 Rust work (types, AAB, policy evaluator) informs Go design and remains available for future selective rewrite.
 
 ---
 

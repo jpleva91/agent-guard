@@ -21,24 +21,15 @@ AI coding agents (Claude Code, GitHub Copilot, any MCP client) run autonomously 
 
 ## Quick Start
 
-### Option 1: Auto-Setup (recommended)
-
-```bash
-npm install @red-codes/agentguard
-# Postinstall auto-configures Claude Code + Copilot CLI hooks and creates a starter policy
-# Zero manual setup — governance is active immediately
-```
-
-### Option 2: Interactive Wizard
-
 ```bash
 npm install -g @red-codes/agentguard
 cd your-project
-agentguard claude-init    # Claude Code setup wizard
-agentguard copilot-init   # GitHub Copilot CLI setup wizard
+agentguard claude-init
+# Interactive wizard: choose monitor/enforce mode and a policy pack
+# → Creates agentguard.yaml, installs Claude Code hooks, and activates governance
 ```
 
-The wizard walks you through setup interactively:
+The `claude-init` wizard walks you through setup interactively:
 
 ```
   Start in monitor mode or enforce mode?
@@ -56,7 +47,6 @@ Verify it's running:
 ```bash
 agentguard status
 # ✓ Claude Code hooks installed
-# ✓ Copilot CLI hooks installed
 # ✓ Policy file (agentguard.yaml)
 # ✓ Runtime active
 ```
@@ -72,7 +62,6 @@ Non-interactive setup (CI or scripted installs):
 
 ```bash
 agentguard claude-init --mode monitor --pack essentials
-agentguard copilot-init --mode monitor --pack essentials
 ```
 
 ## Cloud Dashboard
@@ -316,20 +305,11 @@ AgentGuard Kernel
 ## CLI Reference
 
 ```bash
-# Setup — Claude Code
+# Setup (interactive wizard)
 agentguard claude-init                    # Interactive wizard: mode + pack → creates policy + hooks
 agentguard claude-init --global           # Install hooks globally (~/.claude/settings.json)
 agentguard claude-init --mode monitor --pack essentials  # Non-interactive setup
-agentguard claude-init --remove           # Uninstall hooks
-
-# Setup — GitHub Copilot CLI
-agentguard copilot-init                   # Interactive wizard for Copilot CLI hooks
-agentguard copilot-init --global          # Install hooks globally (~/.copilot/hooks/)
-agentguard copilot-init --store sqlite    # Use SQLite storage backend
-agentguard copilot-init --remove          # Uninstall hooks
-
-# Setup — Auto-detect
-agentguard auto-setup                     # Auto-detect and configure both Claude Code + Copilot CLI hooks
+agentguard claude-init                    # Also installs pre-push hooks for branch protection
 agentguard init --template strict         # Scaffold policy from a template
 agentguard status                         # Show governance status
 
@@ -347,7 +327,6 @@ agentguard replay --last                  # Replay session timeline
 
 # Cloud
 agentguard cloud login                    # Device code auth — opens browser
-agentguard cloud connect --tenant <name>  # Connect with tenant provisioning
 agentguard cloud status                   # Check cloud connection
 agentguard cloud events                   # Query events from cloud
 agentguard cloud runs                     # List governance runs

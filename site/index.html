@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="google-site-verification" content="OeJuCct5Y8LRHQB95DkF5Y9hwUvZIvtYrpKy16x3o28" />
   <title>AgentGuard — Run AI Agents Without Fear</title>
-  <meta name="description" content="AgentGuard v3.0 — default-deny governance for AI coding agents. 22 invariants, vendor-neutral ActionContext, tamper-evident audit trail. Install in 30 seconds.">
+  <meta name="description" content="AgentGuard prevents AI coding agents from doing catastrophic things. No accidental pushes to main, no credential leaks, no runaway loops. Install in 30 seconds.">
 
   <!-- OpenGraph -->
   <meta property="og:title" content="AgentGuard — Run AI Agents Without Fear">
-  <meta property="og:description" content="v3.0 — Default-deny governance for AI coding agents. 22 invariants, vendor-neutral ActionContext, tamper-evident audit trail. Install in 30 seconds.">
+  <meta property="og:description" content="Install in 30 seconds. Your AI agents can't push to main, leak credentials, or destroy your repo. 21 built-in safety checks. Cloud dashboard. Full audit trail.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://agentguardhq.github.io/agentguard/">
   <meta property="og:image" content="https://agentguardhq.github.io/agentguard/og-image.png">
@@ -17,7 +17,7 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="AgentGuard — Run AI Agents Without Fear">
-  <meta name="twitter:description" content="v3.0 — Default-deny governance for AI coding agents. Production-grade enforcement in 30 seconds.">
+  <meta name="twitter:description" content="Prevent AI agents from doing catastrophic things. Production-safe autonomy in 30 seconds.">
 
   <!-- SEO -->
   <link rel="canonical" href="https://agentguardhq.github.io/agentguard/">
@@ -28,7 +28,7 @@
     "name": "AgentGuard",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Windows, macOS, Linux",
-    "description": "AgentGuard v3.0 — default-deny governance for AI coding agents. 22 invariants, vendor-neutral ActionContext, tamper-evident audit trail.",
+    "description": "AgentGuard prevents AI coding agents from doing catastrophic things. No accidental pushes to main, no credential leaks, no runaway loops.",
     "url": "https://agentguardhq.github.io/agentguard/",
     "offers": {
       "@type": "Offer",
@@ -364,7 +364,6 @@
 
       <!-- Desktop links -->
       <div class="hidden md:flex items-center gap-8">
-        <a href="#v3" class="text-cta hover:text-cta-dark transition-colors text-sm font-bold cursor-pointer">v3.0</a>
         <a href="#features" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Features</a>
         <a href="#architecture" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Architecture</a>
         <a href="#invariants" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Invariants</a>
@@ -391,7 +390,6 @@
     <!-- Mobile menu -->
     <div id="mobile-menu" class="mobile-menu md:hidden bg-surface/95 border-t border-surface-light rounded-b-2xl">
       <div class="px-6 py-4 flex flex-col gap-4">
-        <a href="#v3" class="text-cta hover:text-cta-dark transition-colors text-sm font-bold cursor-pointer">v3.0</a>
         <a href="#features" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Features</a>
         <a href="#architecture" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Architecture</a>
         <a href="#invariants" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Invariants</a>
@@ -418,7 +416,6 @@
         <!-- Left column -->
         <div class="reveal">
           <div class="flex items-center gap-3 mb-4 flex-wrap">
-            <span class="font-mono text-bg text-sm font-bold tracking-wider uppercase bg-cta px-2 py-0.5 rounded">v3.0</span>
             <span class="font-mono text-cta text-sm font-semibold tracking-wider uppercase">Open Source</span>
             <span class="text-surface-light">&middot;</span>
             <span class="font-mono text-muted text-sm">Apache 2.0</span>
@@ -434,7 +431,7 @@
             Run AI Agents <span class="text-cta">Without Fear</span>
           </h1>
           <p class="text-muted text-lg leading-relaxed mb-8 max-w-xl">
-            Default-deny governance for AI coding agents. 22 invariants block catastrophic actions before they execute. Vendor-neutral ActionContext decouples enforcement from any single framework. Install in 30 seconds.
+            Your AI agents can't push to main, leak credentials, or destroy your repo. 21 built-in safety checks block catastrophic actions before they execute. Install in 30 seconds. Sleep at night.
           </p>
           <div class="flex flex-wrap gap-4">
             <a href="#quickstart" class="bg-cta hover:bg-cta-dark text-bg font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2 cursor-pointer">
@@ -487,83 +484,16 @@
             <div class="text-muted text-sm mt-1">Event Kinds</div>
           </div>
           <div class="reveal">
-            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="27">0</div>
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="23">0</div>
             <div class="text-muted text-sm mt-1">Action Types</div>
           </div>
           <div class="reveal">
-            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="22">0</div>
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="21">0</div>
             <div class="text-muted text-sm mt-1">Invariants</div>
           </div>
           <div class="reveal">
             <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="29">0</div>
             <div class="text-muted text-sm mt-1">CLI Commands</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================================ -->
-    <!-- WHAT'S NEW IN v3.0                            -->
-    <!-- ============================================ -->
-    <section id="v3" class="py-24 border-b border-surface-light" aria-labelledby="v3-heading">
-      <div class="max-w-7xl mx-auto px-6">
-        <div class="text-center mb-16 reveal">
-          <span class="inline-block font-mono text-bg text-xs font-bold tracking-wider uppercase bg-cta px-3 py-1 rounded-full mb-4">New in v3.0</span>
-          <h2 id="v3-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Mandatory Execution Control</h2>
-          <p class="text-muted text-lg max-w-2xl mx-auto">v3.0 transforms AgentGuard from advisory interception to production-grade enforcement. Unknown actions are denied by default. Every agent action passes through a vendor-neutral governance boundary.</p>
-        </div>
-
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 reveal-stagger">
-          <!-- Default-Deny -->
-          <div class="reveal bg-surface border border-surface-light rounded-xl p-6 card-lift">
-            <div class="w-10 h-10 rounded-lg bg-danger/10 flex items-center justify-center mb-4">
-              <svg class="w-5 h-5 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-            </div>
-            <h3 class="font-mono font-semibold text-text mb-2">Default-Deny Enforcement</h3>
-            <p class="text-muted text-sm leading-relaxed">Unknown actions are denied by default. Only explicitly allowed actions execute. The governance kernel transitions from fail-open to fail-closed &mdash; the same security posture as production firewalls.</p>
-          </div>
-
-          <!-- ActionContext -->
-          <div class="reveal bg-surface border border-surface-light rounded-xl p-6 card-lift">
-            <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
-              <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            </div>
-            <h3 class="font-mono font-semibold text-text mb-2">ActionContext Normalization</h3>
-            <p class="text-muted text-sm leading-relaxed">A vendor-neutral action representation decouples the policy engine from Claude, Copilot, LangGraph, or any other framework. One policy governs all agents regardless of provider.</p>
-          </div>
-
-          <!-- Production-Grade Kernel -->
-          <div class="reveal bg-surface border border-surface-light rounded-xl p-6 card-lift">
-            <div class="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center mb-4">
-              <svg class="w-5 h-5 text-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-            </div>
-            <h3 class="font-mono font-semibold text-text mb-2">Production-Grade Kernel</h3>
-            <p class="text-muted text-sm leading-relaxed">Sub-millisecond evaluation latency. 22 invariants, 87 destructive patterns, tamper-evident audit chain. The reference monitor architecture enterprises require for autonomous agent deployment.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================================ -->
-    <!-- DEMO VIDEO                                    -->
-    <!-- ============================================ -->
-    <section id="demo" class="py-24 border-b border-surface-light" aria-labelledby="demo-heading">
-      <div class="max-w-4xl mx-auto px-6">
-        <div class="text-center mb-12 reveal">
-          <h2 id="demo-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">See It In Action</h2>
-          <p class="text-muted text-lg max-w-2xl mx-auto">Install, configure a policy, run a governed session, and view the Cloud dashboard &mdash; in 30 seconds.</p>
-        </div>
-
-        <div class="reveal">
-          <div class="relative bg-surface border border-surface-light rounded-xl overflow-hidden aspect-video flex items-center justify-center glow-green" id="demo-video-container">
-            <!-- Placeholder: replace with video embed when recorded -->
-            <div class="text-center p-8">
-              <div class="w-16 h-16 rounded-full bg-cta/10 flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-cta" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              </div>
-              <p class="font-mono text-muted text-sm">Demo video coming soon</p>
-              <p class="text-muted text-xs mt-2">npm install &rarr; agentguard.yaml &rarr; governed session &rarr; Cloud dashboard</p>
-            </div>
           </div>
         </div>
       </div>
@@ -770,7 +700,7 @@
             <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
               <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
-            <h3 class="font-mono font-semibold text-text mb-2">22 Safety Invariants</h3>
+            <h3 class="font-mono font-semibold text-text mb-2">21 Safety Invariants</h3>
             <p class="text-muted text-sm leading-relaxed">Secret detection, credential protection, branch guards, blast radius limits, lockfile integrity, script injection, CI/CD protection, network egress control, governance self-modification prevention. Always on.</p>
           </div>
 
