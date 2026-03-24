@@ -1,8 +1,25 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { toActionContext } from '@red-codes/adapters';
 import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 describe('toActionContext — Claude Code adapter (KE-2)', () => {
+  const originalEnv = process.env;
+  let isolationDir: string;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    delete process.env.AGENTGUARD_AGENT_NAME;
+    isolationDir = mkdtempSync(join(tmpdir(), 'ag-test-'));
+    process.env.AGENTGUARD_WORKSPACE = isolationDir;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    try { rmSync(isolationDir, { recursive: true }); } catch { /* ok */ }
+  });
   it('converts a Write tool payload to ActionContext', () => {
     const payload: ClaudeCodeHookPayload = {
       hook: 'PreToolUse',

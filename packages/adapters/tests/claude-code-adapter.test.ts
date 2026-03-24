@@ -21,15 +21,20 @@ beforeEach(() => {
 
 describe('normalizeClaudeCodeAction', () => {
   const originalEnv = process.env;
+  let isolationDir: string;
 
   beforeEach(() => {
     process.env = { ...originalEnv };
     delete process.env.AGENTGUARD_AGENT_NAME;
-    delete process.env.AGENTGUARD_WORKSPACE;
+    // Point AGENTGUARD_WORKSPACE to a temp dir with no .agentguard-identity file
+    // so readIdentityFile() short-circuits and never walks up to the repo root.
+    isolationDir = mkdtempSync(join(tmpdir(), 'ag-test-'));
+    process.env.AGENTGUARD_WORKSPACE = isolationDir;
   });
 
   afterEach(() => {
     process.env = originalEnv;
+    try { rmSync(isolationDir, { recursive: true }); } catch { /* ok */ }
   });
 
   it('normalizes Write tool', () => {
@@ -170,15 +175,18 @@ describe('normalizeClaudeCodeAction', () => {
 
 describe('resolveAgentIdentity', () => {
   const originalEnv = process.env;
+  let isolationDir: string;
 
   beforeEach(() => {
     process.env = { ...originalEnv };
     delete process.env.AGENTGUARD_AGENT_NAME;
-    delete process.env.AGENTGUARD_WORKSPACE;
+    isolationDir = mkdtempSync(join(tmpdir(), 'ag-test-'));
+    process.env.AGENTGUARD_WORKSPACE = isolationDir;
   });
 
   afterEach(() => {
     process.env = originalEnv;
+    try { rmSync(isolationDir, { recursive: true }); } catch { /* ok */ }
   });
 
   it('identity file takes precedence over env var', () => {
@@ -233,15 +241,18 @@ describe('resolveAgentIdentity', () => {
 
 describe('normalizeClaudeCodeAction — session_id propagation', () => {
   const originalEnv = process.env;
+  let isolationDir: string;
 
   beforeEach(() => {
     process.env = { ...originalEnv };
     delete process.env.AGENTGUARD_AGENT_NAME;
-    delete process.env.AGENTGUARD_WORKSPACE;
+    isolationDir = mkdtempSync(join(tmpdir(), 'ag-test-'));
+    process.env.AGENTGUARD_WORKSPACE = isolationDir;
   });
 
   afterEach(() => {
     process.env = originalEnv;
+    try { rmSync(isolationDir, { recursive: true }); } catch { /* ok */ }
   });
 
   it('uses session_id for agent identity when provided', () => {
@@ -307,15 +318,18 @@ describe('normalizeClaudeCodeAction — session_id propagation', () => {
 
 describe('Integration: session_id through kernel pipeline', () => {
   const originalEnv = process.env;
+  let isolationDir: string;
 
   beforeEach(() => {
     process.env = { ...originalEnv };
     delete process.env.AGENTGUARD_AGENT_NAME;
-    delete process.env.AGENTGUARD_WORKSPACE;
+    isolationDir = mkdtempSync(join(tmpdir(), 'ag-test-'));
+    process.env.AGENTGUARD_WORKSPACE = isolationDir;
   });
 
   afterEach(() => {
     process.env = originalEnv;
+    try { rmSync(isolationDir, { recursive: true }); } catch { /* ok */ }
   });
 
   it('decision record shows session-derived agent identity', async () => {

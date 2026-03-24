@@ -55,7 +55,7 @@ export function resolveAgentIdentity(sessionId?: string): string {
 
 /** Read .agentguard-identity with walk-up fallback (mirrors hook's resolveIdentityDir). */
 function readIdentityFile(): string | null {
-  // Try AGENTGUARD_WORKSPACE first
+  // Try AGENTGUARD_WORKSPACE first — if set, only look there (don't walk up)
   if (process.env.AGENTGUARD_WORKSPACE) {
     try {
       const content = readFileSync(
@@ -63,9 +63,10 @@ function readIdentityFile(): string | null {
       ).trim();
       if (content) return content;
     } catch { /* not found */ }
+    return null; // Explicit workspace set but no identity file — don't walk up
   }
 
-  // Walk up from cwd
+  // Walk up from cwd (no explicit workspace)
   let dir = process.cwd();
   const { root } = parsePath(dir);
   let firstGitDir: string | undefined;
