@@ -7,9 +7,9 @@ describe('resolveInvariantMode', () => {
     expect(resolveInvariantMode('no-force-push', config)).toBe('monitor');
   });
 
-  it('defaults to monitor when mode is absent', () => {
+  it('defaults to enforce when mode is absent', () => {
     const config: ModeConfig = {};
-    expect(resolveInvariantMode('no-force-push', config)).toBe('monitor');
+    expect(resolveInvariantMode('no-force-push', config)).toBe('enforce');
   });
 
   it('returns enforce when top-level mode is enforce', () => {
