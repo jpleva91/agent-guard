@@ -20,6 +20,18 @@ beforeEach(() => {
 });
 
 describe('normalizeClaudeCodeAction', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    delete process.env.AGENTGUARD_AGENT_NAME;
+    delete process.env.AGENTGUARD_WORKSPACE;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
   it('normalizes Write tool', () => {
     const payload: ClaudeCodeHookPayload = {
       hook: 'PreToolUse',
