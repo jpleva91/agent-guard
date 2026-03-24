@@ -12,7 +12,7 @@
 
 AgentGuard is the **Execution Control Plane for autonomous AI agents** — the independent governance layer that sits between autonomous agents and the real world. All agent side effects must pass through deterministic governance before reaching the environment, regardless of which orchestration framework, cloud provider, or AI model powers the agents.
 
-**Strategic positioning**: Autonomous Execution Governance (AEG). Like Okta for the application layer, AgentGuard controls the trust boundary without replacing the underlying systems. This is Layer 1 (OSS Kernel) of the four-layer architecture — the moat that makes everything else possible.
+**Strategic positioning**: Autonomous Execution Governance (AEG). Like Okta for the application layer, AgentGuard controls the trust boundary without replacing the underlying systems. The OSS repo houses Layer 1 (Kernel — the moat) and Layer 2 (Studio Runtime — adapters, swarm templates, execution profiles, and the `agentguard init studio` wizard that bootstraps governed workspaces).
 
 **Core thesis**: Once autonomous agents start modifying production systems, organizations need deterministic execution governance. Prompt alignment cannot solve this. Only a reference monitor architecture — default-deny, tamper-evident, fully auditable — provides the guarantees enterprises require. Orchestration is commoditizing (LangGraph, CrewAI, AutoGen, platform-level tools); governance remains scarce.
 
@@ -167,12 +167,26 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 > Ship the governance kernel to the world. Default-deny + KE-2 = production-grade enforcement.
 
 - [ ] Default-deny finalized + KE-2 ActionContext shipped
+- [ ] **Stranger test validation** — Have someone with zero context install and configure AgentGuard from the README alone. Every friction point found is a v3.0 blocker. The individual governance experience (`npm install → agentguard claude-init → governance active`) must work flawlessly before anything else is promoted.
+- [ ] **User capture funnel** — Without this, installs vanish into the void:
+  - README call-to-action: "Join early access / updates" link
+  - Cloud waitlist / signup link in CLI output after `agentguard claude-init`
+  - Enable GitHub Discussions on the repo (category: "Show & Tell", "Q&A")
+  - `agentguard cloud signup` prompt during first-run flow (non-blocking, skippable)
+- [ ] **Install attribution tracking** — The postinstall script (`apps/cli/src/postinstall.ts`) already runs on every `npm install` but doesn't report install events. Add a lightweight, opt-in install ping to the cloud endpoint:
+  - Report: package version, OS, Node version, CI detection (GitHub Actions, Vercel, GitLab, etc.), anonymous install ID
+  - Respect `AGENTGUARD_TELEMETRY=off` and `DO_NOT_TRACK=1`
+  - Fail silently (never break installs)
+  - Enables answering: "How many real humans vs CI pipelines install this? Which versions? Which environments?"
+  - Note: npm download stats are unreliable for attribution — Vercel/CI ephemeral builds inflate counts (see traction note below)
 - [ ] 30-second demo video (install → configure → govern → Cloud dashboard)
 - [ ] Site update with demo embed
 - [ ] LinkedIn + dev community announcement
 - [ ] npm publish v3.0
 
-**Release cadence**: v3.0 (kernel), v3.1 (Runner + Claude Code adapter), v3.2 (Copilot adapters + workspace manager).
+**Traction note (2026-03-24)**: npm reports ~1,761 weekly downloads, but investigation shows the majority are internal Vercel CI builds of `agentguard-cloud` which pins `@red-codes/agentguard@2.0.0`. Each Vercel build (ephemeral containers, preview deploys, branch builds) triggers a fresh `npm install`. Real external adoption is likely in the low hundreds. This makes install attribution tracking and the user capture funnel critical — without them, we cannot distinguish real adoption from CI noise. The version drift (cloud at 2.0.0 vs OSS at 2.4.0) should also be resolved.
+
+**Release cadence**: v3.0 (kernel + stranger test + capture funnel), v3.1 (Runner + `agentguard init studio` wizard + swarm template schema + install attribution), v3.2 (Copilot adapters + execution profiles).
 
 ### Next — Pull-Based Runner (Phase 6.5 — `apps/runner`)
 
@@ -193,6 +207,35 @@ Depends on: v3.0 released + Cloud Phase 2A (orchestrator + runner protocol).
 - [ ] `agentguard runner start --token <TOKEN>` CLI command
 - [ ] `agentguard runner install-service` — Generate systemd service for server deployment
 - [ ] Adapter registry — Map runtime string → adapter implementation, fallback for unknown types
+
+### Next — Studio Runtime (Phase 6.75 — v3.1)
+
+> Formalize the operational layer between the Kernel and Cloud. Make governed workspaces easy to bootstrap.
+
+Depends on: v3.0 released (stranger test passed).
+
+- [ ] **`agentguard init studio` wizard** — Interactive CLI wizard:
+  - Detect project type (monorepo, single package, framework)
+  - Detect CI/CD (GitHub Actions, GitLab CI, etc.)
+  - Detect test framework (Vitest, Jest, Playwright, etc.)
+  - Detect agent runtimes (Claude Code, Copilot, Cursor)
+  - Suggest execution profile (development, ci-safe, strict, enterprise)
+  - Select swarm template (QA, backlog refinement, feature implementation, etc.)
+  - Generate `agentguard.yaml` with inferred configuration
+  - Optionally connect to Cloud (`agentguard cloud connect`)
+- [ ] **Execution profiles** — Predefined governance configurations selectable via `agentguard init studio --profile <name>` or `agentguard init --profile <name>`:
+  - `development` — Permissive, all adapters enabled, logging verbose
+  - `ci-safe` — No interactive commands, restricted file scope, CI-optimized
+  - `strict` — Default-deny, minimal tool allowlist, audit everything
+  - `enterprise` — Strict + compliance invariants (SOC2, HIPAA pack bindings)
+- [ ] **Swarm template schema** — Canonical YAML schema for swarm template definitions:
+  - Agent roles (name, description, model tier, capabilities)
+  - Allowed tools per agent role
+  - Schedules (cron expressions, concurrency limits)
+  - Escalation rules (risk threshold → human review)
+  - PR caps and branch naming conventions
+  - Required policy pack bindings
+  - Template composition (extend base templates)
 
 ### Next — Capability-Scoped Sessions (Phase 7)
 
