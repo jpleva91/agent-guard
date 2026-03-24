@@ -27,15 +27,15 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | Governed action kernel (27 action types, 9 classes) | Implemented | Production |
 | Action Authorization Boundary (AAB) | Implemented | Bypass vectors closed (3 fixed in v2.4.0) |
 | Policy evaluator (YAML/JSON, composition, packs) | Implemented | Production |
-| 21 built-in invariants | Implemented | Production |
-| Canonical event model (50+ event kinds) | Implemented | Production |
-| Pre-execution simulation engine (3 simulators) | Implemented | Production |
+| 22 built-in invariants | Implemented | Production |
+| Canonical event model (47 event kinds) | Implemented | Production |
+| Pre-execution simulation engine (5 simulators) | Implemented | Production |
 | Blast radius computation | Implemented | Production |
 | Escalation state machine (NORMAL → LOCKDOWN) | Implemented | Production |
 | SQLite persistence (events, decisions, sessions) | Implemented | Production |
 | Replay engine with deterministic comparison | Implemented | Production |
 | Evidence pack generation | Implemented | Production |
-| CLI (40+ commands) | Implemented | Production |
+| CLI (32 commands) | Implemented | Production |
 | Claude Code adapter (PreToolUse/PostToolUse) | Implemented | Production |
 | VS Code extension | Implemented | Production |
 | MCP governance server (15 tools) | Implemented | Production |
@@ -43,7 +43,7 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | 8 policy packs (essentials, strict, ci-safe, enterprise, open-source, soc2, hipaa, eng-standards) | Implemented | Production |
 | 26-agent autonomous swarm templates | Implemented | Production |
 | KE-1 Structured matchers (Aho-Corasick, globs, reason codes) | **Shipped v2.3.0** | `packages/matchers/` |
-| All 46 event kinds mapped to cloud AgentEvent | **Shipped v2.3.0** | `packages/telemetry/src/event-mapper.ts` |
+| All 47 event kinds mapped to cloud AgentEvent | **Shipped v2.3.0** | `packages/telemetry/src/event-mapper.ts` |
 | Agent SDK for programmatic governance | **Shipped v2.3.0** | Programmatic governance integration |
 | RunManifest YAML loader | **Shipped v2.3.0** | Declarative session configuration |
 | Monitor mode for claude-hook | **Shipped v2.3.0** | `apps/cli/src/commands/claude-hook.ts` |
@@ -119,15 +119,15 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 - [ ] Ensure policy engine consumes only normalized `ActionContext` (no provider-specific logic)
 - [ ] Benchmark: context normalization in 50–100µs
 
-#### KE-3: Governance Event Envelope
+#### KE-3: Governance Event Envelope ✅ Done 2026-03-24
 
 > Standardize all telemetry into a versioned, runtime-agnostic schema that the Cloud can consume without special cases.
 
-- [ ] Design versioned `GovernanceEvent` envelope: eventId, timestamp, policy version, decision codes, performance metrics (hook latency in µs)
-- [ ] Ensure schema is runtime-agnostic (Claude, Copilot, LangGraph all produce identical envelopes)
-- [ ] Migrate existing event model to envelope format (backward-compatible)
-- [ ] 100% of telemetry follows the versioned schema
-- [ ] **Integration point**: Cloud ingestion consumes envelopes directly — zero special cases
+- [x] ~~Design versioned `GovernanceEvent` envelope: eventId, timestamp, policy version, decision codes, performance metrics (hook latency in µs)~~ — `GovernanceEventEnvelope` in `packages/events/src/schema.ts`
+- [x] ~~Ensure schema is runtime-agnostic (Claude, Copilot, LangGraph all produce identical envelopes)~~ — `source` field differentiates runtimes
+- [x] ~~Migrate existing event model to envelope format (backward-compatible)~~ — `createEnvelope`, `unwrapEnvelope`, `validateEnvelope`
+- [x] ~~100% of telemetry follows the versioned schema~~ — `ENVELOPE_SCHEMA_VERSION` enforced
+- [x] ~~**Integration point**: Cloud ingestion consumes envelopes directly — zero special cases~~
 
 #### KE-4: Plane Separation (Evaluator / Emitter / Shipper)
 

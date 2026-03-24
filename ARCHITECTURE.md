@@ -51,7 +51,7 @@ packages/
 ├── core/          @red-codes/core — Shared utilities (types, actions, hash, execution-log)
 ├── events/        @red-codes/events — Canonical event model (schema, bus, store)
 ├── policy/        @red-codes/policy — Policy system (composer, evaluator, loaders, pack loader)
-├── invariants/    @red-codes/invariants — Invariant system (21 built-in definitions, checker)
+├── invariants/    @red-codes/invariants — Invariant system (22 built-in definitions, checker)
 ├── invariant-data-protection/ @red-codes/invariant-data-protection — Data protection invariant plugin
 ├── matchers/      @red-codes/matchers — Structured matchers (Aho-Corasick, globs, hash sets)
 ├── kernel/        @red-codes/kernel — Governed action kernel (orchestrate, normalize, decide, escalate)
@@ -69,7 +69,7 @@ apps/
 ├── mcp-server/    @red-codes/mcp-server — MCP governance server (15 governance tools)
 └── vscode-extension/  agentguard-vscode — VS Code extension (sidebar panels, notifications, diagnostics)
 
-policies/          Policy packs (YAML: ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
+policies/          Policy packs (YAML: essentials, ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
 ```
 
 ## Layer Rules
