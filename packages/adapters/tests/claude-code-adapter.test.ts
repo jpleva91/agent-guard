@@ -9,7 +9,10 @@ import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
 import { createKernel } from '@red-codes/kernel';
 import { resetActionCounter } from '@red-codes/core';
 import { resetEventCounter } from '@red-codes/events';
-import { beforeEach } from 'vitest';
+import { beforeEach, afterEach } from 'vitest';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 beforeEach(() => {
   resetActionCounter();
@@ -154,7 +157,46 @@ describe('normalizeClaudeCodeAction', () => {
 });
 
 describe('resolveAgentIdentity', () => {
-  it('returns claude-code when no session_id', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    delete process.env.AGENTGUARD_AGENT_NAME;
+    delete process.env.AGENTGUARD_WORKSPACE;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('identity file takes precedence over env var', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'ag-test-'));
+    writeFileSync(join(tmpDir, '.agentguard-identity'), 'file-identity');
+    process.env.AGENTGUARD_WORKSPACE = tmpDir;
+    process.env.AGENTGUARD_AGENT_NAME = 'env-identity';
+    expect(resolveAgentIdentity('session-123')).toBe('file-identity');
+    rmSync(tmpDir, { recursive: true });
+  });
+
+  it('returns env var AGENTGUARD_AGENT_NAME when set', () => {
+    process.env.AGENTGUARD_AGENT_NAME = 'claude:opus:jared';
+    expect(resolveAgentIdentity('some-session')).toBe('claude:opus:jared');
+  });
+
+  it('env var takes precedence over session hash', () => {
+    process.env.AGENTGUARD_AGENT_NAME = 'swarm-agent';
+    const result = resolveAgentIdentity('session-123');
+    expect(result).toBe('swarm-agent');
+    expect(result).not.toMatch(/^claude-code:/);
+  });
+
+  it('falls back to session hash when no identity configured', () => {
+    const identity = resolveAgentIdentity('abc123');
+    expect(identity).toMatch(/^claude-code:[a-z0-9]+$/);
+    expect(identity).not.toBe('claude-code');
+  });
+
+  it('returns claude-code when no session_id and no identity', () => {
     expect(resolveAgentIdentity()).toBe('claude-code');
     expect(resolveAgentIdentity(undefined)).toBe('claude-code');
   });
@@ -162,12 +204,6 @@ describe('resolveAgentIdentity', () => {
   it('returns claude-code for empty or whitespace session_id', () => {
     expect(resolveAgentIdentity('')).toBe('claude-code');
     expect(resolveAgentIdentity('   ')).toBe('claude-code');
-  });
-
-  it('returns claude-code:<hash> for valid session_id', () => {
-    const identity = resolveAgentIdentity('abc123');
-    expect(identity).toMatch(/^claude-code:[a-z0-9]+$/);
-    expect(identity).not.toBe('claude-code');
   });
 
   it('produces consistent hash for same session_id', () => {
@@ -184,6 +220,18 @@ describe('resolveAgentIdentity', () => {
 });
 
 describe('normalizeClaudeCodeAction — session_id propagation', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    delete process.env.AGENTGUARD_AGENT_NAME;
+    delete process.env.AGENTGUARD_WORKSPACE;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
   it('uses session_id for agent identity when provided', () => {
     const payload: ClaudeCodeHookPayload = {
       hook: 'PreToolUse',
@@ -246,6 +294,18 @@ describe('normalizeClaudeCodeAction — session_id propagation', () => {
 });
 
 describe('Integration: session_id through kernel pipeline', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    delete process.env.AGENTGUARD_AGENT_NAME;
+    delete process.env.AGENTGUARD_WORKSPACE;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
   it('decision record shows session-derived agent identity', async () => {
     const kernel = createKernel({ dryRun: true, evaluateOptions: { defaultDeny: false } });
     const payload: ClaudeCodeHookPayload = {
