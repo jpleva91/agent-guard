@@ -13,6 +13,7 @@ import type {
   EventSink,
   RunManifest,
   ActionContext,
+  Suggestion,
 } from '@red-codes/core';
 import { createMonitor } from './monitor.js';
 import type { MonitorConfig, MonitorDecision, MonitorState } from './monitor.js';
@@ -46,6 +47,7 @@ import {
 } from '@red-codes/events';
 import { INTERVENTION } from './decision.js';
 import type { InterventionType } from './decision.js';
+import { SuggestionRegistry } from './suggestion-registry.js';
 import type { GovernanceDecisionRecord, DecisionSink } from './decisions/types.js';
 import { buildDecisionRecord } from './decisions/factory.js';
 import { checkAllInvariants, buildSystemState } from '@red-codes/invariants';
@@ -87,6 +89,8 @@ export interface KernelResult {
   intentDrift?: IntentDriftResult;
   /** Evaluation tier used for this action (fast/standard/deep) */
   tier?: EvaluationTier;
+  /** Corrective suggestion when the action is denied (from policy rule or built-in generator) */
+  suggestion?: Suggestion;
 }
 
 /**
@@ -228,6 +232,18 @@ export function createKernel(config: KernelConfig = {}): Kernel {
     windowSize: config.windowSize,
     evaluateOptions: config.evaluateOptions,
   });
+
+  const suggestionRegistry = new SuggestionRegistry();
+
+  /** Resolve a corrective suggestion from the policy decision and intent. */
+  function resolveSuggestion(decision: MonitorDecision): Suggestion | undefined {
+    const resolved = suggestionRegistry.resolve({
+      policySuggestion: decision.decision.suggestion,
+      policyCorrectedCommand: decision.decision.correctedCommand,
+      intent: decision.intent,
+    });
+    return resolved ?? undefined;
+  }
 
   function sinkEvent(event: DomainEvent): void {
     eventCount++;
@@ -710,6 +726,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                 decisionRecord,
                 intervention: interventionType,
                 paused: true,
+                suggestion: resolveSuggestion(decision),
               };
               actionLog.push(result);
               return result;
@@ -872,6 +889,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                 decisionRecord,
                 intervention: interventionType,
                 modified: false,
+                suggestion: resolveSuggestion(decision),
               };
               actionLog.push(result);
               return result;
@@ -1143,6 +1161,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
               runId,
               decisionRecord,
               intervention: interventionType,
+              suggestion: resolveSuggestion(decision),
             };
             actionLog.push(result);
             return result;

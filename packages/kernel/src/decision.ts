@@ -1,7 +1,7 @@
 // Runtime Assurance Engine — the RTA decision switch.
 // Pure domain logic. No DOM, no Node.js-specific APIs.
 
-import type { DomainEvent, ActionContext } from '@red-codes/core';
+import type { DomainEvent, ActionContext, Suggestion } from '@red-codes/core';
 import { authorize, authorizeContext, isActionContext } from './aab.js';
 import type { RawAgentAction } from './aab.js';
 import type { NormalizedIntent, EvalResult, EvaluateOptions } from '@red-codes/policy';
@@ -44,6 +44,8 @@ export interface EngineDecision {
   events: DomainEvent[];
   evidencePack: EvidencePack | null;
   intervention: InterventionType | null;
+  /** Corrective suggestion resolved from the matched policy rule or built-in generators */
+  suggestion?: Suggestion;
 }
 
 export interface EngineConfig {
