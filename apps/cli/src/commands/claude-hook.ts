@@ -316,15 +316,30 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
         }
       }
 
-      const payload = { ...data, session_id: sessionId } as unknown as ClaudeCodeHookPayload;
-      const denied = await handlePreToolUse(payload, extraArgs, parentSessionId);
-      // Exit code 2 tells Claude Code to block the action
-      process.exit(denied ? 2 : 0);
+      try {
+        const payload = { ...data, session_id: sessionId } as unknown as ClaudeCodeHookPayload;
+        const denied = await handlePreToolUse(payload, extraArgs, parentSessionId);
+        // Exit code 2 tells Claude Code to block the action
+        process.exit(denied ? 2 : 0);
+      } catch (preErr) {
+        // SECURITY: fail closed on PreToolUse — if the kernel crashes, block the action
+        // rather than silently allowing it through.
+        process.stderr.write(
+          `[agentguard] PreToolUse hook error: ${preErr instanceof Error ? preErr.message : String(preErr)}\n`
+        );
+        process.stdout.write(
+          JSON.stringify({
+            decision: 'block',
+            reason: `AgentGuard governance hook crashed: ${preErr instanceof Error ? preErr.message : 'unknown error'}. Action blocked for safety.`,
+          })
+        );
+        process.exit(2);
+      }
     } else {
       handlePostToolUse(data, extraArgs);
     }
   } catch {
-    // Swallow all errors — hooks must never fail (fail-open)
+    // PostToolUse/stdin parsing errors are non-fatal — fail open
   }
   process.exit(0);
 }

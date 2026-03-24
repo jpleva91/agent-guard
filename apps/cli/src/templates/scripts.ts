@@ -174,8 +174,29 @@ export function claudeHookWrapper(
   storeSuffix: string,
   dbPathSuffix: string
 ): string {
+  // For local dev (cliPrefix = "node apps/cli/dist/bin.js"), the binary is always resolvable.
+  // For installed package (cliPrefix = "agentguard"), we need to resolve from node_modules/.bin.
+  const isLocal = cliPrefix.startsWith('node ');
+  const resolveBlock = isLocal
+    ? `AGENTGUARD_BIN="${cliPrefix}"`
+    : `# Resolve the agentguard binary: local node_modules first, then PATH
+AGENTGUARD_BIN=""
+if [ -x "\$AGENTGUARD_WORKSPACE/node_modules/.bin/agentguard" ]; then
+  AGENTGUARD_BIN="\$AGENTGUARD_WORKSPACE/node_modules/.bin/agentguard"
+elif command -v agentguard &>/dev/null; then
+  AGENTGUARD_BIN="agentguard"
+fi
+
+# SECURITY: fail closed — if kernel binary is missing, block the action
+if [ -z "\$AGENTGUARD_BIN" ]; then
+  echo '{"decision":"block","reason":"AgentGuard kernel binary not found — governance cannot evaluate this action. Run: pnpm install"}'
+  exit 0
+fi`;
+
   return `#!/usr/bin/env bash
 # claude-hook-wrapper.sh — Sources persona identity before running governance hook
+# SECURITY: This script MUST fail closed. If the kernel binary cannot be found,
+# it outputs a block response so Claude Code denies the action.
 
 # Resolve project root (hook CWD may not match the project directory)
 AGENTGUARD_WORKSPACE="\$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
@@ -188,7 +209,9 @@ if [ -f "\$AGENTGUARD_WORKSPACE/.agentguard/persona.env" ]; then
   set +a
 fi
 
+${resolveBlock}
+
 # Pass through to the actual hook
-exec ${cliPrefix} claude-hook pre${storeSuffix}${dbPathSuffix}
+exec \$AGENTGUARD_BIN claude-hook pre${storeSuffix}${dbPathSuffix}
 `;
 }

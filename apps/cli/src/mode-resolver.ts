@@ -44,6 +44,7 @@ export function resolveInvariantMode(
     return config.packModes[invariantId];
   }
 
-  // Top-level mode
-  return config.mode ?? 'monitor';
+  // Top-level mode — default to enforce so policy denials are not silently ignored.
+  // Users who want gradual rollout must explicitly set mode: monitor in agentguard.yaml.
+  return config.mode ?? 'enforce';
 }
