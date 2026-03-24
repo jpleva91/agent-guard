@@ -12,7 +12,9 @@ import type {
   GovernanceEventEnvelope,
   DomainEvent,
   EnvelopePerformanceMetrics,
+  Suggestion,
 } from '@red-codes/core';
+import type { HookResponseOptions } from './claude-code.js';
 import { simpleHash, personaFromEnv } from '@red-codes/core';
 import { createEnvelope } from '@red-codes/events';
 
@@ -242,8 +244,59 @@ export async function processCopilotCliHook(
  * Format kernel result as Copilot CLI hook response.
  * Copilot CLI preToolUse hooks expect JSON on stdout with permissionDecision field.
  * Exit code 0 = success (hook ran); the JSON response controls allow/deny.
+ *
+ * Extended with optional `suggestion` and `options` params for corrective enforcement modes.
+ * Backward compatible: calling with just `result` still works.
  */
-export function formatCopilotHookResponse(result: KernelResult): string {
+export function formatCopilotHookResponse(
+  result: KernelResult,
+  suggestion?: Suggestion | null,
+  options?: HookResponseOptions
+): string {
+  const mode = options?.mode;
+
+  // --- Educate mode: allow the action, write suggestion to stderr ---
+  // Copilot CLI has no additionalContext equivalent, so we emit to stderr as a warning.
+  if (mode === 'educate' && suggestion) {
+    const parts = [`[AgentGuard educate] ${suggestion.message}`];
+    if (suggestion.correctedCommand) {
+      parts.push(`Suggested command: ${suggestion.correctedCommand}`);
+    }
+    process.stderr.write(parts.join('\n') + '\n');
+    // Return empty string = allow
+    return '';
+  }
+
+  // --- Guide mode: block with corrective suggestion ---
+  if (mode === 'guide' && !result.allowed) {
+    const attempt = options?.retryAttempt ?? 0;
+    const maxRetries = options?.maxRetries ?? 3;
+
+    // Retry exhausted — hard block
+    if (attempt > maxRetries) {
+      return JSON.stringify({
+        permissionDecision: 'deny',
+        permissionDecisionReason: `Action blocked after ${attempt} correction attempts — ask the human for help`,
+      });
+    }
+
+    const reason = result.decision?.decision?.reason ?? 'Action denied';
+    const parts = [reason];
+    if (suggestion) {
+      parts.push(`Suggestion: ${suggestion.message}`);
+      if (suggestion.correctedCommand) {
+        parts.push(`Corrected command: ${suggestion.correctedCommand}`);
+      }
+    }
+    parts.push(`(attempt ${attempt}/${maxRetries})`);
+
+    return JSON.stringify({
+      permissionDecision: 'deny',
+      permissionDecisionReason: parts.join(' | '),
+    });
+  }
+
+  // --- Enforce mode / Monitor mode / no options: existing behavior ---
   if (!result.allowed) {
     const reason = result.decision?.decision?.reason ?? 'Action denied by AgentGuard policy';
     const violations = result.decision?.violations ?? [];

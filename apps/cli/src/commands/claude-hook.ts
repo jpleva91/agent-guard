@@ -11,7 +11,7 @@ import { execFileSync, execSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, parse as parsePath } from 'node:path';
 import { tmpdir } from 'node:os';
-import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
+import type { ClaudeCodeHookPayload, HookResponseOptions } from '@red-codes/adapters';
 import type { LoadedPolicy } from '@red-codes/policy';
 import { resolveMainRepoRoot } from '@red-codes/core';
 import type { CloudSinkBundle } from '@red-codes/telemetry';
@@ -54,6 +54,19 @@ function writeSessionState(sessionId: string | undefined, patch: Partial<Session
   } catch {
     // Non-fatal — state tracking is best-effort
   }
+}
+
+// --- Retry counter helpers: track per-violation retry attempts across hook calls ---
+
+export function getRetryCount(state: Record<string, unknown>, key: string): number {
+  const counts = (state.retryCounts ?? {}) as Record<string, number>;
+  return counts[key] ?? 0;
+}
+
+export function incrementRetry(state: Record<string, unknown>, key: string): void {
+  if (!state.retryCounts) state.retryCounts = {};
+  const counts = state.retryCounts as Record<string, number>;
+  counts[key] = (counts[key] ?? 0) + 1;
 }
 
 /**
@@ -593,45 +606,73 @@ async function handlePreToolUse(
     }
   }
 
-  // If denied, output reason to stdout and signal the caller to exit with code 2
+  // If denied, route through the four enforcement modes: enforce, guide, educate, monitor.
+  // Default to 'enforce' for backward compatibility — only users who explicitly set
+  // mode in agentguard.yaml get alternative behavior.
   if (!result.allowed) {
-    // Resolve enforcement mode for each violation.
-    // Default to 'enforce' for backward compatibility — only users who
-    // explicitly set mode: monitor in agentguard.yaml get fail-open behavior.
     const { resolveInvariantMode } = await import('../mode-resolver.js');
     const { buildModeConfig } = await import('../policy-resolver.js');
     const modeConfig = buildModeConfig(policyDefs as LoadedPolicy[], projectRoot);
     const violations = result.decision?.violations ?? [];
 
-    // Check if ANY violation requires enforcement
-    let shouldEnforce = false;
-    const monitorWarnings: string[] = [];
-
+    // Resolve the effective mode — if multiple violations, use the strictest
+    let resolvedMode: import('@red-codes/core').EnforcementMode = 'enforce';
     if (violations.length > 0) {
-      // Invariant violations — check each invariant's mode
+      // Invariant violations — find the strictest mode across all violations
+      const modeOrder = { enforce: 3, guide: 2, educate: 1, monitor: 0 } as const;
+      let strictest: import('@red-codes/core').EnforcementMode = 'monitor';
       for (const v of violations) {
         const mode = resolveInvariantMode(v.invariantId, modeConfig);
-        if (mode === 'enforce') {
-          shouldEnforce = true;
-          break;
+        if (modeOrder[mode] > modeOrder[strictest]) {
+          strictest = mode;
         }
-        monitorWarnings.push(
-          `\u26A0 agentguard: ${v.invariantId} triggered \u2014 ${v.name} (monitor mode)`
-        );
       }
+      resolvedMode = strictest;
     } else {
       // Policy rule denial (no invariant violations) — use top-level mode
-      const mode = resolveInvariantMode(null, modeConfig);
-      if (mode === 'enforce') {
-        shouldEnforce = true;
-      } else {
-        const reason = result.decision?.decision?.reason ?? 'Action denied by policy';
-        monitorWarnings.push(`\u26A0 agentguard: policy denied \u2014 ${reason} (monitor mode)`);
-      }
+      resolvedMode = resolveInvariantMode(null, modeConfig);
     }
 
-    if (shouldEnforce) {
-      // Current behavior — block the action
+    // --- Route by enforcement mode ---
+
+    if (resolvedMode === 'guide') {
+      // Guide mode: block with corrective suggestion, track retries
+      const action = result.decision?.intent?.action ?? 'unknown';
+      const policyId = result.decision?.decision?.matchedPolicy?.id ?? 'unknown';
+      // Extract ruleIndex from trace (stable key — avoids depending on reason string)
+      const trace = result.decision?.decision?.trace;
+      const matchedTraceEntry = trace?.rulesEvaluated?.find(
+        (r: { outcome: string }) => r.outcome === 'match'
+      );
+      const ruleIndex = matchedTraceEntry
+        ? (matchedTraceEntry as { ruleIndex: number }).ruleIndex
+        : 0;
+      const retryKey = `${action}:${policyId}:${ruleIndex}`;
+
+      const retryAttempt = getRetryCount(sessionState, retryKey) + 1;
+      incrementRetry(sessionState, retryKey);
+      writeSessionState(normalizedPayload.session_id, sessionState);
+
+      const options: HookResponseOptions = { mode: 'guide', retryAttempt, maxRetries: 3 };
+      const response = formatHookResponse(result, result.suggestion, options);
+      if (response) {
+        await new Promise<void>((resolve) => process.stdout.write(response, () => resolve()));
+      }
+      return true;
+    }
+
+    if (resolvedMode === 'educate') {
+      // Educate mode: allow the action but inject suggestion context
+      const options: HookResponseOptions = { mode: 'educate' };
+      const response = formatHookResponse(result, result.suggestion, options);
+      if (response) {
+        await new Promise<void>((resolve) => process.stdout.write(response, () => resolve()));
+      }
+      return false;
+    }
+
+    if (resolvedMode === 'enforce') {
+      // Enforce mode: hard block (existing behavior)
       const response = formatHookResponse(result);
       if (response) {
         await new Promise<void>((resolve) => process.stdout.write(response, () => resolve()));
@@ -639,9 +680,16 @@ async function handlePreToolUse(
       return true;
     }
 
-    // Monitor mode — warn but allow
-    for (const warning of monitorWarnings) {
-      process.stderr.write(warning + '\n');
+    // Monitor mode: warn to stderr but allow the action through
+    if (violations.length > 0) {
+      for (const v of violations) {
+        process.stderr.write(
+          `\u26A0 agentguard: ${v.invariantId} triggered \u2014 ${v.name} (monitor mode)\n`
+        );
+      }
+    } else {
+      const reason = result.decision?.decision?.reason ?? 'Action denied by policy';
+      process.stderr.write(`\u26A0 agentguard: policy denied \u2014 ${reason} (monitor mode)\n`);
     }
     return false;
   }
