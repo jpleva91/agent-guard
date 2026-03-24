@@ -2,8 +2,9 @@
 // have valid structure, and produce expected governance decisions.
 import { describe, it, expect } from 'vitest';
 import { dirname, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { resolvePackPath, loadPackFile } from '@red-codes/policy';
+import { resolvePackPath, loadPackFile, loadYamlPolicy } from '@red-codes/policy';
 import { evaluate } from '@red-codes/policy';
 import type { LoadedPolicy, NormalizedIntent } from '@red-codes/policy';
 
@@ -696,5 +697,131 @@ describe('policy packs — extends integration', () => {
       expect(pack).not.toBeNull();
       expect(pack!.id).toContain(name.replace('-', '-'));
     }
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Default-deny regression — every pack must allow baseline safe actions
+// ---------------------------------------------------------------------------
+// Under defaultDeny: true (the production default), actions with no matching
+// rule are DENIED. These tests verify that all packs have explicit allow rules
+// for common safe development operations. If someone removes an allow rule
+// from a pack, this section catches it.
+
+describe('default-deny regression — baseline safe actions allowed', () => {
+  // Load essentials separately (standalone YAML, not a directory pack)
+  const essentialsYaml = readFileSync(resolve(POLICIES_DIR, 'essentials.yaml'), 'utf8');
+  const essentials = loadYamlPolicy(essentialsYaml);
+
+  const allPacksWithEssentials: Array<{ name: string; pack: LoadedPolicy }> = [
+    { name: 'essentials', pack: essentials },
+    ...ALL_PACKS.map((name) => ({ name, pack: loadPack(name) })),
+  ];
+
+  // Actions that should be allowed in ALL development-oriented packs
+  const baselineSafeActions: Array<{ action: string; target?: string }> = [
+    { action: 'file.read', target: 'src/index.ts' },
+    { action: 'git.diff' },
+    { action: 'test.run' },
+    { action: 'mcp.call' },
+  ];
+
+  // Packs where file.move should be allowed (ci-safe explicitly denies it)
+  const packsAllowingFileMove = [
+    'essentials', 'enterprise', 'open-source', 'engineering-standards',
+    'hipaa', 'soc2', 'strict',
+  ];
+
+  // Packs where file.write (general) should be allowed
+  // Note: strict and enterprise have blast-radius `limit` deny rules on file.write
+  // that match all file.write actions regardless of target, so they are excluded.
+  const packsAllowingFileWrite = [
+    'essentials', 'open-source', 'engineering-standards',
+    'hipaa', 'soc2',
+  ];
+
+  // Packs where shell.exec (general) should be allowed
+  const packsAllowingShellExec = [
+    'essentials', 'ci-safe', 'enterprise', 'open-source',
+    'engineering-standards', 'hipaa', 'soc2', 'strict',
+  ];
+
+  // Packs where git.commit should be allowed
+  const packsAllowingGitCommit = [
+    'essentials', 'enterprise', 'open-source', 'engineering-standards',
+    'hipaa', 'soc2', 'strict',
+  ];
+
+  describe.each(allPacksWithEssentials)('$name pack', ({ name, pack }) => {
+    const policies = [pack];
+
+    it.each(baselineSafeActions)(
+      'allows $action under default-deny',
+      ({ action, target }) => {
+        const result = evaluate(
+          intent({ action, target: target ?? 'test-target' }),
+          policies,
+          { defaultDeny: true },
+        );
+        expect(result.allowed).toBe(true);
+      },
+    );
+
+    if (packsAllowingFileMove.includes(name)) {
+      it('allows file.move under default-deny', () => {
+        const result = evaluate(
+          intent({ action: 'file.move', target: 'src/old.ts' }),
+          policies,
+          { defaultDeny: true },
+        );
+        expect(result.allowed).toBe(true);
+      });
+    }
+
+    if (packsAllowingFileWrite.includes(name)) {
+      it('allows file.write to safe paths under default-deny', () => {
+        const result = evaluate(
+          intent({ action: 'file.write', target: 'src/index.ts' }),
+          policies,
+          { defaultDeny: true },
+        );
+        expect(result.allowed).toBe(true);
+      });
+    }
+
+    if (packsAllowingShellExec.includes(name)) {
+      it('allows shell.exec (general) under default-deny', () => {
+        const result = evaluate(
+          intent({ action: 'shell.exec', target: 'npm run build' }),
+          policies,
+          { defaultDeny: true },
+        );
+        expect(result.allowed).toBe(true);
+      });
+    }
+
+    if (packsAllowingGitCommit.includes(name)) {
+      it('allows git.commit under default-deny', () => {
+        const result = evaluate(
+          intent({ action: 'git.commit' }),
+          policies,
+          { defaultDeny: true },
+        );
+        expect(result.allowed).toBe(true);
+      });
+    }
+  });
+
+  // Verify dangerous actions are STILL denied (sanity check)
+  it.each(allPacksWithEssentials)(
+    '$name pack still denies git.force-push under default-deny',
+    ({ pack }) => {
+      const result = evaluate(
+        intent({ action: 'git.force-push' }),
+        [pack],
+        { defaultDeny: true },
+      );
+      expect(result.allowed).toBe(false);
+    },
   );
 });
