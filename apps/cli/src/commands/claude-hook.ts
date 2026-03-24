@@ -106,7 +106,12 @@ function loadProjectEnv(): void {
 /** Check if a process is still alive (signal 0 = existence check). */
 function isProcessAlive(pid: number): boolean {
   if (!pid || isNaN(pid)) return false;
-  try { process.kill(pid, 0); return true; } catch { return false; }
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Resolve the project root for identity file placement.
@@ -303,7 +308,11 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
         }
 
         if (!parentSessionId) {
-          try { writeFileSync(rootSessionPath, `${sessionId}\n${process.ppid}`); } catch { /* non-fatal */ }
+          try {
+            writeFileSync(rootSessionPath, `${sessionId}\n${process.ppid}`);
+          } catch {
+            /* non-fatal */
+          }
         }
       }
 
@@ -750,7 +759,9 @@ async function handleStop(cliArgs: string[]): Promise<void> {
     if (currentSessionId && storedSessionId === currentSessionId) {
       unlinkSync(rootSessionPath);
     }
-  } catch { /* non-fatal */ }
+  } catch {
+    /* non-fatal */
+  }
 
   // On session end, generate the session viewer HTML quietly (no browser open).
   // If a live server is running, skip — it already has the latest data.
