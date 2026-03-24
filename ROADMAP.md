@@ -55,6 +55,8 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | Capability grants enforcement before adapter execution | **Shipped v2.4.0** | `packages/kernel/` |
 | Cloud credential storage in project .env | **Shipped v2.4.0** | Per-project instead of global config |
 | Copilot CLI adapter | **Shipped v2.4.0** | `packages/adapters/src/copilot-cli.ts` |
+| Postinstall dual-hook auto-setup (Claude Code + Copilot CLI) | **Shipped v2.4.0** | `apps/cli/src/postinstall.ts` |
+| KE-2 ActionContext (vendor-neutral action normalization) | **Shipped v2.4.0** | `packages/core/src/types.ts`, `packages/kernel/src/aab.ts` |
 | PAUSE and ROLLBACK enforcement | **Shipped v2.4.0** | `packages/kernel/` (PRs #475, #617) |
 | KE-3 Governance Event Envelope | **Shipped v2.5.0** | `packages/events/src/schema.ts` (#686) |
 | Commit scope guard invariant (#22) | **Shipped v2.5.0** | `packages/invariants/src/definitions.ts` |
@@ -113,14 +115,14 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 - [x] ~~Produce machine-readable reason codes for all match results~~ — `packages/matchers/src/reason-codes.ts`
 - [x] ~~Benchmark: total evaluation p50 < 0.25ms~~ — benchmark suite in CI
 
-#### KE-2: Canonical Action Normalization (ActionContext)
+#### KE-2: Canonical Action Normalization (ActionContext) ✅ Done 2026-03-23
 
 > Formalize a vendor-neutral action representation that decouples the policy engine from provider-specific payloads.
 
-- [ ] Design `ActionContext` contract: actor identity (agent/session/worktree), action category, structured arguments
-- [ ] Build specialized adapter for Claude tool-calls → `ActionContext` mapping
-- [ ] Ensure policy engine consumes only normalized `ActionContext` (no provider-specific logic)
-- [ ] Benchmark: context normalization in 50–100µs
+- [x] ~~Design `ActionContext` contract: actor identity (agent/session/worktree), action category, structured arguments~~ — `ActorIdentity`, `ActionArguments`, `ActionContext` types in `packages/core/src/types.ts`
+- [x] ~~Build specialized adapter for Claude tool-calls → `ActionContext` mapping~~ — `toActionContext()` in claude-code adapter, `copilotToActionContext()` in copilot-cli adapter
+- [x] ~~Ensure policy engine consumes only normalized `ActionContext` (no provider-specific logic)~~ — `evaluate()` accepts `NormalizedIntent | ActionContext` (backward-compatible)
+- [x] ~~Benchmark: context normalization in 50–100µs~~ — `normalizeToActionContext()` in `packages/kernel/src/aab.ts`
 
 #### KE-3: Governance Event Envelope ✅ Done 2026-03-24
 
