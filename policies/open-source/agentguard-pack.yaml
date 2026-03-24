@@ -88,3 +88,23 @@ rules:
   - action: npm.script.run
     effect: allow
     reason: NPM scripts allowed
+
+  - action: file.move
+    effect: allow
+    reason: File move/rename allowed
+
+  - action: git.reset
+    effect: allow
+    reason: Git reset allowed in open-source workflows
+
+  - action: git.merge
+    effect: allow
+    reason: Merges allowed
+
+  - action: http.request
+    effect: allow
+    reason: HTTP requests allowed
+
+  - action: mcp.call
+    effect: allow
+    reason: MCP tool calls allowed

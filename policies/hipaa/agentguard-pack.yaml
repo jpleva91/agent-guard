@@ -157,3 +157,15 @@ rules:
   - action: shell.exec
     effect: allow
     reason: "Shell commands allowed for build and development"
+
+  - action: file.move
+    effect: allow
+    reason: File move/rename allowed within compliance boundaries
+
+  - action: git.merge
+    effect: allow
+    reason: Local merges allowed for feature branch workflows
+
+  - action: mcp.call
+    effect: allow
+    reason: MCP tool calls allowed (governed by adapter-level policies)
