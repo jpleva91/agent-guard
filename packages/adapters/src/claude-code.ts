@@ -59,10 +59,13 @@ function readIdentityFile(): string | null {
   if (process.env.AGENTGUARD_WORKSPACE) {
     try {
       const content = readFileSync(
-        join(process.env.AGENTGUARD_WORKSPACE, '.agentguard-identity'), 'utf8'
+        join(process.env.AGENTGUARD_WORKSPACE, '.agentguard-identity'),
+        'utf8'
       ).trim();
       if (content) return content;
-    } catch { /* not found */ }
+    } catch {
+      /* not found */
+    }
     return null; // Explicit workspace set but no identity file — don't walk up
   }
 
@@ -74,9 +77,16 @@ function readIdentityFile(): string | null {
     try {
       const content = readFileSync(join(dir, '.agentguard-identity'), 'utf8').trim();
       if (content) return content;
-    } catch { /* not found */ }
+    } catch {
+      /* not found */
+    }
     if (!firstGitDir) {
-      try { statSync(join(dir, '.git')); firstGitDir = dir; } catch { /* no .git */ }
+      try {
+        statSync(join(dir, '.git'));
+        firstGitDir = dir;
+      } catch {
+        /* no .git */
+      }
     }
     dir = dirname(dir);
   }
@@ -85,7 +95,9 @@ function readIdentityFile(): string | null {
     try {
       const content = readFileSync(join(firstGitDir, '.agentguard-identity'), 'utf8').trim();
       if (content) return content;
-    } catch { /* not found */ }
+    } catch {
+      /* not found */
+    }
   }
 
   return null;
