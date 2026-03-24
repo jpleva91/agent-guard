@@ -202,12 +202,14 @@ export function writeClaudeCodeHooks(projectRoot: string): 'created' | 'skipped'
   if (!settings.hooks) settings.hooks = {};
 
   // PreToolUse — governance enforcement for all tools
+  // Use `npx --no-install` so the command resolves via local node_modules/.bin
+  // without falling back to downloading a (nonexistent) `agentguard` package from npm.
   if (!settings.hooks.PreToolUse) settings.hooks.PreToolUse = [];
   settings.hooks.PreToolUse.push({
     hooks: [
       {
         type: 'command',
-        command: 'agentguard claude-hook pre --store sqlite',
+        command: 'npx --no-install agentguard claude-hook pre --store sqlite',
         timeout: 30000,
       },
     ],
@@ -220,7 +222,7 @@ export function writeClaudeCodeHooks(projectRoot: string): 'created' | 'skipped'
     hooks: [
       {
         type: 'command',
-        command: 'agentguard claude-hook post --store sqlite',
+        command: 'npx --no-install agentguard claude-hook post --store sqlite',
         timeout: 10000,
       },
     ],
@@ -232,7 +234,7 @@ export function writeClaudeCodeHooks(projectRoot: string): 'created' | 'skipped'
     hooks: [
       {
         type: 'command',
-        command: 'agentguard claude-hook notification --store sqlite',
+        command: 'npx --no-install agentguard claude-hook notification --store sqlite',
         timeout: 10000,
       },
     ],
@@ -244,7 +246,7 @@ export function writeClaudeCodeHooks(projectRoot: string): 'created' | 'skipped'
     hooks: [
       {
         type: 'command',
-        command: 'agentguard claude-hook stop --store sqlite',
+        command: 'npx --no-install agentguard claude-hook stop --store sqlite',
         timeout: 10000,
       },
     ],
@@ -286,10 +288,11 @@ export function writeCopilotCliHooks(projectRoot: string): 'created' | 'skipped'
   if (!config.hooks) config.hooks = {};
 
   // preToolUse — governance enforcement
+  // Use `npx --no-install` to resolve via local node_modules/.bin (see Claude Code hooks comment).
   if (!config.hooks.preToolUse) config.hooks.preToolUse = [];
   config.hooks.preToolUse.push({
     type: 'command',
-    bash: 'agentguard copilot-hook pre --store sqlite',
+    bash: 'npx --no-install agentguard copilot-hook pre --store sqlite',
     timeoutSec: 30,
   });
 
@@ -297,7 +300,7 @@ export function writeCopilotCliHooks(projectRoot: string): 'created' | 'skipped'
   if (!config.hooks.postToolUse) config.hooks.postToolUse = [];
   config.hooks.postToolUse.push({
     type: 'command',
-    bash: 'agentguard copilot-hook post --store sqlite',
+    bash: 'npx --no-install agentguard copilot-hook post --store sqlite',
     timeoutSec: 10,
   });
 
