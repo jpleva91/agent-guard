@@ -35,7 +35,7 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | SQLite persistence (events, decisions, sessions) | Implemented | Production |
 | Replay engine with deterministic comparison | Implemented | Production |
 | Evidence pack generation | Implemented | Production |
-| CLI (40+ commands) | Implemented | Production |
+| CLI (32 commands) | Implemented | Production |
 | Claude Code adapter (PreToolUse/PostToolUse) | Implemented | Production |
 | VS Code extension | Implemented | Production |
 | MCP governance server (15 tools) | Implemented | Production |
@@ -43,7 +43,7 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | 8 policy packs (essentials, strict, ci-safe, enterprise, open-source, soc2, hipaa, eng-standards) | Implemented | Production |
 | 26-agent autonomous swarm templates | Implemented | Production |
 | KE-1 Structured matchers (Aho-Corasick, globs, reason codes) | **Shipped v2.3.0** | `packages/matchers/` |
-| All 46 event kinds mapped to cloud AgentEvent | **Shipped v2.3.0** | `packages/telemetry/src/event-mapper.ts` |
+| All 47 event kinds mapped to cloud AgentEvent | **Shipped v2.3.0** | `packages/telemetry/src/event-mapper.ts` |
 | Agent SDK for programmatic governance | **Shipped v2.3.0** | Programmatic governance integration |
 | RunManifest YAML loader | **Shipped v2.3.0** | Declarative session configuration |
 | Monitor mode for claude-hook | **Shipped v2.3.0** | `apps/cli/src/commands/claude-hook.ts` |

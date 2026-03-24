@@ -69,7 +69,7 @@ apps/
 ├── mcp-server/    @red-codes/mcp-server — MCP governance server (15 governance tools)
 └── vscode-extension/  agentguard-vscode — VS Code extension (sidebar panels, notifications, diagnostics)
 
-policies/          Policy packs (YAML: ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
+policies/          Policy packs (YAML: essentials, ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
 ```
 
 ## Layer Rules
