@@ -166,9 +166,9 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 
 > Ship the governance kernel to the world. Default-deny + KE-2 = production-grade enforcement.
 
-- [ ] Default-deny finalized + KE-2 ActionContext shipped
+- [x] ~~Default-deny finalized + KE-2 ActionContext shipped~~ — ✅ Done (#638, #685 closed)
 - [ ] 30-second demo video (install → configure → govern → Cloud dashboard)
-- [ ] Site update with demo embed
+- [x] ~~Site update with demo embed~~ — ✅ Done (v3.0 section, demo placeholder, updated stats)
 - [ ] LinkedIn + dev community announcement
 - [ ] npm publish v3.0
 
