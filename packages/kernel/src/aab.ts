@@ -229,7 +229,12 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
     action,
     target,
     agent: rawAction.agent || 'unknown',
-    branch: rawAction.branch || extractBranch(rawAction.command) || undefined,
+    branch:
+      rawAction.branch ||
+      extractBranch(rawAction.command) ||
+      (typeof rawAction.metadata?.targetBranch === 'string'
+        ? rawAction.metadata.targetBranch
+        : undefined),
     command: rawAction.command || undefined,
     filesAffected: rawAction.filesAffected || undefined,
     metadata: rawAction.metadata || undefined,
