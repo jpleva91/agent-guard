@@ -336,7 +336,7 @@ describe('E2E postinstall pipeline: hook config structure', () => {
     const preHook = settings.hooks.PreToolUse[0];
     expect(preHook.hooks).toBeDefined();
     expect(preHook.hooks[0].type).toBe('command');
-    expect(preHook.hooks[0].command).toContain('agentguard');
+    expect(preHook.hooks[0].command).toMatch(/^npx --no-install agentguard /);
     expect(preHook.hooks[0].timeout).toBe(30000);
 
     // PostToolUse should have a Bash matcher
@@ -376,7 +376,7 @@ describe('E2E postinstall pipeline: hook config structure', () => {
     expect(config.hooks.preToolUse.length).toBeGreaterThan(0);
     const preHook = config.hooks.preToolUse[0];
     expect(preHook.type).toBe('command');
-    expect(preHook.bash).toContain('agentguard');
+    expect(preHook.bash).toMatch(/^npx --no-install agentguard /);
     expect(preHook.timeoutSec).toBe(30);
 
     // postToolUse
@@ -385,7 +385,7 @@ describe('E2E postinstall pipeline: hook config structure', () => {
     expect(config.hooks.postToolUse.length).toBeGreaterThan(0);
     const postHook = config.hooks.postToolUse[0];
     expect(postHook.type).toBe('command');
-    expect(postHook.bash).toContain('agentguard');
+    expect(postHook.bash).toMatch(/^npx --no-install agentguard /);
     expect(postHook.timeoutSec).toBe(10);
   });
 });

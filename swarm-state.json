@@ -1,48 +1,54 @@
 {
   "schemaVersion": "1.0",
-  "updatedAt": "2026-03-22T15:20:00Z",
-  "updatedBy": "recovery-controller-agent",
+  "updatedAt": "2026-03-24T16:05:00Z",
+  "updatedBy": "risk-escalation-agent",
   "mode": "normal",
-  "recommendedMode": "normal",
-  "modeReason": "Current evidence supports NORMAL mode: (1) All 3 open PRs are MERGEABLE with CI green; (2) CI regression #723 (identity gate) is functionally resolved — PRs #731 and #738 pass all CI checks despite the issue remaining open; #715 (wizard prompt) replaced the hard gate and restored test compatibility; (3) PR #731 conflict resolved — conflict:needs-human label was stale, PR is now MERGEABLE with 5/5 CI checks green; (4) Composite risk score 13/100, below NORMAL threshold of 20. Supersedes prior conservative assessment from risk-escalation-agent (11:45Z local, unpushed) based on current GitHub reality.",
+  "recommendedMode": "elevated",
+  "modeReason": "Recommending ELEVATED mode: (1) PR queue expanded from 3 to 8 open PRs — review throughput not keeping pace with agent output; (2) PR #822 (v3.0 release prep) is CONFLICTING — needs human rebase; (3) PR #814 (subagent identity, 270 additions, 7 files) is a high-blast-radius feature PR with no review; (4) 10 HIGH-priority issues remain open including security bypass vectors (#618 credential bypass, #648 read-only blocking, #815 default-deny); (5) Composite risk score 23/100, above NORMAL threshold of 20. No CI failures on main, but growing queue and persistent security gaps warrant caution.",
   "riskAssessment": {
-    "compositeScore": 13,
-    "escalationLevel": "NORMAL",
-    "assessedAt": "2026-03-22T15:20:00Z",
+    "compositeScore": 23,
+    "escalationLevel": "ELEVATED",
+    "assessedAt": "2026-03-24T16:05:00Z",
     "dimensions": {
       "prBlastRadius": {
-        "score": 4,
+        "score": 10,
         "max": 25,
-        "openPRs": 3,
-        "note": "3 open PRs: #731 (feat: team observability analytics, 1076 additions, MERGEABLE, CI 5/5 green), #735 (chore: recovery controller swarm state update, MERGEABLE — being superseded by this run), #738 (docs: sync documentation, MERGEABLE, CI 2/2 green). All MERGEABLE, no stuck PRs. Higher blast radius than prior assessment due to PR #731 (large feature addition), but CI-green and unblocked."
+        "openPRs": 8,
+        "conflictedPRs": 1,
+        "labeledHighBlastRadius": ["#814"],
+        "note": "8 open PRs (up from 3 on Mar 22). Largest: #823 (303+62 lines, 5 files, docs), #814 (270+20 lines, 7 files, feature — labeled blast-radius:high). #822 CONFLICTING (labeled conflict:needs-human). Queue growing faster than review throughput. Most PRs are docs/chore but #814 is a multi-package feature change without review."
       },
       "testFailureRate": {
-        "score": 3,
+        "score": 2,
         "max": 25,
-        "ciRunsAnalyzed": 10,
-        "failures": 0,
-        "failureRate": "0% on active PRs",
-        "note": "Issue #723 remains OPEN (identity gate causes cli-claude-hook + identity tests to fail) but is functionally resolved: PRs #731 and #738 both pass full CI suites (5/5 and 2/2 checks respectively). The identity gate was replaced by an auto-detecting wizard prompt in #715 (merged), which restored test compatibility. Issue #723 should be closed — regression no longer blocks PRs."
+        "ciRunsAnalyzed": 20,
+        "failures": 1,
+        "failureRate": "5% (1 transient failure out of 20 runs)",
+        "note": "1 CI failure on feat/subagent-identity at 03:33Z — succeeded on retry at 04:09Z (transient). All 8 open PRs have green CI. Issue #723 (identity gate regression) still open but functionally resolved. No persistent test failures."
       },
       "governanceDenialRate": {
-        "score": 5,
+        "score": 7,
         "max": 25,
-        "note": "Persistent HIGH security gaps without assigned PRs: #638 (fail-open policy evaluator), #637 (AAB regex bypass), #618 (credential write bypass), #646 (CI/CD invariant too broad), #648 (read-only operations blocked), #650 (pattern-matches command body). Issue #627 RESOLVED — PR #724 (refspec fix) merged. No new security regressions since 08:30Z."
+        "highPriorityIssuesOpen": 10,
+        "securityBypassVectors": ["#618 (credential bypass)", "#648 (read-only blocking)", "#815 (default-deny/fail-open)"],
+        "newSinceLastAssessment": ["#829 (pin GH Actions to SHA)", "#830 (required status checks)", "#815 (default-deny)", "#817 (KE-2 action context)"],
+        "note": "10 HIGH-priority issues open. Persistent security bypass vectors (#618, #648) still without assigned PRs. New supply-chain hardening issues created (#829, #830). #815 formalizes the fail-open evaluator gap (previously #638). No new runtime governance denials, but attack surface remains. Score up from 5 to 7 due to expanded issue count."
       },
       "mergeConflictRate": {
-        "score": 1,
+        "score": 4,
         "max": 25,
-        "conflictedPRs": 0,
-        "openPRs": 3,
-        "note": "0 actual conflicted PRs. PR #731 had stale conflict:needs-human label from an earlier conflicting state but is now MERGEABLE with 5/5 CI checks green. Stale label removed as part of this recovery run (break conflict cascades remediation)."
+        "conflictedPRs": 1,
+        "openPRs": 8,
+        "conflictRate": "12.5%",
+        "note": "1 conflicted PR: #822 (v3.0 release prep, CONFLICTING — labeled conflict:needs-human). 7 other PRs MERGEABLE. Not a cascade but #822 is a release-critical PR that needs human rebase before v3.0 can ship."
       }
     },
     "deltaFromPrior": {
-      "priorScore": 8,
-      "currentScore": 13,
-      "delta": 5,
-      "direction": "slightly-elevated",
-      "cause": "3 open PRs (vs 1 prior) including large feature PR #731 (1076 additions). However all PRs MERGEABLE and CI-green. Prior ELEVATED assessment (11:45Z, local/unpushed by risk-escalation-agent) based on conflict and CI regression that have since resolved. Composite still within NORMAL range (≤20)."
+      "priorScore": 13,
+      "currentScore": 23,
+      "delta": 10,
+      "direction": "elevated",
+      "cause": "PR queue grew from 3 to 8 (+5 open PRs in 2 days). New conflict on #822 (v3.0 release prep). 4 new HIGH-priority issues created. No merges in 2 days while agent output continued — queue accumulation. Recommending ELEVATED mode until queue drains below 5 PRs and conflict resolves."
     }
   },
   "phaseTracking": {
@@ -172,55 +178,85 @@
   },
   "healthChecks": {
     "prQueue": {
-      "status": "healthy",
-      "openPRs": 3,
-      "conflictedPRs": 0,
+      "status": "warning",
+      "openPRs": 8,
+      "conflictedPRs": 1,
       "stuckPRs": 0,
       "ciFailingPRs": 0,
-      "note": "3 open PRs, all MERGEABLE, all CI green. No stuck or failing PRs. PR #735 (prior recovery controller run) closed by this run as superseded. Stale conflict:needs-human label removed from PR #731.",
+      "note": "8 open PRs — queue accumulation pattern. 0 merges in 2 days while agents continued producing PRs. 1 conflict (#822). 1 high-blast-radius feature PR (#814, labeled). All CI green. Fast-merge candidates: #820 (11 additions), #821 (20 additions), #818 (25 additions).",
       "details": [
         {
-          "number": 731,
-          "title": "feat(issue-328): team observability analytics",
-          "branch": "agent/implementation/issue-328",
+          "number": 835,
+          "title": "fix(postinstall): use npx --no-install in generated hook commands",
           "mergeable": true,
           "ciStatus": "all-green",
-          "ciChecks": 5,
-          "stuck": false,
-          "blastRadius": "large",
-          "additions": 1076,
-          "deletions": 23,
-          "staleLabelRemoved": "conflict:needs-human",
-          "note": "Large feature PR. CI 5/5 green. Was conflicting earlier but conflict resolved. Stale label removed."
+          "blastRadius": "small",
+          "additions": 108,
+          "deletions": 9,
+          "changedFiles": 3
         },
         {
-          "number": 738,
-          "title": "docs: sync documentation with codebase state",
-          "branch": "maintenance/docs-sync-20260322",
+          "number": 834,
+          "title": "chore: recovery controller — refresh swarm state (2026-03-24)",
           "mergeable": true,
           "ciStatus": "all-green",
-          "ciChecks": 2,
-          "stuck": false,
+          "blastRadius": "medium",
+          "additions": 200,
+          "deletions": 121,
+          "changedFiles": 1
+        },
+        {
+          "number": 823,
+          "title": "docs: sync with KE-2, KE-3, Copilot CLI parity, and postinstall auto-setup",
+          "mergeable": true,
+          "ciStatus": "all-green",
+          "blastRadius": "medium",
+          "additions": 303,
+          "deletions": 62,
+          "changedFiles": 5
+        },
+        {
+          "number": 822,
+          "title": "feat(issue-749): v3.0 release prep — site update, version bump",
+          "mergeable": false,
+          "ciStatus": "all-green",
           "blastRadius": "small",
-          "note": "Documentation sync. CI 2/2 green. Low blast radius."
+          "additions": 81,
+          "deletions": 11,
+          "changedFiles": 3,
+          "labels": ["conflict:needs-human"],
+          "note": "CONFLICTING — needs human rebase. Release-critical for v3.0."
+        },
+        {
+          "number": 814,
+          "title": "feat: fix subagent identity resolution + hierarchical run support",
+          "mergeable": true,
+          "ciStatus": "all-green",
+          "blastRadius": "high",
+          "additions": 270,
+          "deletions": 20,
+          "changedFiles": 7,
+          "labels": ["blast-radius:high"],
+          "note": "Multi-package feature PR. 7 files changed. No review. Requires governance review before merge."
         }
       ]
     },
     "ciOnMain": {
       "status": "healthy",
-      "note": "Main branch CI green. Active merge pace continues. Recent PRs (#731, #738) passing full CI suites. Issue #723 (identity gate CI regression) is functionally resolved — PRs are passing despite the issue remaining open."
+      "note": "Main branch CI green. 1 transient failure on feat/subagent-identity (03:33Z) resolved on retry (04:09Z). All current PR CIs passing."
     },
     "agentLiveness": {
       "status": "active",
-      "note": "Multiple agents active today: docs-sync agent (PR #738, 15:09Z), prior recovery-controller run (PR #735, 14:44Z), risk-escalation-agent (11:45Z local assessment), active PR #731 (10:29Z). Swarm is operating."
+      "note": "Multiple agents active 2026-03-24: postinstall fix (#835), recovery controller (#834), docs sync (#823), backlog triage (#820). Swarm producing PRs at steady rate. Review throughput is the bottleneck."
     },
     "mergeConflicts": {
-      "status": "healthy",
-      "note": "0 conflicted PRs. PR #731 had stale conflict:needs-human label (added when it was conflicting at 10:29Z) but conflict has since resolved. Label removed as part of this recovery run."
+      "status": "warning",
+      "conflictedPRs": 1,
+      "note": "PR #822 (v3.0 release prep) is CONFLICTING. Labeled conflict:needs-human. Not yet a cascade but growing PR queue increases conflict risk for other PRs."
     },
     "swarmStateFreshness": {
-      "status": "refreshed",
-      "note": "Prior pushed update: 2026-03-22T08:30Z (risk-escalation-agent, ~7 hours ago). Unpushed local update at 11:45Z (risk-escalation-agent, elated-hamilton worktree — ELEVATED assessment, not pushed to origin). This update: 2026-03-22T15:20Z (recovery-controller-agent). Cadence gap resolved."
+      "status": "stale",
+      "note": "Prior update: 2026-03-22T15:20Z (recovery-controller-agent, ~49 hours ago). This update: 2026-03-24T16:05Z (risk-escalation-agent). Cadence gap of 49 hours — should be <24 hours for healthy swarm monitoring."
     },
     "roadmapProgress": {
       "status": "active",
@@ -231,15 +267,14 @@
           "number": 659,
           "title": "fix(rust): update tool_action_map count assertion after #657",
           "severity": "priority:critical",
-          "hasAssignedPR": false,
-          "note": "Technical debt — test count assertion. Not a security regression. Should be fixed before next KE sprint."
+          "hasAssignedPR": false
         }
       ],
-      "resolvedSinceLastAssessment": [
-        { "number": 627, "title": "refspec syntax bypasses protected branch", "resolvedAt": "2026-03-22", "via": "PR #724 merged" }
-      ],
-      "pendingClosure": [
-        { "number": 723, "title": "fix(tests): identity gate CI regression", "note": "Functionally resolved by #715 but issue still open. Should be closed." }
+      "newHighPriorityIssues": [
+        { "number": 815, "title": "Default-deny unknown actions (policy evaluator fallback)" },
+        { "number": 817, "title": "KE-2 Canonical Action Normalization — ActionContext contract" },
+        { "number": 829, "title": "Pin all GitHub Actions to SHA digests (supply chain hardening)" },
+        { "number": 830, "title": "Configure required status checks and PR approval on main branch" }
       ]
     }
   },
@@ -279,23 +314,49 @@
       "timestamp": "2026-03-22T15:20:00Z",
       "description": "Updated swarm-state.json: mode conservative→normal. Risk score 8→13 (3 open PRs including large #731). Overrides unpushed 11:45Z ELEVATED local assessment from risk-escalation-agent — current GitHub reality shows all PRs MERGEABLE, CI-green, CI regression #723 functionally resolved. Mode change approved.",
       "agent": "recovery-controller-agent"
+    },
+    {
+      "type": "risk-assessment",
+      "timestamp": "2026-03-24T16:05:00Z",
+      "description": "Risk score 13→23 (NORMAL→ELEVATED). PR queue grew 3→8. #822 CONFLICTING (labeled conflict:needs-human). #814 labeled blast-radius:high. 10 HIGH-priority issues open. Queue accumulation pattern: no merges in 2 days while agents continued producing PRs. Recommending mode normal→elevated.",
+      "agent": "risk-escalation-agent"
+    },
+    {
+      "type": "label-added",
+      "timestamp": "2026-03-24T16:05:00Z",
+      "description": "Added blast-radius:high to PR #814 (feat: subagent identity resolution, 270 additions, 7 files, multi-package feature, no review). Added conflict:needs-human to PR #822 (v3.0 release prep, CONFLICTING state).",
+      "agent": "risk-escalation-agent"
     }
   ],
   "blockers": [
     {
-      "type": "security",
+      "type": "queue-accumulation",
       "severity": "high",
-      "issueNumbers": [638, 637],
-      "description": "2 HIGH-severity security bypass vectors without assigned PRs: fail-open policy evaluator (#638), AAB regex bypass (#637).",
-      "recommendation": "#638 (fail-open / default-deny) is the primary Phase 6 open item — highest priority security work remaining. Assign implementation agent.",
+      "description": "8 open PRs with 0 merges in 2 days. Agent output exceeding human review throughput. Risk of conflict cascades and stale PRs increasing.",
+      "recommendation": "Prioritize merging reviewed PRs. Consider pausing agent PR creation until queue drops below 5. Triage: #820, #821, #818 are small docs/chore PRs — fast-merge candidates.",
+      "hasAssignedPR": false
+    },
+    {
+      "type": "merge-conflict",
+      "severity": "high",
+      "issueNumbers": [749],
+      "description": "PR #822 (v3.0 release prep) is CONFLICTING. This is a release-critical PR that blocks the v3.0 launch.",
+      "recommendation": "Human rebase required on PR #822. Labeled conflict:needs-human.",
       "hasAssignedPR": false
     },
     {
       "type": "security",
       "severity": "high",
-      "issueNumbers": [646, 648, 618, 650],
-      "description": "False-positive enforcement issues: CI/CD invariant too broad (#646), read-only operations blocked (#648), credential write bypass (#618), pattern-matches command body text (#650).",
-      "recommendation": "These affect daily agent usability. Group into a single governance false-positive fix sprint.",
+      "issueNumbers": [815, 618, 648, 829, 830],
+      "description": "Persistent security gaps: #815 (default-deny/fail-open evaluator), #618 (credential write bypass), #648 (read-only blocking), #829 (GH Actions not pinned to SHA), #830 (no required status checks on main).",
+      "recommendation": "#815 (default-deny) is the primary Phase 6 blocker. #829 and #830 are supply-chain hardening — high impact, low effort. Assign implementation agent to #815.",
+      "hasAssignedPR": false
+    },
+    {
+      "type": "blast-radius",
+      "severity": "medium",
+      "description": "PR #814 (subagent identity fix, 270 additions, 7 files) is a multi-package feature change with no review. Labeled blast-radius:high.",
+      "recommendation": "Requires governance review before merge. Assign code-review-agent.",
       "hasAssignedPR": false
     },
     {
@@ -305,38 +366,30 @@
       "description": "Rust test count assertion outdated after #657 — CI will fail for rust-kernel if any agent touches that assertion.",
       "recommendation": "Fix the count assertion in the rust test file before next KE sprint.",
       "hasAssignedPR": false
-    },
-    {
-      "type": "stale-issue",
-      "severity": "low",
-      "issueNumber": 723,
-      "description": "Issue #723 (identity gate CI regression) is functionally resolved by #715 but still open. Causes noise in risk assessments.",
-      "recommendation": "Close issue #723 — regression resolved. PRs are passing CI.",
-      "hasAssignedPR": false
     }
   ],
   "systemSummary": {
-    "overallHealth": "normal",
-    "escalationLevel": "NORMAL",
-    "riskScore": 13,
-    "riskTrend": "stable",
+    "overallHealth": "elevated",
+    "escalationLevel": "ELEVATED",
+    "riskScore": 23,
+    "riskTrend": "rising",
     "mainBranchCI": "green",
-    "openPRsCount": 2,
-    "conflictedPRsCount": 0,
+    "openPRsCount": 8,
+    "conflictedPRsCount": 1,
     "stuckPRsCount": 0,
     "ciFailingPRsCount": 0,
     "criticalIssuesWithoutPR": 0,
     "criticalIssuesWithPR": 0,
-    "highIssuesWithoutPR": 5,
+    "highIssuesWithoutPR": 10,
     "highIssuesWithPR": 0,
     "regressionDetected": false,
     "completedPhaseCount": 7,
     "activePhaseCount": 4,
-    "progressSinceLastRun": "Mode conservative→normal. Risk score 8→13 (more PRs open, all healthy). PR #724 confirmed merged (closes #627). PR #731 (observability analytics) CI-green, conflict resolved, stale label removed. PR #735 (prior recovery run) closed as superseded. Issue #723 functionally resolved (PRs passing CI despite open issue). Swarm healthy.",
+    "progressSinceLastRun": "Risk score 13→23 (NORMAL→ELEVATED). PR queue grew 3→8 open PRs in 2 days. New conflict on #822 (v3.0 release prep). PR #814 labeled blast-radius:high (270 additions, 7 files, multi-package feature). 4 new HIGH-priority issues created (#815, #817, #829, #830). No merges observed in last 2 days while agent output continued — queue accumulation pattern. Main CI remains green. Recommending ELEVATED mode.",
     "modeChangeConditions": {
-      "toNormal": "CURRENT STATE — risk score 13 (NORMAL), all PRs CI-green, no conflicts, CI regression #723 functionally resolved.",
-      "toElevated": "New high-severity security issue without PR, main CI failure rate >20%, merge conflict rate >25%, or confirmed CI regression on active PRs.",
-      "toCritical": "New security regression on main, main CI failure rate >30%, or 2+ unresolved critical issues without PRs."
+      "toNormal": "PR queue drops below 5 open PRs, conflict on #822 resolves, and no new HIGH-priority security issues for 48 hours.",
+      "toElevated": "CURRENT STATE — risk score 23, 8 open PRs, 1 conflicted, 10 HIGH-priority issues, queue accumulation trend.",
+      "toCritical": "New security regression on main, main CI failure rate >30%, or 2+ unresolved critical issues without PRs, or merge conflict cascade (3+ PRs conflicting)."
     }
   }
 }

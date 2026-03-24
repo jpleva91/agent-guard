@@ -483,3 +483,99 @@ describe('postinstall integration', () => {
     expect(config.hooks.preToolUse[0].bash).toContain('copilot-hook pre');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Regression: hook commands must use `npx --no-install` to resolve binaries
+// ---------------------------------------------------------------------------
+// The published package is `@red-codes/agentguard` but registers bin name `agentguard`.
+// Bare `agentguard` fails because node_modules/.bin isn't in PATH for hook subprocesses.
+// `npx agentguard` (without --no-install) falls back to downloading a nonexistent
+// `agentguard` package from npm, producing a 404 error.
+// `npx --no-install agentguard` resolves the local binary without registry fallback.
+
+describe('regression: hook commands use npx --no-install', () => {
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = makeTempDir('npx-regression');
+    writeFileSync(join(tempDir, 'package.json'), '{}');
+  });
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('Claude Code hooks use npx --no-install for all commands', () => {
+    writeClaudeCodeHooks(tempDir);
+    const settings = JSON.parse(
+      readFileSync(join(tempDir, '.claude', 'settings.json'), 'utf8')
+    );
+
+    const allCommands: string[] = [];
+    for (const hookType of ['PreToolUse', 'PostToolUse', 'Notification', 'Stop']) {
+      for (const group of settings.hooks[hookType] ?? []) {
+        for (const hook of group.hooks ?? []) {
+          if (hook.command) allCommands.push(hook.command);
+        }
+      }
+    }
+
+    expect(allCommands.length).toBeGreaterThanOrEqual(4);
+    for (const cmd of allCommands) {
+      expect(cmd).toMatch(/^npx --no-install agentguard /);
+    }
+  });
+
+  it('Copilot CLI hooks use npx --no-install for all commands', () => {
+    writeCopilotCliHooks(tempDir);
+    const config = JSON.parse(
+      readFileSync(join(tempDir, '.github', 'hooks', 'hooks.json'), 'utf8')
+    );
+
+    const allCommands: string[] = [];
+    for (const hookType of ['preToolUse', 'postToolUse']) {
+      for (const entry of config.hooks[hookType] ?? []) {
+        if (entry.bash) allCommands.push(entry.bash);
+      }
+    }
+
+    expect(allCommands.length).toBeGreaterThanOrEqual(2);
+    for (const cmd of allCommands) {
+      expect(cmd).toMatch(/^npx --no-install agentguard /);
+    }
+  });
+
+  it('no hook command uses bare agentguard without npx', () => {
+    writeClaudeCodeHooks(tempDir);
+    writeCopilotCliHooks(tempDir);
+
+    const settings = JSON.parse(
+      readFileSync(join(tempDir, '.claude', 'settings.json'), 'utf8')
+    );
+    const copilotConfig = JSON.parse(
+      readFileSync(join(tempDir, '.github', 'hooks', 'hooks.json'), 'utf8')
+    );
+
+    // Collect all hook commands from both configs
+    const allCommands: string[] = [];
+    for (const hookType of Object.keys(settings.hooks)) {
+      for (const group of settings.hooks[hookType]) {
+        for (const hook of group.hooks ?? []) {
+          if (hook.command) allCommands.push(hook.command);
+        }
+      }
+    }
+    for (const hookType of Object.keys(copilotConfig.hooks)) {
+      for (const entry of copilotConfig.hooks[hookType]) {
+        if (entry.bash) allCommands.push(entry.bash);
+      }
+    }
+
+    for (const cmd of allCommands) {
+      // Must NOT start with bare `agentguard` (no npx)
+      expect(cmd).not.toMatch(/^agentguard /);
+      // Must NOT use `npx` without `--no-install` (would try to download from registry)
+      expect(cmd).not.toMatch(/^npx agentguard /);
+    }
+  });
+});

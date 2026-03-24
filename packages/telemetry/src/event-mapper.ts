@@ -32,6 +32,7 @@ export interface AgentEvent {
   metadata?: Record<string, unknown>;
   policyVersion?: string;
   sessionId?: string;
+  parentSessionId?: string;
 }
 
 // ---------------------------------------------------------------------------

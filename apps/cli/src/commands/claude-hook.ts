@@ -8,7 +8,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { execFileSync, execSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, parse as parsePath } from 'node:path';
 import { tmpdir } from 'node:os';
 import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
@@ -102,6 +102,17 @@ function loadProjectEnv(): void {
 // --- Agent identity resolution ---
 // Identity is resolved from .agentguard-identity file or AGENTGUARD_AGENT_NAME env var.
 // Identity persists across sessions — no blanking on stop. Users set it once via the wizard.
+
+/** Check if a process is still alive (signal 0 = existence check). */
+function isProcessAlive(pid: number): boolean {
+  if (!pid || isNaN(pid)) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /** Resolve the project root for identity file placement.
  *  Priority: AGENTGUARD_WORKSPACE env > .agentguard-identity walk > .git walk > git rev-parse > cwd.
@@ -276,8 +287,37 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
       // Resolve session_id: payload field > environment variable > undefined
       const sessionId =
         (data.session_id as string | undefined) || process.env.CLAUDE_SESSION_ID || undefined;
+
+      // Detect parent/child session relationship via root session marker.
+      const rootSessionPath = join(resolveIdentityDir(), '.agentguard-root-session');
+      let parentSessionId: string | undefined;
+
+      if (sessionId) {
+        try {
+          const lines = readFileSync(rootSessionPath, 'utf8').trim().split('\n');
+          const existingSessionId = lines[0];
+          const existingPid = parseInt(lines[1], 10);
+
+          if (existingSessionId && existingSessionId !== sessionId) {
+            if (isProcessAlive(existingPid)) {
+              parentSessionId = existingSessionId;
+            }
+          }
+        } catch {
+          // File doesn't exist → first (root) session
+        }
+
+        if (!parentSessionId) {
+          try {
+            writeFileSync(rootSessionPath, `${sessionId}\n${process.ppid}`);
+          } catch {
+            /* non-fatal */
+          }
+        }
+      }
+
       const payload = { ...data, session_id: sessionId } as unknown as ClaudeCodeHookPayload;
-      const denied = await handlePreToolUse(payload, extraArgs);
+      const denied = await handlePreToolUse(payload, extraArgs, parentSessionId);
       // Exit code 2 tells Claude Code to block the action
       process.exit(denied ? 2 : 0);
     } else {
@@ -319,7 +359,8 @@ function extractTargetPath(payload: ClaudeCodeHookPayload): string | undefined {
 /** Returns true if the action was denied. */
 async function handlePreToolUse(
   payload: ClaudeCodeHookPayload,
-  cliArgs: string[]
+  cliArgs: string[],
+  parentSessionId?: string
 ): Promise<boolean> {
   const { processClaudeCodeHook, formatHookResponse } = await import('@red-codes/adapters');
   const { createKernel } = await import('@red-codes/kernel');
@@ -402,6 +443,7 @@ async function handlePreToolUse(
         installId: identity?.install_id,
         apiKey,
         flushIntervalMs: 0, // No interval — we flush manually before exit
+        parentSessionId,
       });
     }
   } catch {
@@ -708,6 +750,19 @@ async function handleNotification(cliArgs: string[]): Promise<void> {
 }
 
 async function handleStop(cliArgs: string[]): Promise<void> {
+  // Clean up root session marker if we're the root session
+  try {
+    const rootSessionPath = join(resolveIdentityDir(), '.agentguard-root-session');
+    const content = readFileSync(rootSessionPath, 'utf8').trim();
+    const storedSessionId = content.split('\n')[0];
+    const currentSessionId = process.env.CLAUDE_SESSION_ID;
+    if (currentSessionId && storedSessionId === currentSessionId) {
+      unlinkSync(rootSessionPath);
+    }
+  } catch {
+    /* non-fatal */
+  }
+
   // On session end, generate the session viewer HTML quietly (no browser open).
   // If a live server is running, skip — it already has the latest data.
   try {

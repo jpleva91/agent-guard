@@ -96,3 +96,48 @@ rules:
   - action: git.diff
     effect: allow
     reason: Viewing diffs is always safe
+
+  # --- Additional safe operations for default-deny compatibility ---
+  - action: file.write
+    effect: allow
+    reason: File writes allowed (secrets and blast radius denied above)
+
+  - action: file.move
+    effect: allow
+    reason: File move/rename allowed
+
+  - action: git.commit
+    effect: allow
+    reason: Commits allowed (pushes denied — use pull requests)
+
+  - action: git.branch.create
+    effect: allow
+    reason: Branch creation allowed for isolated work
+
+  - action: git.checkout
+    effect: allow
+    reason: Branch switching allowed
+
+  - action: git.merge
+    effect: allow
+    reason: Local merges allowed
+
+  - action: shell.exec
+    effect: allow
+    reason: Shell commands allowed (destructive commands denied above)
+
+  - action: npm.install
+    effect: allow
+    reason: Dependency installation allowed
+
+  - action: npm.script.run
+    effect: allow
+    reason: NPM scripts allowed
+
+  - action: http.request
+    effect: allow
+    reason: HTTP requests allowed
+
+  - action: mcp.call
+    effect: allow
+    reason: MCP tool calls allowed

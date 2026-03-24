@@ -2,7 +2,7 @@
 // Validates the full governance pipeline from hook payload to persisted decision.
 // Issue #22: https://github.com/jpleva91/agent-guard/issues/22
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { normalizeClaudeCodeAction, processClaudeCodeHook } from '@red-codes/adapters';
 import type { ClaudeCodeHookPayload } from '@red-codes/adapters';
 import { createKernel } from '@red-codes/kernel';
@@ -14,6 +14,9 @@ import type { ActionSimulator, SimulationResult } from '@red-codes/kernel';
 import type { NormalizedIntent } from '@red-codes/policy';
 import { resetActionCounter } from '@red-codes/core';
 import { resetEventCounter } from '@red-codes/events';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -71,9 +74,35 @@ function createMockSimulator(config: {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Environment isolation: prevent .agentguard-identity walk-up from finding
+// the repo root's identity file, which would override 'claude-code' identity.
+// ---------------------------------------------------------------------------
+let _savedEnv: NodeJS.ProcessEnv;
+let _tmpWorkspace: string;
+
 beforeEach(() => {
+  _savedEnv = process.env;
+  process.env = { ..._savedEnv };
+  delete process.env.AGENTGUARD_AGENT_NAME;
+  // Point AGENTGUARD_WORKSPACE to a fresh temp dir containing a controlled
+  // identity file. This prevents the walk-up logic from finding the repo
+  // root's .agentguard-identity (which may contain a non-default agent name).
+  // Writing 'claude-code' mirrors the default identity the tests expect.
+  _tmpWorkspace = mkdtempSync(join(tmpdir(), 'ag-e2e-'));
+  writeFileSync(join(_tmpWorkspace, '.agentguard-identity'), 'claude-code');
+  process.env.AGENTGUARD_WORKSPACE = _tmpWorkspace;
   resetActionCounter();
   resetEventCounter();
+});
+
+afterEach(() => {
+  process.env = _savedEnv;
+  try {
+    rmSync(_tmpWorkspace, { recursive: true, force: true });
+  } catch {
+    // best-effort cleanup
+  }
 });
 
 // ---------------------------------------------------------------------------

@@ -101,3 +101,11 @@ rules:
   - action: http.request
     effect: allow
     reason: HTTP requests for API testing and health checks
+
+  - action: file.move
+    effect: allow
+    reason: File move/rename for refactoring is safe in CI
+
+  - action: mcp.call
+    effect: allow
+    reason: MCP tool calls allowed for CI governance integration

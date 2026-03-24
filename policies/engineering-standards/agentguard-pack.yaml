@@ -136,3 +136,19 @@ rules:
   - action: deploy.trigger
     effect: allow
     reason: "Deployments allowed through standard pipeline"
+
+  - action: file.move
+    effect: allow
+    reason: File move/rename allowed for refactoring
+
+  - action: git.merge
+    effect: allow
+    reason: Local merges allowed
+
+  - action: http.request
+    effect: allow
+    reason: HTTP requests allowed for API testing
+
+  - action: mcp.call
+    effect: allow
+    reason: MCP tool calls allowed

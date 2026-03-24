@@ -126,3 +126,23 @@ rules:
   - action: npm.script.run
     effect: allow
     reason: NPM scripts allowed
+
+  - action: file.move
+    effect: allow
+    reason: File move/rename allowed
+
+  - action: git.merge
+    effect: allow
+    reason: Local merges allowed
+
+  - action: shell.exec
+    effect: allow
+    reason: Shell commands allowed (destructive commands denied above)
+
+  - action: http.request
+    effect: allow
+    reason: HTTP requests allowed for API testing
+
+  - action: mcp.call
+    effect: allow
+    reason: MCP tool calls allowed

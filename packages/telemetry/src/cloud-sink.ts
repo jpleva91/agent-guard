@@ -42,6 +42,7 @@ export interface CloudSinkConfig {
   queueDir?: string;
   flushIntervalMs?: number;
   batchSize?: number;
+  parentSessionId?: string;
 }
 
 export interface CloudSinkBundle {
@@ -84,6 +85,7 @@ export async function createCloudSinks(config: CloudSinkConfig): Promise<CloudSi
     flushIntervalMs = 60_000,
     batchSize = 50,
   } = config;
+  const { parentSessionId } = config;
 
   const isAnonymous = config.mode === 'anonymous';
 
@@ -120,8 +122,8 @@ export async function createCloudSinks(config: CloudSinkConfig): Promise<CloudSi
     const prepared: AgentEvent = {
       ...agentEvent,
       sessionId: runId,
-      // Inject fallback agentId for events that don't carry one (e.g. PolicyTraceRecorded, EvidencePackGenerated)
       agentId: agentEvent.agentId === 'unknown' ? agentId : agentEvent.agentId,
+      ...(parentSessionId ? { parentSessionId } : {}),
     };
     if (isAnonymous) {
       return anonymizeEvent(prepared, installId);

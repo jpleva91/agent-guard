@@ -2,7 +2,7 @@
 // Handles PreToolUse and PostToolUse hook events.
 // Propagates agent session identity for audit correlation.
 
-import { statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { dirname, join, parse as parsePath } from 'node:path';
 import type { RawAgentAction } from '@red-codes/kernel';
 import { normalizeToActionContext } from '@red-codes/kernel';
@@ -33,14 +33,74 @@ export interface ClaudeCodeHookPayload {
 }
 
 /**
- * Resolve a meaningful agent identity from the session ID.
- * Format: 'claude-code' (no session) or 'claude-code:<hash>' (with session).
+ * Resolve a meaningful agent identity.
+ * Priority: .agentguard-identity file > AGENTGUARD_AGENT_NAME env var > session hash > 'claude-code'.
+ * Matches the hook's resolveAgentIdentity() order so both layers resolve identically.
  */
 export function resolveAgentIdentity(sessionId?: string): string {
-  if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '') {
-    return 'claude-code';
+  // 1. Identity file (canonical source — matches hook resolution order)
+  const fileIdentity = readIdentityFile();
+  if (fileIdentity) return fileIdentity;
+
+  // 2. Env var (set by run-agent.sh for swarm, persona.env for interactive)
+  const envName = process.env.AGENTGUARD_AGENT_NAME;
+  if (envName) return envName;
+
+  // 3. Fallback: hash session ID (anonymous/unconfigured agents)
+  if (sessionId && typeof sessionId === 'string' && sessionId.trim() !== '') {
+    return `claude-code:${simpleHash(sessionId.trim())}`;
   }
-  return `claude-code:${simpleHash(sessionId.trim())}`;
+  return 'claude-code';
+}
+
+/** Read .agentguard-identity with walk-up fallback (mirrors hook's resolveIdentityDir). */
+function readIdentityFile(): string | null {
+  // Try AGENTGUARD_WORKSPACE first — if set, only look there (don't walk up)
+  if (process.env.AGENTGUARD_WORKSPACE) {
+    try {
+      const content = readFileSync(
+        join(process.env.AGENTGUARD_WORKSPACE, '.agentguard-identity'),
+        'utf8'
+      ).trim();
+      if (content) return content;
+    } catch {
+      /* not found */
+    }
+    return null; // Explicit workspace set but no identity file — don't walk up
+  }
+
+  // Walk up from cwd (no explicit workspace)
+  let dir = process.cwd();
+  const { root } = parsePath(dir);
+  let firstGitDir: string | undefined;
+  while (dir !== root) {
+    try {
+      const content = readFileSync(join(dir, '.agentguard-identity'), 'utf8').trim();
+      if (content) return content;
+    } catch {
+      /* not found */
+    }
+    if (!firstGitDir) {
+      try {
+        statSync(join(dir, '.git'));
+        firstGitDir = dir;
+      } catch {
+        /* no .git */
+      }
+    }
+    dir = dirname(dir);
+  }
+
+  if (firstGitDir) {
+    try {
+      const content = readFileSync(join(firstGitDir, '.agentguard-identity'), 'utf8').trim();
+      if (content) return content;
+    } catch {
+      /* not found */
+    }
+  }
+
+  return null;
 }
 
 /**

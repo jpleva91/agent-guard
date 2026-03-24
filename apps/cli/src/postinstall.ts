@@ -78,14 +78,70 @@ rules:
     effect: deny
     reason: Infrastructure destruction requires explicit authorization
 
-  # Defaults
+  # --- Safe operations (default-deny baseline) ---
   - action: file.read
     effect: allow
     reason: Reading is always safe
 
   - action: file.write
     effect: allow
-    reason: File writes allowed by default
+    reason: File writes allowed (secrets denied above)
+
+  - action: file.delete
+    effect: allow
+    reason: File deletion allowed
+
+  - action: file.move
+    effect: allow
+    reason: File move/rename allowed
+
+  - action: git.diff
+    effect: allow
+    reason: Viewing diffs is always safe
+
+  - action: git.commit
+    effect: allow
+    reason: Commits allowed
+
+  - action: git.push
+    effect: allow
+    reason: Pushes to feature branches allowed (protected branches denied above)
+
+  - action: git.branch.create
+    effect: allow
+    reason: Branch creation allowed
+
+  - action: git.checkout
+    effect: allow
+    reason: Branch switching allowed
+
+  - action: git.merge
+    effect: allow
+    reason: Merges allowed
+
+  - action: shell.exec
+    effect: allow
+    reason: Shell commands allowed (destructive commands denied above)
+
+  - action: [test.run, test.run.unit, test.run.integration]
+    effect: allow
+    reason: Running tests is always safe
+
+  - action: npm.install
+    effect: allow
+    reason: Dependency installation allowed
+
+  - action: npm.script.run
+    effect: allow
+    reason: NPM scripts allowed
+
+  - action: http.request
+    effect: allow
+    reason: HTTP requests allowed
+
+  - action: mcp.call
+    effect: allow
+    reason: MCP tool calls allowed
 `;
 
 // ── Types ──
@@ -202,12 +258,14 @@ export function writeClaudeCodeHooks(projectRoot: string): 'created' | 'skipped'
   if (!settings.hooks) settings.hooks = {};
 
   // PreToolUse — governance enforcement for all tools
+  // Use `npx --no-install` so the command resolves via local node_modules/.bin
+  // without falling back to downloading a (nonexistent) `agentguard` package from npm.
   if (!settings.hooks.PreToolUse) settings.hooks.PreToolUse = [];
   settings.hooks.PreToolUse.push({
     hooks: [
       {
         type: 'command',
-        command: 'agentguard claude-hook pre --store sqlite',
+        command: 'npx --no-install agentguard claude-hook pre --store sqlite',
         timeout: 30000,
       },
     ],
@@ -220,7 +278,7 @@ export function writeClaudeCodeHooks(projectRoot: string): 'created' | 'skipped'
     hooks: [
       {
         type: 'command',
-        command: 'agentguard claude-hook post --store sqlite',
+        command: 'npx --no-install agentguard claude-hook post --store sqlite',
         timeout: 10000,
       },
     ],
@@ -232,7 +290,7 @@ export function writeClaudeCodeHooks(projectRoot: string): 'created' | 'skipped'
     hooks: [
       {
         type: 'command',
-        command: 'agentguard claude-hook notification --store sqlite',
+        command: 'npx --no-install agentguard claude-hook notification --store sqlite',
         timeout: 10000,
       },
     ],
@@ -244,7 +302,7 @@ export function writeClaudeCodeHooks(projectRoot: string): 'created' | 'skipped'
     hooks: [
       {
         type: 'command',
-        command: 'agentguard claude-hook stop --store sqlite',
+        command: 'npx --no-install agentguard claude-hook stop --store sqlite',
         timeout: 10000,
       },
     ],
@@ -286,10 +344,11 @@ export function writeCopilotCliHooks(projectRoot: string): 'created' | 'skipped'
   if (!config.hooks) config.hooks = {};
 
   // preToolUse — governance enforcement
+  // Use `npx --no-install` to resolve via local node_modules/.bin (see Claude Code hooks comment).
   if (!config.hooks.preToolUse) config.hooks.preToolUse = [];
   config.hooks.preToolUse.push({
     type: 'command',
-    bash: 'agentguard copilot-hook pre --store sqlite',
+    bash: 'npx --no-install agentguard copilot-hook pre --store sqlite',
     timeoutSec: 30,
   });
 
@@ -297,7 +356,7 @@ export function writeCopilotCliHooks(projectRoot: string): 'created' | 'skipped'
   if (!config.hooks.postToolUse) config.hooks.postToolUse = [];
   config.hooks.postToolUse.push({
     type: 'command',
-    bash: 'agentguard copilot-hook post --store sqlite',
+    bash: 'npx --no-install agentguard copilot-hook post --store sqlite',
     timeoutSec: 10,
   });
 
