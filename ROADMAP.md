@@ -67,7 +67,7 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 
 This is the architectural hinge that transforms AgentGuard from advisory interception to mandatory execution control. **Must complete before Kernel Evolution Sprint.**
 
-- [ ] **Default-deny unknown actions** — Change policy evaluator fallback from `allowed: true` to `allowed: false`. Unrecognized tool calls must be denied, not silently passed through.
+- [x] ~~Default-deny unknown actions~~ — ✅ Done 2026-03-24 — Evaluator defaults to `defaultDeny: true`; all 8 policy packs + starter policy updated with explicit allow rules for safe actions
 - [x] ~~Deny actions with no registered adapter~~ — Emit `ActionDenied` instead of silently skipping
 - [x] ~~Expand destructive command patterns~~ — 87 patterns (sudo, pkill, docker, systemctl, DB commands, etc.)
 - [x] ~~Governance self-modification invariant~~ — Agents cannot modify `agentguard.yaml` or policies/
