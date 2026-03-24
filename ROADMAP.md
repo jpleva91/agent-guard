@@ -27,7 +27,7 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | Governed action kernel (27 action types, 9 classes) | Implemented | Production |
 | Action Authorization Boundary (AAB) | Implemented | Bypass vectors closed (3 fixed in v2.4.0) |
 | Policy evaluator (YAML/JSON, composition, packs) | Implemented | Production |
-| 21 built-in invariants | Implemented | Production |
+| 22 built-in invariants | Implemented | Production |
 | Canonical event model (50+ event kinds) | Implemented | Production |
 | Pre-execution simulation engine (3 simulators) | Implemented | Production |
 | Blast radius computation | Implemented | Production |
@@ -55,6 +55,9 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | Capability grants enforcement before adapter execution | **Shipped v2.4.0** | `packages/kernel/` |
 | Cloud credential storage in project .env | **Shipped v2.4.0** | Per-project instead of global config |
 | Copilot CLI adapter | **Shipped v2.4.0** | `packages/adapters/src/copilot-cli.ts` |
+| PAUSE and ROLLBACK enforcement | **Shipped v2.4.0** | `packages/kernel/` (PRs #475, #617) |
+| KE-3 Governance Event Envelope | **Shipped v2.5.0** | `packages/events/src/schema.ts` (#686) |
+| Commit scope guard invariant (#22) | **Shipped v2.5.0** | `packages/invariants/src/definitions.ts` |
 | Rust kernel (Phase 1 — types, AAB, policy) | In Progress | Experimental |
 
 ---
@@ -72,7 +75,7 @@ This is the architectural hinge that transforms AgentGuard from advisory interce
 - [x] ~~Expand destructive command patterns~~ — 87 patterns (sudo, pkill, docker, systemctl, DB commands, etc.)
 - [x] ~~Governance self-modification invariant~~ — Agents cannot modify `agentguard.yaml` or policies/
 - [x] ~~Path traversal prevention in file adapter~~ — ✅ Done 2026-03-21 (v2.3.0)
-- [ ] **Enforce PAUSE and ROLLBACK** — Currently metadata labels only; implement as enforced kernel behaviors
+- [x] ~~Enforce PAUSE and ROLLBACK~~ — ✅ Done 2026-03-18 (PRs #475, #617 — enforced kernel behaviors, not just metadata labels)
 - [x] ~~Performance benchmark suite~~ — ✅ Done 2026-03-21 — CI regression gate operational (bench-regression-gate.yml)
 
 ---
@@ -119,15 +122,15 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 - [ ] Ensure policy engine consumes only normalized `ActionContext` (no provider-specific logic)
 - [ ] Benchmark: context normalization in 50–100µs
 
-#### KE-3: Governance Event Envelope
+#### KE-3: Governance Event Envelope ✅ Done 2026-03-24
 
 > Standardize all telemetry into a versioned, runtime-agnostic schema that the Cloud can consume without special cases.
 
-- [ ] Design versioned `GovernanceEvent` envelope: eventId, timestamp, policy version, decision codes, performance metrics (hook latency in µs)
-- [ ] Ensure schema is runtime-agnostic (Claude, Copilot, LangGraph all produce identical envelopes)
-- [ ] Migrate existing event model to envelope format (backward-compatible)
-- [ ] 100% of telemetry follows the versioned schema
-- [ ] **Integration point**: Cloud ingestion consumes envelopes directly — zero special cases
+- [x] ~~Design versioned `GovernanceEvent` envelope: eventId, timestamp, policy version, decision codes, performance metrics (hook latency in µs)~~
+- [x] ~~Ensure schema is runtime-agnostic (Claude, Copilot, LangGraph all produce identical envelopes)~~
+- [x] ~~Migrate existing event model to envelope format (backward-compatible)~~
+- [x] ~~100% of telemetry follows the versioned schema~~
+- [x] ~~**Integration point**: Cloud ingestion consumes envelopes directly — zero special cases~~
 
 #### KE-4: Plane Separation (Evaluator / Emitter / Shipper)
 
