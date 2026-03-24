@@ -1020,4 +1020,42 @@ describe('agentguard/core/aab', () => {
       expect(result.result.allowed).toBe(true);
     });
   });
+
+  describe('normalizeIntent targetBranch fallback', () => {
+    it('falls back to metadata.targetBranch when extractBranch returns null', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'echo hello',
+        metadata: { targetBranch: 'release/v2' },
+      });
+      expect(intent.branch).toBe('release/v2');
+    });
+
+    it('prefers extractBranch over metadata.targetBranch', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'git push origin main',
+        metadata: { targetBranch: 'release/v2' },
+      });
+      expect(intent.branch).toBe('main');
+    });
+
+    it('prefers rawAction.branch over metadata.targetBranch', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'echo hello',
+        branch: 'develop',
+        metadata: { targetBranch: 'release/v2' },
+      });
+      expect(intent.branch).toBe('develop');
+    });
+
+    it('returns undefined when no branch source is available', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'echo hello',
+      });
+      expect(intent.branch).toBeUndefined();
+    });
+  });
 });
