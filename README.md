@@ -130,8 +130,8 @@ Four enforcement modes control how AgentGuard responds to policy violations:
 | Mode | Blocks? | Suggests? | Behavior |
 |------|---------|-----------|----------|
 | `monitor` | No | No | Log only — observe violations without interfering |
-| `educate` | No | Yes | Log + attach a `suggestion` explaining the violation |
-| `guide` | No | Yes | Log + attach a `suggestion` with a `correctedCommand` when possible |
+| `educate` | No | Yes | Allow + attach a `suggestion` explaining the violation via `additionalContext` |
+| `guide` | Yes | Yes | Block + attach a `suggestion` with a `correctedCommand` the agent can retry |
 | `enforce` | Yes | No | Deny the action outright |
 
 Set the mode globally and override per-invariant:
