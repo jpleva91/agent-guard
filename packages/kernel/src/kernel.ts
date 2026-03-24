@@ -2,6 +2,10 @@
 // Connects monitor (AAB + policy + invariants) with execution adapters.
 // Emits full action lifecycle events: REQUESTED → ALLOWED/DENIED → EXECUTED/FAILED.
 // Builds GovernanceDecisionRecords and sinks them for audit.
+//
+// KE-4 Plane Separation: The kernel uses three failure-isolated planes:
+//   Evaluator (sync, pure) → Emitter (ring buffer) → Shipper (background persistence)
+// Telemetry failures never alter enforcement decisions.
 
 import type {
   DomainEvent,
@@ -54,6 +58,9 @@ import type { SimulatorRegistry, ImpactForecast } from './simulation/types.js';
 import { buildImpactForecast } from './simulation/forecast.js';
 import type { IntentSpec, IntentDriftResult } from './intent.js';
 import { checkIntentAlignment } from './intent.js';
+import { createEmitter } from './planes/emitter.js';
+import { createShipper } from './planes/shipper.js';
+import type { Emitter, Shipper, EmitterConfig } from './planes/types.js';
 /** Minimal tracer interface (previously from @red-codes/telemetry, now inlined). */
 interface TraceSpan {
   setAttribute(key: string, value: string | number | boolean): void;
@@ -170,6 +177,17 @@ export interface KernelConfig extends MonitorConfig {
    * and records it in governance decision records for audit trail.
    */
   manifest?: RunManifest;
+  /**
+   * KE-4: Emitter plane config (ring buffer capacities).
+   * When provided, events and decisions flow through a ring buffer instead
+   * of being written directly to sinks, decoupling the Evaluator from I/O.
+   */
+  emitterConfig?: EmitterConfig;
+  /**
+   * KE-4: Shipper plane drain interval (ms). Default: 50.
+   * Set to 0 to disable background shipping (flush-only mode for short-lived processes).
+   */
+  shipperIntervalMs?: number;
 }
 
 export interface Kernel {
@@ -186,6 +204,10 @@ export interface Kernel {
   getTierMetrics(): TierMetrics | null;
   /** Returns the run manifest if one was provided at initialization */
   getManifest(): RunManifest | null;
+  /** KE-4: Returns the Emitter plane instance for observability */
+  getEmitter(): Emitter;
+  /** KE-4: Returns the Shipper plane instance for observability */
+  getShipper(): Shipper;
   shutdown(): void;
 }
 
@@ -229,11 +251,32 @@ export function createKernel(config: KernelConfig = {}): Kernel {
     evaluateOptions: config.evaluateOptions,
   });
 
+  // KE-4 Plane Separation: Evaluator → Emitter → Shipper
+  // Events flow through an in-memory ring buffer (Emitter) instead of being
+  // written directly to sinks. The Shipper drains the buffer in the background.
+  const emitter = createEmitter(config.emitterConfig);
+  const shipper = createShipper({
+    emitter,
+    eventSinks: sinks,
+    decisionSinks,
+    intervalMs: config.shipperIntervalMs ?? 50,
+    onError: (err, ctx) => {
+      // Telemetry failures are non-fatal — log but never propagate to Evaluator
+      if (typeof process !== 'undefined' && process.stderr) {
+        process.stderr.write(`[agentguard:shipper] ${ctx}: ${err.message}\n`);
+      }
+    },
+  });
+
+  // Start background shipping if interval > 0
+  if ((config.shipperIntervalMs ?? 50) > 0) {
+    shipper.start();
+  }
+
+  // Evaluator plane: sinkEvent/sinkDecision write to the Emitter (zero I/O).
   function sinkEvent(event: DomainEvent): void {
     eventCount++;
-    for (const sink of sinks) {
-      sink.write(event);
-    }
+    emitter.eventSink.write(event);
   }
 
   function sinkEvents(events: DomainEvent[]): void {
@@ -243,9 +286,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
   }
 
   function sinkDecision(record: GovernanceDecisionRecord): void {
-    for (const sink of decisionSinks) {
-      sink.write(record);
-    }
+    emitter.decisionSink.write(record);
   }
 
   // Emit RUN_STARTED event with agent identity
@@ -1678,10 +1719,18 @@ export function createKernel(config: KernelConfig = {}): Kernel {
             result = { ...result, tier: outerTier };
           }
         }
+        // KE-4: Flush the Emitter → Shipper → Sinks pipeline after each proposal.
+        // This ensures events reach sinks before propose() returns, maintaining
+        // backward compatibility. The ring buffer still provides structural isolation —
+        // all sink write errors are caught by the Shipper, never reaching the Evaluator.
+        shipper.flush();
+
         span?.setAttribute('outcome', result.allowed ? 'allow' : 'deny');
         span?.end();
         return result;
       } catch (err) {
+        // Flush on error too — don't lose events from partial proposals
+        shipper.flush();
         span?.endWithError(err instanceof Error ? err.message : String(err));
         throw err;
       }
@@ -1711,13 +1760,19 @@ export function createKernel(config: KernelConfig = {}): Kernel {
       return manifest;
     },
 
+    getEmitter() {
+      return emitter;
+    },
+
+    getShipper() {
+      return shipper;
+    },
+
     shutdown() {
-      for (const sink of sinks) {
-        if (sink.flush) sink.flush();
-      }
-      for (const sink of decisionSinks) {
-        if (sink.flush) sink.flush();
-      }
+      // KE-4: Stop background shipping, then flush remaining events synchronously.
+      // This ensures no data loss even for short-lived processes (e.g. hook invocations).
+      shipper.stop();
+      shipper.flush();
       tracer?.shutdown();
     },
   };
