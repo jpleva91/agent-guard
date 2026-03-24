@@ -9,6 +9,20 @@ import type {
   ActionContext,
   ActionClassExtended,
 } from '@red-codes/core';
+
+/**
+ * Type guard — distinguishes ActionContext from RawAgentAction.
+ * ActionContext always has `actionClass` and `normalizedAt`; RawAgentAction never does.
+ */
+export function isActionContext(input: unknown): input is ActionContext {
+  return (
+    typeof input === 'object' &&
+    input !== null &&
+    'actionClass' in input &&
+    'normalizedAt' in input &&
+    'source' in input
+  );
+}
 import {
   TOOL_ACTION_MAP_DATA,
   DESTRUCTIVE_PATTERNS_DATA,
@@ -227,12 +241,15 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
   };
 }
 
-export function authorize(
-  rawAction: RawAgentAction | null,
+/**
+ * Core authorization logic shared by authorize() and authorizeContext().
+ * Accepts a pre-normalized intent (NormalizedIntent or ActionContext).
+ */
+function authorizeIntent(
+  intent: NormalizedIntent | ActionContext,
   policies: LoadedPolicy[],
   evaluateOptions?: EvaluateOptions
 ): AuthorizationResult {
-  const intent = normalizeIntent(rawAction);
   const events: DomainEvent[] = [];
 
   if (intent.destructive) {
@@ -283,8 +300,6 @@ export function authorize(
   }
 
   // Blast radius computation engine (Phase 2)
-  // Computes a weighted score from action type, path sensitivity, and file count,
-  // then checks against the tightest policy limit.
   let blastRadius: BlastRadiusResult | undefined;
 
   let tightestLimit = Infinity;
@@ -316,6 +331,28 @@ export function authorize(
   return { intent, result, events, blastRadius };
 }
 
+export function authorize(
+  rawAction: RawAgentAction | null,
+  policies: LoadedPolicy[],
+  evaluateOptions?: EvaluateOptions
+): AuthorizationResult {
+  const intent = normalizeIntent(rawAction);
+  return authorizeIntent(intent, policies, evaluateOptions);
+}
+
+/**
+ * Authorize using a pre-normalized ActionContext (KE-2).
+ * Skips the RawAgentAction → NormalizedIntent conversion since the context
+ * is already vendor-neutral. This is the preferred evaluation entry point.
+ */
+export function authorizeContext(
+  context: ActionContext,
+  policies: LoadedPolicy[],
+  evaluateOptions?: EvaluateOptions
+): AuthorizationResult {
+  return authorizeIntent(context, policies, evaluateOptions);
+}
+
 /**
  * Resolve the ActionClassExtended for a normalized action type.
  * MCP actions get 'mcp', unknown actions get 'unknown', everything else
@@ -344,6 +381,12 @@ export function normalizeToActionContext(
   const actionClass = resolveActionClass(intent.action);
   const now = Date.now();
 
+  // Preserve raw tool name and content in args.metadata for audit trail
+  const argsMeta: Record<string, unknown> = { ...intent.metadata };
+  if (rawAction?.tool) {
+    argsMeta.rawTool = rawAction.tool;
+  }
+
   return {
     // ActionContext-specific enrichment
     actionClass,
@@ -359,7 +402,7 @@ export function normalizeToActionContext(
       branch: intent.branch,
       content: rawAction?.content || undefined,
       filesAffected: intent.filesAffected,
-      metadata: intent.metadata,
+      metadata: argsMeta,
     },
     source,
     normalizedAt: now,

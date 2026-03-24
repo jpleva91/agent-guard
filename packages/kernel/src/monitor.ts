@@ -1,11 +1,12 @@
 // Runtime Monitor — closed-loop feedback system.
 // Pure domain logic. No DOM, no Node.js-specific APIs.
 
-import type { DomainEvent, EventStore } from '@red-codes/core';
+import type { DomainEvent, EventStore, ActionContext } from '@red-codes/core';
 import { ESCALATION_LEVELS, ESCALATION_DEFAULTS } from '@red-codes/core';
 import { createEngine, INTERVENTION } from './decision.js';
 import type { EngineConfig, EngineDecision } from './decision.js';
 import type { RawAgentAction } from './aab.js';
+import { isActionContext } from './aab.js';
 import { EventBus, createInMemoryStore } from '@red-codes/events';
 import { createEvent, STATE_CHANGED } from '@red-codes/events';
 
@@ -62,7 +63,7 @@ export interface Monitor {
   bus: EventBus<Record<string, unknown>>;
   store: EventStore;
   process(
-    rawAction: RawAgentAction | null,
+    rawAction: RawAgentAction | ActionContext | null,
     systemContext?: Record<string, unknown>
   ): MonitorDecision;
   getStatus(): Record<string, unknown>;
@@ -162,12 +163,19 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
     process(rawAction, systemContext = {}) {
       if (escalationLevel === ESCALATION.LOCKDOWN) {
         totalEvaluations++;
+        // KE-2: Extract identity from either ActionContext or RawAgentAction
+        const lockdownAction = isActionContext(rawAction)
+          ? rawAction.action
+          : rawAction?.tool || 'unknown';
+        const lockdownAgent = isActionContext(rawAction)
+          ? rawAction.agent
+          : rawAction?.agent || 'unknown';
         const lockedResult: MonitorDecision = {
           allowed: false,
           intent: {
-            action: rawAction?.tool || 'unknown',
+            action: lockdownAction,
             target: '',
-            agent: rawAction?.agent || 'unknown',
+            agent: lockdownAgent,
             destructive: false,
           },
           decision: {

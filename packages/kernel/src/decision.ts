@@ -1,8 +1,8 @@
 // Runtime Assurance Engine — the RTA decision switch.
 // Pure domain logic. No DOM, no Node.js-specific APIs.
 
-import type { DomainEvent } from '@red-codes/core';
-import { authorize } from './aab.js';
+import type { DomainEvent, ActionContext } from '@red-codes/core';
+import { authorize, authorizeContext, isActionContext } from './aab.js';
 import type { RawAgentAction } from './aab.js';
 import type { NormalizedIntent, EvalResult, EvaluateOptions } from '@red-codes/policy';
 import {
@@ -59,7 +59,7 @@ export interface Engine {
   getPolicyCount(): number;
   getInvariantCount(): number;
   evaluate(
-    rawAction: RawAgentAction | null,
+    rawAction: RawAgentAction | ActionContext | null,
     systemContext?: Record<string, unknown>
   ): EngineDecision;
 }
@@ -118,25 +118,44 @@ export function createEngine(config: EngineConfig = {}): Engine {
     },
 
     evaluate(rawAction, systemContext = {}) {
-      // Merge session-level state flags into rawAction.metadata so the policy
-      // evaluator can read them via intent.metadata (evaluator has no access
-      // to systemContext directly).
-      const enrichedAction = rawAction
-        ? {
-            ...rawAction,
-            metadata: {
-              ...rawAction.metadata,
-              testsPass: systemContext.testsPass ?? rawAction.metadata?.testsPass,
-              formatPass: systemContext.formatPass ?? rawAction.metadata?.formatPass,
-            },
-          }
-        : rawAction;
+      // KE-2: Accept both RawAgentAction and ActionContext.
+      // If already an ActionContext, merge session flags and use authorizeContext()
+      // to skip re-normalization. Otherwise, enrich the raw action and authorize.
+      let intent: NormalizedIntent | ActionContext;
+      let authResult: EvalResult;
+      let authEvents: DomainEvent[];
 
-      const {
-        intent,
-        result: authResult,
-        events: authEvents,
-      } = authorize(enrichedAction, policies, evaluateOptions);
+      if (isActionContext(rawAction)) {
+        // ActionContext path — merge session-level state flags into metadata
+        const enrichedCtx: ActionContext = {
+          ...rawAction,
+          metadata: {
+            ...rawAction.metadata,
+            testsPass: systemContext.testsPass ?? rawAction.metadata?.testsPass,
+            formatPass: systemContext.formatPass ?? rawAction.metadata?.formatPass,
+          },
+        };
+        const authResult_ = authorizeContext(enrichedCtx, policies, evaluateOptions);
+        intent = authResult_.intent;
+        authResult = authResult_.result;
+        authEvents = authResult_.events;
+      } else {
+        // Legacy RawAgentAction path — enrich metadata and normalize
+        const enrichedAction = rawAction
+          ? {
+              ...rawAction,
+              metadata: {
+                ...rawAction.metadata,
+                testsPass: systemContext.testsPass ?? rawAction.metadata?.testsPass,
+                formatPass: systemContext.formatPass ?? rawAction.metadata?.formatPass,
+              },
+            }
+          : rawAction;
+        const authResult_ = authorize(enrichedAction, policies, evaluateOptions);
+        intent = authResult_.intent;
+        authResult = authResult_.result;
+        authEvents = authResult_.events;
+      }
 
       // Emit policy evaluation trace if available
       if (authResult.trace) {
@@ -162,10 +181,11 @@ export function createEngine(config: EngineConfig = {}): Engine {
         authEvents.push(traceEvent);
       }
 
-      // Compute write size from raw action content (character length ≈ byte size for UTF-8 code)
+      // Compute write size from action content (character length ≈ byte size for UTF-8 code)
+      const rawContent = isActionContext(rawAction) ? rawAction.args.content : rawAction?.content;
       const writeSizeBytes =
-        rawAction?.content !== undefined && rawAction?.content !== null
-          ? rawAction.content.length
+        rawContent !== undefined && rawContent !== null
+          ? rawContent.length
           : (systemContext.writeSizeBytes as number | undefined);
 
       // Detect network requests for the network egress invariant

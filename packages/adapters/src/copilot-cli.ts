@@ -233,8 +233,9 @@ export async function processCopilotCliHook(
   systemContext: Record<string, unknown> = {},
   persona?: AgentPersona
 ): Promise<KernelResult> {
-  const rawAction = normalizeCopilotCliAction(payload, persona);
-  return kernel.propose(rawAction, systemContext);
+  // KE-2: Normalize to ActionContext at the adapter boundary
+  const context = copilotToActionContext(payload, persona);
+  return kernel.propose(context, systemContext);
 }
 
 /**

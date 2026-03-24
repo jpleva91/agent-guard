@@ -336,8 +336,9 @@ export async function processClaudeCodeHook(
   persona?: AgentPersona,
   projectRoot?: string
 ): Promise<KernelResult> {
-  const rawAction = normalizeClaudeCodeAction(payload, persona, projectRoot);
-  return kernel.propose(rawAction, systemContext);
+  // KE-2: Normalize to ActionContext at the adapter boundary
+  const context = toActionContext(payload, persona, projectRoot);
+  return kernel.propose(context, systemContext);
 }
 
 export function formatHookResponse(result: KernelResult): string {

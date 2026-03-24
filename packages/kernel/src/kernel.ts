@@ -12,11 +12,12 @@ import type {
   SeededRng,
   EventSink,
   RunManifest,
+  ActionContext,
 } from '@red-codes/core';
 import { createMonitor } from './monitor.js';
 import type { MonitorConfig, MonitorDecision, MonitorState } from './monitor.js';
 import type { RawAgentAction } from './aab.js';
-import { normalizeIntent } from './aab.js';
+import { normalizeToActionContext, isActionContext } from './aab.js';
 import { createTierRouter } from './tier-router.js';
 import type { EvaluationTier, TierRouterConfig, TierRouter, TierMetrics } from './tier-router.js';
 import {
@@ -173,7 +174,7 @@ export interface KernelConfig extends MonitorConfig {
 
 export interface Kernel {
   propose(
-    rawAction: RawAgentAction,
+    rawAction: RawAgentAction | ActionContext,
     systemContext?: Record<string, unknown>
   ): Promise<KernelResult>;
   getRunId(): string;
@@ -260,20 +261,23 @@ export function createKernel(config: KernelConfig = {}): Kernel {
 
   return {
     propose: async (rawAction, systemContext = {}) => {
-      const span =
-        tracer?.startSpan('kernel.propose', `propose:${rawAction.tool || 'unknown'}`) ?? null;
+      // KE-2: Normalize at the boundary. All downstream code uses ActionContext.
+      const ctx: ActionContext = isActionContext(rawAction)
+        ? rawAction
+        : normalizeToActionContext(rawAction, (rawAction.metadata?.source as string) || 'unknown');
+
+      const span = tracer?.startSpan('kernel.propose', `propose:${ctx.action}`) ?? null;
 
       // Tier classification — performed before proposalBody so it's available for the wrapper
       let outerTier: EvaluationTier = 'standard';
       const outerTierStart = performance.now();
       if (tierRouter) {
-        const preIntent = normalizeIntent(rawAction);
         const escalation = monitor.getEscalationLevel();
         const classification = tierRouter.classify(
-          preIntent.action,
-          preIntent.target,
+          ctx.action,
+          ctx.target,
           escalation,
-          preIntent.destructive
+          ctx.destructive
         );
         outerTier = classification.tier;
         span?.setAttribute('tier', outerTier);
@@ -286,13 +290,19 @@ export function createKernel(config: KernelConfig = {}): Kernel {
 
         // 1. Emit ACTION_REQUESTED
         const requestedEvent = createEvent(ACTION_REQUESTED, {
-          actionType: rawAction.tool || 'unknown',
-          target: rawAction.file || rawAction.target || '',
-          justification: (rawAction.metadata?.justification as string) || 'agent action',
+          actionType: ctx.action,
+          target: ctx.target,
+          justification: (ctx.metadata?.justification as string) || 'agent action',
           actionId: undefined,
-          agentId: rawAction.agent || 'unknown',
+          agentId: ctx.agent,
           agentRole,
-          metadata: { runId, command: rawAction.command, persona: rawAction.persona },
+          metadata: {
+            runId,
+            command: ctx.command,
+            persona: ctx.persona,
+            source: ctx.source,
+            rawTool: ctx.args.metadata?.rawTool,
+          },
         });
         allEvents.push(requestedEvent);
 
@@ -300,7 +310,8 @@ export function createKernel(config: KernelConfig = {}): Kernel {
         const currentTier = outerTier;
 
         if (tierRouter && currentTier === 'fast') {
-          const intent = normalizeIntent(rawAction);
+          // KE-2: Use the already-normalized ActionContext for fast-path
+          const intent = ctx;
 
           // Fast-path: check cache for previously allowed action signatures
           {
@@ -407,8 +418,8 @@ export function createKernel(config: KernelConfig = {}): Kernel {
               try {
                 if (intent.action !== 'unknown') {
                   fastAction = createAction(intent.action, intent.target, 'kernel-proposed', {
-                    command: rawAction.command,
-                    agent: rawAction.agent,
+                    command: ctx.command,
+                    agent: ctx.agent,
                     runId,
                   });
                 }
@@ -554,10 +565,9 @@ export function createKernel(config: KernelConfig = {}): Kernel {
         // and hooks always use dryRun: true.
         let enrichedContext = systemContext;
         {
-          const preIntent = normalizeIntent(rawAction);
-          if (preIntent.action === 'git.commit') {
+          if (ctx.action === 'git.commit') {
             const stagedFiles = await fetchStagedFiles(
-              (rawAction as Record<string, unknown>)?.cwd as string | undefined
+              (systemContext.cwd as string | undefined) ?? (ctx.metadata?.cwd as string | undefined)
             );
             enrichedContext = {
               ...systemContext,
@@ -567,9 +577,8 @@ export function createKernel(config: KernelConfig = {}): Kernel {
           }
         }
 
-        // Evaluate via monitor (AAB → policy → invariants → evidence)
-        // `let` because the PAUSE-approved path reassigns: decision = { ...decision, allowed: true }
-        let decision = monitor.process(rawAction, enrichedContext);
+        // KE-2: Pass the ActionContext to the monitor (flows through engine → authorize)
+        let decision = monitor.process(ctx, enrichedContext);
 
         // 3. Create canonical action object for execution
         let action: CanonicalAction | null = null;
@@ -578,8 +587,8 @@ export function createKernel(config: KernelConfig = {}): Kernel {
           const target = decision.intent.target;
           if (actionType !== 'unknown') {
             action = createAction(actionType, target, 'kernel-proposed', {
-              command: rawAction.command,
-              agent: rawAction.agent,
+              command: ctx.command,
+              agent: ctx.agent,
               runId,
             });
           }
@@ -752,19 +761,26 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                 clearTimeout(timer!);
 
                 if (modifyResult.modified && modifyResult.changes) {
-                  // Merge modifications into the original raw action and re-evaluate
+                  // KE-2: Merge modifications and re-normalize to ActionContext
                   const modifiedRawAction: RawAgentAction = {
-                    ...rawAction,
+                    tool: (ctx.args.metadata?.rawTool as string) || ctx.action,
+                    file: ctx.args.filePath,
+                    target: ctx.target,
+                    command: ctx.command,
+                    agent: ctx.agent,
+                    persona: ctx.persona,
+                    content: ctx.args.content,
                     ...modifyResult.changes,
                     metadata: {
-                      ...rawAction.metadata,
+                      ...ctx.metadata,
                       ...modifyResult.changes.metadata,
                       modifiedBy: 'modify-intervention',
-                      originalCommand: rawAction.command,
+                      originalCommand: ctx.command,
                     },
                   };
+                  const modifiedCtx = normalizeToActionContext(modifiedRawAction, ctx.source);
 
-                  const reEvalDecision = monitor.process(modifiedRawAction, systemContext);
+                  const reEvalDecision = monitor.process(modifiedCtx, systemContext);
 
                   if (reEvalDecision.allowed) {
                     // Modified action passed re-evaluation — update decision and action
@@ -783,8 +799,8 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                           modifiedTarget,
                           'kernel-modified',
                           {
-                            command: modifiedRawAction.command,
-                            agent: modifiedRawAction.agent,
+                            command: modifiedCtx.command,
+                            agent: modifiedCtx.agent,
                             runId,
                           }
                         );
@@ -921,7 +937,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                       if (!rollbackResult.success) {
                         // Rollback failed — escalate to LOCKDOWN
                         monitor.process(
-                          { tool: 'kernel.rollback-failed', agent: rawAction.agent || 'kernel' },
+                          { tool: 'kernel.rollback-failed', agent: ctx.agent || 'kernel' },
                           { ...systemContext, forceEscalation: 'LOCKDOWN' }
                         );
                       }
@@ -955,7 +971,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                           monitor.process(
                             {
                               tool: 'kernel.rollback-failed',
-                              agent: rawAction.agent || 'kernel',
+                              agent: ctx.agent || 'kernel',
                             },
                             { ...systemContext, forceEscalation: 'LOCKDOWN' }
                           );
