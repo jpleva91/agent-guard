@@ -439,8 +439,12 @@ function printSummary(
     process.stderr.write('  Governance is active. Run: agentguard inspect --last\n\n');
   }
 
-  process.stderr.write('  Customize:  npx @red-codes/agentguard claude-init   (full Claude Code wizard)\n');
-  process.stderr.write('              npx @red-codes/agentguard copilot-init  (full Copilot CLI wizard)\n');
+  process.stderr.write(
+    '  Customize:  npx @red-codes/agentguard claude-init   (full Claude Code wizard)\n'
+  );
+  process.stderr.write(
+    '              npx @red-codes/agentguard copilot-init  (full Copilot CLI wizard)\n'
+  );
   process.stderr.write('  Enforce:    set mode: enforce in agentguard.yaml\n');
   process.stderr.write('\n');
 }
