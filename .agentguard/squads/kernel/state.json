@@ -1,48 +1,43 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Land Go kernel rewrite (PR #870) with CI clean; merge rust-kernel fix (PR #869) after architect review",
+    "goal": "Land Go kernel rewrite (merged PR #870) and rust-kernel fix (merged PR #869); resolve lint CI failure on PR #888 (fix/npx-scoped-package-name)",
     "issues": []
   },
   "assignments": {
-    "pr-870-ci-fix": {
-      "task": "Fix lint and rust-kernel CI failures on PR #870 (feat/squad-swarm-spec)",
+    "pr-888-lint-fix": {
+      "task": "Fix lint CI failure on PR #888 (fix/848-npx-scoped-package-name)",
       "assignee": "senior-coder",
       "priority": "P1",
-      "pr": 870,
+      "pr": 888,
       "status": "open",
-      "notes": "lint job failing + rust-kernel job failing. Likely formatting violations or count desyncs similar to #867."
+      "notes": "Lint job failing; test-and-build, rust-kernel, analyze, CodeQL all green. Tier C scope (4 files, ~8 lines). Likely a formatting or ESLint violation introduced in the patch."
     }
   },
   "blockers": [
     {
-      "id": "ci-failure-pr-870",
-      "description": "PR #870 failing CI: lint + rust-kernel jobs",
-      "pr": 870,
-      "firstSeen": "2026-03-25T08:35:00.000Z",
+      "id": "ci-failure-pr-888",
+      "description": "PR #888 (fix/npx-scoped-package-name) failing CI: lint job only",
+      "pr": 888,
+      "firstSeen": "2026-03-25T15:00:00.000Z",
       "runCount": 1
     }
   ],
   "prQueue": {
-    "open": 2,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
       {
-        "number": 869,
-        "status": "awaiting_review",
-        "ci": "green",
-        "flaggedForArchitect": true
-      },
-      {
-        "number": 870,
+        "number": 888,
+        "title": "fix: use npx @red-codes/agentguard in user-facing docs and messages",
         "status": "ci_failing",
         "ci": "failing",
-        "failingChecks": ["lint", "rust-kernel"]
+        "failingChecks": ["lint"]
       }
     ]
   },
   "health": "yellow",
-  "lastEmRun": "2026-03-25T08:35:00.000Z",
-  "updatedAt": "2026-03-25T08:35:00.000Z"
+  "lastEmRun": "2026-03-25T15:00:00.000Z",
+  "updatedAt": "2026-03-25T15:00:00.000Z"
 }
