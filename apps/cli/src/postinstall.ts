@@ -21,13 +21,13 @@ const POLICY_CANDIDATES = [
 
 const STARTER_POLICY = `# AgentGuard policy — safety rules for AI coding agents.
 # Customize this file to match your project's security requirements.
-# Docs: https://github.com/AgentGuardHQ/agent-guard
+# Docs: https://github.com/AgentGuardHQ/agentguard
 
 id: default-policy
 name: Default Safety Policy
 description: Baseline safety rules for AI coding agents
 severity: 4
-mode: monitor
+mode: guide
 pack: essentials
 
 rules:
