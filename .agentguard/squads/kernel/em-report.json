@@ -1,60 +1,23 @@
 {
-  "generatedAt": "2026-03-25T18:10:00.000Z",
+  "generatedAt": "2026-03-25T18:11:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
   "health": "green",
-  "summary": "Squad is healthy. Previous blockers resolved — PRs #869 and #870 both merged. Go kernel landed (PR #885), v2.6.0 released (PR #887). 10 PRs merged since last cycle. One open PR (#888) is CI green and awaiting review. EM report PR #889 merged this cycle. No P0/P1 issues. Sprint goal complete — updating to maintenance mode.",
+  "summary": "Squad is healthy. All PRs merged — clean slate. PR #905 (previous EM report) was CI green and merged this cycle. PR #888 (npx scoped package fix) confirmed merged. No P0/P1 issues open. 10 open issues are ROADMAP v3.0 planning, progress reports, and informational items — none require kernel squad action. Sprint goal updated to maintenance/v3.0 readiness.",
   "prQueue": {
-    "open": 1,
-    "prs": [
-      {
-        "number": 888,
-        "title": "fix: use npx @red-codes/agentguard in user-facing docs and messages",
-        "branch": "fix/848-npx-scoped-package-name",
-        "ci": "green",
-        "checks": {
-          "CodeQL": "success",
-          "test-and-build": "success",
-          "analyze": "success",
-          "rust-kernel": "success",
-          "lint": "success"
-        },
-        "reviews": 0,
-        "status": "awaiting_review",
-        "action": "Tier C scope (4 files, ~8 lines). CI green. Needs one review to merge."
-      }
-    ]
+    "open": 0,
+    "prs": []
   },
   "mergedThisCycle": [
     {
-      "number": 889,
-      "title": "chore(kernel-em): EM cycle report 2026-03-25T15:00Z",
+      "number": 905,
+      "title": "chore(kernel-em): EM cycle report 2026-03-25T21:10Z",
       "mergedBy": "em"
-    },
-    {
-      "number": 887,
-      "title": "v2.6.0 — Go kernel, SHA pinning, unscoped npm, performance docs",
-      "mergedAt": "2026-03-25T15:00:07Z"
-    },
-    {
-      "number": 885,
-      "title": "feat(go): complete Go kernel — KE-2/4/5/6, ~100x faster governance",
-      "mergedAt": "2026-03-25T14:34:46Z"
-    },
-    {
-      "number": 884,
-      "title": "feat(issue-857): stranger test protocol and install fixes",
-      "mergedAt": "2026-03-25T14:39:31Z"
-    },
-    {
-      "number": 883,
-      "title": "chore(swarm): recovery controller — all healthy, mode normal",
-      "mergedAt": "2026-03-25T14:50:03Z"
     }
   ],
   "loopGuards": {
     "prBudget": {
-      "open": 1,
+      "open": 0,
       "max": 3,
       "pass": true
     },
@@ -70,7 +33,8 @@
   "triage": {
     "p0Issues": 0,
     "p1Issues": 0,
-    "newAssignments": []
+    "newAssignments": [],
+    "notes": "10 open issues — all ROADMAP v3.0 items (#892–#896), progress/milestone reports (#880–#881), risk assessment (#903), content pack (#877), and stale EM issue (#897). None are P0/P1 or require kernel squad action."
   },
   "blockers": [],
   "escalations": [],
@@ -87,6 +51,6 @@
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "All clear. No failing CI, no blockers, no denials."
+    "notes": "All clear. Zero open PRs, zero failing CI, zero blockers, zero denials."
   }
 }
