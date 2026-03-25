@@ -1,30 +1,31 @@
 {
-  "generatedAt": "2026-03-25T21:10:00.000Z",
+  "generatedAt": "2026-03-25T19:35:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
   "health": "green",
-  "summary": "Clean cycle. PR #888 (fix/npx-scoped-package-name) confirmed merged at 15:13 UTC. PR #890 (EM cycle report 18:10Z) merged this cycle — all CI green. PR #902 (QA cycle report) closed as stale after state.json conflict with #890; QA test data incorporated here. Zero open PRs. No P0/P1 issues. 4065 tests all passing across 18 packages. Squad is idle and healthy.",
+  "summary": "Quiet cycle. Since last report, PR #914 (shell credential stripping fix, closes #639) and PR #913 (QA cycle report) both merged by jpleva91 at ~18:59Z. PR #906 (stale EM report) closed. Zero open PRs. No P0/P1 issues. CI fully green — all 5 recent runs passed. 5 open proposed-invariant issues (#908–#912) from analytics-invariant-researcher pending governance review. Squad idle and healthy.",
   "prQueue": {
     "open": 0,
     "prs": []
   },
   "mergedThisCycle": [
     {
-      "number": 890,
-      "title": "chore(kernel-em): EM cycle report 2026-03-25T18:10Z",
-      "mergedBy": "em"
+      "number": 914,
+      "title": "fix(adapters): add missing AI/k8s/vault credential patterns to shell stripping",
+      "mergedAt": "2026-03-25T18:59:04Z",
+      "mergedBy": "jpleva91"
     },
     {
-      "number": 888,
-      "title": "fix: use npx @red-codes/agentguard in user-facing docs and messages",
-      "mergedAt": "2026-03-25T15:13:03Z",
+      "number": 913,
+      "title": "chore(kernel-qa): QA cycle report 2026-03-25T18:50Z",
+      "mergedAt": "2026-03-25T18:58:51Z",
       "mergedBy": "jpleva91"
     }
   ],
   "closedThisCycle": [
     {
-      "number": 902,
-      "reason": "stale — state.json conflict after #890 merge; QA data incorporated into EM state"
+      "number": 906,
+      "reason": "stale — duplicate EM cycle report superseded by #905"
     }
   ],
   "loopGuards": {
@@ -45,12 +46,18 @@
   "triage": {
     "p0Issues": 0,
     "p1Issues": 0,
-    "newAssignments": []
+    "newAssignments": [],
+    "notableIssues": [
+      {
+        "numbers": [908, 909, 910, 911, 912],
+        "note": "5 proposed invariants from analytics-invariant-researcher awaiting governance review"
+      }
+    ]
   },
   "blockers": [],
   "escalations": [],
   "metrics": {
-    "prsOpened": 1,
+    "prsOpened": 0,
     "prsMerged": 2,
     "prsClosed": 1,
     "issuesClosed": 0,
@@ -63,6 +70,6 @@
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "All clear. Zero open PRs, no blockers, no failing CI, no denials."
+    "notes": "All clear. Zero open PRs, no blockers, CI fully green, no denials."
   }
 }

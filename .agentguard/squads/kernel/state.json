@@ -1,7 +1,7 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Post-v2.6.0 stabilization complete. Monitoring CI health and tracking new issues.",
+    "goal": "Post-v2.7.0 stabilization. Monitoring CI health, tracking proposed invariant issues (#908–#912).",
     "issues": []
   },
   "assignments": {},
@@ -21,7 +21,7 @@
     "lastRun": "2026-03-25T18:50:00.000Z",
     "status": "all_passing"
   },
-  "lastEmRun": "2026-03-25T21:10:00.000Z",
+  "lastEmRun": "2026-03-25T19:35:00.000Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-25T18:50:00.000Z"
+  "updatedAt": "2026-03-25T19:35:00.000Z"
 }
