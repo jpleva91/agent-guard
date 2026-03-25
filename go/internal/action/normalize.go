@@ -103,23 +103,43 @@ func (n *Normalizer) Normalize(raw RawAction, source string) ActionContext {
 	branch := raw.Branch
 	destructive := false
 
-	// For shell.exec, detect specific action types via scanner
+	// For shell.exec, detect specific action types via scanner.
+	// Prefer AST-based scanning for compound commands (&&, ||, ;, |)
+	// as it is more precise and faster for multi-command strings.
 	if actionType == "shell.exec" && raw.Command != "" {
 		cmd := raw.Command
 
-		// GitHub detection first (before git, since gh commands also contain "git")
-		if ghResult := n.scanner.ScanGithubAction(cmd); ghResult != nil {
-			actionType = ghResult.ActionType
-		} else if gitResult := n.scanner.ScanGitAction(cmd); gitResult != nil {
-			actionType = gitResult.ActionType
-			if branch == "" {
-				branch = ExtractBranch(cmd)
+		if PreferAST(cmd) {
+			// AST-based scanning: parse into commands, scan each independently
+			results := n.scanner.ScanAST(cmd)
+			for _, r := range results {
+				if r.Category != "" && r.Matched {
+					// Destructive match
+					destructive = true
+				} else if r.Matched && actionType == "shell.exec" {
+					// First git/github match wins for action type
+					actionType = r.ActionType
+					if branch == "" {
+						branch = ExtractBranch(cmd)
+					}
+				}
 			}
-		}
+		} else {
+			// Regex-based scanning (fallback for simple commands)
+			// GitHub detection first (before git, since gh commands also contain "git")
+			if ghResult := n.scanner.ScanGithubAction(cmd); ghResult != nil {
+				actionType = ghResult.ActionType
+			} else if gitResult := n.scanner.ScanGitAction(cmd); gitResult != nil {
+				actionType = gitResult.ActionType
+				if branch == "" {
+					branch = ExtractBranch(cmd)
+				}
+			}
 
-		// Destructive detection (independent of git/github)
-		if matches := n.scanner.ScanDestructive(cmd); len(matches) > 0 {
-			destructive = true
+			// Destructive detection (independent of git/github)
+			if matches := n.scanner.ScanDestructive(cmd); len(matches) > 0 {
+				destructive = true
+			}
 		}
 	}
 
