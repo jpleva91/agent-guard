@@ -122,7 +122,7 @@ export async function demo(): Promise<number> {
 
   write(`  ${BOLD}Get started:${RESET}\n`);
   write(
-    `  ${DIM}$ ${FG.cyan}npx agentguard claude-init${RESET}  ${DIM}— install Claude Code hooks${RESET}\n`
+    `  ${DIM}$ ${FG.cyan}npx @red-codes/agentguard claude-init${RESET}  ${DIM}— install Claude Code hooks${RESET}\n`
   );
   write(
     `  ${DIM}$ ${FG.cyan}agentguard simulate --action git.push --branch main${RESET}  ${DIM}— try a simulation${RESET}\n\n`

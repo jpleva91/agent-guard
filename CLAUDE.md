@@ -27,10 +27,10 @@ pnpm install         # Install dependencies
 pnpm build           # Build all packages (turbo build)
 
 # Governance runtime
-echo '{"tool":"Bash","command":"git push origin main"}' | npx agentguard guard --dry-run
-npx agentguard guard --policy agentguard.yaml   # Start runtime with policy
-npx agentguard inspect --last                   # Inspect most recent run
-npx agentguard events --last                    # Show raw event stream
+echo '{"tool":"Bash","command":"git push origin main"}' | npx @red-codes/agentguard guard --dry-run
+npx @red-codes/agentguard guard --policy agentguard.yaml   # Start runtime with policy
+npx @red-codes/agentguard inspect --last                   # Inspect most recent run
+npx @red-codes/agentguard events --last                    # Show raw event stream
 ```
 
 ## Project Structure

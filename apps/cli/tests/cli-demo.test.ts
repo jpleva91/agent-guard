@@ -31,7 +31,7 @@ describe('demo', () => {
     await demo();
 
     expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('npx agentguard claude-init')
+      expect.stringContaining('npx @red-codes/agentguard claude-init')
     );
   });
 });
