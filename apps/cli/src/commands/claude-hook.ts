@@ -30,6 +30,30 @@ interface SessionState extends Record<string, unknown> {
   writtenFiles?: string[];
 }
 
+/**
+ * Detect the agent's squad from identity format (driver:model:squad:rank)
+ * or from AGENTGUARD_AGENT_NAME env var.
+ */
+function detectSquad(payload: { session_id?: string } & Record<string, unknown>): string | null {
+  // Try env var first (set by write-persona.sh or --agent-name flag)
+  const agentName = process.env.AGENTGUARD_AGENT_NAME;
+  if (agentName) {
+    const parts = agentName.split(':');
+    if (parts.length >= 3) return parts[2]; // driver:model:squad:rank
+  }
+  // Try session state
+  try {
+    const state = readSessionState(payload.session_id as string | undefined);
+    if (state.agentName) {
+      const parts = (state.agentName as string).split(':');
+      if (parts.length >= 3) return parts[2];
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 function sessionStatePath(sessionId: string): string {
   // Use a dedicated subdirectory rather than flat tmpdir to reduce path
   // predictability on shared systems (e.g. multi-user CI machines).
@@ -662,12 +686,42 @@ async function handlePreToolUse(
     }
 
     if (resolvedMode === 'educate') {
-      // Educate mode: allow the action but inject suggestion context
+      // Educate mode: allow the action but inject suggestion context + capture lesson
       const options: HookResponseOptions = { mode: 'educate' };
       const response = formatHookResponse(result, result.suggestion, options);
       if (response) {
         await new Promise<void>((resolve) => process.stdout.write(response, () => resolve()));
       }
+
+      // Capture lesson for agent memory
+      try {
+        const { generateLesson, mergeLesson, readLessonStore, writeLessonStore } = await import('@red-codes/kernel');
+        const action = result.decision?.intent?.action ?? 'unknown';
+        const reason = result.decision?.decision?.reason ?? 'Action flagged by governance';
+        const squad = detectSquad(normalizedPayload as unknown as Record<string, unknown>);
+
+        if (squad) {
+          const toolInput = normalizedPayload.tool_input as Record<string, string> | undefined;
+          const lesson = generateLesson({
+            action,
+            tool: normalizedPayload.tool_name,
+            target: toolInput?.command ?? toolInput?.file_path ?? '',
+            rule: reason,
+            reason,
+            suggestion: result.suggestion?.message,
+            correctedCommand: result.suggestion?.correctedCommand,
+            agentId: (sessionState.agentName as string) ?? 'unknown',
+            squad,
+          });
+
+          const store = readLessonStore(projectRoot ?? '.', squad);
+          const updated = mergeLesson(store, lesson);
+          writeLessonStore(projectRoot ?? '.', squad, updated);
+        }
+      } catch {
+        // Non-fatal — lesson capture should never block the action
+      }
+
       return false;
     }
 

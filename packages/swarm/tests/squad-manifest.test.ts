@@ -24,7 +24,7 @@ describe('loadSquadManifest', () => {
       'utf8',
     );
     const manifest = loadSquadManifest(yaml);
-    expect(Object.keys(manifest.squads)).toEqual(['kernel', 'cloud', 'qa']);
+    expect(Object.keys(manifest.squads)).toEqual(['kernel', 'cloud', 'qa', 'studio']);
   });
 
   it('each squad has em + 5 agents', () => {

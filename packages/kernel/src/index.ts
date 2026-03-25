@@ -23,3 +23,6 @@ export * from './enforcement-audit.js';
 export * from './intent.js';
 export * from './tier-router.js';
 export * from './suggestion-registry.js';
+
+export { generateLesson, mergeLesson, emptyLessonStore, formatLessonContext, readLessonStore, writeLessonStore, patternsToLessons, learnFromDenials } from './lessons.js';
+export type { Lesson, LessonInput, LessonStore, LessonContext, DenialPatternLike } from './lessons.js';
