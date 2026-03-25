@@ -23,7 +23,7 @@ export class Dispatcher {
   constructor(
     private readonly store: TaskStore,
     private readonly leases: LeaseManager,
-    private readonly config: DispatcherConfig,
+    private readonly config: DispatcherConfig
   ) {
     this.cooldownMs = config.cooldownMs ?? DEFAULT_COOLDOWN_MS;
     this.leaseTimeMs = config.leaseTimeMs ?? 10 * 60 * 1000;
@@ -61,7 +61,8 @@ export class Dispatcher {
   start(taskId: string, workerId: string): Task {
     const task = this.store.get(taskId);
     if (!task) throw new Error(`Task ${taskId} not found`);
-    if (task.leaseOwner !== workerId) throw new Error(`Worker ${workerId} does not hold lease on ${taskId}`);
+    if (task.leaseOwner !== workerId)
+      throw new Error(`Worker ${workerId} does not hold lease on ${taskId}`);
 
     return this.store.transition(taskId, 'running', {
       startedAt: Date.now(),

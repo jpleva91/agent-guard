@@ -17,7 +17,7 @@ export interface LoopGuardResult {
 export function checkLoopGuards(
   config: LoopGuardConfig,
   state: SquadState,
-  context: LoopGuardContext,
+  context: LoopGuardContext
 ): LoopGuardResult {
   const violations: GuardViolation[] = [];
   const messages: string[] = [];
@@ -26,7 +26,7 @@ export function checkLoopGuards(
   if (state.prQueue.open >= config.maxOpenPRsPerSquad) {
     violations.push('budget');
     messages.push(
-      `PR budget exceeded: ${state.prQueue.open} open (max ${config.maxOpenPRsPerSquad}). Skip implementation, focus on review/merge.`,
+      `PR budget exceeded: ${state.prQueue.open} open (max ${config.maxOpenPRsPerSquad}). Skip implementation, focus on review/merge.`
     );
   }
 
@@ -34,7 +34,7 @@ export function checkLoopGuards(
   if (context.retryCount > config.maxRetries) {
     violations.push('retry');
     messages.push(
-      `Retry limit exceeded: ${context.retryCount} attempts (max ${config.maxRetries}). Create escalation issue.`,
+      `Retry limit exceeded: ${context.retryCount} attempts (max ${config.maxRetries}). Create escalation issue.`
     );
   }
 
@@ -42,7 +42,7 @@ export function checkLoopGuards(
   if (context.predictedFileChanges > config.maxBlastRadius) {
     violations.push('blast-radius');
     messages.push(
-      `Blast radius exceeded: ${context.predictedFileChanges} files (max ${config.maxBlastRadius}). Escalate to Architect.`,
+      `Blast radius exceeded: ${context.predictedFileChanges} files (max ${config.maxBlastRadius}). Escalate to Architect.`
     );
   }
 
@@ -52,7 +52,7 @@ export function checkLoopGuards(
   if (elapsedMin > config.maxRunMinutes) {
     violations.push('time');
     messages.push(
-      `Run time exceeded: ${Math.round(elapsedMin)}min (max ${config.maxRunMinutes}min). Force-stop, EM investigates.`,
+      `Run time exceeded: ${Math.round(elapsedMin)}min (max ${config.maxRunMinutes}min). Force-stop, EM investigates.`
     );
   }
 

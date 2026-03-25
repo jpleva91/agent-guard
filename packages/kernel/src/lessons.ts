@@ -76,7 +76,7 @@ function lessonId(pattern: string, action: string): string {
   const str = `${pattern}:${action}`;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash |= 0;
   }
   return `lesson-${Math.abs(hash).toString(36)}`;
@@ -140,9 +140,7 @@ export function mergeLesson(store: LessonStore, lesson: Lesson): LessonStore {
   if (existing) {
     // Update hit count and last seen
     const updated = store.lessons.map((l) =>
-      l.id === lesson.id
-        ? { ...l, hitCount: l.hitCount + 1, lastSeen: now }
-        : l,
+      l.id === lesson.id ? { ...l, hitCount: l.hitCount + 1, lastSeen: now } : l
     );
     return { ...store, lessons: updated, lastUpdated: now };
   }
@@ -167,10 +165,13 @@ export function emptyLessonStore(): LessonStore {
 // ── Lesson context formatting ──
 
 /** Format lessons for injection into agent context */
-export function formatLessonContext(store: LessonStore, options?: {
-  maxLessons?: number;
-  minSeverity?: 'info' | 'warning' | 'critical';
-}): LessonContext {
+export function formatLessonContext(
+  store: LessonStore,
+  options?: {
+    maxLessons?: number;
+    minSeverity?: 'info' | 'warning' | 'critical';
+  }
+): LessonContext {
   const maxLessons = options?.maxLessons ?? 20;
   const minSeverity = options?.minSeverity ?? 'info';
 
@@ -201,9 +202,12 @@ export function formatLessonContext(store: LessonStore, options?: {
   ];
 
   for (const lesson of filtered) {
-    const icon = lesson.severity === 'critical' ? '[CRITICAL]'
-      : lesson.severity === 'warning' ? '[WARNING]'
-      : '[INFO]';
+    const icon =
+      lesson.severity === 'critical'
+        ? '[CRITICAL]'
+        : lesson.severity === 'warning'
+          ? '[WARNING]'
+          : '[INFO]';
     lines.push(`- ${icon} **${lesson.rule}**: ${lesson.why}`);
     lines.push(`  Instead: ${lesson.instead}`);
     if (lesson.correctedCommand) {
@@ -246,11 +250,7 @@ export function writeLessonStore(root: string, squad: string, store: LessonStore
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
-  writeFileSync(
-    `${dir}/learnings.json`,
-    JSON.stringify(store, null, 2),
-    'utf8',
-  );
+  writeFileSync(`${dir}/learnings.json`, JSON.stringify(store, null, 2), 'utf8');
 }
 
 // ── Bridge: denial-learner patterns → lessons ──
@@ -270,7 +270,7 @@ export interface DenialPatternLike {
  *  High-confidence patterns (0.8+) become critical lessons. */
 export function patternsToLessons(
   patterns: readonly DenialPatternLike[],
-  context: { agentId: string; squad: string },
+  context: { agentId: string; squad: string }
 ): Lesson[] {
   return patterns.map((p) => {
     // Map confidence to severity
@@ -296,7 +296,7 @@ export function learnFromDenials(
   patterns: readonly DenialPatternLike[],
   root: string,
   squad: string,
-  agentId: string,
+  agentId: string
 ): { lessonsAdded: number; totalLessons: number } {
   const lessons = patternsToLessons(patterns, { agentId, squad });
   let store = readLessonStore(root, squad);

@@ -695,7 +695,8 @@ async function handlePreToolUse(
 
       // Capture lesson for agent memory
       try {
-        const { generateLesson, mergeLesson, readLessonStore, writeLessonStore } = await import('@red-codes/kernel');
+        const { generateLesson, mergeLesson, readLessonStore, writeLessonStore } =
+          await import('@red-codes/kernel');
         const action = result.decision?.intent?.action ?? 'unknown';
         const reason = result.decision?.decision?.reason ?? 'Action flagged by governance';
         const squad = detectSquad(normalizedPayload as unknown as Record<string, unknown>);

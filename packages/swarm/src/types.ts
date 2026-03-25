@@ -74,7 +74,14 @@ export interface ScaffoldedAgent {
 
 // --- Squad hierarchy types ---
 
-export type SquadRank = 'director' | 'em' | 'product-lead' | 'architect' | 'senior' | 'junior' | 'qa';
+export type SquadRank =
+  | 'director'
+  | 'em'
+  | 'product-lead'
+  | 'architect'
+  | 'senior'
+  | 'junior'
+  | 'qa';
 export type AgentDriver = 'claude-code' | 'copilot-cli';
 export type AgentModel = 'opus' | 'sonnet' | 'haiku' | 'copilot';
 
@@ -89,7 +96,7 @@ export interface SquadAgent {
 
 export interface Squad {
   readonly name: string;
-  readonly repo: string;       // repo name or '*' for cross-repo
+  readonly repo: string; // repo name or '*' for cross-repo
   readonly em: SquadAgent;
   readonly agents: Readonly<Record<string, SquadAgent>>;
 }
@@ -116,11 +123,16 @@ export interface SquadState {
     readonly goal: string;
     readonly issues: readonly string[];
   };
-  readonly assignments: Readonly<Record<string, {
-    readonly current: string | null;
-    readonly status: string;
-    readonly waiting?: string;
-  }>>;
+  readonly assignments: Readonly<
+    Record<
+      string,
+      {
+        readonly current: string | null;
+        readonly status: string;
+        readonly waiting?: string;
+      }
+    >
+  >;
   readonly blockers: readonly string[];
   readonly prQueue: {
     readonly open: number;

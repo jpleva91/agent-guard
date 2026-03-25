@@ -148,12 +148,17 @@ mod tests {
         assert_eq!(TOOL_ACTION_MAP.get("Bash").unwrap(), "shell.exec");
         assert_eq!(TOOL_ACTION_MAP.get("Write").unwrap(), "file.write");
         assert_eq!(TOOL_ACTION_MAP.get("WebFetch").unwrap(), "http.request");
-        assert_eq!(TOOL_ACTION_MAP.len(), 37);
+        // Derive expected count from the JSON source to avoid hardcoded desync
+        let expected: HashMap<String, String> =
+            serde_json::from_str(TOOL_ACTION_MAP_JSON).unwrap();
+        assert_eq!(TOOL_ACTION_MAP.len(), expected.len());
     }
 
     #[test]
     fn test_git_patterns_compile() {
-        assert_eq!(GIT_ACTION_PATTERNS.len(), 8);
+        let expected: Vec<GitActionPatternRaw> =
+            serde_json::from_str(GIT_ACTION_PATTERNS_JSON).unwrap();
+        assert_eq!(GIT_ACTION_PATTERNS.len(), expected.len());
         assert_eq!(GIT_ACTION_PATTERNS[0].action_type, "git.worktree.add");
     }
 

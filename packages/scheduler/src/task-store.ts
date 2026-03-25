@@ -58,7 +58,22 @@ export class TaskStore {
     return this.tasks.get(id) ?? null;
   }
 
-  transition(id: string, newState: TaskState, patch?: Partial<Pick<Task, 'leaseOwner' | 'leaseExpiresAt' | 'startedAt' | 'finishedAt' | 'resultSummary' | 'attemptCount' | 'cooldownUntil'>>): Task {
+  transition(
+    id: string,
+    newState: TaskState,
+    patch?: Partial<
+      Pick<
+        Task,
+        | 'leaseOwner'
+        | 'leaseExpiresAt'
+        | 'startedAt'
+        | 'finishedAt'
+        | 'resultSummary'
+        | 'attemptCount'
+        | 'cooldownUntil'
+      >
+    >
+  ): Task {
     const task = this.tasks.get(id);
     if (!task) throw new Error(`Task ${id} not found`);
 
@@ -86,7 +101,7 @@ export class TaskStore {
         (t) =>
           t.state === 'queued' &&
           t.scheduledAt <= now &&
-          (!workerClass || t.workerClass === workerClass),
+          (!workerClass || t.workerClass === workerClass)
       )
       .sort((a, b) => {
         const pa = priorityOrder(a.priority);
@@ -99,7 +114,7 @@ export class TaskStore {
   /** Count active (leased + running) tasks per class */
   activeCount(workerClass: WorkerClass): number {
     return [...this.tasks.values()].filter(
-      (t) => t.workerClass === workerClass && (t.state === 'leased' || t.state === 'running'),
+      (t) => t.workerClass === workerClass && (t.state === 'leased' || t.state === 'running')
     ).length;
   }
 
@@ -133,10 +148,14 @@ export class TaskStore {
 
 function priorityOrder(p: Task['priority']): number {
   switch (p) {
-    case 'P0': return 0;
-    case 'P1': return 1;
-    case 'P2': return 2;
-    case 'P3': return 3;
+    case 'P0':
+      return 0;
+    case 'P1':
+      return 1;
+    case 'P2':
+      return 2;
+    case 'P3':
+      return 3;
   }
 }
 
@@ -147,7 +166,7 @@ function isTerminal(state: TaskState): boolean {
 export class DedupeError extends Error {
   constructor(
     public readonly dedupeKey: string,
-    public readonly existingTaskId: string,
+    public readonly existingTaskId: string
   ) {
     super(`Duplicate task: key=${dedupeKey} exists as ${existingTaskId}`);
     this.name = 'DedupeError';
@@ -157,7 +176,7 @@ export class DedupeError extends Error {
 export class InvalidTransitionError extends Error {
   constructor(
     public readonly from: TaskState,
-    public readonly to: TaskState,
+    public readonly to: TaskState
   ) {
     super(`Invalid transition: ${from} → ${to}`);
     this.name = 'InvalidTransitionError';

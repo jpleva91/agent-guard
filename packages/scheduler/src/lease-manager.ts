@@ -11,7 +11,7 @@ export class LeaseManager {
     resourceType: Lease['resourceType'],
     resourceKey: string,
     owner: string,
-    ttlMs: number = DEFAULT_LEASE_TTL_MS,
+    ttlMs: number = DEFAULT_LEASE_TTL_MS
   ): Lease | null {
     const key = leaseKey(resourceType, resourceKey);
     const existing = this.leases.get(key);
@@ -51,7 +51,7 @@ export class LeaseManager {
     resourceType: Lease['resourceType'],
     resourceKey: string,
     owner: string,
-    ttlMs: number = DEFAULT_LEASE_TTL_MS,
+    ttlMs: number = DEFAULT_LEASE_TTL_MS
   ): Lease | null {
     const key = leaseKey(resourceType, resourceKey);
     const existing = this.leases.get(key);

@@ -35,10 +35,11 @@ export function computeMetrics(store: TaskStore): QueueMetrics {
 
   // Retry rate
   const finishedTasks = tasks.filter(
-    (t) => t.state === 'succeeded' || t.state === 'failed_terminal' || t.state === 'dead_letter',
+    (t) => t.state === 'succeeded' || t.state === 'failed_terminal' || t.state === 'dead_letter'
   );
   const totalAttempts = finishedTasks.reduce((sum, t) => sum + t.attemptCount, 0);
-  const retryRate = finishedTasks.length > 0 ? (totalAttempts - finishedTasks.length) / finishedTasks.length : 0;
+  const retryRate =
+    finishedTasks.length > 0 ? (totalAttempts - finishedTasks.length) / finishedTasks.length : 0;
 
   const deadLetterCount = tasks.filter((t) => t.state === 'dead_letter').length;
 
