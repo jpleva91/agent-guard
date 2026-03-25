@@ -446,10 +446,7 @@ const COMMANDS: Record<string, CommandHelp> = {
     description: 'Trust a project-local policy file after risk review',
     usage: 'aguard trust <policy-file> [flags]',
     flags: [{ flag: '--yes, -y', description: 'Skip confirmation prompt' }],
-    examples: [
-      'aguard trust agentguard.yaml',
-      'aguard trust .agentguard/policy.yaml --yes',
-    ],
+    examples: ['aguard trust agentguard.yaml', 'aguard trust .agentguard/policy.yaml --yes'],
   },
   cloud: {
     name: 'aguard cloud',
