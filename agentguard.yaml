@@ -19,6 +19,14 @@ mode: guide
 # Policy pack — curated invariant enforcement profiles
 pack: essentials
 
+# Per-invariant mode overrides (override pack defaults)
+# Governance self-modification uses guide mode so agents get corrective
+# suggestions instead of hard blocks when referencing governance files.
+invariantModes:
+  no-governance-self-modification: guide
+  no-skill-modification: guide
+  no-scheduled-task-modification: guide
+
 rules:
   # Protected branches — prevent direct push to main/master
   - action: git.push
@@ -169,8 +177,7 @@ rules:
     effect: allow
     reason: GitHub state-changing operations allowed by default
 
-  # MCP tool invocations (add your MCP servers here)
-  # - action: mcp.call
-  #   effect: allow
-  #   target: "your-mcp-server"
-  #   reason: MCP server access allowed
+  # MCP tool invocations
+  - action: mcp.call
+    effect: allow
+    reason: MCP tool invocations allowed by default

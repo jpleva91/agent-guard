@@ -27,7 +27,6 @@
   "ExitPlanMode": "shell.exec",
   "EnterWorktree": "shell.exec",
   "ExitWorktree": "shell.exec",
-
   "create": "file.write",
   "edit": "file.write",
   "view": "file.read",
@@ -36,5 +35,9 @@
   "glob": "file.read",
   "grep": "file.read",
   "web_fetch": "http.request",
-  "task": "shell.exec"
+  "task": "shell.exec",
+  "RemoteTrigger": "mcp.call",
+  "LSP": "file.read",
+  "NotebookRead": "file.read",
+  "KillShell": "shell.exec"
 }
