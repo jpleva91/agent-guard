@@ -1,6 +1,6 @@
 {
   "name": "aguard",
-  "version": "2.7.0",
+  "version": "2.7.1",
   "description": "Agent Guard — run AI agents without fear. Installs @red-codes/agentguard.",
   "license": "Apache-2.0",
   "type": "module",
@@ -13,7 +13,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@red-codes/agentguard": "^2.7.0"
+    "@red-codes/agentguard": "^2.7.1"
   },
   "repository": {
     "type": "git",
