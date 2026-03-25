@@ -1,0 +1,91 @@
+{
+  "generatedAt": "2026-03-25T08:35:00.000Z",
+  "identity": "claude-code:opus:kernel:em",
+  "runCycle": "3h",
+  "health": "yellow",
+  "summary": "Squad is active with 2 open PRs. PR #869 (fix/rust-kernel CI count desync) is fully green and awaiting architect review. PR #870 (Go kernel rewrite + 9-squad swarm expansion) is failing CI on 'lint' and 'rust-kernel' jobs — this is the primary blocker this cycle. No P0/P1 issues open in the tracker. Sprint goal has been set to reflect active work.",
+  "prQueue": {
+    "open": 2,
+    "prs": [
+      {
+        "number": 869,
+        "title": "fix(rust-kernel): derive data test counts from JSON source (#867)",
+        "branch": "fix/rust-kernel-tool-action-map-count-867",
+        "ci": "green",
+        "checks": {
+          "CodeQL": "success",
+          "test-and-build": "success",
+          "analyze": "success",
+          "rust-kernel": "success",
+          "lint": "success",
+          "bench": "success"
+        },
+        "reviews": 0,
+        "status": "awaiting_review",
+        "action": "Flag for architect review — CI fully green, ready to merge once approved"
+      },
+      {
+        "number": 870,
+        "title": "feat: Go kernel rewrite + 9-squad swarm org",
+        "branch": "feat/squad-swarm-spec",
+        "ci": "failing",
+        "checks": {
+          "CodeQL": "success",
+          "test-and-build": "success",
+          "analyze": "success",
+          "lint": "failure",
+          "rust-kernel": "failure"
+        },
+        "reviews": 0,
+        "status": "ci_failing",
+        "action": "Must fix lint and rust-kernel CI failures before review or merge"
+      }
+    ]
+  },
+  "loopGuards": {
+    "prBudget": {
+      "open": 2,
+      "max": 3,
+      "pass": true
+    },
+    "retryLoops": {
+      "stuckAgents": 0,
+      "pass": true
+    },
+    "blastRadius": {
+      "withinLimits": true,
+      "pass": true
+    }
+  },
+  "triage": {
+    "p0Issues": 0,
+    "p1Issues": 0,
+    "newAssignments": []
+  },
+  "blockers": [
+    {
+      "id": "ci-failure-pr-870",
+      "pr": 870,
+      "description": "PR #870 (Go kernel rewrite) failing CI: 'lint' and 'rust-kernel' jobs. Must be resolved before merge.",
+      "firstSeen": "2026-03-25T08:35:00.000Z",
+      "runCount": 1,
+      "escalate": false
+    }
+  ],
+  "escalations": [],
+  "metrics": {
+    "prsOpened": 2,
+    "prsMerged": 0,
+    "issuesClosed": 0,
+    "governanceDenials": 0,
+    "retries": 0
+  },
+  "escalationRules": {
+    "triggered": {
+      "twoPlusFailingCI": false,
+      "persistentBlocker": false,
+      "governanceDenialsExceeded": false
+    },
+    "notes": "1 PR failing CI (below 2-PR threshold for yellow, but flagged yellow due to severity of failures on large feature branch)"
+  }
+}
