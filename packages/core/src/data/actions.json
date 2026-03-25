@@ -22,6 +22,7 @@
     "git.diff": { "class": "git", "description": "View git diff" },
     "git.commit": { "class": "git", "description": "Create a git commit" },
     "git.push": { "class": "git", "description": "Push to remote" },
+    "git.force-push": { "class": "git", "description": "Force push to remote (rewrites history)" },
     "git.branch.create": { "class": "git", "description": "Create a branch" },
     "git.branch.delete": { "class": "git", "description": "Delete a branch" },
     "git.checkout": { "class": "git", "description": "Switch branches" },

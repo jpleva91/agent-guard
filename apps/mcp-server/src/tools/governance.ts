@@ -15,6 +15,7 @@ import {
   createGitSimulator,
   createFilesystemSimulator,
   createPackageSimulator,
+  createShellSimulator,
   createDependencyGraphSimulator,
 } from '@red-codes/kernel';
 import type { McpConfig } from '../config.js';
@@ -41,6 +42,7 @@ function buildSimulatorRegistry() {
   registry.register(createGitSimulator());
   registry.register(createFilesystemSimulator());
   registry.register(createPackageSimulator());
+  registry.register(createShellSimulator());
   registry.register(createDependencyGraphSimulator());
   return registry;
 }

@@ -10,6 +10,7 @@ import {
   createGitSimulator,
   createFilesystemSimulator,
   createPackageSimulator,
+  createShellSimulator,
   simulatePlan,
   createDependencyGraphSimulator,
 } from '@red-codes/kernel';
@@ -297,6 +298,7 @@ function printUsage(): void {
     git.push, git.merge,          → Git simulator
     git.force-push, git.branch.delete
     shell.exec (npm/yarn/pnpm)    → Package simulator
+    shell.exec (general)          → Shell simulator (destructive pattern analysis)
 
   ${bold('Plan file format:')}
     [
@@ -411,6 +413,7 @@ export async function simulate(args: string[], options: SimulateOptions = {}): P
   simulators.register(createFilesystemSimulator());
   simulators.register(createDependencyGraphSimulator());
   simulators.register(createPackageSimulator());
+  simulators.register(createShellSimulator());
 
   // Plan mode: simulate a batch of actions
   if (planPath) {
@@ -478,7 +481,7 @@ export async function simulate(args: string[], options: SimulateOptions = {}): P
         `  ${color('No simulator available', 'yellow')} for action ${bold(intent.action)}\n`
       );
       process.stderr.write(
-        `  ${dim('Supported:')} file.write, file.delete, git.push, git.merge, git.force-push, git.branch.delete, shell.exec (npm/yarn/pnpm)\n`
+        `  ${dim('Supported:')} file.write, file.delete, git.push, git.merge, git.force-push, git.branch.delete, shell.exec\n`
       );
     }
     return EXIT_INPUT_ERROR;
