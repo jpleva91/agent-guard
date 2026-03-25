@@ -1,0 +1,15 @@
+[
+  { "patterns": ["\\bgh\\s+pr\\s+list\\b"], "actionType": "github.pr.list" },
+  { "patterns": ["\\bgh\\s+pr\\s+(create|new)\\b"], "actionType": "github.pr.create" },
+  { "patterns": ["\\bgh\\s+pr\\s+merge\\b"], "actionType": "github.pr.merge" },
+  { "patterns": ["\\bgh\\s+pr\\s+(close|delete)\\b"], "actionType": "github.pr.close" },
+  { "patterns": ["\\bgh\\s+pr\\s+view\\b"], "actionType": "github.pr.view" },
+  { "patterns": ["\\bgh\\s+pr\\s+checks\\b"], "actionType": "github.pr.checks" },
+  { "patterns": ["\\bgh\\s+issue\\s+list\\b"], "actionType": "github.issue.list" },
+  { "patterns": ["\\bgh\\s+issue\\s+(create|new)\\b"], "actionType": "github.issue.create" },
+  { "patterns": ["\\bgh\\s+issue\\s+close\\b"], "actionType": "github.issue.close" },
+  { "patterns": ["\\bgh\\s+release\\s+create\\b"], "actionType": "github.release.create" },
+  { "patterns": ["\\bgh\\s+run\\s+list\\b"], "actionType": "github.run.list" },
+  { "patterns": ["\\bgh\\s+run\\s+view\\b"], "actionType": "github.run.view" },
+  { "patterns": ["\\bgh\\s+api\\b"], "actionType": "github.api" }
+]

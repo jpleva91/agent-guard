@@ -1,0 +1,10 @@
+[
+  { "patterns": ["\\bgit\\s+worktree\\s+add\\b"], "actionType": "git.worktree.add" },
+  { "patterns": ["\\bgit\\s+worktree\\s+remove\\b", "\\bgit\\s+worktree\\s+prune\\b"], "actionType": "git.worktree.remove" },
+  { "patterns": ["\\bgit\\s+worktree\\s+list\\b"], "actionType": "git.worktree.list" },
+  { "patterns": ["\\bgit\\s+push\\s+--force\\b", "\\bgit\\s+push\\s+-f\\b"], "actionType": "git.force-push" },
+  { "patterns": ["\\bgit\\s+push\\b"], "actionType": "git.push" },
+  { "patterns": ["\\bgit\\s+branch\\s+-[dD]\\b"], "actionType": "git.branch.delete" },
+  { "patterns": ["\\bgit\\s+merge\\b"], "actionType": "git.merge" },
+  { "patterns": ["\\bgit\\s+commit\\b"], "actionType": "git.commit" }
+]
