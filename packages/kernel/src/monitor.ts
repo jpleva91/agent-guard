@@ -94,7 +94,8 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
   const denialThreshold = config.denialThreshold ?? ESCALATION_DEFAULTS.denialThreshold;
   const violationThreshold = config.violationThreshold ?? ESCALATION_DEFAULTS.violationThreshold;
   const windowSize = config.windowSize ?? ESCALATION_DEFAULTS.windowSize;
-  const denialRetryThreshold = config.denialRetryThreshold ?? ESCALATION_DEFAULTS.denialRetryThreshold;
+  const denialRetryThreshold =
+    config.denialRetryThreshold ?? ESCALATION_DEFAULTS.denialRetryThreshold;
   const clock = config.now ?? Date.now;
 
   let totalEvaluations = 0;
