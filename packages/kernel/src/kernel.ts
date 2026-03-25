@@ -371,6 +371,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                       totalViolations: 0,
                       windowedDenials: 0,
                       windowedViolations: 0,
+                      denialRetryEscalation: false,
                     },
                   };
 
@@ -515,6 +516,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
                 totalViolations: 0,
                 windowedDenials: 0,
                 windowedViolations: 0,
+                denialRetryEscalation: false,
               };
 
               const fastDecision: MonitorDecision = {

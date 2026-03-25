@@ -8,7 +8,7 @@ import type { EngineConfig, EngineDecision } from './decision.js';
 import type { RawAgentAction } from './aab.js';
 import { isActionContext } from './aab.js';
 import { EventBus, createInMemoryStore } from '@red-codes/events';
-import { createEvent, STATE_CHANGED } from '@red-codes/events';
+import { createEvent, STATE_CHANGED, INVARIANT_VIOLATION } from '@red-codes/events';
 
 export const ESCALATION = {
   NORMAL: ESCALATION_LEVELS.NORMAL,
@@ -33,6 +33,8 @@ export interface MonitorState {
   totalViolations: number;
   windowedDenials: number;
   windowedViolations: number;
+  /** True when a single (actionType, target) pair exceeded the denial retry threshold */
+  denialRetryEscalation: boolean;
 }
 
 export interface MonitorDecision extends EngineDecision {
@@ -46,11 +48,14 @@ export interface MonitorConfig extends EngineConfig {
   windowSize?: number;
   /** Injectable clock for testing (default: Date.now) */
   now?: () => number;
+  /** Max retries per (actionType, target) pair before escalating to LOCKDOWN (default: 3) */
+  denialRetryThreshold?: number;
 }
 
 interface RecentDenial {
   timestamp: number;
   action: string;
+  target: string;
   reason: string;
 }
 
@@ -89,6 +94,7 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
   const denialThreshold = config.denialThreshold ?? ESCALATION_DEFAULTS.denialThreshold;
   const violationThreshold = config.violationThreshold ?? ESCALATION_DEFAULTS.violationThreshold;
   const windowSize = config.windowSize ?? ESCALATION_DEFAULTS.windowSize;
+  const denialRetryThreshold = config.denialRetryThreshold ?? ESCALATION_DEFAULTS.denialRetryThreshold;
   const clock = config.now ?? Date.now;
 
   let totalEvaluations = 0;
@@ -98,6 +104,9 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
   const violationsByInvariant = new Map<string, number>();
   const recentDenials: RecentDenial[] = [];
   const recentViolations: RecentViolation[] = [];
+  /** Per-(actionType, target) denial counts for retry detection */
+  const denialRetryMap = new Map<string, number>();
+  let denialRetryEscalation = false;
   let escalationLevel: EscalationLevel = ESCALATION.NORMAL;
   const sessionStartTime = clock();
 
@@ -118,6 +127,7 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
     const previousLevel = escalationLevel;
 
     if (
+      denialRetryEscalation ||
       windowedDenialCount >= denialThreshold * 2 ||
       windowedViolationCount >= violationThreshold * 2
     ) {
@@ -197,6 +207,7 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
             totalViolations,
             windowedDenials: recentDenials.length,
             windowedViolations: recentViolations.length,
+            denialRetryEscalation,
           },
         };
         bus.emit('lockdown-denial', lockedResult as unknown as Record<string, unknown>);
@@ -211,11 +222,41 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
         const agent = result.intent.agent || 'unknown';
         denialsByAgent.set(agent, (denialsByAgent.get(agent) || 0) + 1);
 
+        const target = result.intent.target || '';
         recentDenials.push({
           timestamp: clock(),
           action: result.intent.action,
+          target,
           reason: result.decision.reason,
         });
+
+        // Track per-(actionType, target) denial retries
+        const retryKey = `${result.intent.action}::${target}`;
+        const retryCount = (denialRetryMap.get(retryKey) || 0) + 1;
+        denialRetryMap.set(retryKey, retryCount);
+
+        if (retryCount >= denialRetryThreshold && !denialRetryEscalation) {
+          denialRetryEscalation = true;
+
+          const retryEvent = createEvent(INVARIANT_VIOLATION, {
+            invariant: 'denial-retry-escalation',
+            expected: `No more than ${denialRetryThreshold - 1} denied retries for same (actionType, target)`,
+            actual: `${retryCount} denials for (${result.intent.action}, ${target})`,
+            metadata: {
+              name: 'Denial Retry Escalation',
+              severity: 4,
+              description:
+                'Agent retried the same denied action too many times — escalated to LOCKDOWN',
+              actionType: result.intent.action,
+              target,
+              retryCount,
+              threshold: denialRetryThreshold,
+            },
+          });
+          store.append(retryEvent);
+          bus.emit(INVARIANT_VIOLATION, retryEvent as unknown as Record<string, unknown>);
+          bus.emit('*', retryEvent as unknown as Record<string, unknown>);
+        }
       }
 
       for (const v of result.violations) {
@@ -242,6 +283,7 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
           totalViolations,
           windowedDenials: recentDenials.length,
           windowedViolations: recentViolations.length,
+          denialRetryEscalation,
         },
       };
     },
@@ -259,6 +301,9 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
         totalViolations,
         windowedDenials: recentDenials.length,
         windowedViolations: recentViolations.length,
+        denialRetryEscalation,
+        denialRetryThreshold,
+        denialRetryCounts: Object.fromEntries(denialRetryMap),
         denialsByAgent: Object.fromEntries(denialsByAgent),
         violationsByInvariant: Object.fromEntries(violationsByInvariant),
         recentDenials: [...recentDenials],
@@ -275,6 +320,8 @@ export function createMonitor(config: MonitorConfig = {}): Monitor {
       escalationLevel = ESCALATION.NORMAL;
       totalDenials = 0;
       totalViolations = 0;
+      denialRetryEscalation = false;
+      denialRetryMap.clear();
       denialsByAgent.clear();
       violationsByInvariant.clear();
       recentDenials.length = 0;

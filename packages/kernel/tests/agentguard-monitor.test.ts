@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createMonitor, ESCALATION } from '@red-codes/kernel';
-import { STATE_CHANGED } from '@red-codes/events';
+import { STATE_CHANGED, INVARIANT_VIOLATION } from '@red-codes/events';
 import type { DomainEvent } from '@red-codes/core';
 
 describe('agentguard/monitor', () => {
@@ -707,6 +707,250 @@ describe('agentguard/monitor', () => {
       const evt = stateEvents[0] as unknown as Record<string, unknown>;
       expect(evt.windowedDenials).toBe(1);
       expect(evt.windowedViolations).toBe(0);
+    });
+  });
+
+  describe('denial-retry-escalation', () => {
+    it('escalates to LOCKDOWN when same (actionType, target) is denied 3 times', () => {
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-writes',
+            name: 'Deny Writes',
+            rules: [{ action: 'file.write', effect: 'deny', reason: 'Read-only' }],
+          },
+        ],
+        // Use high denial threshold so normal escalation doesn't interfere
+        denialThreshold: 100,
+        denialRetryThreshold: 3,
+      });
+
+      // Deny the same (file.write, src/a.ts) 3 times
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      const r3 = monitor.process({ tool: 'Write', file: 'src/a.ts' });
+
+      expect(r3.monitor.escalationLevel).toBe(ESCALATION.LOCKDOWN);
+      expect(r3.monitor.denialRetryEscalation).toBe(true);
+    });
+
+    it('does not escalate when different targets are denied', () => {
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-writes',
+            name: 'Deny Writes',
+            rules: [{ action: 'file.write', effect: 'deny', reason: 'Read-only' }],
+          },
+        ],
+        denialThreshold: 100,
+        denialRetryThreshold: 3,
+      });
+
+      // Deny different targets — each (actionType, target) pair only has 1 denial
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/b.ts' });
+      const r3 = monitor.process({ tool: 'Write', file: 'src/c.ts' });
+
+      expect(r3.monitor.escalationLevel).toBe(ESCALATION.NORMAL);
+      expect(r3.monitor.denialRetryEscalation).toBe(false);
+    });
+
+    it('does not escalate when different action types hit the same target', () => {
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
+        denialThreshold: 100,
+        denialRetryThreshold: 3,
+      });
+
+      // Different action types for the same target
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Read', file: 'src/a.ts' });
+      const r3 = monitor.process({ tool: 'Bash', command: 'cat src/a.ts' });
+
+      expect(r3.monitor.denialRetryEscalation).toBe(false);
+    });
+
+    it('emits InvariantViolation event when threshold is breached', () => {
+      const violationEvents: DomainEvent[] = [];
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-writes',
+            name: 'Deny Writes',
+            rules: [{ action: 'file.write', effect: 'deny', reason: 'Read-only' }],
+          },
+        ],
+        denialThreshold: 100,
+        denialRetryThreshold: 3,
+      });
+
+      monitor.bus.on(INVARIANT_VIOLATION, (event) => {
+        violationEvents.push(event as unknown as DomainEvent);
+      });
+
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+
+      const violations = violationEvents.filter(
+        (e) =>
+          (e as unknown as Record<string, unknown>).invariant === 'denial-retry-escalation'
+      );
+      expect(violations).toHaveLength(1);
+
+      const evt = violations[0] as unknown as Record<string, unknown>;
+      expect(evt.invariant).toBe('denial-retry-escalation');
+      expect((evt.metadata as Record<string, unknown>).retryCount).toBe(3);
+      expect((evt.metadata as Record<string, unknown>).severity).toBe(4);
+    });
+
+    it('only emits InvariantViolation once even with more retries', () => {
+      const violationEvents: DomainEvent[] = [];
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-writes',
+            name: 'Deny Writes',
+            rules: [{ action: 'file.write', effect: 'deny', reason: 'Read-only' }],
+          },
+        ],
+        denialThreshold: 100,
+        denialRetryThreshold: 2,
+      });
+
+      monitor.bus.on(INVARIANT_VIOLATION, (event) => {
+        violationEvents.push(event as unknown as DomainEvent);
+      });
+
+      // Exceed threshold multiple times
+      for (let i = 0; i < 5; i++) {
+        monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      }
+
+      const violations = violationEvents.filter(
+        (e) =>
+          (e as unknown as Record<string, unknown>).invariant === 'denial-retry-escalation'
+      );
+      expect(violations).toHaveLength(1);
+    });
+
+    it('denial retry LOCKDOWN is sticky — does not decay with time', () => {
+      let time = 1000;
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-writes',
+            name: 'Deny Writes',
+            rules: [{ action: 'file.write', effect: 'deny', reason: 'Read-only' }],
+          },
+          {
+            id: 'allow-reads',
+            name: 'Allow Reads',
+            rules: [{ action: 'file.read', effect: 'allow' }],
+          },
+        ],
+        denialThreshold: 100,
+        denialRetryThreshold: 3,
+        windowSize: 5000,
+        now: () => time,
+      });
+
+      // Trigger denial-retry LOCKDOWN
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      expect(monitor.getEscalationLevel()).toBe(ESCALATION.LOCKDOWN);
+
+      // Advance time past the window — normal denials would decay
+      time = 100000;
+      const result = monitor.process({ tool: 'Read', file: 'src/a.ts' });
+
+      // Still LOCKDOWN because denial-retry is sticky
+      expect(result.monitor.escalationLevel).toBe(ESCALATION.LOCKDOWN);
+      expect(result.monitor.denialRetryEscalation).toBe(true);
+    });
+
+    it('resetEscalation clears denial retry state', () => {
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-writes',
+            name: 'Deny Writes',
+            rules: [{ action: 'file.write', effect: 'deny', reason: 'Read-only' }],
+          },
+          {
+            id: 'allow-reads',
+            name: 'Allow Reads',
+            rules: [{ action: 'file.read', effect: 'allow' }],
+          },
+        ],
+        denialThreshold: 100,
+        denialRetryThreshold: 3,
+      });
+
+      // Trigger denial-retry LOCKDOWN
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      expect(monitor.getEscalationLevel()).toBe(ESCALATION.LOCKDOWN);
+
+      monitor.resetEscalation();
+      expect(monitor.getEscalationLevel()).toBe(ESCALATION.NORMAL);
+
+      // Denial retry counts should be cleared
+      const result = monitor.process({ tool: 'Read', file: 'src/a.ts' });
+      expect(result.monitor.denialRetryEscalation).toBe(false);
+    });
+
+    it('getStatus includes denial retry information', () => {
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-writes',
+            name: 'Deny Writes',
+            rules: [{ action: 'file.write', effect: 'deny', reason: 'Read-only' }],
+          },
+        ],
+        denialThreshold: 100,
+        denialRetryThreshold: 5,
+      });
+
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+
+      const status = monitor.getStatus();
+      expect(status.denialRetryEscalation).toBe(false);
+      expect(status.denialRetryThreshold).toBe(5);
+      expect(status.denialRetryCounts).toEqual({ 'file.write::src/a.ts': 2 });
+    });
+
+    it('uses default threshold of 3 when not configured', () => {
+      const monitor = createMonitor({
+        policyDefs: [
+          {
+            id: 'deny-writes',
+            name: 'Deny Writes',
+            rules: [{ action: 'file.write', effect: 'deny', reason: 'Read-only' }],
+          },
+        ],
+        denialThreshold: 100,
+      });
+
+      // Default denialRetryThreshold is 3
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      monitor.process({ tool: 'Write', file: 'src/a.ts' });
+      const r2 = monitor.process({ tool: 'Write', file: 'src/a.ts' });
+
+      // Should trigger on the 3rd retry (default threshold)
+      expect(r2.monitor.denialRetryEscalation).toBe(true);
+      expect(r2.monitor.escalationLevel).toBe(ESCALATION.LOCKDOWN);
     });
   });
 });
