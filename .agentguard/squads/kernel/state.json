@@ -4,7 +4,15 @@
     "goal": "Post-v2.6.0 stabilization complete. Monitoring CI health and tracking new issues.",
     "issues": []
   },
-  "assignments": {},
+  "assignments": {
+    "senior": {
+      "issue": 640,
+      "title": "Policy scope matching vulnerable to path manipulation",
+      "status": "pr-created",
+      "branch": "agent/kernel-sr-20260325-193002",
+      "claimedAt": "2026-03-25T19:30:00.000Z"
+    }
+  },
   "blockers": [],
   "prQueue": {
     "open": 0,

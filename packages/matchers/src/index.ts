@@ -83,3 +83,4 @@ export { CommandScanner } from './command-scanner.js';
 export { PathMatcher } from './path-matcher.js';
 export type { PathPatternInput } from './path-matcher.js';
 export { PolicyMatcher } from './policy-matcher.js';
+export { canonicalizePath } from './canonicalize-path.js';

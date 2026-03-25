@@ -1,4 +1,5 @@
 import picomatch from 'picomatch';
+import { canonicalizePath } from './canonicalize-path.js';
 
 // ─── PolicyMatcher ──────────────────────────────────────────────────────────
 
@@ -55,11 +56,14 @@ export class PolicyMatcher {
     // Empty target = no match
     if (!target) return false;
 
-    // Normalize backslashes to forward slashes
-    const normalized = target.replace(/\\/g, '/');
+    // Canonicalize target: decode URL-encoding, resolve traversal, normalize separators
+    const normalized = canonicalizePath(target);
+
+    // Reject if canonicalization emptied the path (e.g. pure traversal)
+    if (!normalized) return false;
 
     for (const pattern of scopePatterns) {
-      // Normalize pattern backslashes too
+      // Canonicalize pattern (separators + traversal only, no URL-decoding for patterns)
       const normalizedPattern = pattern.replace(/\\/g, '/');
 
       // Wildcard matches everything
