@@ -631,6 +631,74 @@ describe('claudeInit', () => {
     expect(skillWrites).toHaveLength(0);
   });
 
+  // --- .agentguard-identity file creation (#850) ---
+
+  it('creates .agentguard-identity file during fresh install', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit(['--role', 'developer']);
+
+    const identityCalls = writeCalls('.agentguard-identity');
+    expect(identityCalls).toHaveLength(1);
+    const content = identityCalls[0][1] as string;
+    // Format: driver:model:role
+    expect(content).toMatch(/^.+:.+:developer$/);
+  });
+
+  it('does not overwrite existing .agentguard-identity file', async () => {
+    vi.mocked(existsSync).mockImplementation((p: unknown) => {
+      const path = String(p);
+      if (path.endsWith('.agentguard-identity')) return true;
+      return false;
+    });
+
+    await claudeInit([]);
+
+    const identityCalls = writeCalls('.agentguard-identity');
+    expect(identityCalls).toHaveLength(0);
+  });
+
+  it('creates .agentguard-identity during --refresh if missing', async () => {
+    // Simulate existing settings with a hook (so --refresh path is taken)
+    vi.mocked(existsSync).mockImplementation((p: unknown) => {
+      const path = String(p);
+      if (path.includes('settings.json')) return true;
+      // .agentguard-identity does NOT exist
+      if (path.endsWith('.agentguard-identity')) return false;
+      return false;
+    });
+    vi.mocked(readFileSync).mockReturnValue(
+      JSON.stringify({
+        hooks: {
+          PreToolUse: [
+            {
+              hooks: [{ type: 'command', command: 'bash scripts/claude-hook-wrapper.sh' }],
+            },
+          ],
+        },
+      })
+    );
+
+    await claudeInit(['--refresh']);
+
+    const identityCalls = writeCalls('.agentguard-identity');
+    expect(identityCalls).toHaveLength(1);
+    const content = identityCalls[0][1] as string;
+    expect(content).toMatch(/^.+:.+:.+$/);
+  });
+
+  it('uses detected driver and model in .agentguard-identity', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit(['--role', 'security']);
+
+    const identityCalls = writeCalls('.agentguard-identity');
+    expect(identityCalls).toHaveLength(1);
+    const content = identityCalls[0][1] as string;
+    // Mock returns human:unknown, role is security
+    expect(content).toBe('human:unknown:security');
+  });
+
   it('appends identity block to existing CLAUDE.md', async () => {
     vi.mocked(existsSync).mockImplementation((p: unknown) => {
       const path = String(p);

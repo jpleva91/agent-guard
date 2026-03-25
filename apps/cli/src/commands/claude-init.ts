@@ -1,7 +1,7 @@
 // agentguard claude-init — set up Claude Code integration
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { execSync, execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { createInterface } from 'node:readline';
@@ -135,15 +135,51 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     process.stderr.write(
       `  ${FG.green}✓${RESET}  Hook baseline refreshed for ${settingsLabel}\n\n`
     );
+
+    // Ensure .agentguard-identity exists even on --refresh (fresh worktrees/clones won't have it)
+    const refreshRepoRoot = resolveMainRepoRoot();
+    const refreshIdentityPath = join(refreshRepoRoot, '.agentguard-identity');
+    if (!existsSync(refreshIdentityPath)) {
+      const refreshDriver = driverArg ?? detectDriver();
+      const refreshModel = detectModel();
+      const refreshRole = roleArg ?? 'developer';
+      writeFileSync(refreshIdentityPath, `${refreshDriver}:${refreshModel}:${refreshRole}`);
+      process.stderr.write(
+        `  ${FG.green}✓${RESET}  Identity file created: ${FG.cyan}.agentguard-identity${RESET}\n\n`
+      );
+    }
+
     return;
   }
 
   if (hasAgentGuardHook(settings)) {
-    process.stderr.write(
-      `  ${FG.yellow}Already configured.${RESET} AgentGuard hook found in ${settingsLabel}.\n`
-    );
-    process.stderr.write(`  ${DIM}Use --remove to uninstall.${RESET}\n\n`);
-    return;
+    // Hooks exist in settings — but verify referenced scripts/binaries are intact
+    const integrity = validateHookIntegrity();
+    if (!integrity.ok || !integrity.binaryResolved) {
+      const issues: string[] = [];
+      if (integrity.missingScripts.length > 0) {
+        issues.push(`missing scripts: ${integrity.missingScripts.join(', ')}`);
+      }
+      if (!integrity.binaryResolved) {
+        issues.push('agentguard binary not found');
+      }
+      process.stderr.write(
+        `  ${FG.yellow}Hooks are configured but some referenced scripts are missing:${RESET}\n`
+      );
+      for (const issue of issues) {
+        process.stderr.write(`    ${FG.red}✗${RESET} ${issue}\n`);
+      }
+      process.stderr.write(
+        `  ${DIM}Continuing with init to repair...${RESET}\n\n`
+      );
+      // Fall through to re-run init and repair the broken state
+    } else {
+      process.stderr.write(
+        `  ${FG.yellow}Already configured.${RESET} AgentGuard hook found in ${settingsLabel}.\n`
+      );
+      process.stderr.write(`  ${DIM}Use --remove to uninstall.${RESET}\n\n`);
+      return;
+    }
   }
 
   // Parse --mode and --pack flags for non-interactive mode
@@ -337,6 +373,20 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   process.stderr.write(
     `  ${FG.green}✓${RESET}  Identity set: ${FG.cyan}${driver}:${model}:${selectedRole}${RESET} (project: ${project})\n`
   );
+
+  // Create .agentguard-identity file (gitignored — each clone/worktree creates its own).
+  // This file is required by the PreToolUse hook; without it all tool calls are blocked (#850).
+  // For CI/cron agents, AGENTGUARD_AGENT_NAME env var overrides this file at runtime.
+  const identityFilePath = join(repoRoot, '.agentguard-identity');
+  if (!existsSync(identityFilePath)) {
+    writeFileSync(identityFilePath, `${driver}:${model}:${selectedRole}`);
+    process.stderr.write(
+      `  ${FG.green}✓${RESET}  Identity file created: ${FG.cyan}.agentguard-identity${RESET}\n`
+    );
+    process.stderr.write(
+      `  ${DIM}   CI/cron agents: set AGENTGUARD_AGENT_NAME env var to override${RESET}\n`
+    );
+  }
 
   // Scaffold starter skills
   if (!noSkills) {
@@ -597,6 +647,10 @@ description: Baseline safety rules for AI coding agents
 #   enforce — block dangerous actions, no suggestions
 mode: ${mode}
 
+# Agent identity: defaults to .agentguard-identity file (created by claude-init).
+# For CI/cron agents, set AGENTGUARD_AGENT_NAME env var to override.
+# e.g., AGENTGUARD_AGENT_NAME=ci:github-actions:ops
+
 # Policy pack — curated invariant enforcement profiles
 ${packLine}
 
@@ -785,4 +839,56 @@ function hasAgentGuardHook(settings: Settings): boolean {
     const hooks = entry.hooks || [];
     return hooks.some((h) => h.command && h.command.includes(HOOK_MARKER));
   });
+}
+
+/** Wrapper scripts that hooks may reference. */
+const WRAPPER_SCRIPTS = [
+  'scripts/claude-hook-wrapper.sh',
+  'scripts/session-persona-check.sh',
+  'scripts/agent-identity-bridge.sh',
+  'scripts/write-persona.sh',
+];
+
+interface HookIntegrityResult {
+  ok: boolean;
+  missingScripts: string[];
+  binaryResolved: boolean;
+}
+
+/** Validate that hook-referenced scripts and binaries actually exist on disk. */
+export function validateHookIntegrity(): HookIntegrityResult {
+  const repoRoot = resolveMainRepoRoot();
+  const missingScripts: string[] = [];
+
+  for (const script of WRAPPER_SCRIPTS) {
+    const scriptPath = join(repoRoot, script);
+    if (!existsSync(scriptPath)) {
+      missingScripts.push(script);
+    }
+  }
+
+  // Check if the agentguard binary can be resolved
+  let binaryResolved = false;
+  const localBinPath = join(repoRoot, 'node_modules', '.bin', 'agentguard');
+  if (existsSync(localBinPath)) {
+    binaryResolved = true;
+  } else {
+    // Check PATH via execFileSync (safe — no shell injection)
+    try {
+      execFileSync('which', ['agentguard'], { stdio: 'pipe', timeout: 3000 });
+      binaryResolved = true;
+    } catch {
+      // Also check if we're in local dev mode (apps/cli/dist/bin.js exists)
+      const localDevBin = join(repoRoot, 'apps', 'cli', 'dist', 'bin.js');
+      if (existsSync(localDevBin)) {
+        binaryResolved = true;
+      }
+    }
+  }
+
+  return {
+    ok: missingScripts.length === 0,
+    missingScripts,
+    binaryResolved,
+  };
 }

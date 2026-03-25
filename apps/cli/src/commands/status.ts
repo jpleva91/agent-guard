@@ -1,11 +1,11 @@
 // agentguard status — quick health check for AgentGuard governance runtime
 
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname, parse as parsePath } from 'node:path';
 import { homedir } from 'node:os';
 import { RESET, BOLD, DIM, FG } from '../colors.js';
 import { findDefaultPolicy } from '../policy-resolver.js';
-import { detectRtk } from '@red-codes/core';
+import { detectRtk, resolveMainRepoRoot } from '@red-codes/core';
 
 interface HookEntry {
   hooks?: Array<{ type?: string; command?: string }>;
@@ -79,6 +79,14 @@ export async function status(args: string[]): Promise<number> {
 
   // Directories
   printCheck(checks.dirs.ok, 'Event directories', checks.dirs.detail);
+
+  // Agent identity (informational — does not affect exit code)
+  const identityCheck = checkAgentIdentity();
+  printCheck(identityCheck.ok, 'Agent identity', identityCheck.detail);
+
+  // Hook scripts (informational — does not affect exit code)
+  const hookScriptsCheck = checkHookScripts();
+  printCheck(hookScriptsCheck.ok, 'Hook scripts', hookScriptsCheck.detail);
 
   // Token optimization (optional — does not affect exit code)
   const rtkCheck = checkRtkInstalled();
@@ -223,6 +231,73 @@ async function checkPolicyTrust(): Promise<{ ok: boolean; detail: string }> {
   } catch {
     return { ok: false, detail: '(trust check unavailable)' };
   }
+}
+
+/** Walk up from CWD looking for .agentguard-identity (same resolution as claude-hook.ts). */
+function findAgentIdentityFile(): string | null {
+  let dir = process.cwd();
+  const fsRoot = parsePath(dir).root;
+  while (dir !== fsRoot) {
+    const candidate = join(dir, '.agentguard-identity');
+    if (existsSync(candidate)) return candidate;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+}
+
+export function checkAgentIdentity(): { ok: boolean; detail: string } {
+  const identityPath = findAgentIdentityFile();
+  if (!identityPath) {
+    return {
+      ok: false,
+      detail: '(missing — will be created on first Claude session)',
+    };
+  }
+  try {
+    const value = readFileSync(identityPath, 'utf8').trim();
+    if (value) {
+      return { ok: true, detail: `(${value})` };
+    }
+    return {
+      ok: false,
+      detail: '(empty — will be set on first Claude session)',
+    };
+  } catch {
+    return {
+      ok: false,
+      detail: '(unreadable — will be recreated on first Claude session)',
+    };
+  }
+}
+
+/** Wrapper scripts referenced by hooks. */
+const WRAPPER_SCRIPTS = [
+  'scripts/claude-hook-wrapper.sh',
+  'scripts/session-persona-check.sh',
+  'scripts/agent-identity-bridge.sh',
+  'scripts/write-persona.sh',
+];
+
+export function checkHookScripts(): { ok: boolean; detail: string } {
+  const repoRoot = resolveMainRepoRoot();
+  const missing: string[] = [];
+
+  for (const script of WRAPPER_SCRIPTS) {
+    const scriptPath = join(repoRoot, script);
+    if (!existsSync(scriptPath)) {
+      missing.push(script);
+    }
+  }
+
+  if (missing.length === 0) {
+    return { ok: true, detail: '(all scripts present)' };
+  }
+  return {
+    ok: false,
+    detail: `(missing — run 'agentguard claude-init --refresh')`,
+  };
 }
 
 async function checkDenialInsights(): Promise<{ detail: string }> {
