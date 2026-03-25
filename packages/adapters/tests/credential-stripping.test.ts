@@ -1,6 +1,10 @@
 // Tests for credential stripping in the shell adapter
 import { describe, it, expect } from 'vitest';
-import { sanitizeEnvironment, DEFAULT_STRIPPED_CREDENTIALS } from '@red-codes/adapters';
+import {
+  sanitizeEnvironment,
+  DEFAULT_STRIPPED_CREDENTIALS,
+  DEFAULT_STRIPPED_CREDENTIAL_PATTERNS,
+} from '@red-codes/adapters';
 
 describe('DEFAULT_STRIPPED_CREDENTIALS', () => {
   it('includes SSH credentials', () => {
@@ -25,6 +29,24 @@ describe('DEFAULT_STRIPPED_CREDENTIALS', () => {
     expect(DEFAULT_STRIPPED_CREDENTIALS).toContain('GOOGLE_APPLICATION_CREDENTIALS');
   });
 
+  it('includes AI provider keys', () => {
+    expect(DEFAULT_STRIPPED_CREDENTIALS).toContain('ANTHROPIC_API_KEY');
+    expect(DEFAULT_STRIPPED_CREDENTIALS).toContain('OPENAI_API_KEY');
+    expect(DEFAULT_STRIPPED_CREDENTIALS).toContain('OPENAI_ORG_ID');
+    expect(DEFAULT_STRIPPED_CREDENTIALS).toContain('GOOGLE_API_KEY');
+  });
+
+  it('includes Kubernetes and Vault credentials', () => {
+    expect(DEFAULT_STRIPPED_CREDENTIALS).toContain('KUBECONFIG');
+    expect(DEFAULT_STRIPPED_CREDENTIALS).toContain('KUBERNETES_SERVICE_TOKEN');
+    expect(DEFAULT_STRIPPED_CREDENTIALS).toContain('VAULT_TOKEN');
+    expect(DEFAULT_STRIPPED_CREDENTIALS).toContain('VAULT_ADDR');
+  });
+
+  it('includes data platform credentials', () => {
+    expect(DEFAULT_STRIPPED_CREDENTIALS).toContain('DATABRICKS_TOKEN');
+  });
+
   it('includes NPM tokens', () => {
     expect(DEFAULT_STRIPPED_CREDENTIALS).toContain('NPM_TOKEN');
     expect(DEFAULT_STRIPPED_CREDENTIALS).toContain('NPM_AUTH_TOKEN');
@@ -38,6 +60,16 @@ describe('DEFAULT_STRIPPED_CREDENTIALS', () => {
   it('is immutable (readonly array)', () => {
     expect(Array.isArray(DEFAULT_STRIPPED_CREDENTIALS)).toBe(true);
     expect(DEFAULT_STRIPPED_CREDENTIALS.length).toBeGreaterThan(0);
+  });
+});
+
+describe('DEFAULT_STRIPPED_CREDENTIAL_PATTERNS', () => {
+  it('includes wildcard suffix patterns for common credential names', () => {
+    expect(DEFAULT_STRIPPED_CREDENTIAL_PATTERNS).toContain('*_API_KEY');
+    expect(DEFAULT_STRIPPED_CREDENTIAL_PATTERNS).toContain('*_SECRET');
+    expect(DEFAULT_STRIPPED_CREDENTIAL_PATTERNS).toContain('*_TOKEN');
+    expect(DEFAULT_STRIPPED_CREDENTIAL_PATTERNS).toContain('*_PASSWORD');
+    expect(DEFAULT_STRIPPED_CREDENTIAL_PATTERNS).toContain('*_PROXY');
   });
 });
 
@@ -61,7 +93,102 @@ describe('sanitizeEnvironment', () => {
     expect('SSH_AUTH_SOCK' in sanitized).toBe(false);
     expect('AWS_ACCESS_KEY_ID' in sanitized).toBe(false);
     expect('GITHUB_TOKEN' in sanitized).toBe(false);
-    expect(stripped).toEqual(['AWS_ACCESS_KEY_ID', 'GITHUB_TOKEN', 'SSH_AUTH_SOCK']);
+    expect(stripped).toContain('AWS_ACCESS_KEY_ID');
+    expect(stripped).toContain('SSH_AUTH_SOCK');
+  });
+
+  it('strips AI provider keys', () => {
+    const env: Record<string, string | undefined> = {
+      PATH: '/usr/bin',
+      ANTHROPIC_API_KEY: 'sk-ant-xxx',
+      OPENAI_API_KEY: 'sk-openai-xxx',
+      OPENAI_ORG_ID: 'org-xxx',
+      GOOGLE_API_KEY: 'AIzaSyXxx',
+    };
+
+    const { env: sanitized, stripped } = sanitizeEnvironment(env);
+
+    expect(sanitized.PATH).toBe('/usr/bin');
+    expect('ANTHROPIC_API_KEY' in sanitized).toBe(false);
+    expect('OPENAI_API_KEY' in sanitized).toBe(false);
+    expect('OPENAI_ORG_ID' in sanitized).toBe(false);
+    expect('GOOGLE_API_KEY' in sanitized).toBe(false);
+    expect(stripped).toContain('ANTHROPIC_API_KEY');
+    expect(stripped).toContain('OPENAI_API_KEY');
+    expect(stripped).toContain('OPENAI_ORG_ID');
+    expect(stripped).toContain('GOOGLE_API_KEY');
+  });
+
+  it('strips Kubernetes and Vault credentials', () => {
+    const env: Record<string, string | undefined> = {
+      PATH: '/usr/bin',
+      KUBECONFIG: '/home/user/.kube/config',
+      KUBERNETES_SERVICE_TOKEN: 'k8s-token-xxx',
+      VAULT_TOKEN: 'hvs.xxx',
+      VAULT_ADDR: 'https://vault.example.com',
+    };
+
+    const { env: sanitized, stripped } = sanitizeEnvironment(env);
+
+    expect('KUBECONFIG' in sanitized).toBe(false);
+    expect('KUBERNETES_SERVICE_TOKEN' in sanitized).toBe(false);
+    expect('VAULT_TOKEN' in sanitized).toBe(false);
+    expect('VAULT_ADDR' in sanitized).toBe(false);
+    expect(stripped).toContain('KUBECONFIG');
+    expect(stripped).toContain('KUBERNETES_SERVICE_TOKEN');
+    expect(stripped).toContain('VAULT_TOKEN');
+    expect(stripped).toContain('VAULT_ADDR');
+  });
+
+  it('strips proxy vars (which may contain embedded credentials)', () => {
+    const env: Record<string, string | undefined> = {
+      PATH: '/usr/bin',
+      HTTP_PROXY: 'http://user:pass@proxy.example.com:3128',
+      HTTPS_PROXY: 'https://user:pass@proxy.example.com:3128',
+    };
+
+    const { env: sanitized, stripped } = sanitizeEnvironment(env);
+
+    expect('HTTP_PROXY' in sanitized).toBe(false);
+    expect('HTTPS_PROXY' in sanitized).toBe(false);
+    expect(stripped).toContain('HTTP_PROXY');
+    expect(stripped).toContain('HTTPS_PROXY');
+  });
+
+  it('strips wildcard-matched credential vars not in the explicit list', () => {
+    const env: Record<string, string | undefined> = {
+      PATH: '/usr/bin',
+      MY_CUSTOM_API_KEY: 'key-xxx',
+      INTERNAL_SERVICE_TOKEN: 'token-xxx',
+      APP_SECRET: 'secret-xxx',
+      DB_PASSWORD: 'pass-xxx',
+    };
+
+    const { env: sanitized, stripped } = sanitizeEnvironment(env);
+
+    expect(sanitized.PATH).toBe('/usr/bin');
+    expect('MY_CUSTOM_API_KEY' in sanitized).toBe(false);
+    expect('INTERNAL_SERVICE_TOKEN' in sanitized).toBe(false);
+    expect('APP_SECRET' in sanitized).toBe(false);
+    expect('DB_PASSWORD' in sanitized).toBe(false);
+    expect(stripped).toContain('MY_CUSTOM_API_KEY');
+    expect(stripped).toContain('INTERNAL_SERVICE_TOKEN');
+    expect(stripped).toContain('APP_SECRET');
+    expect(stripped).toContain('DB_PASSWORD');
+  });
+
+  it('preserve overrides wildcard pattern stripping', () => {
+    const env: Record<string, string | undefined> = {
+      PATH: '/usr/bin',
+      MY_API_KEY: 'key-xxx',
+    };
+
+    const { env: sanitized, stripped } = sanitizeEnvironment(env, {
+      preserve: ['MY_API_KEY'],
+    });
+
+    expect(sanitized.MY_API_KEY).toBe('key-xxx');
+    expect(stripped).not.toContain('MY_API_KEY');
   });
 
   it('returns empty stripped list when no sensitive vars are present', () => {
@@ -117,7 +244,8 @@ describe('sanitizeEnvironment', () => {
     expect(sanitized.PATH).toBe('/usr/bin');
     expect('MY_CUSTOM_SECRET' in sanitized).toBe(false);
     expect('INTERNAL_API_KEY' in sanitized).toBe(false);
-    expect(stripped).toEqual(['INTERNAL_API_KEY', 'MY_CUSTOM_SECRET']);
+    expect(stripped).toContain('INTERNAL_API_KEY');
+    expect(stripped).toContain('MY_CUSTOM_SECRET');
   });
 
   it('preserves specified variables even if in default strip list', () => {

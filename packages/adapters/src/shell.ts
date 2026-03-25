@@ -270,8 +270,18 @@ export const DEFAULT_STRIPPED_CREDENTIALS: readonly string[] = [
   'AZURE_TENANT_ID',
   'AZURE_CLIENT_ID',
   'GOOGLE_APPLICATION_CREDENTIALS',
+  'GOOGLE_API_KEY',
   'GCLOUD_SERVICE_KEY',
   'CLOUDSDK_AUTH_ACCESS_TOKEN',
+  // AI provider keys
+  'ANTHROPIC_API_KEY',
+  'OPENAI_API_KEY',
+  'OPENAI_ORG_ID',
+  // Kubernetes / infrastructure
+  'KUBECONFIG',
+  'KUBERNETES_SERVICE_TOKEN',
+  'VAULT_TOKEN',
+  'VAULT_ADDR',
   // CI / CD
   'CI_JOB_TOKEN',
   'GITLAB_TOKEN',
@@ -283,6 +293,8 @@ export const DEFAULT_STRIPPED_CREDENTIALS: readonly string[] = [
   // NPM
   'NPM_TOKEN',
   'NPM_AUTH_TOKEN',
+  // Data platforms
+  'DATABRICKS_TOKEN',
   // IDE IPC sockets — prevent governance escape via host IDE manipulation
   ...INVARIANT_IDE_CONTEXT_ENV_VARS,
   // Generic secrets
@@ -294,6 +306,22 @@ export const DEFAULT_STRIPPED_CREDENTIALS: readonly string[] = [
   'DATABASE_PASSWORD',
   'REDIS_URL',
   'REDIS_PASSWORD',
+];
+
+/**
+ * Wildcard suffix patterns for stripping credential-like environment variables.
+ * Any env var whose name ends with one of these suffixes (case-insensitive) will
+ * be stripped, catching custom or less-common credential names automatically.
+ * Note: HTTP_PROXY / HTTPS_PROXY are intentionally covered here via '*_PROXY' suffix
+ * only when they contain embedded credentials (user:pass@host), but we strip them
+ * unconditionally because agents should not route traffic through ambient proxies.
+ */
+export const DEFAULT_STRIPPED_CREDENTIAL_PATTERNS: readonly string[] = [
+  '*_API_KEY',
+  '*_SECRET',
+  '*_TOKEN',
+  '*_PASSWORD',
+  '*_PROXY',
 ];
 
 /**
@@ -358,7 +386,26 @@ function resolveProfile(
 }
 
 /**
+ * Check whether an environment variable name matches a wildcard credential suffix pattern.
+ * Patterns use a simple `*` prefix glob (e.g. `*_API_KEY` matches `OPENAI_API_KEY`).
+ */
+function matchesCredentialPattern(varName: string, patterns: readonly string[]): boolean {
+  const upper = varName.toUpperCase();
+  for (const pattern of patterns) {
+    if (pattern.startsWith('*')) {
+      const suffix = pattern.slice(1).toUpperCase();
+      if (upper.endsWith(suffix)) return true;
+    } else if (upper === pattern.toUpperCase()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Build a sanitized copy of the environment with credential variables removed.
+ * Strips variables from the explicit DEFAULT_STRIPPED_CREDENTIALS list as well as
+ * any env var whose name matches a DEFAULT_STRIPPED_CREDENTIAL_PATTERNS suffix glob.
  * Returns the sanitized env and the list of variable names that were actually present and stripped.
  */
 export function sanitizeEnvironment(
@@ -390,6 +437,7 @@ export function sanitizeEnvironment(
   const stripped: string[] = [];
   const strippedIdeSockets: string[] = [];
 
+  // Strip explicitly listed credentials
   for (const name of toStrip) {
     if (name in sanitized && sanitized[name] !== undefined) {
       delete sanitized[name];
@@ -397,6 +445,20 @@ export function sanitizeEnvironment(
         strippedIdeSockets.push(name);
       } else {
         stripped.push(name);
+      }
+    }
+  }
+
+  // Strip any remaining env vars matching wildcard suffix patterns
+  for (const varName of Object.keys(sanitized)) {
+    if (preserveSet.has(varName.toUpperCase())) continue;
+    if (sanitized[varName] === undefined) continue;
+    if (matchesCredentialPattern(varName, DEFAULT_STRIPPED_CREDENTIAL_PATTERNS)) {
+      delete sanitized[varName];
+      if (ideSocketSet.has(varName.toUpperCase())) {
+        strippedIdeSockets.push(varName);
+      } else {
+        stripped.push(varName);
       }
     }
   }
