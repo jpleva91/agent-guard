@@ -141,7 +141,7 @@ export async function cloud(args: string[]): Promise<number> {
       return showCloudHelp();
     default:
       process.stderr.write(`  ${FG.red}Error:${RESET} Unknown subcommand: ${sub}\n`);
-      process.stderr.write(`  ${DIM}Run "agentguard cloud help" for usage.${RESET}\n`);
+      process.stderr.write(`  ${DIM}Run "aguard cloud help" for usage.${RESET}\n`);
       return 1;
   }
 }
@@ -198,7 +198,7 @@ function cloudStatus(): number {
   if (!cloud) {
     process.stderr.write(`  ${DIM}Status:${RESET}    ${FG.yellow}not connected${RESET}\n`);
     process.stderr.write(
-      `\n  ${DIM}Run "agentguard cloud login" or "agentguard cloud connect <api-key>" to connect.${RESET}\n`
+      `\n  ${DIM}Run "aguard cloud login" or "aguard cloud connect <api-key>" to connect.${RESET}\n`
     );
     process.stderr.write('\n');
     return 0;
@@ -236,7 +236,7 @@ function requireCloudConfig(): CloudConfig | null {
   if (!cloud) {
     process.stderr.write(`  ${FG.red}Error:${RESET} Not connected to AgentGuard Cloud.\n`);
     process.stderr.write(
-      `  ${DIM}Run "agentguard cloud login" or "agentguard cloud connect <api-key>" to connect.${RESET}\n`
+      `  ${DIM}Run "aguard cloud login" or "aguard cloud connect <api-key>" to connect.${RESET}\n`
     );
     return null;
   }

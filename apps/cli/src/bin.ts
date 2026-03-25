@@ -22,21 +22,21 @@ const wantsHelp = args.includes('--help') || args.includes('-h');
 
 const COMMANDS: Record<string, CommandHelp> = {
   learn: {
-    name: 'agentguard learn',
+    name: 'aguard learn',
     description: 'Analyze denial patterns and suggest policy improvements',
-    usage: 'agentguard learn [flags]',
+    usage: 'aguard learn [flags]',
     flags: [
       { flag: '--write-rules', description: 'Write safety hints to .claude/rules/' },
       { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       { flag: '--db-path <path>', description: 'SQLite database path' },
       { flag: '--json', description: 'Output as JSON' },
     ],
-    examples: ['agentguard learn', 'agentguard learn --write-rules', 'agentguard learn --json'],
+    examples: ['aguard learn', 'aguard learn --write-rules', 'aguard learn --json'],
   },
   adoption: {
-    name: 'agentguard adoption',
+    name: 'aguard adoption',
     description: 'Show how much of your agent activity is protected',
-    usage: 'agentguard adoption [flags]',
+    usage: 'aguard adoption [flags]',
     flags: [
       { flag: '--session <path>', description: 'Path to Claude session JSONL file' },
       { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
@@ -44,15 +44,15 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--json', description: 'Output as JSON' },
     ],
     examples: [
-      'agentguard adoption',
-      'agentguard adoption --session ~/.claude/projects/foo/session.jsonl',
-      'agentguard adoption --json',
+      'aguard adoption',
+      'aguard adoption --session ~/.claude/projects/foo/session.jsonl',
+      'aguard adoption --json',
     ],
   },
   analytics: {
-    name: 'agentguard analytics',
+    name: 'aguard analytics',
     description: 'Analyze blocked action patterns across safety sessions',
-    usage: 'agentguard analytics [flags]',
+    usage: 'aguard analytics [flags]',
     flags: [
       { flag: '--format, -f <format>', description: 'Output format: terminal, json, markdown' },
       { flag: '--json', description: 'Output as JSON' },
@@ -66,16 +66,16 @@ const COMMANDS: Record<string, CommandHelp> = {
       },
     ],
     examples: [
-      'agentguard analytics',
-      'agentguard analytics --json',
-      'agentguard analytics --markdown',
-      'agentguard analytics --min-cluster 3',
+      'aguard analytics',
+      'aguard analytics --json',
+      'aguard analytics --markdown',
+      'aguard analytics --min-cluster 3',
     ],
   },
   guard: {
-    name: 'agentguard guard',
+    name: 'aguard guard',
     description: 'Start the safety runtime — prevent dangerous agent actions',
-    usage: 'agentguard guard [flags]',
+    usage: 'aguard guard [flags]',
     flags: [
       {
         flag: '--policy, -p <file>',
@@ -100,19 +100,19 @@ const COMMANDS: Record<string, CommandHelp> = {
       },
     ],
     examples: [
-      'agentguard guard',
-      'agentguard guard --policy agentguard.yaml',
-      'agentguard guard --policy base.yaml --policy overrides.yaml',
-      'agentguard guard --manifest session.yaml',
-      'agentguard guard --agent-name "claude-opus"',
-      'agentguard guard --dry-run',
-      'echo \'{"tool":"Bash","command":"rm -rf /"}\' | agentguard guard',
+      'aguard guard',
+      'aguard guard --policy agentguard.yaml',
+      'aguard guard --policy base.yaml --policy overrides.yaml',
+      'aguard guard --manifest session.yaml',
+      'aguard guard --agent-name "claude-opus"',
+      'aguard guard --dry-run',
+      'echo \'{"tool":"Bash","command":"rm -rf /"}\' | aguard guard',
     ],
   },
   inspect: {
-    name: 'agentguard inspect',
+    name: 'aguard inspect',
     description: 'Inspect the action graph and decision records for a run',
-    usage: 'agentguard inspect [runId]',
+    usage: 'aguard inspect [runId]',
     flags: [
       { flag: '--list', description: 'List all recorded runs' },
       { flag: '--last', description: 'Inspect the most recent run' },
@@ -123,16 +123,16 @@ const COMMANDS: Record<string, CommandHelp> = {
       },
     ],
     examples: [
-      'agentguard inspect --list',
-      'agentguard inspect --last',
-      'agentguard inspect --last --store sqlite',
-      'agentguard inspect run_1234567890_abc',
+      'aguard inspect --list',
+      'aguard inspect --last',
+      'aguard inspect --last --store sqlite',
+      'aguard inspect run_1234567890_abc',
     ],
   },
   events: {
-    name: 'agentguard events',
+    name: 'aguard events',
     description: 'Show the raw event stream for a run',
-    usage: 'agentguard events <runId>',
+    usage: 'aguard events <runId>',
     flags: [
       { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
       {
@@ -140,12 +140,12 @@ const COMMANDS: Record<string, CommandHelp> = {
         description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
       },
     ],
-    examples: ['agentguard events --last', 'agentguard events run_1234567890_abc'],
+    examples: ['aguard events --last', 'aguard events run_1234567890_abc'],
   },
   replay: {
-    name: 'agentguard replay',
+    name: 'aguard replay',
     description: 'Replay an agent session timeline',
-    usage: 'agentguard replay [session-id] [flags]',
+    usage: 'aguard replay [session-id] [flags]',
     flags: [
       { flag: '--last, -l', description: 'Replay the most recent session' },
       { flag: '--step, -s', description: 'Step through events one at a time' },
@@ -163,17 +163,17 @@ const COMMANDS: Record<string, CommandHelp> = {
       },
     ],
     examples: [
-      'agentguard replay',
-      'agentguard replay --last',
-      'agentguard replay --last --step',
-      'agentguard replay --last --ui',
-      'agentguard replay --last --ui --denied-only',
+      'aguard replay',
+      'aguard replay --last',
+      'aguard replay --last --step',
+      'aguard replay --last --ui',
+      'aguard replay --last --ui --denied-only',
     ],
   },
   export: {
-    name: 'agentguard export',
+    name: 'aguard export',
     description: 'Export a safety session to a portable JSONL file',
-    usage: 'agentguard export <runId> [flags]',
+    usage: 'aguard export <runId> [flags]',
     flags: [
       { flag: '--output, -o <file>', description: 'Output file path' },
       { flag: '--last', description: 'Export the most recent run' },
@@ -184,16 +184,16 @@ const COMMANDS: Record<string, CommandHelp> = {
       },
     ],
     examples: [
-      'agentguard export run_1234567890_abc',
-      'agentguard export --last',
-      'agentguard export --last -o session.jsonl',
-      'agentguard export --last --store sqlite',
+      'aguard export run_1234567890_abc',
+      'aguard export --last',
+      'aguard export --last -o session.jsonl',
+      'aguard export --last --store sqlite',
     ],
   },
   import: {
-    name: 'agentguard import',
+    name: 'aguard import',
     description: 'Import a safety session from a portable JSONL file',
-    usage: 'agentguard import <file> [flags]',
+    usage: 'aguard import <file> [flags]',
     flags: [
       { flag: '--as <runId>', description: 'Import as a different run ID' },
       { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
@@ -203,15 +203,15 @@ const COMMANDS: Record<string, CommandHelp> = {
       },
     ],
     examples: [
-      'agentguard import session.jsonl',
-      'agentguard import ./exports/run.agentguard.jsonl --as custom_run_id',
-      'agentguard import session.jsonl --store sqlite',
+      'aguard import session.jsonl',
+      'aguard import ./exports/run.agentguard.jsonl --as custom_run_id',
+      'aguard import session.jsonl --store sqlite',
     ],
   },
   migrate: {
-    name: 'agentguard migrate',
+    name: 'aguard migrate',
     description: 'Bulk-import JSONL event/decision files into SQLite',
-    usage: 'agentguard migrate [flags]',
+    usage: 'aguard migrate [flags]',
     flags: [
       {
         flag: '--dir, -d <path>',
@@ -225,16 +225,16 @@ const COMMANDS: Record<string, CommandHelp> = {
       },
     ],
     examples: [
-      'agentguard migrate',
-      'agentguard migrate --dry-run',
-      'agentguard migrate --verbose',
-      'agentguard migrate --dir .agentguard --db-path ./local.db',
+      'aguard migrate',
+      'aguard migrate --dry-run',
+      'aguard migrate --verbose',
+      'aguard migrate --dir .agentguard --db-path ./local.db',
     ],
   },
   'ci-check': {
-    name: 'agentguard ci-check',
+    name: 'aguard ci-check',
     description: 'CI safety check — verify no dangerous actions in a session',
-    usage: 'agentguard ci-check <session-file> [flags]',
+    usage: 'aguard ci-check <session-file> [flags]',
     flags: [
       { flag: '--fail-on-violation', description: 'Exit 1 if invariant violations found' },
       { flag: '--fail-on-denial', description: 'Exit 1 if any actions were denied' },
@@ -251,33 +251,33 @@ const COMMANDS: Record<string, CommandHelp> = {
       },
     ],
     examples: [
-      'agentguard ci-check session.agentguard.jsonl --fail-on-violation',
-      'agentguard ci-check --last --fail-on-denial --json',
-      'agentguard ci-check --last --store sqlite --fail-on-violation',
-      'agentguard ci-check --last --post-evidence --pr 42',
+      'aguard ci-check session.agentguard.jsonl --fail-on-violation',
+      'aguard ci-check --last --fail-on-denial --json',
+      'aguard ci-check --last --store sqlite --fail-on-violation',
+      'aguard ci-check --last --post-evidence --pr 42',
     ],
   },
   policy: {
-    name: 'agentguard policy',
+    name: 'aguard policy',
     description: 'Policy management tools (validate, suggest, verify)',
-    usage: 'agentguard policy <command> [options]',
+    usage: 'aguard policy <command> [options]',
     flags: [],
     examples: [
-      'agentguard policy validate agentguard.yaml',
-      'agentguard policy validate my-policy.json --json',
-      'agentguard policy validate agentguard.yaml --strict',
-      'agentguard policy validate agentguard.yaml --verify',
-      'agentguard policy suggest',
-      'agentguard policy suggest --yaml',
-      'agentguard policy suggest --json',
-      'agentguard policy verify agentguard.yaml',
-      'agentguard policy verify my-policy.yaml --json',
+      'aguard policy validate agentguard.yaml',
+      'aguard policy validate my-policy.json --json',
+      'aguard policy validate agentguard.yaml --strict',
+      'aguard policy validate agentguard.yaml --verify',
+      'aguard policy suggest',
+      'aguard policy suggest --yaml',
+      'aguard policy suggest --json',
+      'aguard policy verify agentguard.yaml',
+      'aguard policy verify my-policy.yaml --json',
     ],
   },
   simulate: {
-    name: 'agentguard simulate',
+    name: 'aguard simulate',
     description: 'Simulate an action and display predicted impact without executing',
-    usage: 'agentguard simulate <action-json> [flags]',
+    usage: 'aguard simulate <action-json> [flags]',
     flags: [
       { flag: '--action <type>', description: 'Action type (e.g., file.write, git.push)' },
       { flag: '--target <path>', description: 'Target file or resource path' },
@@ -288,17 +288,17 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--json', description: 'Output raw result as JSON' },
     ],
     examples: [
-      'agentguard simulate \'{"tool":"Bash","command":"git push origin main"}\'',
-      'agentguard simulate --action file.write --target .env',
-      'agentguard simulate --action git.push --branch main --json',
-      'agentguard simulate --action file.write --target .env --policy agentguard.yaml',
-      'agentguard simulate --plan plan.json --policy agentguard.yaml',
+      'aguard simulate \'{"tool":"Bash","command":"git push origin main"}\'',
+      'aguard simulate --action file.write --target .env',
+      'aguard simulate --action git.push --branch main --json',
+      'aguard simulate --action file.write --target .env --policy agentguard.yaml',
+      'aguard simulate --plan plan.json --policy agentguard.yaml',
     ],
   },
   diff: {
-    name: 'agentguard diff',
+    name: 'aguard diff',
     description: 'Compare two safety sessions side-by-side',
-    usage: 'agentguard diff <runId-A> <runId-B> [flags]',
+    usage: 'aguard diff <runId-A> <runId-B> [flags]',
     flags: [
       { flag: '--json', description: 'Output as JSON' },
       { flag: '--last', description: 'Compare the two most recent runs' },
@@ -306,16 +306,16 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
     ],
     examples: [
-      'agentguard diff run_abc123 run_def456',
-      'agentguard diff --last',
-      'agentguard diff --last --json',
-      'agentguard diff --last --store sqlite',
+      'aguard diff run_abc123 run_def456',
+      'aguard diff --last',
+      'aguard diff --last --json',
+      'aguard diff --last --store sqlite',
     ],
   },
   init: {
-    name: 'agentguard init',
+    name: 'aguard init',
     description: 'Scaffold a new AgentGuard extension',
-    usage: 'agentguard init --extension <type> [--name <name>] [--dir <path>]',
+    usage: 'aguard init --extension <type> [--name <name>] [--dir <path>]',
     flags: [
       {
         flag: '--extension, -e <type>',
@@ -326,15 +326,15 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--dir, -d <path>', description: 'Output directory (default: ./<name>)' },
     ],
     examples: [
-      'agentguard init --extension renderer --name json-renderer',
-      'agentguard init invariant --name vendor-guard',
-      'agentguard init policy-pack --name strict-policy',
+      'aguard init --extension renderer --name json-renderer',
+      'aguard init invariant --name vendor-guard',
+      'aguard init policy-pack --name strict-policy',
     ],
   },
   traces: {
-    name: 'agentguard traces',
+    name: 'aguard traces',
     description: 'Display policy evaluation traces for a run',
-    usage: 'agentguard traces [runId] [flags]',
+    usage: 'aguard traces [runId] [flags]',
     flags: [
       { flag: '--last', description: 'Show traces for the most recent run' },
       { flag: '--list', description: 'List all recorded runs' },
@@ -348,27 +348,27 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--store <backend>', description: 'Storage backend (sqlite)' },
     ],
     examples: [
-      'agentguard traces --last',
-      'agentguard traces --last --summary',
-      'agentguard traces --last --action git',
-      'agentguard traces --last --decision deny',
-      'agentguard traces --last --json',
-      'agentguard traces run_1234567890_abc',
+      'aguard traces --last',
+      'aguard traces --last --summary',
+      'aguard traces --last --action git',
+      'aguard traces --last --decision deny',
+      'aguard traces --last --json',
+      'aguard traces run_1234567890_abc',
     ],
   },
   status: {
-    name: 'agentguard status',
+    name: 'aguard status',
     description: 'Check AgentGuard safety readiness (hooks, policy, directories)',
-    usage: 'agentguard status [flags]',
+    usage: 'aguard status [flags]',
     flags: [
       { flag: '--quiet, -q', description: 'Machine-readable output (exit 0 if ready, 1 if not)' },
     ],
-    examples: ['agentguard status', 'agentguard status --quiet'],
+    examples: ['aguard status', 'aguard status --quiet'],
   },
   'evidence-pr': {
-    name: 'agentguard evidence-pr',
+    name: 'aguard evidence-pr',
     description: 'Attach safety evidence report to a pull request',
-    usage: 'agentguard evidence-pr [pr-number] [flags]',
+    usage: 'aguard evidence-pr [pr-number] [flags]',
     flags: [
       { flag: '--pr, -n <number>', description: 'PR number (auto-detected if omitted)' },
       { flag: '--run, -r <runId>', description: 'Use events from a specific run' },
@@ -381,17 +381,17 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--db-path <path>', description: 'Path to SQLite database file' },
     ],
     examples: [
-      'agentguard evidence-pr',
-      'agentguard evidence-pr --pr 42',
-      'agentguard evidence-pr --last --dry-run',
-      'agentguard evidence-pr --run run_1234567890_abc',
-      'agentguard evidence-pr --last --store sqlite',
+      'aguard evidence-pr',
+      'aguard evidence-pr --pr 42',
+      'aguard evidence-pr --last --dry-run',
+      'aguard evidence-pr --run run_1234567890_abc',
+      'aguard evidence-pr --last --store sqlite',
     ],
   },
   'audit-verify': {
-    name: 'agentguard audit-verify',
+    name: 'aguard audit-verify',
     description: 'Verify tamper-resistant audit chain integrity and generate enforcement report',
-    usage: 'agentguard audit-verify [runId] [flags]',
+    usage: 'aguard audit-verify [runId] [flags]',
     flags: [
       { flag: '--last', description: 'Verify the most recent chained audit trail' },
       { flag: '--list', description: 'List all chained audit trails' },
@@ -399,17 +399,17 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--json', description: 'Output as JSON' },
     ],
     examples: [
-      'agentguard audit-verify --last',
-      'agentguard audit-verify --list',
-      'agentguard audit-verify --last --report',
-      'agentguard audit-verify --last --report --json',
-      'agentguard audit-verify run_1234567890_abc',
+      'aguard audit-verify --last',
+      'aguard audit-verify --list',
+      'aguard audit-verify --last --report',
+      'aguard audit-verify --last --report --json',
+      'aguard audit-verify run_1234567890_abc',
     ],
   },
   'auto-setup': {
-    name: 'agentguard auto-setup',
+    name: 'aguard auto-setup',
     description: 'Auto-detect AgentGuard in project and configure Claude Code hooks',
-    usage: 'agentguard auto-setup [flags]',
+    usage: 'aguard auto-setup [flags]',
     flags: [
       { flag: '--quiet, -q', description: 'Machine-readable output (no banner)' },
       { flag: '--dry-run', description: 'Detect without installing' },
@@ -417,45 +417,45 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--db-path <path>', description: 'SQLite database path' },
     ],
     examples: [
-      'agentguard auto-setup',
-      'agentguard auto-setup --dry-run',
-      'agentguard auto-setup --store sqlite',
-      'agentguard auto-setup --quiet',
+      'aguard auto-setup',
+      'aguard auto-setup --dry-run',
+      'aguard auto-setup --store sqlite',
+      'aguard auto-setup --quiet',
     ],
   },
   config: {
-    name: 'agentguard config',
+    name: 'aguard config',
     description: 'Manage AgentGuard configuration (show, get, set)',
-    usage: 'agentguard config <subcommand> [options]',
+    usage: 'aguard config <subcommand> [options]',
     flags: [
       { flag: '--json', description: 'Output as JSON (for show subcommand)' },
       { flag: '--global, -g', description: 'Target user-level config (for set subcommand)' },
     ],
     examples: [
-      'agentguard config show',
-      'agentguard config show --json',
-      'agentguard config get storage',
-      'agentguard config set storage sqlite',
-      'agentguard config set autoSetup false --global',
-      'agentguard config path',
-      'agentguard config keys',
+      'aguard config show',
+      'aguard config show --json',
+      'aguard config get storage',
+      'aguard config set storage sqlite',
+      'aguard config set autoSetup false --global',
+      'aguard config path',
+      'aguard config keys',
     ],
   },
   trust: {
-    name: 'agentguard trust',
+    name: 'aguard trust',
     description: 'Trust a project-local policy file after risk review',
-    usage: 'agentguard trust <policy-file> [flags]',
+    usage: 'aguard trust <policy-file> [flags]',
     flags: [{ flag: '--yes, -y', description: 'Skip confirmation prompt' }],
     examples: [
-      'agentguard trust agentguard.yaml',
-      'agentguard trust .agentguard/policy.yaml --yes',
+      'aguard trust agentguard.yaml',
+      'aguard trust .agentguard/policy.yaml --yes',
     ],
   },
   cloud: {
-    name: 'agentguard cloud',
+    name: 'aguard cloud',
     description:
       'Manage AgentGuard Cloud connection and query data (connect, status, disconnect, events, runs, summary)',
-    usage: 'agentguard cloud <command> [options]',
+    usage: 'aguard cloud <command> [options]',
     flags: [
       {
         flag: '--endpoint <url>',
@@ -468,20 +468,20 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--status <status>', description: 'Filter runs by status' },
     ],
     examples: [
-      'agentguard cloud connect ag_live_abc123def456xyz',
-      'agentguard cloud connect ag_test_key1234567890 --endpoint https://custom.example.com',
-      'agentguard cloud status',
-      'agentguard cloud disconnect',
-      'agentguard cloud events',
-      'agentguard cloud events --limit 50 --agent claude',
-      'agentguard cloud runs --status completed',
-      'agentguard cloud summary',
+      'aguard cloud connect ag_live_abc123def456xyz',
+      'aguard cloud connect ag_test_key1234567890 --endpoint https://custom.example.com',
+      'aguard cloud status',
+      'aguard cloud disconnect',
+      'aguard cloud events',
+      'aguard cloud events --limit 50 --agent claude',
+      'aguard cloud runs --status completed',
+      'aguard cloud summary',
     ],
   },
   'session-viewer': {
-    name: 'agentguard session-viewer',
+    name: 'aguard session-viewer',
     description: 'Generate an interactive HTML visualization of an agent session',
-    usage: 'agentguard session-viewer [runId] [flags]',
+    usage: 'aguard session-viewer [runId] [flags]',
     flags: [
       { flag: '--last', description: 'Visualize the most recent run' },
       { flag: '--list', description: 'List available runs' },
@@ -508,13 +508,13 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--db-path <path>', description: 'SQLite database path' },
     ],
     examples: [
-      'agentguard session-viewer --last',
-      'agentguard session-viewer --last --live',
-      'agentguard session-viewer --last --share',
-      'agentguard session-viewer run_1234567890_abc',
-      'agentguard session-viewer --last --merge-recent 100',
-      'agentguard session-viewer --last --output report.html',
-      'agentguard session-viewer --last --no-open',
+      'aguard session-viewer --last',
+      'aguard session-viewer --last --live',
+      'aguard session-viewer --last --share',
+      'aguard session-viewer run_1234567890_abc',
+      'aguard session-viewer --last --merge-recent 100',
+      'aguard session-viewer --last --output report.html',
+      'aguard session-viewer --last --no-open',
     ],
   },
 };
@@ -805,7 +805,7 @@ async function main() {
         console.log(`Enrolled: ${identity?.enrollment_token ? 'yes' : 'no'}`);
         console.log(`Server: ${identity?.server_url ?? 'default'}`);
       } else {
-        console.log('Usage: agentguard telemetry [on|off|status]');
+        console.log('Usage: aguard telemetry [on|off|status]');
         console.log('  on            Enable anonymous telemetry');
         console.log('  on --verified Enable verified telemetry');
         console.log('  off           Disable telemetry');
@@ -952,135 +952,135 @@ function printHelp(): void {
   \x1b[1mAgentGuard\x1b[0m — Run AI agents without fear
 
   \x1b[1mSafety:\x1b[0m
-    agentguard guard                          Start the safety runtime
-    agentguard guard --policy <file>          Use a specific policy file (YAML/JSON)
-    agentguard guard --policy a --policy b    Compose multiple policies with precedence
-    agentguard guard --dry-run                Evaluate without executing actions
-    agentguard guard --trace                  Show policy evaluation traces inline
-    agentguard inspect [runId]                Inspect action graph and decisions
-    agentguard events [runId]                 Show raw event stream for a run
-    agentguard analytics                      Analyze blocked action patterns across sessions
-    agentguard team-report                    Team-level governance observability across agents
-    agentguard adoption                       Show how much agent activity is protected
-    agentguard learn                          Analyze denial patterns and suggest policy improvements
+    aguard guard                          Start the safety runtime
+    aguard guard --policy <file>          Use a specific policy file (YAML/JSON)
+    aguard guard --policy a --policy b    Compose multiple policies with precedence
+    aguard guard --dry-run                Evaluate without executing actions
+    aguard guard --trace                  Show policy evaluation traces inline
+    aguard inspect [runId]                Inspect action graph and decisions
+    aguard events [runId]                 Show raw event stream for a run
+    aguard analytics                      Analyze blocked action patterns across sessions
+    aguard team-report                    Team-level governance observability across agents
+    aguard adoption                       Show how much agent activity is protected
+    aguard learn                          Analyze denial patterns and suggest policy improvements
 
   \x1b[1mTraces:\x1b[0m
-    agentguard traces --last                  Show policy traces for most recent run
-    agentguard traces --last --summary        Show summary statistics only
-    agentguard traces --last --action git     Filter traces by action type
-    agentguard traces --last --decision deny  Filter traces by decision
+    aguard traces --last                  Show policy traces for most recent run
+    aguard traces --last --summary        Show summary statistics only
+    aguard traces --last --action git     Filter traces by action type
+    aguard traces --last --decision deny  Filter traces by decision
 
   [1mComparison:[0m
-    agentguard diff <runA> <runB>              Compare two safety sessions
-    agentguard diff --last                     Compare the two most recent runs
-    agentguard diff --last --json              Output comparison as JSON
+    aguard diff <runA> <runB>              Compare two safety sessions
+    aguard diff --last                     Compare the two most recent runs
+    aguard diff --last --json              Output comparison as JSON
 
   \x1b[1mSimulation:\x1b[0m
-    agentguard simulate <action-json>          Simulate action and show predicted impact
-    agentguard simulate --action <type>        Simulate by action type and flags
-    agentguard simulate --plan <file>          Simulate an action plan (batch)
-    agentguard simulate ... --policy <file>    Evaluate against policy (non-zero on deny)
-    agentguard simulate ... --json             Output raw JSON result
+    aguard simulate <action-json>          Simulate action and show predicted impact
+    aguard simulate --action <type>        Simulate by action type and flags
+    aguard simulate --plan <file>          Simulate an action plan (batch)
+    aguard simulate ... --policy <file>    Evaluate against policy (non-zero on deny)
+    aguard simulate ... --json             Output raw JSON result
 
   \x1b[1mPortability:\x1b[0m
-    agentguard export <runId>                 Export a safety session to JSONL
-    agentguard export --last                  Export the most recent run
-    agentguard import <file>                  Import a safety session from JSONL
-    agentguard migrate                        Bulk-import JSONL files into SQLite
-    agentguard migrate --dry-run              Preview migration without writing
+    aguard export <runId>                 Export a safety session to JSONL
+    aguard export --last                  Export the most recent run
+    aguard import <file>                  Import a safety session from JSONL
+    aguard migrate                        Bulk-import JSONL files into SQLite
+    aguard migrate --dry-run              Preview migration without writing
 
   \x1b[1mReplay:\x1b[0m
-    agentguard replay                         List recorded sessions
-    agentguard replay --last                  Replay most recent session
-    agentguard replay --last --step           Step through events interactively
-    agentguard replay --last --ui             Open interactive timeline viewer in browser
+    aguard replay                         List recorded sessions
+    aguard replay --last                  Replay most recent session
+    aguard replay --last --step           Step through events interactively
+    aguard replay --last --ui             Open interactive timeline viewer in browser
 
   \x1b[1mPolicy:\x1b[0m
-    agentguard policy validate <file>        Validate a policy file (YAML/JSON)
-    agentguard policy validate ... --strict  Include best-practice checks
-    agentguard policy validate ... --json    Output as JSON
-    agentguard policy validate ... --verify  Also verify against historical violations
-    agentguard policy suggest                Suggest rules based on violation patterns
-    agentguard policy suggest --yaml         Output suggestions as YAML rules
-    agentguard policy suggest --json         Output suggestions as JSON
-    agentguard policy verify <file>          Verify policy resolves historical violations
-    agentguard policy verify ... --json      Output verification result as JSON
+    aguard policy validate <file>        Validate a policy file (YAML/JSON)
+    aguard policy validate ... --strict  Include best-practice checks
+    aguard policy validate ... --json    Output as JSON
+    aguard policy validate ... --verify  Also verify against historical violations
+    aguard policy suggest                Suggest rules based on violation patterns
+    aguard policy suggest --yaml         Output suggestions as YAML rules
+    aguard policy suggest --json         Output suggestions as JSON
+    aguard policy verify <file>          Verify policy resolves historical violations
+    aguard policy verify ... --json      Output verification result as JSON
 
   \x1b[1mPlugins:\x1b[0m
-    agentguard plugin list                    List installed plugins
-    agentguard plugin install <path>          Install a plugin from a local path
-    agentguard plugin remove <id>             Remove a plugin by ID
-    agentguard plugin search [query]          Search for plugins on npm
+    aguard plugin list                    List installed plugins
+    aguard plugin install <path>          Install a plugin from a local path
+    aguard plugin remove <id>             Remove a plugin by ID
+    aguard plugin search [query]          Search for plugins on npm
 
   \x1b[1mVisualization:\x1b[0m
-    agentguard session-viewer --last          Open session viewer in browser
-    agentguard session-viewer <runId>         Visualize a specific run
-    agentguard session-viewer --last -o f.html  Save to file without opening
+    aguard session-viewer --last          Open session viewer in browser
+    aguard session-viewer <runId>         Visualize a specific run
+    aguard session-viewer --last -o f.html  Save to file without opening
 
   \x1b[1mAudit:\x1b[0m
-    agentguard audit-verify --last            Verify audit chain integrity
-    agentguard audit-verify --list            List chained audit trails
-    agentguard audit-verify --last --report   Full enforcement audit report
-    agentguard audit-verify ... --json        Output as JSON
+    aguard audit-verify --last            Verify audit chain integrity
+    aguard audit-verify --list            List chained audit trails
+    aguard audit-verify --last --report   Full enforcement audit report
+    aguard audit-verify ... --json        Output as JSON
 
   \x1b[1mEvidence:\x1b[0m
-    agentguard evidence-pr                    Attach safety evidence to a PR
-    agentguard evidence-pr --pr <number>      Post evidence to a specific PR
-    agentguard evidence-pr --dry-run          Preview the evidence report
+    aguard evidence-pr                    Attach safety evidence to a PR
+    aguard evidence-pr --pr <number>      Post evidence to a specific PR
+    aguard evidence-pr --dry-run          Preview the evidence report
 
   \x1b[1mScaffolding:\x1b[0m
-    agentguard init --extension <type>        Scaffold a new AgentGuard extension
-    agentguard init --extension <type> -n X   Name the extension
+    aguard init --extension <type>        Scaffold a new AgentGuard extension
+    aguard init --extension <type> -n X   Name the extension
 
 
   \x1b[1mCI/CD:\x1b[0m
-    agentguard ci-check <session>             Verify agent session safety in CI
-    agentguard ci-check --last                Check most recent run locally
+    aguard ci-check <session>             Verify agent session safety in CI
+    aguard ci-check --last                Check most recent run locally
 
 
   \x1b[1mIntegration:\x1b[0m
-    agentguard claude-init                    Set up Claude Code hook integration
-    agentguard copilot-init                   Set up Copilot CLI hook integration
-    agentguard copilot-init --global          Install hooks globally (~/.copilot/hooks/)
-    agentguard auto-setup                     Auto-detect and configure hooks
-    agentguard auto-setup --dry-run           Detect without installing
-    agentguard claude-hook                    Claude Code hook handler (internal)
-    agentguard copilot-hook                   Copilot CLI hook handler (internal)
-    agentguard status                         Check safety readiness (hooks, policy, dirs)
-    agentguard status --quiet                 Machine-readable check (exit code only)
-    agentguard demo                           See AgentGuard in action (interactive showcase)
+    aguard claude-init                    Set up Claude Code hook integration
+    aguard copilot-init                   Set up Copilot CLI hook integration
+    aguard copilot-init --global          Install hooks globally (~/.copilot/hooks/)
+    aguard auto-setup                     Auto-detect and configure hooks
+    aguard auto-setup --dry-run           Detect without installing
+    aguard claude-hook                    Claude Code hook handler (internal)
+    aguard copilot-hook                   Copilot CLI hook handler (internal)
+    aguard status                         Check safety readiness (hooks, policy, dirs)
+    aguard status --quiet                 Machine-readable check (exit code only)
+    aguard demo                           See AgentGuard in action (interactive showcase)
 
   \x1b[1mConfiguration:\x1b[0m
-    agentguard config show                    Display resolved configuration
-    agentguard config get <key>               Get a specific config value
-    agentguard config set <key> <value>       Set a project-level config value
-    agentguard config set <key> <value> -g    Set a user-level config value
-    agentguard config path                    Show config file locations
-    agentguard config keys                    List available config keys
+    aguard config show                    Display resolved configuration
+    aguard config get <key>               Get a specific config value
+    aguard config set <key> <value>       Set a project-level config value
+    aguard config set <key> <value> -g    Set a user-level config value
+    aguard config path                    Show config file locations
+    aguard config keys                    List available config keys
 
   \x1b[1mCloud:\x1b[0m
-    agentguard cloud connect <api-key>        Connect to AgentGuard Cloud
-    agentguard cloud connect ... --endpoint   Use a custom cloud endpoint
-    agentguard cloud status                   Show cloud connection status
-    agentguard cloud disconnect               Remove cloud connection
-    agentguard cloud events                   Query agent events from cloud
-    agentguard cloud runs                     Query agent runs from cloud
-    agentguard cloud summary                  Show cloud analytics summary
+    aguard cloud connect <api-key>        Connect to AgentGuard Cloud
+    aguard cloud connect ... --endpoint   Use a custom cloud endpoint
+    aguard cloud status                   Show cloud connection status
+    aguard cloud disconnect               Remove cloud connection
+    aguard cloud events                   Query agent events from cloud
+    aguard cloud runs                     Query agent runs from cloud
+    aguard cloud summary                  Show cloud analytics summary
 
   \x1b[1mMeta:\x1b[0m
-    agentguard --version                      Show version
-    agentguard help                           Show this help
+    aguard --version                      Show version
+    aguard help                           Show this help
 `);
 }
 
 function printUsage(error: string): void {
   console.error(`  Error: ${error}`);
-  console.error('  Run "agentguard help" for usage info.');
+  console.error('  Run "aguard help" for usage info.');
 }
 
 main().catch((err: unknown) => {
   const message = err instanceof Error ? err.message : String(err);
-  console.error(`\n  agentguard: fatal error — ${message}`);
-  console.error('  Run "agentguard help" for usage info.\n');
+  console.error(`\n  aguard: fatal error — ${message}`);
+  console.error('  Run "aguard help" for usage info.\n');
   process.exit(1);
 });

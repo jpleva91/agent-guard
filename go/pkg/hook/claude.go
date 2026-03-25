@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-// RunClaudeHook is the main entry point for the `agentguard claude-hook` command.
+// RunClaudeHook is the main entry point for the `aguard claude-hook` command.
 // It reads environment variables set by Claude Code, finds the policy file,
 // evaluates the action, and writes a JSON response to stdout.
 //

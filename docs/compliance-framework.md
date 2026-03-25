@@ -133,7 +133,7 @@ policies/
 
 - Compliance report generation for each framework produces valid output
 - Control mappings are complete (no AgentGuard feature unmapped)
-- Policy templates pass `agentguard policy validate`
+- Policy templates pass `aguard policy validate`
 - Attestation reports include all governance events within the specified period
 
 ## References

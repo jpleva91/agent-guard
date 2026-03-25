@@ -137,7 +137,7 @@ telemetry:
 ### Interactive Trace Exploration
 
 ```bash
-agentguard traces --interactive    # Launch interactive trace explorer
+aguard traces --interactive    # Launch interactive trace explorer
 ```
 
 Features:

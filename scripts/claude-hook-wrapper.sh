@@ -9,4 +9,4 @@ if [ -f .agentguard/persona.env ]; then
 fi
 
 # Pass through to the actual hook
-exec agentguard claude-hook pre --store sqlite
+exec aguard claude-hook pre --store sqlite

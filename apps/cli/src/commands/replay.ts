@@ -76,7 +76,7 @@ export function registerReplayCommand(program: Command): void {
             const runId = options.run || getLatestRunIdJsonl(options.baseDir);
             if (!runId) {
               console.error('\n  No governance runs found.');
-              console.error('  Run "agentguard guard" first to generate events.\n');
+              console.error('  Run "aguard guard" first to generate events.\n');
               return;
             }
             session = loadReplaySession(runId, { baseDir: options.baseDir });
@@ -97,13 +97,13 @@ export function registerReplayCommand(program: Command): void {
 
         // --- Legacy execution log replay mode ---
         const targetFile = file || '.events.ndjson';
-        const logger = pino({ name: 'agentguard-replay' });
+        const logger = pino({ name: 'aguard-replay' });
         const fs = await import('node:fs');
 
         if (!fs.existsSync(targetFile)) {
           logger.error({ file: targetFile }, 'Event log file not found');
           console.error(`Event log file not found: ${targetFile}`);
-          console.error('Run "agentguard guard" first to generate events.');
+          console.error('Run "aguard guard" first to generate events.');
           return;
         }
 
@@ -166,7 +166,7 @@ async function loadReplaySessionSqlite(runId?: string): Promise<ReplaySession | 
   const targetRunId = runId || getLatestRunId(db);
   if (!targetRunId) {
     console.error('\n  No governance runs found.');
-    console.error('  Run "agentguard guard" first to generate events.\n');
+    console.error('  Run "aguard guard" first to generate events.\n');
     storage.close();
     return null;
   }
@@ -193,7 +193,7 @@ async function renderRunListSqlite(): Promise<void> {
 
   if (runIds.length === 0) {
     console.error('\n  No governance runs found.');
-    console.error('  Run "agentguard guard" first to generate events.\n');
+    console.error('  Run "aguard guard" first to generate events.\n');
     return;
   }
 
@@ -204,7 +204,7 @@ async function renderRunListSqlite(): Promise<void> {
   if (runIds.length > 20) {
     console.log(`    ... and ${runIds.length - 20} more`);
   }
-  console.log('\n  Usage: agentguard replay --run <runId>\n');
+  console.log('\n  Usage: aguard replay --run <runId>\n');
 }
 
 // ---------------------------------------------------------------------------
@@ -215,7 +215,7 @@ function renderRunList(baseDir: string): void {
   const runIds = listRunIdsJsonl(baseDir);
   if (runIds.length === 0) {
     console.error('\n  No governance runs found.');
-    console.error('  Run "agentguard guard" first to generate events.\n');
+    console.error('  Run "aguard guard" first to generate events.\n');
     return;
   }
 
@@ -226,7 +226,7 @@ function renderRunList(baseDir: string): void {
   if (runIds.length > 20) {
     console.log(`    ... and ${runIds.length - 20} more`);
   }
-  console.log('\n  Usage: agentguard replay --run <runId>\n');
+  console.log('\n  Usage: aguard replay --run <runId>\n');
 }
 
 function renderSessionSummary(session: ReplaySession): void {

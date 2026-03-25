@@ -21,13 +21,13 @@ const POLICY_CANDIDATES = [
 
 const STARTER_POLICY = `# AgentGuard policy — safety rules for AI coding agents.
 # Customize this file to match your project's security requirements.
-# Docs: https://github.com/AgentGuardHQ/agentguard
+# Docs: https://github.com/AgentGuardHQ/agent-guard
 
 id: default-policy
 name: Default Safety Policy
 description: Baseline safety rules for AI coding agents
 severity: 4
-mode: guide
+mode: monitor
 pack: essentials
 
 rules:
@@ -439,12 +439,8 @@ function printSummary(
     process.stderr.write('  Governance is active. Run: agentguard inspect --last\n\n');
   }
 
-  process.stderr.write(
-    '  Customize:  npx @red-codes/agentguard claude-init   (full Claude Code wizard)\n'
-  );
-  process.stderr.write(
-    '              npx @red-codes/agentguard copilot-init  (full Copilot CLI wizard)\n'
-  );
+  process.stderr.write('  Customize:  npx aguard claude-init   (full Claude Code wizard)\n');
+  process.stderr.write('              npx aguard copilot-init  (full Copilot CLI wizard)\n');
   process.stderr.write('  Enforce:    set mode: enforce in agentguard.yaml\n');
   process.stderr.write('\n');
 }

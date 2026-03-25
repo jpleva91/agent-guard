@@ -312,7 +312,7 @@ export async function sessionViewer(
 
     if (runs.length === 0) {
       process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
-      process.stderr.write('  Run \x1b[1magentguard guard\x1b[0m to start recording.\n\n');
+      process.stderr.write('  Run \x1b[1maguard guard\x1b[0m to start recording.\n\n');
       return 0;
     }
 
@@ -324,7 +324,7 @@ export async function sessionViewer(
     if (runs.length > 20) {
       process.stderr.write(`  \x1b[2m... and ${runs.length - 20} more\x1b[0m\n`);
     }
-    process.stderr.write('\n  Usage: agentguard session-viewer <runId>\n\n');
+    process.stderr.write('\n  Usage: aguard session-viewer <runId>\n\n');
     return 0;
   }
 
@@ -363,7 +363,7 @@ export async function sessionViewer(
     if (runs.length === 0) {
       storage.close();
       process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
-      process.stderr.write('  Run \x1b[1magentguard guard\x1b[0m to start recording.\n\n');
+      process.stderr.write('  Run \x1b[1maguard guard\x1b[0m to start recording.\n\n');
       return 1;
     }
     const count = mergeCount > 0 ? mergeCount : Math.min(runs.length, 50);
@@ -398,7 +398,7 @@ export async function sessionViewer(
 
     if (!targetRunId) {
       process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
-      process.stderr.write('  Run \x1b[1magentguard guard\x1b[0m to start recording.\n\n');
+      process.stderr.write('  Run \x1b[1maguard guard\x1b[0m to start recording.\n\n');
       return 1;
     }
 

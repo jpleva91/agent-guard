@@ -23,19 +23,13 @@ AI coding agents (Claude Code, GitHub Copilot, any MCP client) run autonomously 
 
 ```bash
 npm install -g aguard
-# or: npm install -g @red-codes/agentguard
 cd your-project
-agentguard claude-init
+aguard claude-init
 # Interactive wizard: choose enforcement mode and a policy pack
 # → Creates agentguard.yaml, installs Claude Code hooks, and activates governance
 ```
 
-Or use `npx` without a global install:
-
-```bash
-cd your-project
-npx @red-codes/agentguard claude-init
-```
+> `aguard` is a convenience alias for the full scoped package `@red-codes/agentguard`. Both work identically.
 
 The `claude-init` wizard walks you through setup interactively:
 
@@ -55,7 +49,7 @@ The `claude-init` wizard walks you through setup interactively:
 Verify it's running:
 
 ```bash
-agentguard status
+aguard status
 # ✓ Claude Code hooks installed
 # ✓ Policy file (agentguard.yaml)
 # ✓ Runtime active
@@ -64,14 +58,14 @@ agentguard status
 Test a deny rule without executing anything:
 
 ```bash
-echo '{"tool":"Bash","command":"git push origin main"}' | agentguard guard --dry-run
+echo '{"tool":"Bash","command":"git push origin main"}' | aguard guard --dry-run
 # ✗ git.push main → DENIED (protect-main)
 ```
 
 Non-interactive setup (CI or scripted installs):
 
 ```bash
-agentguard claude-init --mode guide --pack essentials
+aguard claude-init --mode guide --pack essentials
 ```
 
 ## Cloud Dashboard
@@ -79,7 +73,7 @@ agentguard claude-init --mode guide --pack essentials
 Connect to the AgentGuard Cloud for team governance, real-time telemetry, and multi-tenant management:
 
 ```bash
-agentguard cloud login
+aguard cloud login
 # Opens browser → authenticate with GitHub or Google → CLI auto-configures
 ```
 
@@ -93,7 +87,7 @@ agentguard cloud login
 Every governed session has an identity. Set it via the CLI flag or let the interactive prompt ask:
 
 ```bash
-agentguard guard --agent-name my-agent
+aguard guard --agent-name my-agent
 # Or omit --agent-name and an interactive prompt will ask for role + driver
 ```
 
@@ -378,8 +372,8 @@ The Go kernel includes: action normalization with AST-based shell parsing, polic
 |---------|---------|
 | **Compliance packs** | `extends: soc2`, `extends: hipaa` — pre-built policy packs mapping to SOC 2 CC6/CC7 and HIPAA 164.312 controls |
 | **Audit trail** | Tamper-resistant SQLite event chain; export to JSONL for SIEM ingestion |
-| **Evidence PRs** | `agentguard evidence-pr` — attach governance evidence summary to any PR |
-| **CI gates** | `agentguard ci-check <session>` — fail CI if a governance session contains violations |
+| **Evidence PRs** | `aguard evidence-pr` — attach governance evidence summary to any PR |
+| **CI gates** | `aguard ci-check <session>` — fail CI if a governance session contains violations |
 | **Branch protection** | Policy-enforced push controls on top of GitHub branch rules |
 | **SSO** | GitHub and Google OAuth via cloud dashboard |
 | **Multi-tenant** | Isolated workspaces per team or project |
@@ -388,42 +382,42 @@ The Go kernel includes: action normalization with AST-based shell parsing, polic
 
 ```bash
 # Setup (interactive wizard)
-agentguard claude-init                    # Interactive wizard: mode + pack → creates policy + hooks
-agentguard claude-init --global           # Install hooks globally (~/.claude/settings.json)
-agentguard claude-init --mode guide --pack essentials  # Non-interactive setup
-agentguard claude-init                    # Also installs pre-push hooks for branch protection
-agentguard init --template strict         # Scaffold policy from a template
-agentguard status                         # Show governance status
+aguard claude-init                    # Interactive wizard: mode + pack → creates policy + hooks
+aguard claude-init --global           # Install hooks globally (~/.claude/settings.json)
+aguard claude-init --mode guide --pack essentials  # Non-interactive setup
+aguard claude-init                    # Also installs pre-push hooks for branch protection
+aguard init --template strict         # Scaffold policy from a template
+aguard status                         # Show governance status
 
 # Runtime
-agentguard guard                          # Start governed action runtime
-agentguard guard --policy <file>          # Use a specific policy file
-agentguard guard --dry-run                # Evaluate without executing
-agentguard guard --agent-name <name>      # Set agent identity for session
+aguard guard                          # Start governed action runtime
+aguard guard --policy <file>          # Use a specific policy file
+aguard guard --dry-run                # Evaluate without executing
+aguard guard --agent-name <name>      # Set agent identity for session
 
 # Inspect
-agentguard inspect --last                 # Show last run action graph
-agentguard events --last                  # Raw event stream (pipe to jq)
-agentguard traces [runId]                 # Policy evaluation traces
-agentguard replay --last                  # Replay session timeline
+aguard inspect --last                 # Show last run action graph
+aguard events --last                  # Raw event stream (pipe to jq)
+aguard traces [runId]                 # Policy evaluation traces
+aguard replay --last                  # Replay session timeline
 
 # Cloud
-agentguard cloud login                    # Device code auth — opens browser
-agentguard cloud status                   # Check cloud connection
-agentguard cloud events                   # Query events from cloud
-agentguard cloud runs                     # List governance runs
-agentguard cloud summary                  # Analytics summary
+aguard cloud login                    # Device code auth — opens browser
+aguard cloud status                   # Check cloud connection
+aguard cloud events                   # Query events from cloud
+aguard cloud runs                     # List governance runs
+aguard cloud summary                  # Analytics summary
 
 # CI / Compliance
-agentguard ci-check <session>             # Verify session for violations (CI gate)
-agentguard evidence-pr                    # Attach evidence summary to PR
-agentguard audit-verify                   # Verify tamper-resistant audit chain
-agentguard analytics                      # Violation pattern analysis
+aguard ci-check <session>             # Verify session for violations (CI gate)
+aguard evidence-pr                    # Attach evidence summary to PR
+aguard audit-verify                   # Verify tamper-resistant audit chain
+aguard analytics                      # Violation pattern analysis
 
 # Policy
-agentguard policy validate <file>         # Validate a policy file
-agentguard policy-verify <file>           # Verify policy structure and rules
-agentguard init --template <name>         # Scaffold from template (strict/permissive/ci-only/development)
+aguard policy validate <file>         # Validate a policy file
+aguard policy-verify <file>           # Verify policy structure and rules
+aguard init --template <name>         # Scaffold from template (strict/permissive/ci-only/development)
 ```
 
 ## Agent SDK
