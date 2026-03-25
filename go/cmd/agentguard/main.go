@@ -2,6 +2,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -11,18 +12,32 @@ import (
 	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
 	"github.com/AgentGuardHQ/agent-guard/go/internal/config"
 	"github.com/AgentGuardHQ/agent-guard/go/internal/engine"
+	"github.com/AgentGuardHQ/agent-guard/go/internal/kernel"
+	"github.com/AgentGuardHQ/agent-guard/go/pkg/hook"
 )
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "Usage: agentguard <normalize|evaluate>")
+		fmt.Fprintln(os.Stderr, "Usage: agentguard <guard|normalize|evaluate|claude-hook|copilot-hook>")
 		os.Exit(1)
 	}
 	switch os.Args[1] {
+	case "guard":
+		runGuard(os.Args[2:])
 	case "normalize":
 		runNormalize()
 	case "evaluate":
 		runEvaluate(os.Args[2:])
+	case "claude-hook":
+		if err := hook.RunClaudeHook(); err != nil {
+			fmt.Fprintf(os.Stderr, "claude-hook error: %v\n", err)
+			os.Exit(1)
+		}
+	case "copilot-hook":
+		if err := hook.RunCopilotHook(); err != nil {
+			fmt.Fprintf(os.Stderr, "copilot-hook error: %v\n", err)
+			os.Exit(1)
+		}
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
 		os.Exit(1)
@@ -104,6 +119,98 @@ func runEvaluate(args []string) {
 	fmt.Println(string(out))
 
 	if !result.Allowed {
+		os.Exit(2)
+	}
+}
+
+// runGuard creates a kernel, reads actions from stdin, and outputs governance
+// decisions. Supports single JSON objects and newline-delimited JSON.
+// Exits 2 if any action is denied.
+func runGuard(args []string) {
+	fs := flag.NewFlagSet("guard", flag.ExitOnError)
+	policyPath := fs.String("policy", "", "Path to agentguard.yaml policy file")
+	dryRun := fs.Bool("dry-run", false, "Evaluate without executing")
+	agentName := fs.String("agent-name", "", "Agent identity for this session")
+	defaultDeny := fs.Bool("default-deny", true, "Deny actions with no matching rule")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintf(os.Stderr, "parse flags: %v\n", err)
+		os.Exit(1)
+	}
+
+	if *policyPath == "" {
+		fmt.Fprintln(os.Stderr, "error: --policy is required")
+		os.Exit(1)
+	}
+
+	cfg := kernel.KernelConfig{
+		PolicyPaths: []string{*policyPath},
+		DryRun:      *dryRun,
+		AgentName:   *agentName,
+		DefaultDeny: *defaultDeny,
+	}
+
+	k, err := kernel.NewKernel(cfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "kernel init: %v\n", err)
+		os.Exit(1)
+	}
+	defer k.Close()
+
+	stdinData, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "read stdin: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Parse input — try single JSON object first, then newline-delimited
+	var payloads []struct {
+		Tool  string         `json:"tool"`
+		Input map[string]any `json:"input"`
+	}
+
+	var single struct {
+		Tool  string         `json:"tool"`
+		Input map[string]any `json:"input"`
+	}
+	if err := json.Unmarshal(stdinData, &single); err == nil && single.Tool != "" {
+		payloads = append(payloads, single)
+	} else {
+		// Try newline-delimited JSON
+		dec := json.NewDecoder(bytes.NewReader(stdinData))
+		for dec.More() {
+			var p struct {
+				Tool  string         `json:"tool"`
+				Input map[string]any `json:"input"`
+			}
+			if err := dec.Decode(&p); err != nil {
+				fmt.Fprintf(os.Stderr, "parse json: %v\n", err)
+				os.Exit(1)
+			}
+			payloads = append(payloads, p)
+		}
+	}
+
+	if len(payloads) == 0 {
+		fmt.Fprintln(os.Stderr, "error: no actions provided on stdin")
+		os.Exit(1)
+	}
+
+	anyDenied := false
+	for _, p := range payloads {
+		raw := parseRawAction(p.Tool, p.Input)
+		result, err := k.Propose(raw)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "propose error: %v\n", err)
+			os.Exit(1)
+		}
+		out, _ := json.MarshalIndent(result, "", "  ")
+		fmt.Println(string(out))
+		if result.Decision == "deny" {
+			anyDenied = true
+		}
+	}
+
+	if anyDenied {
 		os.Exit(2)
 	}
 }

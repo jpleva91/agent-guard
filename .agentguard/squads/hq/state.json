@@ -1,0 +1,15 @@
+{
+  "squad": "hq",
+  "sprint": {
+    "goal": "",
+    "issues": []
+  },
+  "assignments": {},
+  "blockers": [],
+  "prQueue": {
+    "open": 0,
+    "reviewed": 0,
+    "mergeable": 0
+  },
+  "updatedAt": "2026-03-25T00:00:00.000Z"
+}

@@ -195,6 +195,190 @@ squads:
         cron: "0 */3 * * *"
         skills: [e2e-testing, compliance-test, test-health-review, learn, prune]
 
+  hq:
+    repo: agent-guard
+    em:
+      id: hq-em
+      rank: em
+      driver: claude-code
+      model: opus
+      cron: "0 */4 * * *"
+      skills: [squad-plan, squad-execute, squad-status, squad-retro, escalation-router]
+    agents:
+      product-lead:
+        id: hq-pl
+        rank: product-lead
+        driver: claude-code
+        model: sonnet
+        cron: "0 8 * * *"
+        skills: [sprint-planning, product-health-review, backlog-steward, roadmap-expand]
+      architect:
+        id: hq-arch
+        rank: architect
+        driver: claude-code
+        model: opus
+        cron: "0 */6 * * *"
+        skills: [architecture-review, sdlc-pipeline-health, policy-effectiveness-review, evolve]
+      senior:
+        id: hq-sr
+        rank: senior
+        driver: claude-code
+        model: sonnet
+        cron: "0 */3 * * *"
+        skills: [repo-hygiene, scheduled-docs-sync, dependency-security-audit, release-prepare]
+      junior:
+        id: hq-jr
+        rank: junior
+        driver: copilot-cli
+        model: copilot
+        cron: "0 */3 * * *"
+        skills: [stale-branch-janitor, triage-failing-ci, run-tests, generate-tests]
+      qa:
+        id: hq-qa
+        rank: qa
+        driver: copilot-cli
+        model: sonnet
+        cron: "0 */4 * * *"
+        skills: [governance-log-audit, compliance-test, test-health-review, observability-review]
+
+  marketing:
+    repo: agent-guard
+    em:
+      id: marketing-em
+      rank: em
+      driver: claude-code
+      model: sonnet
+      cron: "0 */6 * * *"
+      skills: [squad-plan, squad-execute, squad-status, squad-retro, escalation-router]
+    agents:
+      product-lead:
+        id: marketing-pl
+        rank: product-lead
+        driver: claude-code
+        model: sonnet
+        cron: "0 9 * * *"
+        skills: [sprint-planning, marketing-content, backlog-steward, roadmap-expand]
+      architect:
+        id: marketing-arch
+        rank: architect
+        driver: claude-code
+        model: sonnet
+        cron: "0 */8 * * *"
+        skills: [architecture-review, product-health-review, review-open-prs, evolve]
+      senior:
+        id: marketing-sr
+        rank: senior
+        driver: claude-code
+        model: sonnet
+        cron: "0 */4 * * *"
+        skills: [marketing-content, scheduled-docs-sync, create-pr, claim-issue]
+      junior:
+        id: marketing-jr
+        rank: junior
+        driver: copilot-cli
+        model: copilot
+        cron: "0 */4 * * *"
+        skills: [claim-issue, implement-issue, generate-tests, run-tests]
+      qa:
+        id: marketing-qa
+        rank: qa
+        driver: copilot-cli
+        model: haiku
+        cron: "0 */6 * * *"
+        skills: [test-health-review, review-open-prs, run-tests]
+
+  site:
+    repo: agent-guard
+    em:
+      id: site-em
+      rank: em
+      driver: claude-code
+      model: sonnet
+      cron: "0 */4 * * *"
+      skills: [squad-plan, squad-execute, squad-status, squad-retro, escalation-router]
+    agents:
+      product-lead:
+        id: site-pl
+        rank: product-lead
+        driver: claude-code
+        model: sonnet
+        cron: "0 8 * * *"
+        skills: [sprint-planning, product-health-review, backlog-steward, roadmap-expand]
+      architect:
+        id: site-arch
+        rank: architect
+        driver: claude-code
+        model: opus
+        cron: "0 */6 * * *"
+        skills: [architecture-review, review-open-prs, evolve, observability-review]
+      senior:
+        id: site-sr
+        rank: senior
+        driver: claude-code
+        model: sonnet
+        cron: "0 */3 * * *"
+        skills: [claim-issue, implement-issue, create-pr, scheduled-docs-sync]
+      junior:
+        id: site-jr
+        rank: junior
+        driver: copilot-cli
+        model: copilot
+        cron: "0 */3 * * *"
+        skills: [claim-issue, implement-issue, run-tests, generate-tests]
+      qa:
+        id: site-qa
+        rank: qa
+        driver: copilot-cli
+        model: sonnet
+        cron: "0 */4 * * *"
+        skills: [e2e-testing, test-health-review, review-open-prs]
+
+  design:
+    repo: "*"
+    em:
+      id: design-em
+      rank: em
+      driver: claude-code
+      model: sonnet
+      cron: "0 */6 * * *"
+      skills: [squad-plan, squad-execute, squad-status, squad-retro, escalation-router]
+    agents:
+      product-lead:
+        id: design-pl
+        rank: product-lead
+        driver: claude-code
+        model: sonnet
+        cron: "0 9 * * *"
+        skills: [sprint-planning, product-health-review, backlog-steward, roadmap-expand]
+      architect:
+        id: design-arch
+        rank: architect
+        driver: claude-code
+        model: opus
+        cron: "0 */8 * * *"
+        skills: [architecture-review, review-open-prs, evolve, observability-review]
+      senior:
+        id: design-sr
+        rank: senior
+        driver: claude-code
+        model: sonnet
+        cron: "0 */4 * * *"
+        skills: [claim-issue, implement-issue, create-pr, run-tests]
+      junior:
+        id: design-jr
+        rank: junior
+        driver: copilot-cli
+        model: copilot
+        cron: "0 */4 * * *"
+        skills: [claim-issue, implement-issue, run-tests, generate-tests]
+      qa:
+        id: design-qa
+        rank: qa
+        driver: copilot-cli
+        model: haiku
+        cron: "0 */6 * * *"
+        skills: [e2e-testing, test-health-review, review-open-prs]
+
 loopGuards:
   maxOpenPRsPerSquad: 3
   maxRetries: 3
