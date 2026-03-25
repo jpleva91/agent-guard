@@ -36,7 +36,7 @@ cd apps/cli && npm link && cd ../..
 
 # Scaffold the swarm into your project
 cd /path/to/your-project
-agentguard init swarm
+aguard init swarm
 
 # This creates:
 #   agentguard-swarm.yaml   — swarm configuration
@@ -172,11 +172,11 @@ To run the same swarm on two repos (e.g., an OSS repo and a private enterprise r
 ```bash
 # In your OSS repo
 cd ~/oss-project
-agentguard init swarm
+aguard init swarm
 
 # In your enterprise repo
 cd ~/enterprise-project
-agentguard init swarm
+aguard init swarm
 ```
 
 Each repo has its own ROADMAP.md driving independent priorities. The agents operate under their respective governance policies. Swarm state is per-repo.

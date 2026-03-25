@@ -1,4 +1,4 @@
-// CLI command: agentguard guard — start the governed action runtime.
+// CLI command: aguard guard — start the governed action runtime.
 // Reads stdin for action proposals (JSON), evaluates them, writes results to stdout.
 // Uses the renderer plugin system for all human-facing output.
 // Supports policy composition: multiple --policy flags merged with precedence.

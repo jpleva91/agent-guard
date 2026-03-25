@@ -453,7 +453,7 @@
               <span class="w-3 h-3 rounded-full bg-danger/60" aria-hidden="true"></span>
               <span class="w-3 h-3 rounded-full bg-warning/60" aria-hidden="true"></span>
               <span class="w-3 h-3 rounded-full bg-cta/60" aria-hidden="true"></span>
-              <span class="font-mono text-xs text-muted ml-2">agentguard guard --policy agentguard.yaml</span>
+              <span class="font-mono text-xs text-muted ml-2">aguard guard --policy agentguard.yaml</span>
             </div>
             <!-- Terminal body -->
             <div class="p-5 font-mono text-sm leading-relaxed h-[380px] overflow-hidden">
@@ -1196,8 +1196,8 @@
               <span class="text-text font-semibold text-sm">Install globally</span>
             </div>
             <div class="relative group">
-              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">npm install -g @red-codes/agentguard</span></code></pre>
-              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="npm install -g @red-codes/agentguard" aria-label="Copy to clipboard">
+              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">npm install -g aguard</span></code></pre>
+              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="npm install -g aguard" aria-label="Copy to clipboard">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>
@@ -1211,10 +1211,10 @@
             </div>
             <div class="relative group">
               <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">cd your-project</span>
-<span class="text-muted">$</span> <span class="text-text">agentguard claude-init</span>
+<span class="text-muted">$</span> <span class="text-text">aguard claude-init</span>
 <span class="text-muted"># Wizard: choose enforcement mode + policy pack</span>
 <span class="text-muted"># Creates agentguard.yaml + installs Claude Code hooks</span></code></pre>
-              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="agentguard claude-init" aria-label="Copy to clipboard">
+              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="aguard claude-init" aria-label="Copy to clipboard">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>
@@ -1227,10 +1227,10 @@
               <span class="text-text font-semibold text-sm">Connect to cloud dashboard <span class="text-muted font-normal">(optional)</span></span>
             </div>
             <div class="relative group">
-              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">agentguard cloud login</span>
+              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">aguard cloud login</span>
 <span class="text-muted"># Opens browser &rarr; GitHub or Google OAuth &rarr; CLI auto-configures</span>
 <span class="text-muted"># Visit: agentguard-cloud-dashboard.vercel.app</span></code></pre>
-              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="agentguard cloud login" aria-label="Copy to clipboard">
+              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="aguard cloud login" aria-label="Copy to clipboard">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>
@@ -1243,11 +1243,11 @@
               <span class="text-text font-semibold text-sm">Verify governance is active</span>
             </div>
             <div class="relative group">
-              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">agentguard status</span>
+              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">aguard status</span>
 <span class="text-cta">✓</span> <span class="text-muted">Claude Code hooks installed</span>
 <span class="text-cta">✓</span> <span class="text-muted">Policy file (agentguard.yaml)</span>
 <span class="text-cta">✓</span> <span class="text-muted">Runtime active</span></code></pre>
-              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="agentguard status" aria-label="Copy to clipboard">
+              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" data-code="aguard status" aria-label="Copy to clipboard">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               </button>
             </div>
@@ -1832,7 +1832,7 @@ rules:
             <h3 class="font-mono font-bold text-text text-lg mb-2">Claude Code</h3>
             <p class="text-muted text-sm leading-relaxed mb-4">Inline hook integration &mdash; no daemon, no sidecar. Fires on every tool call, evaluates policies in-process, and exits. Fail-open by design.</p>
             <div class="relative group mb-4">
-              <pre class="bg-bg/50 rounded-lg p-3 font-mono text-xs overflow-x-auto"><code class="text-muted"><span class="text-cta">$</span> agentguard claude-init</code></pre>
+              <pre class="bg-bg/50 rounded-lg p-3 font-mono text-xs overflow-x-auto"><code class="text-muted"><span class="text-cta">$</span> aguard claude-init</code></pre>
             </div>
             <div class="flex flex-wrap gap-2">
               <span class="text-xs font-mono text-muted bg-surface-light/50 px-2 py-1 rounded">PreToolUse</span>

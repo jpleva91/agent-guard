@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Extend `agentguard claude-init` with role prompt, auto-detected identity, starter skill scaffolding, and tests.
+**Goal:** Extend `aguard claude-init` with role prompt, auto-detected identity, starter skill scaffolding, and tests.
 
 **Architecture:** Add identity prompting and skill scaffolding to the existing `claudeInit()` function. Bundle template scripts and skills as embedded strings (same pattern as `STARTER_POLICY_TEMPLATE`). Update PreToolUse hook to use wrapper script. Add SessionStart persona check hook. Tests extend the existing `cli-claude-init.test.ts` with vitest.
 

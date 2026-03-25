@@ -84,17 +84,17 @@ Import behavior:
 
 ```bash
 # Export from default JSONL backend
-agentguard export --last -o session.jsonl
+aguard export --last -o session.jsonl
 
 # Export from SQLite backend
-agentguard export --last --store sqlite -o session.jsonl
+aguard export --last --store sqlite -o session.jsonl
 
 # Import into JSONL backend
-agentguard import session.jsonl
+aguard import session.jsonl
 
 # Import into SQLite backend
-agentguard import session.jsonl --store sqlite
+aguard import session.jsonl --store sqlite
 
 # Import with a different run ID
-agentguard import session.jsonl --as custom_run_id
+aguard import session.jsonl --as custom_run_id
 ```

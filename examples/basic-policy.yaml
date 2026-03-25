@@ -1,7 +1,7 @@
 # Example AgentGuard policy — annotated to show all rule features.
 #
 # Place as `agentguard.yaml` in your repo root for automatic discovery,
-# or pass explicitly: `agentguard guard --policy examples/basic-policy.yaml`
+# or pass explicitly: `aguard guard --policy examples/basic-policy.yaml`
 
 # Policy metadata
 id: example-policy

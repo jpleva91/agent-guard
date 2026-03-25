@@ -114,7 +114,7 @@ describe('checkHookScripts', () => {
     const result = checkHookScripts();
     expect(result.ok).toBe(false);
     expect(result.detail).toContain('missing');
-    expect(result.detail).toContain('agentguard claude-init --refresh');
+    expect(result.detail).toContain('aguard claude-init --refresh');
   });
 
   it('returns ok:false when some scripts are missing', () => {

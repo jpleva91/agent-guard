@@ -12,7 +12,7 @@
 
 AgentGuard is the **Execution Control Plane for autonomous AI agents** — the independent governance layer that sits between autonomous agents and the real world. All agent side effects must pass through deterministic governance before reaching the environment, regardless of which orchestration framework, cloud provider, or AI model powers the agents.
 
-**Strategic positioning**: Autonomous Execution Governance (AEG). Like Okta for the application layer, AgentGuard controls the trust boundary without replacing the underlying systems. The OSS repo houses Layer 1 (Kernel — the moat) and Layer 2 (Studio Runtime — adapters, swarm templates, execution profiles, and the `agentguard init studio` wizard that bootstraps governed workspaces).
+**Strategic positioning**: Autonomous Execution Governance (AEG). Like Okta for the application layer, AgentGuard controls the trust boundary without replacing the underlying systems. The OSS repo houses Layer 1 (Kernel — the moat) and Layer 2 (Studio Runtime — adapters, swarm templates, execution profiles, and the `aguard init studio` wizard that bootstraps governed workspaces).
 
 **Core thesis**: Once autonomous agents start modifying production systems, organizations need deterministic execution governance. Prompt alignment cannot solve this. Only a reference monitor architecture — default-deny, tamper-evident, fully auditable — provides the guarantees enterprises require. Orchestration is commoditizing (LangGraph, CrewAI, AutoGen, platform-level tools); governance remains scarce.
 
@@ -171,12 +171,12 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 > Ship the governance kernel to the world. Default-deny + KE-2 = production-grade enforcement.
 
 - [ ] Default-deny finalized + KE-2 ActionContext shipped
-- [ ] **Stranger test validation** — Have someone with zero context install and configure AgentGuard from the README alone. Every friction point found is a v3.0 blocker. The individual governance experience (`npm install → agentguard claude-init → governance active`) must work flawlessly before anything else is promoted.
+- [ ] **Stranger test validation** — Have someone with zero context install and configure AgentGuard from the README alone. Every friction point found is a v3.0 blocker. The individual governance experience (`npm install → aguard claude-init → governance active`) must work flawlessly before anything else is promoted.
 - [ ] **User capture funnel** — Without this, installs vanish into the void:
   - README call-to-action: "Join early access / updates" link
-  - Cloud waitlist / signup link in CLI output after `agentguard claude-init`
+  - Cloud waitlist / signup link in CLI output after `aguard claude-init`
   - Enable GitHub Discussions on the repo (category: "Show & Tell", "Q&A")
-  - `agentguard cloud signup` prompt during first-run flow (non-blocking, skippable)
+  - `aguard cloud signup` prompt during first-run flow (non-blocking, skippable)
 - [ ] **Install attribution tracking** — The postinstall script (`apps/cli/src/postinstall.ts`) already runs on every `npm install` but doesn't report install events. Add a lightweight, opt-in install ping to the cloud endpoint:
   - Report: package version, OS, Node version, CI detection (GitHub Actions, Vercel, GitLab, etc.), anonymous install ID
   - Respect `AGENTGUARD_TELEMETRY=off` and `DO_NOT_TRACK=1`
@@ -190,7 +190,7 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 
 **Traction note (2026-03-24)**: npm reports ~1,761 weekly downloads, but investigation shows the majority are internal Vercel CI builds of `agentguard-cloud` which pins `@red-codes/agentguard@2.0.0`. Each Vercel build (ephemeral containers, preview deploys, branch builds) triggers a fresh `npm install`. Real external adoption is likely in the low hundreds. This makes install attribution tracking and the user capture funnel critical — without them, we cannot distinguish real adoption from CI noise. The version drift (cloud at 2.0.0 vs OSS at 2.4.0) should also be resolved.
 
-**Release cadence**: v3.0 (kernel + stranger test + capture funnel), v3.1 (Runner + `agentguard init studio` wizard + swarm template schema + install attribution), v3.2 (Copilot adapters + execution profiles).
+**Release cadence**: v3.0 (kernel + stranger test + capture funnel), v3.1 (Runner + `aguard init studio` wizard + swarm template schema + install attribution), v3.2 (Copilot adapters + execution profiles).
 
 ### Next — Pull-Based Runner (Phase 6.5 — `apps/runner`)
 
@@ -218,7 +218,7 @@ Depends on: v3.0 released + Cloud Phase 2A (orchestrator + runner protocol).
 
 Depends on: v3.0 released (stranger test passed).
 
-- [ ] **`agentguard init studio` wizard** — Interactive CLI wizard:
+- [ ] **`aguard init studio` wizard** — Interactive CLI wizard:
   - Detect project type (monorepo, single package, framework)
   - Detect CI/CD (GitHub Actions, GitLab CI, etc.)
   - Detect test framework (Vitest, Jest, Playwright, etc.)
@@ -226,8 +226,8 @@ Depends on: v3.0 released (stranger test passed).
   - Suggest execution profile (development, ci-safe, strict, enterprise)
   - Select swarm template (QA, backlog refinement, feature implementation, etc.)
   - Generate `agentguard.yaml` with inferred configuration
-  - Optionally connect to Cloud (`agentguard cloud connect`)
-- [ ] **Execution profiles** — Predefined governance configurations selectable via `agentguard init studio --profile <name>` or `agentguard init --profile <name>`:
+  - Optionally connect to Cloud (`aguard cloud connect`)
+- [ ] **Execution profiles** — Predefined governance configurations selectable via `aguard init studio --profile <name>` or `aguard init --profile <name>`:
   - `development` — Permissive, all adapters enabled, logging verbose
   - `ci-safe` — No interactive commands, restricted file scope, CI-optimized
   - `strict` — Default-deny, minimal tool allowlist, audit everything
@@ -289,7 +289,7 @@ Depends on: KE-2 (ActionContext provides vendor-neutral normalization).
 
 - [ ] SQLite migration v2 — additional indexed columns
 - [ ] Adaptive governance depth — tiered evaluation (fast-path for known-safe, full eval for normal, simulation for high-risk)
-- [ ] Timeline viewer for governance sessions (`agentguard replay --ui`)
+- [ ] Timeline viewer for governance sessions (`aguard replay --ui`)
 - [ ] Application-level process and network monitoring
 
 ### Later — CI/CD Enforcement (Phase 12)

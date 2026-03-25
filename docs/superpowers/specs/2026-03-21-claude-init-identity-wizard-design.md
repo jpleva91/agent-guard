@@ -6,7 +6,7 @@
 
 ## Problem
 
-When users install AgentGuard and run `agentguard claude-init`, it configures hooks and policies but does not:
+When users install AgentGuard and run `aguard claude-init`, it configures hooks and policies but does not:
 
 1. Set up agent identity (persona) for governance telemetry
 2. Scaffold starter skills that demonstrate the identity bridge pattern
@@ -62,7 +62,7 @@ No prompts. Uses `--role` flag or defaults to `developer`. Auto-detects driver a
 #### What Init Writes
 
 **`.claude/settings.json` changes:**
-- PreToolUse: `bash scripts/claude-hook-wrapper.sh` (replaces direct `agentguard claude-hook pre` call)
+- PreToolUse: `bash scripts/claude-hook-wrapper.sh` (replaces direct `aguard claude-hook pre` call)
 - SessionStart: adds `bash scripts/session-persona-check.sh` (blocking, 5s timeout)
 - All other hooks unchanged
 

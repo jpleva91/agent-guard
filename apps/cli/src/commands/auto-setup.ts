@@ -152,7 +152,7 @@ export async function autoSetup(args: string[] = []): Promise<AutoSetupResult> {
         `  ${DIM}Install: npm install --save-dev @red-codes/agentguard${RESET}\n`
       );
       process.stderr.write(
-        `  ${DIM}Or run: agentguard claude-init (to configure manually)${RESET}\n\n`
+        `  ${DIM}Or run: aguard claude-init (to configure manually)${RESET}\n\n`
       );
     }
     return result;
@@ -209,7 +209,7 @@ export async function autoSetup(args: string[] = []): Promise<AutoSetupResult> {
     result.skipped = 'Dry run — skipped installation';
     if (!quiet) {
       process.stderr.write(
-        `  ${DIM}[dry-run] Would run: agentguard claude-init --store ${storeBackend}${RESET}\n\n`
+        `  ${DIM}[dry-run] Would run: aguard claude-init --store ${storeBackend}${RESET}\n\n`
       );
     }
     return result;

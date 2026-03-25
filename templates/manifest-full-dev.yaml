@@ -4,7 +4,7 @@
 # shell commands, and test execution. Suitable for feature development
 # with standard guardrails (protected branches, blast radius limits).
 #
-# Usage: agentguard guard --manifest manifest-full-dev.yaml
+# Usage: aguard guard --manifest manifest-full-dev.yaml
 # Docs:  https://docs.agentguard.dev/manifests
 
 sessionId: dev-session

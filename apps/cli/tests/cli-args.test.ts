@@ -99,19 +99,19 @@ describe('formatHelp', () => {
     const output = formatHelp({
       name: 'guard',
       description: 'Start the runtime',
-      usage: 'agentguard guard [options]',
+      usage: 'aguard guard [options]',
     });
     expect(output).toContain('guard');
     expect(output).toContain('Start the runtime');
     expect(output).toContain('Usage:');
-    expect(output).toContain('agentguard guard [options]');
+    expect(output).toContain('aguard guard [options]');
   });
 
   it('renders flags section', () => {
     const output = formatHelp({
       name: 'guard',
       description: 'Start the runtime',
-      usage: 'agentguard guard [options]',
+      usage: 'aguard guard [options]',
       flags: [
         { flag: '--policy <file>', description: 'Policy file to load' },
         { flag: '--dry-run', description: 'Evaluate without executing' },
@@ -127,12 +127,12 @@ describe('formatHelp', () => {
     const output = formatHelp({
       name: 'guard',
       description: 'Start',
-      usage: 'agentguard guard',
-      examples: ['agentguard guard --dry-run', 'agentguard guard --policy custom.yaml'],
+      usage: 'aguard guard',
+      examples: ['aguard guard --dry-run', 'aguard guard --policy custom.yaml'],
     });
     expect(output).toContain('Examples:');
-    expect(output).toContain('agentguard guard --dry-run');
-    expect(output).toContain('agentguard guard --policy custom.yaml');
+    expect(output).toContain('aguard guard --dry-run');
+    expect(output).toContain('aguard guard --policy custom.yaml');
   });
 
   it('omits flags section when no flags provided', () => {

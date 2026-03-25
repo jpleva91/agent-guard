@@ -37,14 +37,14 @@ on:
       session-file:
         description: >
           Path to an exported governance session file (.agentguard.jsonl).
-          Created by running `agentguard export --last -o <path>`.
+          Created by running `aguard export --last -o <path>`.
           If omitted, the workflow will look for the most recent local run.
         required: false
         type: string
         default: ''
       action-manifest:
         description: >
-          Path to a JSONL file of actions to evaluate via `agentguard guard --dry-run`.
+          Path to a JSONL file of actions to evaluate via `aguard guard --dry-run`.
           Each line should be a JSON object with tool/command fields.
           When provided, the workflow evaluates actions against policy without executing them.
           Cannot be used together with session-file.

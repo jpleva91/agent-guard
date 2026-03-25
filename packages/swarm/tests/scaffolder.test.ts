@@ -101,7 +101,7 @@ describe('scaffolder', () => {
     roadmap: PLAN.md
     swarmState: .governance/state.json
     logs: governance/events.jsonl
-    cli: npx agentguard
+    cli: npx aguard
   labels:
     pending: 'todo'
     inProgress: 'doing'
