@@ -114,6 +114,14 @@ const MIGRATIONS: readonly Migration[] = [
       db.exec('CREATE INDEX IF NOT EXISTS idx_decisions_severity ON decisions (severity)');
     },
   },
+
+  {
+    version: 4,
+    description: 'Add standalone index on decisions.action_type for filtered queries',
+    up(db) {
+      db.exec('CREATE INDEX IF NOT EXISTS idx_decisions_action_type ON decisions (action_type)');
+    },
+  },
 ];
 
 /**

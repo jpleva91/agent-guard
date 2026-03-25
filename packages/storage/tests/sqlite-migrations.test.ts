@@ -14,7 +14,7 @@ describe('SQLite migrations', () => {
 
   it('creates all tables on first run', () => {
     const applied = runMigrations(db);
-    expect(applied).toBe(3);
+    expect(applied).toBe(4);
 
     const tables = db
       .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
@@ -48,20 +48,23 @@ describe('SQLite migrations', () => {
     // v2 indexes
     expect(names).toContain('idx_events_action_type');
     expect(names).toContain('idx_decisions_severity');
+
+    // v4 index
+    expect(names).toContain('idx_decisions_action_type');
   });
 
   it('is idempotent — running twice applies nothing the second time', () => {
     const first = runMigrations(db);
     const second = runMigrations(db);
 
-    expect(first).toBe(3);
+    expect(first).toBe(4);
     expect(second).toBe(0);
   });
 
   it('tracks schema version', () => {
     expect(getSchemaVersion(db)).toBe(0);
     runMigrations(db);
-    expect(getSchemaVersion(db)).toBe(3);
+    expect(getSchemaVersion(db)).toBe(4);
   });
 
   it('enables WAL mode (on file-based databases)', () => {
@@ -114,8 +117,8 @@ describe('SQLite migrations', () => {
     expect(getSchemaVersion(db)).toBe(1);
 
     const applied = runMigrations(db);
-    expect(applied).toBe(2);
-    expect(getSchemaVersion(db)).toBe(3);
+    expect(applied).toBe(3);
+    expect(getSchemaVersion(db)).toBe(4);
 
     const indexes = db
       .prepare(
@@ -210,9 +213,9 @@ describe('SQLite migration v2 — action_type and severity columns', () => {
       JSON.stringify({ id: 'evt_2', kind: 'RunStarted', timestamp: 1001, fingerprint: 'fp2' })
     );
 
-    // Run v2+v3 migrations
+    // Run v2+v3+v4 migrations
     const applied = runMigrations(db);
-    expect(applied).toBe(2);
+    expect(applied).toBe(3);
 
     const row1 = db.prepare('SELECT action_type FROM events WHERE id = ?').get('evt_1') as {
       action_type: string | null;
@@ -292,5 +295,58 @@ describe('SQLite migration v2 — action_type and severity columns', () => {
       action_type: string | null;
     };
     expect(row.action_type).toBeNull();
+  });
+
+  it('creates idx_decisions_action_type index for filtered queries', () => {
+    runMigrations(db);
+
+    const indexes = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='index' AND name = 'idx_decisions_action_type'"
+      )
+      .all() as { name: string }[];
+    expect(indexes).toHaveLength(1);
+  });
+
+  it('applies v4 index incrementally on existing v3 database', () => {
+    // Start fresh — simulate v3 database
+    const db2 = new Database(':memory:');
+    db2.pragma('journal_mode = WAL');
+    db2.exec('CREATE TABLE migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)');
+    for (let v = 1; v <= 3; v++) {
+      db2
+        .prepare('INSERT INTO migrations (version, applied_at) VALUES (?, ?)')
+        .run(v, '2026-01-01T00:00:00Z');
+    }
+    db2.exec(`
+      CREATE TABLE events (
+        id TEXT PRIMARY KEY, run_id TEXT NOT NULL, kind TEXT NOT NULL,
+        timestamp INTEGER NOT NULL, fingerprint TEXT NOT NULL, data TEXT NOT NULL,
+        action_type TEXT
+      );
+      CREATE TABLE decisions (
+        record_id TEXT PRIMARY KEY, run_id TEXT NOT NULL, timestamp INTEGER NOT NULL,
+        outcome TEXT NOT NULL, action_type TEXT NOT NULL, target TEXT NOT NULL,
+        reason TEXT NOT NULL, data TEXT NOT NULL, severity INTEGER
+      );
+      CREATE TABLE sessions (
+        id TEXT PRIMARY KEY, started_at TEXT NOT NULL, ended_at TEXT,
+        command TEXT, repo TEXT, data TEXT NOT NULL
+      );
+    `);
+
+    expect(getSchemaVersion(db2)).toBe(3);
+
+    const applied = runMigrations(db2);
+    expect(applied).toBe(1);
+    expect(getSchemaVersion(db2)).toBe(4);
+
+    const indexes = db2
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='index' AND name = 'idx_decisions_action_type'"
+      )
+      .all() as { name: string }[];
+    expect(indexes).toHaveLength(1);
+    db2.close();
   });
 });
