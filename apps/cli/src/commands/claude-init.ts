@@ -170,15 +170,15 @@ export async function claudeInit(args: string[] = []): Promise<void> {
       for (const issue of issues) {
         process.stderr.write(`    ${FG.red}✗${RESET} ${issue}\n`);
       }
-      process.stderr.write(
-        `  ${DIM}Continuing with init to repair...${RESET}\n\n`
-      );
+      process.stderr.write(`  ${DIM}Continuing with init to repair...${RESET}\n\n`);
       // Fall through to re-run init and repair the broken state
     } else if (!isReset) {
       process.stderr.write(
         `  ${FG.yellow}Already configured.${RESET} AgentGuard hook found in ${settingsLabel}.\n`
       );
-      process.stderr.write(`  ${DIM}Use --remove to uninstall, or --reset to regenerate policy.${RESET}\n\n`);
+      process.stderr.write(
+        `  ${DIM}Use --remove to uninstall, or --reset to regenerate policy.${RESET}\n\n`
+      );
       return;
     }
     // --reset: fall through to regenerate policy even when hooks are intact
