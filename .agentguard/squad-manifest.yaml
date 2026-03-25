@@ -148,6 +148,53 @@ squads:
         cron: "0 */1 * * *"
         skills: [e2e-testing, regression-analysis, flakiness-detection, learn, prune]
 
+
+  studio:
+    repo: agentguard-workspace
+    em:
+      id: studio-em
+      rank: em
+      driver: claude-code
+      model: opus
+      cron: "0 */3 * * *"
+      skills: [squad-plan, squad-execute, squad-status, squad-retro, escalation-router]
+    agents:
+      product-lead:
+        id: studio-pl
+        rank: product-lead
+        driver: claude-code
+        model: sonnet
+        cron: "0 6 * * *"
+        skills: [sprint-planning, roadmap-expand, backlog-steward, learn]
+      architect:
+        id: studio-arch
+        rank: architect
+        driver: claude-code
+        model: opus
+        cron: "0 */4 * * *"
+        skills: [architecture-review, review-open-prs, eval, evolve]
+      senior:
+        id: studio-sr
+        rank: senior
+        driver: copilot-cli
+        model: sonnet
+        cron: "0 */2 * * *"
+        skills: [claim-issue, implement-issue, create-pr, run-tests]
+      junior:
+        id: studio-jr
+        rank: junior
+        driver: copilot-cli
+        model: copilot
+        cron: "0 */2 * * *"
+        skills: [claim-issue, implement-issue, run-tests, generate-tests]
+      qa:
+        id: studio-qa
+        rank: qa
+        driver: copilot-cli
+        model: sonnet
+        cron: "0 */3 * * *"
+        skills: [e2e-testing, compliance-test, test-health-review, learn, prune]
+
 loopGuards:
   maxOpenPRsPerSquad: 3
   maxRetries: 3
