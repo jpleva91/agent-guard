@@ -339,6 +339,25 @@ Rust enforcement core + Go control plane + TypeScript dashboards. Many productio
 
 ---
 
+## AgentGuard Studio — Autonomous Engineering Platform
+
+AgentGuard Studio is the autonomous engineering platform that wraps the OSS kernel. It is the self-building system: Studio uses the AgentGuard kernel to govern 80+ agents operating across 4 repositories simultaneously.
+
+**Architecture**: Studio follows a 3-node topology — a **control plane** (orchestration, scheduling, issue scanning), **coding workers** (feature implementation, bug fixes, migrations), and **QA workers** (smoke tests, regression analysis, flaky test detection, security review). Agents are organized into 6 worker classes:
+
+1. **Planner** — Issue triage, backlog refinement, sprint planning
+2. **Coder** — Feature implementation, bug fixes, refactoring
+3. **Validator** — Type checking, lint enforcement, build verification
+4. **QA** — Test authoring, smoke runs, regression analysis, flaky test detection
+5. **Ops** — CI/CD management, deployment, infrastructure
+6. **Governance** — Policy enforcement, security review, compliance auditing
+
+**LATTICE governance design**: The governance model powering Studio is being extracted from `bench-devs-platform` into a reusable specification. LATTICE defines how agents declare intent, how the control plane assigns work, and how the kernel enforces execution boundaries — enabling deterministic multi-agent orchestration at scale.
+
+**Teaser site**: [https://didactic-adventure-wwlp1jr.pages.github.io/](https://didactic-adventure-wwlp1jr.pages.github.io/)
+
+---
+
 ## Performance Regression Gate
 
 The following benchmark must pass before every merge to `main`:
