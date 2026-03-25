@@ -131,16 +131,3 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish unscoped agentguard wrapper
-        working-directory: npm-wrapper/agentguard
-        run: |
-          OUTPUT=$(npm publish --access public 2>&1) && echo "$OUTPUT" || {
-            echo "$OUTPUT"
-            if echo "$OUTPUT" | grep -q "cannot publish over the previously published"; then
-              echo "::notice::agentguard (unscoped) already published at this version, skipping"
-            else
-              exit 1
-            fi
-          }
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
