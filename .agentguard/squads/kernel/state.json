@@ -18,10 +18,10 @@
     "passed": 4065,
     "failed": 0,
     "packages": 18,
-    "lastRun": "2026-03-25T15:50:00.000Z",
+    "lastRun": "2026-03-25T18:50:00.000Z",
     "status": "all_passing"
   },
   "lastEmRun": "2026-03-25T21:10:00.000Z",
-  "lastQaRun": "2026-03-25T15:50:00.000Z",
-  "updatedAt": "2026-03-25T21:10:00.000Z"
+  "lastQaRun": "2026-03-25T18:50:00.000Z",
+  "updatedAt": "2026-03-25T18:50:00.000Z"
 }
