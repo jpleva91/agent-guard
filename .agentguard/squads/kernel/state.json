@@ -1,15 +1,48 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "",
+    "goal": "Land Go kernel rewrite (PR #870) with CI clean; merge rust-kernel fix (PR #869) after architect review",
     "issues": []
   },
-  "assignments": {},
-  "blockers": [],
-  "prQueue": {
-    "open": 0,
-    "reviewed": 0,
-    "mergeable": 0
+  "assignments": {
+    "pr-870-ci-fix": {
+      "task": "Fix lint and rust-kernel CI failures on PR #870 (feat/squad-swarm-spec)",
+      "assignee": "senior-coder",
+      "priority": "P1",
+      "pr": 870,
+      "status": "open",
+      "notes": "lint job failing + rust-kernel job failing. Likely formatting violations or count desyncs similar to #867."
+    }
   },
-  "updatedAt": "2026-03-25T06:20:02.273Z"
+  "blockers": [
+    {
+      "id": "ci-failure-pr-870",
+      "description": "PR #870 failing CI: lint + rust-kernel jobs",
+      "pr": 870,
+      "firstSeen": "2026-03-25T08:35:00.000Z",
+      "runCount": 1
+    }
+  ],
+  "prQueue": {
+    "open": 2,
+    "reviewed": 0,
+    "mergeable": 0,
+    "prs": [
+      {
+        "number": 869,
+        "status": "awaiting_review",
+        "ci": "green",
+        "flaggedForArchitect": true
+      },
+      {
+        "number": 870,
+        "status": "ci_failing",
+        "ci": "failing",
+        "failingChecks": ["lint", "rust-kernel"]
+      }
+    ]
+  },
+  "health": "yellow",
+  "lastEmRun": "2026-03-25T08:35:00.000Z",
+  "updatedAt": "2026-03-25T08:35:00.000Z"
 }
