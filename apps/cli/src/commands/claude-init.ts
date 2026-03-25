@@ -675,7 +675,9 @@ function showProtectionSummary(
       `  ${BOLD}Mode: ${FG.cyan}guide${RESET}${BOLD} — dangerous actions blocked with corrective suggestions${RESET}\n\n`
     );
     process.stderr.write(`  ${BOLD}Guiding:${RESET}\n`);
-    process.stderr.write(`  ${FG.cyan}■${RESET} ${DIM}Block + suggest${RESET} push to main/master\n`);
+    process.stderr.write(
+      `  ${FG.cyan}■${RESET} ${DIM}Block + suggest${RESET} push to main/master\n`
+    );
     process.stderr.write(`  ${FG.cyan}■${RESET} ${DIM}Block + suggest${RESET} force push\n`);
     process.stderr.write(
       `  ${FG.cyan}■${RESET} ${DIM}Block + suggest${RESET} writes to .env, credentials\n`

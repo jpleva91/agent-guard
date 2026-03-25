@@ -60,9 +60,10 @@ export async function copilotInit(args: string[] = []): Promise<void> {
   const modeArgIdx = args.findIndex((a) => a === '--mode');
   const modeArg = modeArgIdx !== -1 ? args[modeArgIdx + 1] : undefined;
   const VALID_MODES: EnforcementMode[] = ['guide', 'educate', 'monitor', 'enforce'];
-  const selectedMode: EnforcementMode = modeArg && VALID_MODES.includes(modeArg as EnforcementMode)
-    ? (modeArg as EnforcementMode)
-    : 'guide';
+  const selectedMode: EnforcementMode =
+    modeArg && VALID_MODES.includes(modeArg as EnforcementMode)
+      ? (modeArg as EnforcementMode)
+      : 'guide';
 
   // Copilot CLI hooks location:
   // Repo-level: .github/hooks/hooks.json
@@ -201,7 +202,9 @@ function removeHooks(hooksPath: string, hooksLabel: string): void {
   );
 }
 
-const STARTER_POLICY_TEMPLATE = (mode: EnforcementMode) => `# AgentGuard policy — safety rules for AI coding agents.
+const STARTER_POLICY_TEMPLATE = (
+  mode: EnforcementMode
+) => `# AgentGuard policy — safety rules for AI coding agents.
 # Customize this file to match your project's security requirements.
 # Docs: https://github.com/AgentGuardHQ/agent-guard
 
@@ -310,7 +313,9 @@ function showProtectionSummary(policyGenerated: boolean, mode: EnforcementMode =
       `  ${BOLD}Mode: ${FG.cyan}guide${RESET}${BOLD} — dangerous actions blocked with corrective suggestions${RESET}\n\n`
     );
     process.stderr.write(`  ${BOLD}Guiding:${RESET}\n`);
-    process.stderr.write(`  ${FG.cyan}\u25A0${RESET} ${DIM}Block + suggest${RESET} push to main/master\n`);
+    process.stderr.write(
+      `  ${FG.cyan}\u25A0${RESET} ${DIM}Block + suggest${RESET} push to main/master\n`
+    );
     process.stderr.write(`  ${FG.cyan}\u25A0${RESET} ${DIM}Block + suggest${RESET} force push\n`);
     process.stderr.write(
       `  ${FG.cyan}\u25A0${RESET} ${DIM}Block + suggest${RESET} writes to .env, .npmrc, SSH keys\n`
@@ -323,7 +328,9 @@ function showProtectionSummary(policyGenerated: boolean, mode: EnforcementMode =
       `  ${BOLD}Mode: ${FG.blue}educate${RESET}${BOLD} — actions allowed with corrective teaching${RESET}\n\n`
     );
     process.stderr.write(`  ${BOLD}Teaching:${RESET}\n`);
-    process.stderr.write(`  ${FG.blue}\u25A0${RESET} ${DIM}Allow + teach${RESET} push to main/master\n`);
+    process.stderr.write(
+      `  ${FG.blue}\u25A0${RESET} ${DIM}Allow + teach${RESET} push to main/master\n`
+    );
     process.stderr.write(`  ${FG.blue}\u25A0${RESET} ${DIM}Allow + teach${RESET} force push\n`);
     process.stderr.write(
       `  ${FG.blue}\u25A0${RESET} ${DIM}Allow + teach${RESET} writes to .env, .npmrc, SSH keys\n`
