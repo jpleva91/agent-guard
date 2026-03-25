@@ -1,6 +1,6 @@
 {
   "name": "@red-codes/agentguard",
-  "version": "2.7.0",
+  "version": "2.7.3",
   "description": "Run AI agents without fear — CLI safety layer",
   "type": "module",
   "license": "Apache-2.0",
@@ -25,7 +25,9 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
-    }
+    },
+    "./dist/bin.js": "./dist/bin.js",
+    "./dist/postinstall.js": "./dist/postinstall.js"
   },
   "scripts": {
     "build": "tsc -b && tsx esbuild.config.ts",
