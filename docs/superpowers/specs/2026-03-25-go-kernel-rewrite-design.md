@@ -65,7 +65,7 @@ agent-guard/
 │   │   │   ├── session.go             # Session state (retries, written files)
 │   │   │   └── lifecycle.go           # Start/stop/health
 │   │   └── storage/
-│   │       ├── sqlite.go              # SQLite sink (mattn/go-sqlite3 or modernc.org/sqlite)
+│   │       ├── sqlite.go              # SQLite sink (modernc.org/sqlite — pure Go, no CGo)
 │   │       └── jsonl.go               # JSONL append-only sink
 │   ├── data/                           # Symlinks to packages/core/src/data/
 │   └── test/
@@ -111,10 +111,15 @@ Stop hook         → agentguard-go daemon stop --session $CLAUDE_SESSION_ID
 **Daemon internals:**
 - Loads policy + governance data once at startup
 - Creates kernel instance once, reused across all tool calls in the session
-- Session state (retry counts, written files, escalation level) held in memory
-- One goroutine per incoming connection (concurrent tool calls safe)
+- Session state (retry counts, written files, escalation level) held in memory, guarded by `sync.Mutex` for concurrent access safety
+- One goroutine per incoming connection — session state access serialized via mutex (not lock-free; Claude Code can issue overlapping tool calls via parallel subagents)
 - SQLite writer runs in a dedicated goroutine (channel-based, no lock contention on hot path)
 - Telemetry flushes on configurable interval + on shutdown
+
+**Socket lifecycle:**
+- On startup, if socket path already exists: attempt connect. If refused (stale), remove and proceed. If connected (already running), exit with info message.
+- Register `signal.NotifyContext` for `SIGTERM`/`SIGINT` to remove socket file before exit
+- `defer os.Remove(socketPath)` as belt-and-suspenders cleanup
 
 **Fallback:** If daemon socket is missing, `agentguard-go hook pre` falls back to process-per-invocation mode (same as the `evaluate` subcommand). Governance never fails because the daemon didn't start.
 
@@ -134,7 +139,15 @@ All 7 governance JSON files baked into the binary. Zero file I/O for defaults.
 3. Policy pack files (`policies/*.yaml` from disk)
 4. `.agentguard/data/*.json` overrides (user-customized patterns, if present)
 
-**Shared source-of-truth:** `go/data/` symlinks to `packages/core/src/data/` so both kernels use identical JSON files. CI validates symlinks aren't stale.
+**Shared source-of-truth:** `//go:embed` cannot follow symlinks. A `go generate` step copies files from `packages/core/src/data/` into `go/internal/config/data/` before build:
+
+```go
+//go:generate cp -r ../../packages/core/src/data ./data
+//go:embed data/*.json
+var embeddedData embed.FS
+```
+
+CI validates the copy is fresh (hash comparison against canonical source). The copy is gitignored; the canonical source remains in `packages/core/src/data/`.
 
 ### TS Integration — Graceful Migration
 
@@ -145,8 +158,8 @@ The Go kernel is additive. The TS kernel continues to work. Migration is opt-in 
 # Go daemon (fastest) > Go binary (fast) > TS node_modules > TS PATH
 if [ -S "/tmp/agentguard-${CLAUDE_SESSION_ID}.sock" ]; then
   exec go/bin/agentguard hook pre --session "$CLAUDE_SESSION_ID"
-elif [ -x "go/bin/agentguard" ]; then
-  exec go/bin/agentguard evaluate --policy "$AGENTGUARD_WORKSPACE/agentguard.yaml"
+elif [ -x "$AGENTGUARD_WORKSPACE/go/bin/agentguard" ]; then
+  exec "$AGENTGUARD_WORKSPACE/go/bin/agentguard" evaluate --policy "$AGENTGUARD_WORKSPACE/agentguard.yaml"
 elif [ -x "$AGENTGUARD_WORKSPACE/node_modules/.bin/agentguard" ]; then
   exec "$AGENTGUARD_WORKSPACE/node_modules/.bin/agentguard" claude-hook pre --store sqlite
 fi
@@ -167,11 +180,12 @@ Each phase is an independent spec → plan → implementation cycle. Later phase
 
 **Delivers:**
 - Go structs for all core types (ActionContext, PolicyRule, EvalResult, Suggestion, etc.)
-- CommandScanner with Aho-Corasick pattern matching (git, github, destructive)
+- CommandScanner with regex pattern matching (git, github, destructive)
 - AAB normalization: raw tool call → classified ActionContext
+- Blast radius computation (stateless, pure logic — needed for compliance parity)
 - Policy evaluator: load `agentguard.yaml`, match rules, return allow/deny with suggestions
 - `agentguard-go evaluate --policy agentguard.yaml` CLI subcommand
-- Compliance tests: same inputs → same decisions as TS kernel
+- Compliance tests: same inputs → same decisions as TS kernel (full hook response comparison, not just decision structs)
 
 **Does NOT include:** invariants, daemon, adapters, storage, telemetry
 
