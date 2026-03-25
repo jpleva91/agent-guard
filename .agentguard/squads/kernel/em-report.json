@@ -1,54 +1,38 @@
 {
-  "generatedAt": "2026-03-25T22:35:00.000Z",
+  "generatedAt": "2026-03-26T01:35:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
   "health": "yellow",
-  "summary": "Security regression found. PR #915 (path hardening, closes #640) merged at ~19:36Z but introduced issue #924 — URL-encoded null byte (%00) bypasses canonicalizePath rejection. High severity; undermines stated security goals. PR #923 (denial-retry-escalation invariant, closes #908) is open but blocked by Prettier formatting failure in monitor.ts. 3 PRs merged since last cycle: #922 (EM report), #916 (SQLite action_type index, closes #727), #915 (path manipulation fix, closes #640). Reassigning senior coder from #640 (done) to #924 (regression fix). Squad health downgraded to yellow due to security regression requiring immediate attention.",
+  "summary": "PR #923 (denial-retry-escalation invariant, closes #908) merged — lint issue resolved. Duplicate PR #935 closed. All 4,106 tests passing across 18 packages, 0 failures. Issue #924 (null byte bypass in canonicalizePath) remains open with no branch started — blocker persists across 2 EM runs. Senior coder assigned but no work visible yet. Escalation warning: if no progress by next cycle, will escalate #924 to director. PR queue is now clear (0 open). Sprint goal narrowed to #924 fix + v3.0 readiness.",
   "prQueue": {
-    "open": 1,
-    "prs": [
-      {
-        "number": 923,
-        "title": "feat(kernel): denial-retry-escalation invariant",
-        "status": "lint-failing",
-        "ciStatus": "5/6 passed — Prettier format failure in packages/kernel/src/monitor.ts",
-        "closesIssue": 908
-      }
-    ]
+    "open": 0,
+    "prs": []
   },
   "mergedThisCycle": [
     {
-      "number": 922,
-      "title": "chore(kernel-em): EM cycle report 2026-03-25T19:35Z",
-      "mergedAt": "2026-03-25T19:37:17Z",
+      "number": 923,
+      "title": "feat(kernel): denial-retry-escalation invariant (closes #908)",
+      "mergedAt": "2026-03-25T23:00:00Z",
       "mergedBy": "jpleva91"
     },
     {
-      "number": 916,
-      "title": "feat(storage): add decisions.action_type index for filtered queries (closes #727)",
-      "mergedAt": "2026-03-25T19:36:40Z",
-      "mergedBy": "jpleva91"
-    },
-    {
-      "number": 915,
-      "title": "fix(matchers): harden scope matching against path manipulation (closes #640)",
-      "mergedAt": "2026-03-25T19:36:41Z",
+      "number": 928,
+      "title": "chore(kernel-em): EM cycle report 2026-03-25T22:35Z",
+      "mergedAt": "2026-03-25T23:00:00Z",
       "mergedBy": "jpleva91"
     }
   ],
-  "closedThisCycle": [],
-  "newIssues": [
+  "closedThisCycle": [
     {
-      "number": 924,
-      "title": "fix(matchers): URL-encoded null byte (%00) bypasses canonicalizePath rejection",
-      "severity": "high",
-      "introducedBy": "PR #915",
-      "note": "Security regression — null byte check runs before URL decoding, allowing %00 bypass"
+      "number": 935,
+      "title": "chore(kernel-em): EM cycle report 2026-03-25T22:35Z",
+      "reason": "Duplicate of merged #928"
     }
   ],
+  "newIssues": [],
   "loopGuards": {
     "prBudget": {
-      "open": 1,
+      "open": 0,
       "max": 3,
       "pass": true
     },
@@ -64,17 +48,15 @@
   "triage": {
     "p0Issues": 0,
     "p1Issues": 0,
-    "newAssignments": [
-      {
-        "agent": "senior",
-        "issue": 924,
-        "reason": "High-severity security regression from merged PR #915, needs immediate fix"
-      }
-    ],
+    "newAssignments": [],
     "notableIssues": [
       {
-        "numbers": [908, 909, 910, 911, 912],
-        "note": "5 proposed invariants from analytics-invariant-researcher; #908 addressed by PR #923 (pending lint fix)"
+        "numbers": [924],
+        "note": "High-severity security regression — null byte bypass in canonicalizePath. Assigned to senior coder, no branch started yet. Persisting 2 cycles."
+      },
+      {
+        "numbers": [909, 910, 911, 912],
+        "note": "4 remaining analytics-proposed invariants (no-self-approve-pr, session-action-velocity, shared-state-write-lock, cost-anomaly-circuit-breaker). Backlog — not yet assigned."
       },
       {
         "numbers": [919, 920],
@@ -87,24 +69,40 @@
       "issue": 924,
       "description": "Security regression in canonicalizePath — null byte bypass via URL encoding",
       "impact": "Undermines path manipulation hardening from PR #915",
-      "action": "Assigned to senior coder for immediate fix"
+      "action": "Assigned to senior coder. No progress visible. Escalation warning — will escalate to director if no branch by next EM cycle.",
+      "since": "2026-03-25T22:35:00.000Z",
+      "persistedCycles": 2
     }
   ],
-  "escalations": [],
+  "escalations": [
+    {
+      "type": "warning",
+      "issue": 924,
+      "rule": "blocker persists across 2 runs",
+      "action": "Will escalate to director next cycle if no progress"
+    }
+  ],
   "metrics": {
-    "prsOpened": 1,
-    "prsMerged": 3,
-    "prsClosed": 0,
-    "issuesClosed": 2,
+    "prsOpened": 0,
+    "prsMerged": 2,
+    "prsClosed": 1,
+    "issuesClosed": 1,
     "governanceDenials": 0,
     "retries": 0
+  },
+  "testHealth": {
+    "total": 4106,
+    "passed": 4106,
+    "failed": 0,
+    "packages": 18,
+    "status": "all_passing"
   },
   "escalationRules": {
     "triggered": {
       "twoPlusFailingCI": false,
-      "persistentBlocker": false,
+      "persistentBlocker": true,
       "governanceDenialsExceeded": false
     },
-    "notes": "Yellow due to security regression #924. Only 1 PR with CI failure (lint only). Blocker is new this cycle — not yet persistent."
+    "notes": "Yellow due to #924 persisting 2 cycles with no branch started. Escalation warning issued. All CI green, tests green, PR queue clear."
   }
 }
