@@ -21,6 +21,16 @@ function resolveCliPrefix(): { cli: string; isLocal: boolean } {
   return { cli: 'agentguard', isLocal: false };
 }
 
+/**
+ * Build a hook command string that resolves the binary at runtime.
+ * Copilot's `bash` field runs in bash, so env-var expansion works directly.
+ * See #964.
+ */
+function hookCmd(cli: string, isLocal: boolean, args: string): string {
+  if (isLocal) return `${cli} ${args}`;
+  return `\${AGENTGUARD_BIN:-./node_modules/.bin/agentguard} ${args}`;
+}
+
 interface HookEntry {
   type?: string;
   bash?: string;
@@ -108,13 +118,13 @@ export async function copilotInit(args: string[] = []): Promise<void> {
 
   if (!config.hooks) config.hooks = {};
 
-  const { cli } = resolveCliPrefix();
+  const { cli, isLocal } = resolveCliPrefix();
 
   // preToolUse — governance enforcement (routes all tool calls through the kernel)
   if (!config.hooks.preToolUse) config.hooks.preToolUse = [];
   config.hooks.preToolUse.push({
     type: 'command',
-    bash: `${cli} copilot-hook pre${storeSuffix}${dbPathSuffix}`,
+    bash: hookCmd(cli, isLocal, `copilot-hook pre${storeSuffix}${dbPathSuffix}`),
     timeoutSec: 30,
   });
 
@@ -122,7 +132,7 @@ export async function copilotInit(args: string[] = []): Promise<void> {
   if (!config.hooks.postToolUse) config.hooks.postToolUse = [];
   config.hooks.postToolUse.push({
     type: 'command',
-    bash: `${cli} copilot-hook post${storeSuffix}${dbPathSuffix}`,
+    bash: hookCmd(cli, isLocal, `copilot-hook post${storeSuffix}${dbPathSuffix}`),
     timeoutSec: 10,
   });
 

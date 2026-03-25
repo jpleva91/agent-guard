@@ -32,6 +32,17 @@ function resolveCliPrefix(): { cli: string; isLocal: boolean } {
   return { cli: 'agentguard', isLocal: false };
 }
 
+/**
+ * Build a hook command string that resolves the binary at runtime.
+ * Local dev uses the direct node path; npm installs use an env-var fallback
+ * to ./node_modules/.bin/agentguard so hooks work even when agentguard
+ * is not on PATH (see #964).
+ */
+function hookCmd(cli: string, isLocal: boolean, args: string): string {
+  if (isLocal) return `${cli} ${args}`;
+  return `bash -c '\${AGENTGUARD_BIN:-./node_modules/.bin/agentguard} ${args}'`;
+}
+
 interface HookEntry {
   matcher?: string;
   hooks?: Array<{ type?: string; command?: string }>;
@@ -270,7 +281,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `${cli} claude-hook post${storeSuffix}${dbPathSuffix}`,
+        command: hookCmd(cli, isLocal, `claude-hook post${storeSuffix}${dbPathSuffix}`),
       },
     ],
   });
@@ -300,7 +311,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   });
   sessionStartHooks.push({
     type: 'command',
-    command: `${cli} status`,
+    command: hookCmd(cli, isLocal, 'status'),
     timeout: 10000,
     blocking: false,
   });
@@ -312,7 +323,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `${cli} claude-hook notify${storeSuffix}${dbPathSuffix}`,
+        command: hookCmd(cli, isLocal, `claude-hook notify${storeSuffix}${dbPathSuffix}`),
         timeout: 15000,
         blocking: false,
       },
@@ -325,7 +336,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `${cli} claude-hook stop${storeSuffix}${dbPathSuffix}`,
+        command: hookCmd(cli, isLocal, `claude-hook stop${storeSuffix}${dbPathSuffix}`),
         timeout: 15000,
         blocking: false,
       },

@@ -102,12 +102,16 @@ describe('claudeInit', () => {
     expect(written.hooks.PreToolUse[0].hooks[0].type).toBe('command');
     expect(written.hooks.PreToolUse[0].hooks[0].command).toContain('claude-hook-wrapper.sh');
 
-    // PostToolUse — error monitoring for Bash
+    // PostToolUse — error monitoring for Bash (non-local uses bash -c with binary resolution)
     expect(written.hooks.PostToolUse).toHaveLength(1);
     expect(written.hooks.PostToolUse[0].matcher).toBe('Bash');
     expect(written.hooks.PostToolUse[0].hooks[0].type).toBe('command');
     expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('claude-hook');
     expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('post');
+    // #964: non-local hooks resolve binary via env var fallback
+    expect(written.hooks.PostToolUse[0].hooks[0].command).toContain(
+      'node_modules/.bin/agentguard'
+    );
   });
 
   it('installs SessionStart persona check + status hooks for globally-installed case', async () => {
@@ -121,6 +125,10 @@ describe('claudeInit', () => {
     expect(written.hooks.SessionStart[0].hooks).toHaveLength(2);
     expect(written.hooks.SessionStart[0].hooks[0].command).toContain('session-persona-check');
     expect(written.hooks.SessionStart[0].hooks[1].command).toContain('status');
+    // #964: non-local status hook resolves binary via env var fallback
+    expect(written.hooks.SessionStart[0].hooks[1].command).toContain(
+      'node_modules/.bin/agentguard'
+    );
   });
 
   it('installs SessionStart build + persona check + status hooks in local dev repo', async () => {
@@ -338,8 +346,8 @@ describe('claudeInit', () => {
       ''
     );
 
-    // PostToolUse command should include --store sqlite
-    expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('post --store sqlite');
+    // PostToolUse command should include --store sqlite (wrapped for binary resolution)
+    expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('claude-hook post --store sqlite');
   });
 
   it('does not include --store suffix when no --store flag is provided', async () => {
