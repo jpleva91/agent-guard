@@ -22,7 +22,8 @@ AI coding agents (Claude Code, GitHub Copilot, any MCP client) run autonomously 
 ## Quick Start
 
 ```bash
-npm install -g @red-codes/agentguard
+npm install -g aguard
+# or: npm install -g @red-codes/agentguard
 cd your-project
 agentguard claude-init
 # Interactive wizard: choose enforcement mode and a policy pack
