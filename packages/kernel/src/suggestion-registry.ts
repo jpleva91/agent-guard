@@ -139,9 +139,7 @@ export function validateCommandScope(
 const BUILTIN_GENERATORS: Record<string, SuggestionGenerator> = {
   'git.push': (intent) => ({
     message: `Push to branch "${intent.branch || intent.target}" was denied by policy.`,
-    correctedCommand: intent.branch
-      ? `git push origin ${shellEscape(intent.branch)}`
-      : undefined,
+    correctedCommand: intent.branch ? `git push origin ${shellEscape(intent.branch)}` : undefined,
   }),
 
   'git.force-push': (intent) => ({
