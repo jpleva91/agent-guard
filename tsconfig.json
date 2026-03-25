@@ -7,20 +7,53 @@
   },
   "include": [],
   "references": [
-    { "path": "packages/core" },
-    { "path": "packages/events" },
-    { "path": "packages/policy" },
-    { "path": "packages/invariants" },
-    { "path": "packages/kernel" },
-    { "path": "packages/adapters" },
-    { "path": "packages/storage" },
-    { "path": "packages/plugins" },
-    { "path": "packages/invariant-data-protection" },
-    { "path": "packages/renderers" },
-    { "path": "packages/matchers" },
-    { "path": "packages/swarm" },
-    { "path": "packages/sdk" },
-    { "path": "apps/cli" },
-    { "path": "apps/mcp-server" }
+    {
+      "path": "packages/core"
+    },
+    {
+      "path": "packages/events"
+    },
+    {
+      "path": "packages/policy"
+    },
+    {
+      "path": "packages/invariants"
+    },
+    {
+      "path": "packages/kernel"
+    },
+    {
+      "path": "packages/adapters"
+    },
+    {
+      "path": "packages/storage"
+    },
+    {
+      "path": "packages/plugins"
+    },
+    {
+      "path": "packages/invariant-data-protection"
+    },
+    {
+      "path": "packages/renderers"
+    },
+    {
+      "path": "packages/matchers"
+    },
+    {
+      "path": "packages/swarm"
+    },
+    {
+      "path": "packages/sdk"
+    },
+    {
+      "path": "apps/cli"
+    },
+    {
+      "path": "apps/mcp-server"
+    },
+    {
+      "path": "packages/scheduler"
+    }
   ]
 }

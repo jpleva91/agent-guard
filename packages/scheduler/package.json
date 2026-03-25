@@ -1,0 +1,35 @@
+{
+  "name": "@red-codes/scheduler",
+  "version": "0.1.0",
+  "description": "Task scheduler, queue, lease manager, and worker orchestration for AgentGuard swarm",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "ts:check": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src/"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vitest": "^4.1.0",
+    "typescript": "^5.8.3"
+  },
+  "keywords": [
+    "agentguard",
+    "scheduler",
+    "queue",
+    "lease",
+    "orchestration"
+  ]
+}

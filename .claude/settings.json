@@ -5,14 +5,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node apps/cli/dist/bin.js claude-hook pre --store sqlite"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
             "command": "bash scripts/claude-hook-wrapper.sh"
           }
         ]
@@ -25,15 +17,6 @@
           {
             "type": "command",
             "command": "node apps/cli/dist/bin.js claude-hook post --store sqlite"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node apps/cli/dist/bin.js claude-hook post"
           }
         ]
       }
@@ -53,22 +36,6 @@
             "timeout": 120000,
             "blocking": true
           },
-          {
-            "type": "command",
-            "command": "test -f apps/cli/dist/bin.js || pnpm build",
-            "timeout": 120000,
-            "blocking": true
-          },
-          {
-            "type": "command",
-            "command": "node apps/cli/dist/bin.js status",
-            "timeout": 10000,
-            "blocking": false
-          }
-        ]
-      },
-      {
-        "hooks": [
           {
             "type": "command",
             "command": "test -f apps/cli/dist/bin.js || pnpm build",
@@ -100,16 +67,6 @@
             "blocking": false
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node apps/cli/dist/bin.js claude-hook notify",
-            "timeout": 15000,
-            "blocking": false
-          }
-        ]
       }
     ],
     "Stop": [
@@ -118,16 +75,6 @@
           {
             "type": "command",
             "command": "node apps/cli/dist/bin.js claude-hook stop --store sqlite",
-            "timeout": 15000,
-            "blocking": false
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node apps/cli/dist/bin.js claude-hook stop",
             "timeout": 15000,
             "blocking": false
           }
