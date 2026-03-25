@@ -1,55 +1,57 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Fix security regression #924 (null byte bypass in canonicalizePath). Continue v3.0 release readiness.",
-    "issues": [924, 958, 959]
+    "goal": "Wire Go kernel into npm hook path (#955). TS claude-hook must delegate to Go binary for 100x latency win.",
+    "issues": [955, 957, 964]
   },
   "assignments": {
     "senior": {
-      "issue": [958, 959],
-      "title": "simulate: add shell.exec simulator and git.force-push action type",
-      "status": "pr_open",
-      "branch": "agent/kernel-sr-20260325-213002",
-      "pr": 961,
-      "claimedAt": "2026-03-25T21:30:00.000Z",
-      "note": "Added git.force-push to ACTION_TYPES (#958), created shell-simulator for general shell.exec (#959). 889+194 tests passing. PR #961 opened."
+      "issue": [955, 957, 964],
+      "title": "Wire Go kernel into claude-hook.ts — delegate evaluation to Go binary",
+      "status": "unassigned",
+      "branch": null,
+      "pr": null,
+      "claimedAt": null,
+      "note": "P0: claude-hook.ts must detect Go binary, pre-resolve YAML/pack policies to flat JSON, delegate to go/bin/agentguard evaluate on stdin. #957 (Go pack resolution) and #964 (full binary path in hooks) are sub-tasks."
     }
   },
   "blockers": [],
   "prQueue": {
-    "open": 1,
+    "open": 0,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
       {
-        "number": 952,
-        "title": "fix(matchers): reject URL-encoded null bytes (%00) in canonicalizePath (closes #924)",
-        "branch": "fix/matchers-url-encoded-null-byte-924",
-        "status": "merged",
-        "ciStatus": "passed",
-        "openedAt": "2026-03-26T04:10:00.000Z",
-        "mergedAt": "2026-03-25T21:14:32.000Z"
-      },
-      {
         "number": 961,
         "title": "fix(simulate): add shell.exec simulator and git.force-push action type",
         "branch": "agent/kernel-sr-20260325-213002",
-        "status": "open",
-        "ciStatus": "pending",
-        "openedAt": "2026-03-25T21:37:00.000Z"
+        "status": "merged",
+        "ciStatus": "passed",
+        "openedAt": "2026-03-25T21:37:00.000Z",
+        "mergedAt": "2026-03-25T21:41:36.000Z"
+      },
+      {
+        "number": 960,
+        "title": "chore(kernel-em): EM cycle report 2026-03-26T04:25Z",
+        "branch": "agent/kernel-em-20260326-042500",
+        "status": "closed",
+        "ciStatus": null,
+        "openedAt": "2026-03-25T21:27:00.000Z",
+        "closedAt": "2026-03-25T23:05:00.000Z",
+        "note": "Stale EM report with merge conflicts, closed this cycle"
       }
     ]
   },
   "health": "green",
   "testHealth": {
-    "total": 4120,
-    "passed": 4120,
+    "total": 4129,
+    "passed": 4129,
     "failed": 0,
-    "packages": 18,
-    "lastRun": "2026-03-25T21:36:00.000Z",
+    "packages": 19,
+    "lastRun": "2026-03-25T23:05:00.000Z",
     "status": "all_passing"
   },
-  "lastEmRun": "2026-03-26T04:10:00.000Z",
+  "lastEmRun": "2026-03-25T23:05:00.000Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-25T21:37:00.000Z"
+  "updatedAt": "2026-03-25T23:05:00.000Z"
 }
