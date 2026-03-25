@@ -139,9 +139,9 @@ Pure domain logic with no environment dependencies.
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
-| `agentguard guard` | `apps/cli/src/commands/guard.ts` | Start governed action runtime |
-| `agentguard inspect` | `apps/cli/src/commands/inspect.ts` | Show action graph for a run |
-| `agentguard events` | `apps/cli/src/commands/inspect.ts` | Show raw event stream for a run |
+| `aguard guard` | `apps/cli/src/commands/guard.ts` | Start governed action runtime |
+| `aguard inspect` | `apps/cli/src/commands/inspect.ts` | Show action graph for a run |
+| `aguard events` | `apps/cli/src/commands/inspect.ts` | Show raw event stream for a run |
 
 ## Integration Guarantees
 

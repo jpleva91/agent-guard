@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "npx --no-install agentguard copilot-hook pre --store sqlite",
+        "timeoutSec": 30
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "npx --no-install agentguard copilot-hook post --store sqlite",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}

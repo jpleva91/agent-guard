@@ -101,7 +101,7 @@ action.yml (composite)
   Step 2: Install @red-codes/agentguard@version (with npm cache)
   Step 3: Validate policy file exists (warn if missing, continue)
   Step 4: Detect session source (file, .agentguard/, or scan-only)
-  Step 5: Run agentguard ci-check --json --enhanced -> governance-result.json
+  Step 5: Run aguard ci-check --json --enhanced -> governance-result.json
   Step 6: Post PR comment via gh CLI (if post-report=true and in PR context)
   Step 7: Set outputs from governance-result.json
   Step 8: Upload session artifact
@@ -112,7 +112,7 @@ action.yml (composite)
 The orchestration script uses `set -euo pipefail`. All user-supplied inputs (`session-file`, `policy`, `agentguard-version`) arrive as environment variables (`$INPUT_SESSION_FILE`, `$INPUT_POLICY`, `$INPUT_AGENTGUARD_VERSION`). Implementation requirements:
 
 - **Double-quote all interpolated inputs**: `"$INPUT_SESSION_FILE"`, `"$INPUT_POLICY"`, `"$INPUT_AGENTGUARD_VERSION"`
-- **Use `--` to terminate option parsing** before positional arguments: `agentguard ci-check -- "$INPUT_SESSION_FILE"`
+- **Use `--` to terminate option parsing** before positional arguments: `aguard ci-check -- "$INPUT_SESSION_FILE"`
 - Avoids shell injection via whitespace splitting and glob expansion in input values
 
 ### Error handling

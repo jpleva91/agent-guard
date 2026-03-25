@@ -9,7 +9,7 @@
 
 ```bash
 # Install AgentGuard
-npm install -g @red-codes/agentguard
+npm install -g aguard
 
 # (Optional) Install RTK for 60-90% token savings on CLI output
 # Homebrew: brew install rtk
@@ -17,8 +17,10 @@ npm install -g @red-codes/agentguard
 # Windows: download from https://github.com/rtk-ai/rtk/releases
 
 # Set up Claude Code hooks
-agentguard claude-init
+aguard claude-init
 ```
+
+> `aguard` is a convenience alias for `@red-codes/agentguard`. Both work identically.
 
 ## What It Does
 
@@ -37,19 +39,19 @@ agent proposes action  →  safety checked  →  allow/deny  →  action recorde
 
 ```bash
 # Set up Claude Code hooks (one-time)
-agentguard claude-init
+aguard claude-init
 
 # Check governance status
-agentguard status
+aguard status
 
 # Validate a policy file
-agentguard policy validate agentguard.yaml
+aguard policy validate agentguard.yaml
 
 # Evaluate an action against policy (dry-run)
-echo '{"tool":"Bash","command":"git push origin main"}' | agentguard guard --dry-run
+echo '{"tool":"Bash","command":"git push origin main"}' | aguard guard --dry-run
 
 # Inspect the most recent governance session
-agentguard inspect --last
+aguard inspect --last
 ```
 
 ## Claude Code Integration
@@ -57,7 +59,7 @@ agentguard inspect --last
 AgentGuard integrates via inline hooks — no daemon, no ports, no IPC:
 
 ```bash
-agentguard claude-init    # Installs PreToolUse + PostToolUse + SessionStart hooks
+aguard claude-init    # Installs PreToolUse + PostToolUse + SessionStart hooks
 ```
 
 | Hook | Purpose |
@@ -80,7 +82,7 @@ If no identity is set, PreToolUse hooks **block all actions** with a message dir
 For autonomous agent swarms, pass identity via env var per-process or `--agent-name` flag:
 
 ```bash
-agentguard guard --agent-name "builder-agent-3" --policy agentguard.yaml
+aguard guard --agent-name "builder-agent-3" --policy agentguard.yaml
 ```
 
 Tool call mapping:
@@ -157,42 +159,42 @@ When `requireWorktree: true` is set, the deny rule is bypassed if the agent is a
 
 ```bash
 # Governance
-agentguard guard [--policy <file>] [--dry-run] [--agent-name <name>]  # Start governed runtime
-agentguard inspect [--last]                       # Inspect action graph
-agentguard events [--last]                        # Raw event stream
-agentguard analytics                              # Violation patterns
-agentguard traces [--last]                        # Policy evaluation traces
+aguard guard [--policy <file>] [--dry-run] [--agent-name <name>]  # Start governed runtime
+aguard inspect [--last]                       # Inspect action graph
+aguard events [--last]                        # Raw event stream
+aguard analytics                              # Violation patterns
+aguard traces [--last]                        # Policy evaluation traces
 
 # Policy
-agentguard policy validate <file>                 # Validate policy
-agentguard policy suggest                         # Auto-suggest rules from violations
-agentguard policy verify <file>                   # Verify against historical violations
+aguard policy validate <file>                 # Validate policy
+aguard policy suggest                         # Auto-suggest rules from violations
+aguard policy verify <file>                   # Verify against historical violations
 
 # Simulation
-agentguard simulate <action-json>                 # Predict impact without executing
-agentguard simulate --plan <file>                 # Batch simulate an action plan
+aguard simulate <action-json>                 # Predict impact without executing
+aguard simulate --plan <file>                 # Batch simulate an action plan
 
 # Session tools
-agentguard replay --last [--step]                 # Replay governance session
-agentguard session-viewer --last                  # Interactive HTML timeline
-agentguard diff <runA> <runB>                     # Compare two sessions
-agentguard export/import                          # Portable JSONL sessions
+aguard replay --last [--step]                 # Replay governance session
+aguard session-viewer --last                  # Interactive HTML timeline
+aguard diff <runA> <runB>                     # Compare two sessions
+aguard export/import                          # Portable JSONL sessions
 
 # CI/CD
-agentguard ci-check [--last]                      # Verify governance in CI
-agentguard evidence-pr [--pr <num>]               # Attach evidence to PR
-agentguard audit-verify [--last]                  # Verify audit chain integrity
+aguard ci-check [--last]                      # Verify governance in CI
+aguard evidence-pr [--pr <num>]               # Attach evidence to PR
+aguard audit-verify [--last]                  # Verify audit chain integrity
 
 # Integration
-agentguard claude-init                            # Set up Claude Code hooks
-agentguard auto-setup                             # Auto-detect and configure
-agentguard status                                 # Check governance readiness
-agentguard demo                                   # Interactive showcase
+aguard claude-init                            # Set up Claude Code hooks
+aguard auto-setup                             # Auto-detect and configure
+aguard status                                 # Check governance readiness
+aguard demo                                   # Interactive showcase
 
 # Configuration
-agentguard config show|get|set                    # Manage config
-agentguard init --extension <type>                # Scaffold extensions
-agentguard migrate                                # Import JSONL into SQLite
+aguard config show|get|set                    # Manage config
+aguard init --extension <type>                # Scaffold extensions
+aguard migrate                                # Import JSONL into SQLite
 ```
 
 ## Library Packages
@@ -210,7 +212,7 @@ AgentGuard integrates with [RTK](https://github.com/rtk-ai/rtk) to reduce token 
 
 ```bash
 npm install -g @anthropic-ai/rtk    # Install RTK (optional)
-agentguard status                    # Confirms: ⚡ Token optimization active
+aguard status                    # Confirms: ⚡ Token optimization active
 ```
 
 Works with git, npm, cargo, tsc, docker, kubectl, and more. No configuration needed — AgentGuard detects RTK automatically.
@@ -220,7 +222,7 @@ Works with git, npm, cargo, tsc, docker, kubectl, and more. No configuration nee
 AgentGuard ships with a 26-agent autonomous development swarm:
 
 ```bash
-agentguard init swarm    # Scaffolds agents, skills, and governance into your repo
+aguard init swarm    # Scaffolds agents, skills, and governance into your repo
 ```
 
 Agents handle implementation, code review, CI triage, security audits, planning, docs, and more — all under governance.

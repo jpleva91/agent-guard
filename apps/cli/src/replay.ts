@@ -111,7 +111,7 @@ export async function replay(args: string[]): Promise<void> {
     const sessions = listSessions(1);
     if (sessions.length === 0) {
       process.stderr.write(
-        '\n  No sessions recorded yet.\n  Run "agentguard guard" to start recording.\n\n'
+        '\n  No sessions recorded yet.\n  Run "aguard guard" to start recording.\n\n'
       );
       return;
     }
@@ -126,7 +126,7 @@ export async function replay(args: string[]): Promise<void> {
   const session = loadSession(sessionId) as SessionData | null;
   if (!session) {
     process.stderr.write(
-      `\n  Session "${sessionId}" not found.\n  Run "agentguard replay" to list available sessions.\n\n`
+      `\n  Session "${sessionId}" not found.\n  Run "aguard replay" to list available sessions.\n\n`
     );
     return;
   }
@@ -173,7 +173,7 @@ async function replayUi(options: ReplayUiOptions): Promise<void> {
   if (!targetRunId) {
     storage.close();
     process.stderr.write(
-      '\n  No governance runs found.\n  Run "agentguard guard" first to generate events.\n\n'
+      '\n  No governance runs found.\n  Run "aguard guard" first to generate events.\n\n'
     );
     return;
   }
@@ -229,7 +229,7 @@ function renderSessionList(): void {
 
   if (sessions.length === 0) {
     process.stderr.write(
-      '\n  No sessions recorded yet.\n  Run "agentguard guard" to start recording.\n\n'
+      '\n  No sessions recorded yet.\n  Run "aguard guard" to start recording.\n\n'
     );
     return;
   }
