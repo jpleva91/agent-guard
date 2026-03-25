@@ -1125,10 +1125,15 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       const targetViolation = target !== '' && matchesGovernancePath(target);
 
       const command = state.currentCommand || '';
-      const commandViolation =
+      // For shell.exec, only flag command violation if the command WRITES to governance paths.
+      // Read-only references (echo, cat, ls, grep, git log mentioning governance files) are safe.
+      // Check for write-indicative patterns: redirect (>), pipe to write (tee), sed -i, rm, mv, cp to target.
+      const WRITE_INDICATORS = /(?:>[^>]|\bsed\s+-i\b|\brm\s|\bmv\s.*\bagentguard\b|\bcp\s.*\bagentguard\b|\btee\s|\bwrite\b|\bedit\b|\bmodify\b)/i;
+      const commandReferencesGovernance =
         command !== '' &&
         (matchesGovernancePath(command) ||
           GOVERNANCE_FILE_BASENAMES.some((f) => command.toLowerCase().includes(f)));
+      const commandViolation = commandReferencesGovernance && WRITE_INDICATORS.test(command);
 
       const governanceFiles = (state.modifiedFiles || []).filter((f) => matchesGovernancePath(f));
 

@@ -656,6 +656,14 @@ mode: ${mode}
 # Policy pack — curated invariant enforcement profiles
 ${packLine}
 
+# Per-invariant mode overrides (override pack defaults)
+# Governance self-modification uses guide mode so agents get corrective
+# suggestions instead of hard blocks when referencing governance files.
+invariantModes:
+  no-governance-self-modification: guide
+  no-skill-modification: guide
+  no-scheduled-task-modification: guide
+
 rules:
   # Protected branches — prevent direct push to main/master
   - action: git.push
