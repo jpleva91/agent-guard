@@ -25,7 +25,9 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
-    }
+    },
+    "./dist/bin.js": "./dist/bin.js",
+    "./dist/postinstall.js": "./dist/postinstall.js"
   },
   "scripts": {
     "build": "tsc -b && tsx esbuild.config.ts",
