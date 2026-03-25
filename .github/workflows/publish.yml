@@ -131,13 +131,13 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish aiguard (convenience wrapper)
-        working-directory: npm-wrapper/aiguard
+      - name: Publish aguard (convenience wrapper)
+        working-directory: npm-wrapper/aguard
         run: |
           OUTPUT=$(npm publish --access public 2>&1) && echo "$OUTPUT" || {
             echo "$OUTPUT"
             if echo "$OUTPUT" | grep -q "cannot publish over the previously published"; then
-              echo "::notice::aiguard already published at this version, skipping"
+              echo "::notice::aguard already published at this version, skipping"
             else
               exit 1
             fi

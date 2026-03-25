@@ -1,15 +1,15 @@
-# aiguard
+# aguard
 
-**AI Guard** — Run AI agents without fear.
+**Agent Guard** — Run AI agents without fear.
 
 This is a convenience package that installs [`@red-codes/agentguard`](https://www.npmjs.com/package/@red-codes/agentguard).
 
 ```bash
-npx aiguard claude-init
-npx aiguard guard
-npx aiguard status
+npx aguard claude-init
+npx aguard guard
+npx aguard status
 ```
 
-Both `npx aiguard` and `npx @red-codes/agentguard` work identically.
+Both `npx aguard` and `npx @red-codes/agentguard` work identically.
 
 For full documentation, see the [AgentGuard repository](https://github.com/AgentGuardHQ/agentguard).
