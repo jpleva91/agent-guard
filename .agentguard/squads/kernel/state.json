@@ -2,18 +2,17 @@
   "squad": "kernel",
   "sprint": {
     "goal": "Fix security regression #924 (null byte bypass in canonicalizePath). Continue v3.0 release readiness.",
-    "issues": [924]
+    "issues": [924, 958, 959]
   },
   "assignments": {
     "senior": {
-      "issue": 924,
-      "title": "URL-encoded null byte (%00) bypasses canonicalizePath rejection",
+      "issue": [958, 959],
+      "title": "simulate: add shell.exec simulator and git.force-push action type",
       "status": "pr_open",
-      "branch": "fix/matchers-url-encoded-null-byte-924",
-      "pr": 952,
-      "claimedAt": "2026-03-25T22:35:00.000Z",
-      "resolvedAt": "2026-03-26T04:10:00.000Z",
-      "note": "EM direct-implemented after 2 cycles with no branch. PR #952 opened. 114/114 tests passing."
+      "branch": "agent/kernel-sr-20260325-213002",
+      "pr": 961,
+      "claimedAt": "2026-03-25T21:30:00.000Z",
+      "note": "Added git.force-push to ACTION_TYPES (#958), created shell-simulator for general shell.exec (#959). 889+194 tests passing. PR #961 opened."
     }
   },
   "blockers": [],
@@ -26,22 +25,31 @@
         "number": 952,
         "title": "fix(matchers): reject URL-encoded null bytes (%00) in canonicalizePath (closes #924)",
         "branch": "fix/matchers-url-encoded-null-byte-924",
+        "status": "merged",
+        "ciStatus": "passed",
+        "openedAt": "2026-03-26T04:10:00.000Z",
+        "mergedAt": "2026-03-25T21:14:32.000Z"
+      },
+      {
+        "number": 961,
+        "title": "fix(simulate): add shell.exec simulator and git.force-push action type",
+        "branch": "agent/kernel-sr-20260325-213002",
         "status": "open",
         "ciStatus": "pending",
-        "openedAt": "2026-03-26T04:10:00.000Z"
+        "openedAt": "2026-03-25T21:37:00.000Z"
       }
     ]
   },
   "health": "green",
   "testHealth": {
-    "total": 4106,
-    "passed": 4106,
+    "total": 4120,
+    "passed": 4120,
     "failed": 0,
     "packages": 18,
-    "lastRun": "2026-03-26T04:10:00.000Z",
+    "lastRun": "2026-03-25T21:36:00.000Z",
     "status": "all_passing"
   },
   "lastEmRun": "2026-03-26T04:10:00.000Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-26T04:10:00.000Z"
+  "updatedAt": "2026-03-25T21:37:00.000Z"
 }

@@ -25,6 +25,10 @@ describe('domain/actions', () => {
     expect(ACTION_TYPES['file.read']).toEqual({ class: 'file', description: expect.any(String) });
     expect(ACTION_TYPES['test.run']).toEqual({ class: 'test', description: expect.any(String) });
     expect(ACTION_TYPES['git.commit']).toEqual({ class: 'git', description: expect.any(String) });
+    expect(ACTION_TYPES['git.force-push']).toEqual({
+      class: 'git',
+      description: expect.any(String),
+    });
   });
 
   it('defines decision constants', () => {
