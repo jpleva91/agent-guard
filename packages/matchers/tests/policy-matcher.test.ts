@@ -113,6 +113,54 @@ describe('PolicyMatcher', () => {
       expect(PolicyMatcher.matchScope(patterns, 'test/bar.test.ts')).toBe(true);
       expect(PolicyMatcher.matchScope(patterns, 'lib/baz.ts')).toBe(false);
     });
+
+    // ─── Path traversal hardening (issue #640) ──────────────────────────
+
+    it('blocks path traversal via .. segments', () => {
+      // src/../etc/passwd resolves to etc/passwd — does NOT match src/ scope
+      expect(PolicyMatcher.matchScope(['src/'], 'src/../etc/passwd')).toBe(false);
+      // Direct traversal out of project root — rejected entirely
+      expect(PolicyMatcher.matchScope(['src/**'], '../../../etc/passwd')).toBe(false);
+    });
+
+    it('blocks URL-encoded traversal', () => {
+      // src/%2e%2e/etc/passwd decodes to src/../etc/passwd → etc/passwd — not under src/
+      expect(PolicyMatcher.matchScope(['src/'], 'src/%2e%2e/etc/passwd')).toBe(false);
+      // Traversal that escapes project root — rejected entirely
+      expect(PolicyMatcher.matchScope(['src/**'], '%2e%2e/%2e%2e/etc/passwd')).toBe(false);
+    });
+
+    it('blocks null bytes in paths', () => {
+      expect(PolicyMatcher.matchScope(['src/**'], 'src/foo.ts\0.jpg')).toBe(false);
+      expect(PolicyMatcher.matchScope(['src/'], 'src/\0../etc/passwd')).toBe(false);
+    });
+
+    it('collapses multiple slashes', () => {
+      // src//foo.ts should match src/ scope after collapsing
+      expect(PolicyMatcher.matchScope(['src/'], 'src//foo.ts')).toBe(true);
+      expect(PolicyMatcher.matchScope(['src/**'], 'src///nested///bar.ts')).toBe(true);
+    });
+
+    it('resolves dot segments in paths', () => {
+      // src/./foo.ts should match src/ scope
+      expect(PolicyMatcher.matchScope(['src/'], 'src/./foo.ts')).toBe(true);
+      // src/nested/../foo.ts resolves to src/foo.ts
+      expect(PolicyMatcher.matchScope(['src/'], 'src/nested/../foo.ts')).toBe(true);
+    });
+
+    it('strips leading ./ from targets', () => {
+      expect(PolicyMatcher.matchScope(['src/'], './src/foo.ts')).toBe(true);
+    });
+
+    it('handles URL-encoded extension bypass', () => {
+      // *.env pattern should catch %2Eenv after decoding
+      expect(PolicyMatcher.matchScope(['*.env'], 'config%2Eenv')).toBe(true);
+    });
+
+    it('rejects pure traversal paths', () => {
+      expect(PolicyMatcher.matchScope(['*'], '..')).toBe(false);
+      expect(PolicyMatcher.matchScope(['**'], '../..')).toBe(false);
+    });
   });
 
   // ─── toSet ──────────────────────────────────────────────────────────────
