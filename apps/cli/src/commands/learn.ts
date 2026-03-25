@@ -273,7 +273,7 @@ export async function learn(args: string[]): Promise<number> {
 
   if (rawDeniedEvents.length === 0) {
     process.stderr.write('\n  No denial events found in governance database.\n');
-    process.stderr.write('  Run `agentguard guard` to start recording governance events.\n\n');
+    process.stderr.write('  Run `aguard guard` to start recording governance events.\n\n');
     return 0;
   }
 

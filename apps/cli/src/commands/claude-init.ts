@@ -1,4 +1,4 @@
-// agentguard claude-init — set up Claude Code integration
+// aguard claude-init — set up Claude Code integration
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
 import { execSync, execFileSync } from 'node:child_process';
@@ -926,7 +926,7 @@ function showProtectionSummary(
       `  ${DIM}1. Start a Claude Code session — warnings appear in your terminal${RESET}\n`
     );
     process.stderr.write(
-      `  ${DIM}2. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`
+      `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`
     );
     process.stderr.write(
       `  ${DIM}3. Edit ${FG.cyan}agentguard.yaml${RESET}${DIM} → set ${FG.cyan}mode: guide${RESET}${DIM} when ready to block with suggestions${RESET}\n`
@@ -936,7 +936,7 @@ function showProtectionSummary(
       `  ${DIM}1. Start a Claude Code session — teaching feedback appears in your terminal${RESET}\n`
     );
     process.stderr.write(
-      `  ${DIM}2. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`
+      `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`
     );
     process.stderr.write(
       `  ${DIM}3. Edit ${FG.cyan}agentguard.yaml${RESET}${DIM} → set ${FG.cyan}mode: guide${RESET}${DIM} when ready to block with suggestions${RESET}\n`
@@ -946,12 +946,12 @@ function showProtectionSummary(
       `  ${DIM}1. Start a Claude Code session — governance is automatic${RESET}\n`
     );
     process.stderr.write(
-      `  ${DIM}2. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`
+      `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`
     );
   }
   if (!isGlobal) {
     process.stderr.write(
-      `\n  ${FG.yellow}Tip:${RESET} Run ${FG.cyan}agentguard claude-init --global${RESET} to install hooks globally.\n`
+      `\n  ${FG.yellow}Tip:${RESET} Run ${FG.cyan}aguard claude-init --global${RESET} to install hooks globally.\n`
     );
   }
   process.stderr.write(`\n  ${DIM}ℹ Claude Desktop support coming soon.${RESET}\n`);

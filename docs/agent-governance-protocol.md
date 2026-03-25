@@ -204,7 +204,7 @@ To verify an AGP audit trail:
 | `agp.escalation.changed` | `StateChanged` event kind |
 | `agp.invariant.violated` | `InvariantViolation` event kind |
 | AGP policy document | `Policy` type from `src/policy/loader.ts` |
-| AGP audit export | JSONL export from `agentguard export` |
+| AGP audit export | JSONL export from `aguard export` |
 
 ## Governance
 

@@ -233,9 +233,9 @@ AgentGuard is **implemented and operational**. The governed action kernel connec
 ### CLI Commands
 | Component | File | Status |
 |-----------|------|--------|
-| `agentguard guard` | `cli/commands/guard.ts` | Complete |
-| `agentguard inspect` | `cli/commands/inspect.ts` | Complete |
-| `agentguard events` | `cli/commands/inspect.ts` | Complete |
+| `aguard guard` | `cli/commands/guard.ts` | Complete |
+| `aguard inspect` | `cli/commands/inspect.ts` | Complete |
+| `aguard events` | `cli/commands/inspect.ts` | Complete |
 
 ### Directory Structure
 

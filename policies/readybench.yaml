@@ -17,7 +17,7 @@
 # Default deny is active — any action without an explicit allow rule is denied.
 #
 # Usage:
-#   agentguard guard --policy policies/readybench.yaml
+#   aguard guard --policy policies/readybench.yaml
 
 id: readybench-policy
 name: ReadyBench Safety Policy

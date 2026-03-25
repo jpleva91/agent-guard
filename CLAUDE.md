@@ -27,10 +27,10 @@ pnpm install         # Install dependencies
 pnpm build           # Build all packages (turbo build)
 
 # Governance runtime
-echo '{"tool":"Bash","command":"git push origin main"}' | npx agentguard guard --dry-run
-npx agentguard guard --policy agentguard.yaml   # Start runtime with policy
-npx agentguard inspect --last                   # Inspect most recent run
-npx agentguard events --last                    # Show raw event stream
+echo '{"tool":"Bash","command":"git push origin main"}' | npx aguard guard --dry-run
+npx aguard guard --policy agentguard.yaml   # Start runtime with policy
+npx aguard inspect --last                   # Inspect most recent run
+npx aguard events --last                    # Show raw event stream
 ```
 
 ## Project Structure
@@ -251,40 +251,40 @@ Each workspace package maps to a single architectural concept:
 - **apps/mcp-server/** — MCP governance server (15 governance tools)
 
 ### CLI Commands
-- `agentguard guard` — Start the governed action runtime (policy + invariant enforcement)
-- `agentguard guard --policy <file>` — Use a specific policy file (YAML or JSON)
-- `agentguard guard --dry-run` — Evaluate without executing actions
-- `agentguard guard --agent-name <name>` — Set agent identity for this session (required; prompts if not set)
-- `agentguard inspect [runId]` — Show action graph and decisions for a run
-- `agentguard events [runId]` — Show raw event stream for a run
-- `agentguard export <runId>` — Export a governance session to a portable JSONL file
-- `agentguard import <file>` — Import a governance session from a portable JSONL file
-- `agentguard replay` — Replay a governance session timeline
-- `agentguard session-viewer [runId]` — Generate interactive HTML dashboard (auto-opens on session end; `--share` for cloud sharing; `--merge-recent <n>` to combine runs)
-- `agentguard plugin list|install|remove|search` — Manage plugins
-- `agentguard simulate <action-json>` — Simulate an action and display predicted impact without executing
-- `agentguard ci-check <session-file>` — CI governance verification (check a session for violations)
-- `agentguard policy validate <file>` — Validate a policy file (YAML/JSON)
-- `agentguard claude-hook` — Handle Claude Code PreToolUse/PostToolUse hook events
-- `agentguard claude-init` — Set up Claude Code hook integration
-- `agentguard diff <run1> <run2>` — Compare two governance sessions side-by-side
-- `agentguard evidence-pr` — Attach governance evidence summary to a pull request
-- `agentguard traces [runId]` — Display policy evaluation traces for a run
-- `agentguard init <type>` — Scaffold governance extensions (invariant, policy-pack, adapter, renderer, replay-processor)
-- `agentguard status` — Show current governance session status
-- `agentguard policy-verify <file>` — Verify policy file structure and rules
-- `agentguard analytics` — Analyze violation patterns across sessions
-- `agentguard auto-setup` — Auto-detect AgentGuard and configure Claude Code hooks
-- `agentguard config show|get|set` — Manage AgentGuard configuration
-- `agentguard audit-verify` — Verify tamper-resistant audit chain integrity
-- `agentguard demo` — Interactive governance showcase
-- `agentguard adoption` — Adoption metrics and onboarding status
-- `agentguard learn` — Interactive tutorials and learning paths
-- `agentguard migrate` — Migrate configuration between versions
-- `agentguard trust` — Manage policy and hook trust verification
-- `agentguard cloud login|connect|status|events|runs|summary|disconnect` — Cloud governance analytics
-- `agentguard copilot-hook` — Handle GitHub Copilot PreToolUse/PostToolUse hook events
-- `agentguard copilot-init` — Set up GitHub Copilot hook integration
+- `aguard guard` — Start the governed action runtime (policy + invariant enforcement)
+- `aguard guard --policy <file>` — Use a specific policy file (YAML or JSON)
+- `aguard guard --dry-run` — Evaluate without executing actions
+- `aguard guard --agent-name <name>` — Set agent identity for this session (required; prompts if not set)
+- `aguard inspect [runId]` — Show action graph and decisions for a run
+- `aguard events [runId]` — Show raw event stream for a run
+- `aguard export <runId>` — Export a governance session to a portable JSONL file
+- `aguard import <file>` — Import a governance session from a portable JSONL file
+- `aguard replay` — Replay a governance session timeline
+- `aguard session-viewer [runId]` — Generate interactive HTML dashboard (auto-opens on session end; `--share` for cloud sharing; `--merge-recent <n>` to combine runs)
+- `aguard plugin list|install|remove|search` — Manage plugins
+- `aguard simulate <action-json>` — Simulate an action and display predicted impact without executing
+- `aguard ci-check <session-file>` — CI governance verification (check a session for violations)
+- `aguard policy validate <file>` — Validate a policy file (YAML/JSON)
+- `aguard claude-hook` — Handle Claude Code PreToolUse/PostToolUse hook events
+- `aguard claude-init` — Set up Claude Code hook integration
+- `aguard diff <run1> <run2>` — Compare two governance sessions side-by-side
+- `aguard evidence-pr` — Attach governance evidence summary to a pull request
+- `aguard traces [runId]` — Display policy evaluation traces for a run
+- `aguard init <type>` — Scaffold governance extensions (invariant, policy-pack, adapter, renderer, replay-processor)
+- `aguard status` — Show current governance session status
+- `aguard policy-verify <file>` — Verify policy file structure and rules
+- `aguard analytics` — Analyze violation patterns across sessions
+- `aguard auto-setup` — Auto-detect AgentGuard and configure Claude Code hooks
+- `aguard config show|get|set` — Manage AgentGuard configuration
+- `aguard audit-verify` — Verify tamper-resistant audit chain integrity
+- `aguard demo` — Interactive governance showcase
+- `aguard adoption` — Adoption metrics and onboarding status
+- `aguard learn` — Interactive tutorials and learning paths
+- `aguard migrate` — Migrate configuration between versions
+- `aguard trust` — Manage policy and hook trust verification
+- `aguard cloud login|connect|status|events|runs|summary|disconnect` — Cloud governance analytics
+- `aguard copilot-hook` — Handle GitHub Copilot PreToolUse/PostToolUse hook events
+- `aguard copilot-init` — Set up GitHub Copilot hook integration
 
 ### Event Model
 The canonical event model is the architectural spine. Event kinds defined in `packages/events/src/schema.ts`:

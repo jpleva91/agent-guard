@@ -1,4 +1,4 @@
-// agentguard status — quick health check for AgentGuard governance runtime
+// aguard status — quick health check for AgentGuard governance runtime
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join, dirname, parse as parsePath } from 'node:path';
@@ -101,7 +101,7 @@ export async function status(args: string[]): Promise<number> {
     );
   } else {
     process.stderr.write(
-      `  ${FG.yellow}${BOLD}AgentGuard is not fully configured.${RESET} ${DIM}Run "agentguard claude-init" to set up.${RESET}\n`
+      `  ${FG.yellow}${BOLD}AgentGuard is not fully configured.${RESET} ${DIM}Run "aguard claude-init" to set up.${RESET}\n`
     );
   }
 
@@ -138,7 +138,7 @@ function checkHooksInstalled(): { ok: boolean; detail: string } {
     }
   }
 
-  return { ok: false, detail: '(not found — run "agentguard claude-init")' };
+  return { ok: false, detail: '(not found — run "aguard claude-init")' };
 }
 
 function checkPolicyFound(): { ok: boolean; detail: string } {
@@ -191,9 +191,9 @@ async function checkHookIntegrity(): Promise<{
       case 'verified':
         return { result, detail: '(verified — settings.json matches baseline)' };
       case 'tampered':
-        return { result, detail: '(TAMPERED — run "agentguard claude-init --refresh")' };
+        return { result, detail: '(TAMPERED — run "aguard claude-init --refresh")' };
       case 'no_baseline':
-        return { result, detail: '(no baseline — run "agentguard claude-init --refresh")' };
+        return { result, detail: '(no baseline — run "aguard claude-init --refresh")' };
       case 'hooks_missing':
         return { result, detail: '(hooks not found)' };
     }
@@ -224,9 +224,9 @@ async function checkPolicyTrust(): Promise<{ ok: boolean; detail: string }> {
       case 'trusted':
         return { ok: true, detail: '(trusted)' };
       case 'untrusted':
-        return { ok: false, detail: '(untrusted — run "agentguard trust")' };
+        return { ok: false, detail: '(untrusted — run "aguard trust")' };
       case 'content_changed':
-        return { ok: false, detail: '(content changed since trusted — run "agentguard trust")' };
+        return { ok: false, detail: '(content changed since trusted — run "aguard trust")' };
     }
   } catch {
     return { ok: false, detail: '(trust check unavailable)' };
@@ -296,7 +296,7 @@ export function checkHookScripts(): { ok: boolean; detail: string } {
   }
   return {
     ok: false,
-    detail: `(missing — run 'agentguard claude-init --refresh')`,
+    detail: `(missing — run 'aguard claude-init --refresh')`,
   };
 }
 
@@ -325,7 +325,7 @@ async function checkDenialInsights(): Promise<{ detail: string }> {
 
       const sessionIds = new Set(denials.map((e) => e.runId));
       return {
-        detail: `(${denials.length} denial${denials.length !== 1 ? 's' : ''} across ${sessionIds.size} session${sessionIds.size !== 1 ? 's' : ''} — run "agentguard learn")`,
+        detail: `(${denials.length} denial${denials.length !== 1 ? 's' : ''} across ${sessionIds.size} session${sessionIds.size !== 1 ? 's' : ''} — run "aguard learn")`,
       };
     } finally {
       try {
