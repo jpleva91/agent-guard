@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.5.0 (2026-03-25)
+
+### Features
+
+* **Corrective enforcement modes** — four modes on two axes (block × suggest): `monitor` (observe), `educate` (allow + teach), `guide` (block + suggest corrected command), `enforce` (hard block). Policy rules support `suggestion` and `correctedCommand` fields with `{{branch}}`, `{{target}}` template variables. Built-in suggestion generators for git.push, force-push, reset-hard, file.write secrets, and rm -rf. Retry budget (3 max) prevents infinite correction loops.
+* **SuggestionRegistry** — kernel-level registry with shell-escaped template rendering, action-scope validation for correctedCommand, and policy-pack trust verification.
+* **Fail-closed governance** — PreToolUse hook crashes now output `{"decision":"block"}` + exit 2 instead of silently allowing actions through. PostToolUse errors remain fail-open.
+* **Default mode changed to enforce** — `resolveInvariantMode` defaults to `enforce` (was `monitor`). `claude-init` generates `mode: guide` for new installs.
+
+### Bug Fixes
+
+* **Identity scaffolding (#850)** — `claude-init` now creates `.agentguard-identity` with auto-detected `driver:model:role`. CI/cron agents override via `AGENTGUARD_AGENT_NAME` env var.
+* **Hook validation (#849)** — `claude-init` validates that referenced wrapper scripts and binaries exist before reporting "Already configured". Warns and offers repair when hooks are broken.
+* **Status identity check (#851)** — `agentguard status` now checks for `.agentguard-identity` and wrapper script existence with actionable hints when missing.
+* **Wrapper binary resolution (#852)** — Hook wrapper resolves agentguard binary from `node_modules/.bin/` first, then PATH. Fails closed if binary not found.
+* **Hook wrapper fail-closed** — wrapper script outputs block response instead of silently failing when binary is missing.
+
+### Other
+
+* **Claude Code + Copilot adapters** — `formatHookResponse` extended for guide (suggestion in `permissionDecisionReason`) and educate (`additionalContext`). Copilot adapter mirrors Claude Code with protocol-appropriate fallbacks.
+* **Invariant suggest callback** — `AgentGuardInvariant` interface now supports optional `suggest` callback for future invariant-level corrective suggestions.
+* **Site + README updates** — four-mode documentation, "What's Inside" section, updated meta descriptions.
+
 ## 2.4.0 (2026-03-22)
 
 ### Features
