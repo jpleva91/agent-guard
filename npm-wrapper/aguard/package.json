@@ -1,0 +1,31 @@
+{
+  "name": "aguard",
+  "version": "2.7.0",
+  "description": "Agent Guard — run AI agents without fear. Installs @red-codes/agentguard.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "aguard": "./bin.js"
+  },
+  "files": [
+    "bin.js",
+    "index.js",
+    "README.md"
+  ],
+  "dependencies": {
+    "@red-codes/agentguard": "^2.7.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AgentGuardHQ/agentguard"
+  },
+  "keywords": [
+    "aguard",
+    "agentguard",
+    "ai-governance",
+    "agent-safety",
+    "claude-code",
+    "copilot",
+    "guardrails"
+  ]
+}
