@@ -79,6 +79,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   const isGlobal = args.includes('--global') || args.includes('-g');
   const isRemove = args.includes('--remove') || args.includes('--uninstall');
   const isRefresh = args.includes('--refresh');
+  const isReset = args.includes('--reset');
 
   // Parse --store flag for storage backend (embedded into hook commands)
   const storeIdx = args.findIndex((a) => a === '--store');
@@ -485,8 +486,8 @@ Then run: \`scripts/write-persona.sh <driver> <role>\`
     }
   }
 
-  // Auto-generate starter policy if none exists
-  const policyGenerated = generateStarterPolicy(selectedMode, selectedPack);
+  // Auto-generate starter policy if none exists (or overwrite if --reset)
+  const policyGenerated = generateStarterPolicy(selectedMode, selectedPack, isReset);
 
   // Detect rtk for token optimization status
   let rtkStatus: { available: boolean; version?: string } = { available: false };
@@ -699,18 +700,25 @@ const POLICY_CANDIDATES = [
   '.agentguard.yml',
 ];
 
-function generateStarterPolicy(mode: EnforcementMode = 'guide', pack?: string): boolean {
+function generateStarterPolicy(
+  mode: EnforcementMode = 'guide',
+  pack?: string,
+  forceOverwrite = false
+): boolean {
   const repoRoot = resolveMainRepoRoot();
-  for (const candidate of POLICY_CANDIDATES) {
-    if (existsSync(join(repoRoot, candidate))) {
-      return false;
+  if (!forceOverwrite) {
+    for (const candidate of POLICY_CANDIDATES) {
+      if (existsSync(join(repoRoot, candidate))) {
+        return false;
+      }
     }
   }
 
   const policyPath = join(repoRoot, 'agentguard.yaml');
   writeFileSync(policyPath, STARTER_POLICY_TEMPLATE(mode, pack), 'utf8');
+  const verb = forceOverwrite ? 'Reset' : 'Created';
   process.stderr.write(
-    `  ${FG.green}✓${RESET}  Policy created: ${FG.cyan}agentguard.yaml${RESET} (${mode} mode${pack ? `, ${pack} pack` : ''})\n`
+    `  ${FG.green}✓${RESET}  Policy ${verb.toLowerCase()}: ${FG.cyan}agentguard.yaml${RESET} (${mode} mode${pack ? `, ${pack} pack` : ''})\n`
   );
   return true;
 }
