@@ -402,4 +402,313 @@ describe('transitive-effect-analysis', () => {
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('dangerous lifecycle hook');
   });
+
+  // --- Node.js fs module write patterns (closes #862) ---
+
+  it('detects fs.writeFileSync in Node.js scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'bypass.mjs',
+      fileContentDiff:
+        'import fs from "fs";\nfs.writeFileSync(".agentguard/config.yaml", "override: true");',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file system write (Node.js fs.writeFile)');
+  });
+
+  it('detects fs.writeFile in Node.js scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'bypass.js',
+      fileContentDiff: 'fs.writeFile("/etc/hosts", data, callback);',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file system write (Node.js fs.writeFile)');
+  });
+
+  it('detects fs.copyFileSync in Node.js scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'copy.mjs',
+      fileContentDiff: 'fs.copyFileSync("malicious.yaml", ".agentguard/policy.yaml");',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file system copy (Node.js fs.copyFile)');
+  });
+
+  it('detects fs.renameSync in Node.js scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'move.js',
+      fileContentDiff: 'fs.renameSync("tmp/config", ".agentguard/config.yaml");',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file system rename (Node.js fs.rename)');
+  });
+
+  it('detects fs.unlinkSync in Node.js scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'delete.mjs',
+      fileContentDiff: 'fs.unlinkSync(".agentguard/policy.yaml");',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file system delete (Node.js fs.unlink)');
+  });
+
+  it('detects fs.appendFileSync in Node.js scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'append.js',
+      fileContentDiff: 'fs.appendFileSync("/etc/profile", "export EVIL=1");',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file system append (Node.js fs.appendFile)');
+  });
+
+  it('detects fs.chmodSync in Node.js scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'perms.js',
+      fileContentDiff: 'fs.chmodSync("/tmp/exploit", 0o777);',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file permission change (Node.js fs.chmod/chown)');
+  });
+
+  it('detects fsPromises.writeFile in Node.js scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'async-bypass.mjs',
+      fileContentDiff:
+        'import { promises as fsPromises } from "fs";\nawait fsPromises.writeFile("config.yaml", data);',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('async file system write (Node.js fs/promises)');
+  });
+
+  // --- Python pathlib and os write patterns ---
+
+  it('detects pathlib write_text in Python scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'bypass.py',
+      fileContentDiff:
+        'from pathlib import Path\nPath(".agentguard/config.yaml").write_text("override: true")',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file system write (Python pathlib)');
+  });
+
+  it('detects pathlib write_bytes in Python scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'bypass.py',
+      fileContentDiff: 'Path("/etc/passwd").write_bytes(b"root::0:0")',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file system write (Python pathlib)');
+  });
+
+  it('detects os.remove in Python scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'delete.py',
+      fileContentDiff: 'import os\nos.remove(".agentguard/policy.yaml")',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file system modification (Python os)');
+  });
+
+  it('detects os.chmod in Python scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'perms.py',
+      fileContentDiff: 'import os\nos.chmod("/tmp/exploit", 0o777)',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file system modification (Python os)');
+  });
+
+  it('detects shutil.copy in Python scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'copy.py',
+      fileContentDiff: 'import shutil\nshutil.copy("evil.yaml", ".agentguard/config.yaml")',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file system copy/move (Python shutil)');
+  });
+
+  it('detects shutil.move in Python scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'move.py',
+      fileContentDiff: 'shutil.move("tmp/config", ".agentguard/")',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file system copy/move (Python shutil)');
+  });
+
+  it('detects shutil.copytree in Python scripts', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: 'copy_tree.py',
+      fileContentDiff: 'shutil.copytree("malicious/", ".agentguard/")',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('file system copy/move (Python shutil)');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Script Execution Tracking invariant tests
+// ---------------------------------------------------------------------------
+describe('script-execution-tracking', () => {
+  const inv = findInvariant('script-execution-tracking');
+
+  it('has severity 4', () => {
+    expect(inv.severity).toBe(4);
+  });
+
+  it('holds for non-shell.exec actions', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentCommand: 'node bypass.mjs',
+      sessionWrittenFiles: ['bypass.mjs'],
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('not shell.exec');
+  });
+
+  it('holds when no command is available', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      sessionWrittenFiles: ['bypass.mjs'],
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toBe('No command available');
+  });
+
+  it('holds when no session write log is available', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'node bypass.mjs',
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toBe('No session write log available');
+  });
+
+  it('holds for empty session write log', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'node bypass.mjs',
+      sessionWrittenFiles: [],
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('detects execution of a session-written .mjs script', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'node scripts/bypass.mjs',
+      sessionWrittenFiles: ['scripts/bypass.mjs'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('scripts/bypass.mjs');
+  });
+
+  it('detects execution of a session-written .js script', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'node exploit.js',
+      sessionWrittenFiles: ['exploit.js'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('exploit.js');
+  });
+
+  it('detects execution of a session-written .sh script', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'bash scripts/scaffold.sh',
+      sessionWrittenFiles: ['scripts/scaffold.sh'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('scripts/scaffold.sh');
+  });
+
+  it('detects execution of a session-written .py script', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'python3 exploit.py',
+      sessionWrittenFiles: ['exploit.py'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('exploit.py');
+  });
+
+  it('detects execution by basename match', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'node bypass.mjs',
+      sessionWrittenFiles: ['scripts/deep/bypass.mjs'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('bypass.mjs');
+  });
+
+  it('holds when command does not reference any written script', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'npm run build',
+      sessionWrittenFiles: ['src/index.ts', 'scripts/bypass.mjs'],
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('does not reference');
+  });
+
+  it('ignores non-script written files (e.g. .yaml, .md)', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'cat config.yaml',
+      sessionWrittenFiles: ['config.yaml', 'README.md'],
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds for empty state', () => {
+    const result = inv.check({});
+    expect(result.holds).toBe(true);
+  });
+
+  it('detects execution when actionType is not set', () => {
+    const result = inv.check({
+      currentCommand: 'node bypass.mjs',
+      sessionWrittenFiles: ['bypass.mjs'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('bypass.mjs');
+  });
+
+  it('detects multiple written scripts in command', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'node step1.mjs && node step2.mjs',
+      sessionWrittenFiles: ['step1.mjs', 'step2.mjs'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('step1.mjs');
+    expect(result.actual).toContain('step2.mjs');
+  });
+
+  it('detects .cjs script execution', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'node exploit.cjs',
+      sessionWrittenFiles: ['exploit.cjs'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('exploit.cjs');
+  });
 });

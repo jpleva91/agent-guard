@@ -56,6 +56,8 @@
     { "id": "no-env-var-modification", "name": "No Environment Variable Modification", "description": "Detects attempts to modify environment variables or shell profile files — environment variables often contain secrets and profile modifications can establish persistent backdoors", "severity": 3 },
     { "id": "no-destructive-migration", "name": "No Destructive Migration", "description": "Detects potentially destructive database migration files — flags writes to migration directories containing DROP, TRUNCATE, or other destructive DDL", "severity": 3 },
     { "id": "transitive-effect-analysis", "name": "Transitive Effect Analysis", "description": "Detects when an agent writes a script or config file whose contents would produce effects that would be denied if executed directly — closes the creative circumvention gap", "severity": 4 },
-    { "id": "no-ide-socket-access", "name": "No IDE Socket Access", "description": "Blocks agent access to IDE inter-process communication sockets (VS Code, JetBrains, Cursor) — prevents governance escape via host IDE manipulation", "severity": 4 }
+    { "id": "no-ide-socket-access", "name": "No IDE Socket Access", "description": "Blocks agent access to IDE inter-process communication sockets (VS Code, JetBrains, Cursor) — prevents governance escape via host IDE manipulation", "severity": 4 },
+    { "id": "commit-scope-guard", "name": "Commit Scope Guard", "description": "All files in a git commit must have been written or modified by the current session — prevents accidental inclusion of pre-staged files", "severity": 4 },
+    { "id": "script-execution-tracking", "name": "Script Execution Tracking", "description": "Detects when a shell command executes a file written in the current session — prevents governance bypass via write-then-execute indirection", "severity": 4 }
   ]
 }

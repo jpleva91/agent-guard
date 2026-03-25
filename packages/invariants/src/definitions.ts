@@ -433,6 +433,49 @@ const TRANSITIVE_SCRIPT_PATTERNS: { pattern: RegExp; label: string }[] = [
   { pattern: /\bchild_process\b/, label: 'child process spawning (Node.js)' },
   { pattern: /\bexecSync\s*\(/, label: 'synchronous command execution (execSync)' },
   { pattern: /\beval\s*\(/, label: 'dynamic code execution (eval)' },
+  // --- Node.js fs module — file system write bypass vectors (closes #862) ---
+  {
+    pattern: /\bfs\s*\.(?:writeFileSync|writeFile)\s*\(/,
+    label: 'file system write (Node.js fs.writeFile)',
+  },
+  {
+    pattern: /\bfs\s*\.(?:copyFileSync|copyFile)\s*\(/,
+    label: 'file system copy (Node.js fs.copyFile)',
+  },
+  {
+    pattern: /\bfs\s*\.(?:renameSync|rename)\s*\(/,
+    label: 'file system rename (Node.js fs.rename)',
+  },
+  {
+    pattern: /\bfs\s*\.(?:unlinkSync|unlink)\s*\(/,
+    label: 'file system delete (Node.js fs.unlink)',
+  },
+  {
+    pattern: /\bfs\s*\.(?:appendFileSync|appendFile)\s*\(/,
+    label: 'file system append (Node.js fs.appendFile)',
+  },
+  {
+    pattern: /\bfs\s*\.(?:chmodSync|chmod|chownSync|chown)\s*\(/,
+    label: 'file permission change (Node.js fs.chmod/chown)',
+  },
+  // --- Node.js fs/promises — async write operations ---
+  {
+    pattern: /\bfsPromises\s*\.(?:writeFile|copyFile|rename|unlink|appendFile|chmod|chown)\s*\(/,
+    label: 'async file system write (Node.js fs/promises)',
+  },
+  // --- Python pathlib — file write bypass vectors ---
+  {
+    pattern: /\.write_text\s*\(|\.write_bytes\s*\(/,
+    label: 'file system write (Python pathlib)',
+  },
+  {
+    pattern: /\bos\s*\.(?:remove|unlink|rename|chmod)\s*\(/,
+    label: 'file system modification (Python os)',
+  },
+  {
+    pattern: /\bshutil\s*\.(?:copy2?|move|copytree)\s*\(/,
+    label: 'file system copy/move (Python shutil)',
+  },
 ];
 
 export function isCredentialPath(filePath: string): boolean {
@@ -1630,6 +1673,90 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         holds: true,
         expected: 'All staged files must have been written in this session',
         actual: `All ${state.stagedFiles.length} staged file(s) match session write log`,
+      };
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // 23 — Script Execution Tracking
+  // Detects when a shell.exec command executes a file that was written earlier
+  // in the same session — the write-then-execute bypass vector described in #862.
+  // ---------------------------------------------------------------------------
+  {
+    id: 'script-execution-tracking',
+    name: 'Script Execution Tracking',
+    description:
+      'Detects when a shell command executes a file that was written in the current session — ' +
+      'prevents governance bypass via write-then-execute indirection',
+    severity: 4,
+    check(state: SystemState): InvariantCheckResult {
+      const actionType = state.currentActionType || '';
+
+      // Only applies to shell.exec actions
+      if (actionType !== '' && actionType !== 'shell.exec') {
+        return {
+          holds: true,
+          expected: 'Shell commands must not execute session-written scripts',
+          actual: `Action type ${actionType} is not shell.exec — skipped`,
+        };
+      }
+
+      const command = state.currentCommand || '';
+      if (command === '') {
+        return {
+          holds: true,
+          expected: 'Shell commands must not execute session-written scripts',
+          actual: 'No command available',
+        };
+      }
+
+      // Fail-open when no session write log is available
+      const writtenFiles = state.sessionWrittenFiles;
+      if (!writtenFiles || writtenFiles.length === 0) {
+        return {
+          holds: true,
+          expected: 'Shell commands must not execute session-written scripts',
+          actual: 'No session write log available',
+        };
+      }
+
+      // Check if any session-written file appears in the command
+      const executedWrittenFiles: string[] = [];
+
+      for (const filePath of writtenFiles) {
+        // Only check script-like files to avoid false positives on data files
+        if (
+          !isScriptFilePath(filePath) &&
+          !filePath.endsWith('.mjs') &&
+          !filePath.endsWith('.cjs')
+        ) {
+          continue;
+        }
+
+        // Check if the file path (or its basename) appears in the command
+        const basename = filePath.split(/[\\/]/).pop() || '';
+        if (basename && command.includes(basename)) {
+          executedWrittenFiles.push(filePath);
+        } else if (filePath && command.includes(filePath)) {
+          executedWrittenFiles.push(filePath);
+        }
+      }
+
+      if (executedWrittenFiles.length > 0) {
+        const listed = executedWrittenFiles.slice(0, 3).join(', ');
+        const suffix =
+          executedWrittenFiles.length > 3 ? ` (+${executedWrittenFiles.length - 3} more)` : '';
+        return {
+          holds: false,
+          expected: 'Shell commands must not execute session-written scripts',
+          actual: `Command executes session-written script(s): ${listed}${suffix}`,
+        };
+      }
+
+      return {
+        holds: true,
+        expected: 'Shell commands must not execute session-written scripts',
+        actual: 'Command does not reference any session-written scripts',
       };
     },
   },

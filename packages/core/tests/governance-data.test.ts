@@ -173,9 +173,9 @@ describe('governance-data loader', () => {
       expect(INVARIANT_IDE_SOCKET_PATH_PATTERNS).toContain('vscode-ipc-');
     });
 
-    it('exports invariant metadata for all 20 invariants', () => {
+    it('exports invariant metadata for all invariants', () => {
       expect(Array.isArray(INVARIANT_METADATA)).toBe(true);
-      expect(INVARIANT_METADATA.length).toBe(20);
+      expect(INVARIANT_METADATA.length).toBeGreaterThanOrEqual(22);
       for (const inv of INVARIANT_METADATA) {
         expect(typeof inv.id).toBe('string');
         expect(typeof inv.name).toBe('string');
