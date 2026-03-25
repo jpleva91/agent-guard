@@ -1,6 +1,7 @@
 import picomatch from 'picomatch';
 import type { MatchResult } from './types.js';
 import { RC_FILE_CREDENTIAL } from './reason-codes.js';
+import { canonicalizePath } from './canonicalize-path.js';
 
 // ─── Input type ──────────────────────────────────────────────────────────────
 
@@ -28,14 +29,12 @@ interface CompiledPattern {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
- * Normalize a file path for consistent matching:
- * - Convert Windows backslashes to forward slashes
- * - Strip leading `./`
+ * Normalize a file path for consistent matching.
+ * Delegates to canonicalizePath for URL-decoding, traversal resolution,
+ * separator normalization, and null-byte rejection.
  */
 function normalizePath(filePath: string): string {
-  let p = filePath.replace(/\\/g, '/');
-  if (p.startsWith('./')) p = p.slice(2);
-  return p;
+  return canonicalizePath(filePath);
 }
 
 // ─── PathMatcher ─────────────────────────────────────────────────────────────
