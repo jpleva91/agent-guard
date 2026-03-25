@@ -1,0 +1,20 @@
+id: test-policy
+name: Test Policy
+severity: 4
+mode: guide
+rules:
+  - action: git.push
+    effect: deny
+    branches: [main, master]
+    reason: Direct push to protected branch
+    suggestion: Push to a feature branch and open a PR
+    correctedCommand: "git push origin {{branch}}"
+  - action: file.read
+    effect: allow
+    reason: Reading is safe
+  - action: shell.exec
+    effect: allow
+    reason: Shell commands permitted
+  - action: git.push
+    effect: allow
+    reason: Feature branch pushes permitted
