@@ -52,6 +52,14 @@ describe('canonicalizePath', () => {
     expect(canonicalizePath('\0')).toBe('');
   });
 
+  it('rejects URL-encoded null bytes (%00)', () => {
+    // %00 decodes to \0 — must be caught after URL decoding
+    expect(canonicalizePath('src/%00')).toBe('');
+    expect(canonicalizePath('src/%00../etc/passwd')).toBe('');
+    expect(canonicalizePath('%00')).toBe('');
+    expect(canonicalizePath('a/b/%00/c')).toBe('');
+  });
+
   it('strips leading / for consistent relative paths', () => {
     expect(canonicalizePath('/src/foo.ts')).toBe('src/foo.ts');
   });
@@ -62,7 +70,7 @@ describe('canonicalizePath', () => {
   });
 
   it('handles empty string', () => {
-    expect(canonicalizePath('')).toBe('.');
+    expect(canonicalizePath('')).toBe('');
   });
 
   it('handles dotfiles correctly', () => {

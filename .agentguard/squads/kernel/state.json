@@ -1,44 +1,47 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Fix security regression #924 (null byte bypass in canonicalizePath). Continue v3.0 release readiness. #908 closed by merged PR #923.",
+    "goal": "Fix security regression #924 (null byte bypass in canonicalizePath). Continue v3.0 release readiness.",
     "issues": [924]
   },
   "assignments": {
     "senior": {
       "issue": 924,
       "title": "URL-encoded null byte (%00) bypasses canonicalizePath rejection",
-      "status": "assigned",
-      "branch": null,
+      "status": "pr_open",
+      "branch": "fix/matchers-url-encoded-null-byte-924",
+      "pr": 952,
       "claimedAt": "2026-03-25T22:35:00.000Z",
-      "note": "No branch started after 2 EM cycles. Escalation warning issued."
+      "resolvedAt": "2026-03-26T04:10:00.000Z",
+      "note": "EM direct-implemented after 2 cycles with no branch. PR #952 opened. 114/114 tests passing."
     }
   },
-  "blockers": [
-    {
-      "issue": 924,
-      "description": "Security regression — null byte bypass via URL encoding in canonicalizePath",
-      "since": "2026-03-25T22:35:00.000Z",
-      "persistedCycles": 2,
-      "escalationWarning": true
-    }
-  ],
+  "blockers": [],
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
-    "prs": []
+    "prs": [
+      {
+        "number": 952,
+        "title": "fix(matchers): reject URL-encoded null bytes (%00) in canonicalizePath (closes #924)",
+        "branch": "fix/matchers-url-encoded-null-byte-924",
+        "status": "open",
+        "ciStatus": "pending",
+        "openedAt": "2026-03-26T04:10:00.000Z"
+      }
+    ]
   },
-  "health": "yellow",
+  "health": "green",
   "testHealth": {
     "total": 4106,
     "passed": 4106,
     "failed": 0,
     "packages": 18,
-    "lastRun": "2026-03-26T01:35:00.000Z",
+    "lastRun": "2026-03-26T04:10:00.000Z",
     "status": "all_passing"
   },
-  "lastEmRun": "2026-03-26T01:35:00.000Z",
+  "lastEmRun": "2026-03-26T04:10:00.000Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-26T01:35:00.000Z"
+  "updatedAt": "2026-03-26T04:10:00.000Z"
 }

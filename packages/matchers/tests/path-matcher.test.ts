@@ -185,6 +185,33 @@ describe('PathMatcher', () => {
     });
   });
 
+  describe('URL-encoded evasion resistance', () => {
+    const matcher = PathMatcher.create(ALL_PATTERNS);
+
+    it('URL-encoded .env path still matches env pattern', () => {
+      // %2e = '.' — attacker tries to evade .env detection
+      expect(matcher.matchAny('%2eenv')).toBe(true);
+      expect(matcher.matchAny('config/%2eenv')).toBe(true);
+    });
+
+    it('URL-encoded .key path still matches key pattern', () => {
+      // %2e = '.' — attacker tries to evade .key detection
+      expect(matcher.matchAny('certs/server%2ekey')).toBe(true);
+    });
+
+    it('URL-encoded null byte (%00) does NOT match any pattern', () => {
+      // %00 decodes to null byte — canonicalizePath must reject and PathMatcher returns null
+      expect(matcher.match('src/%00')).toBeNull();
+      expect(matcher.match('src/%00../etc/passwd')).toBeNull();
+      expect(matcher.match('%00')).toBeNull();
+    });
+
+    it('URL-encoded traversal does not match after resolution', () => {
+      // %2e%2e = '..' — traversal attempt, should either resolve within root or be rejected
+      expect(matcher.match('src/%2e%2e/%2e%2e/etc/passwd')).toBeNull();
+    });
+  });
+
   describe('default severity', () => {
     it('defaults severity to 5 when not specified', () => {
       const matcher = PathMatcher.create([
