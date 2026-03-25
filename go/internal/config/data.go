@@ -5,6 +5,8 @@ import (
 	"embed"
 	"encoding/json"
 	"sync"
+
+	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
 )
 
 //go:embed data/*.json
@@ -91,4 +93,39 @@ func GithubActionPatterns() []ActionPattern {
 		json.Unmarshal(data, &githubPatterns)
 	})
 	return githubPatterns
+}
+
+// NewDefaultScanner creates an action.Scanner pre-loaded with all embedded
+// governance data (git patterns, github patterns, destructive patterns).
+// This is the primary way to construct a scanner — config owns the data,
+// action owns the scanning logic.
+func NewDefaultScanner() *action.Scanner {
+	gitGroups := make([]action.PatternGroup, len(GitActionPatterns()))
+	for i, p := range GitActionPatterns() {
+		gitGroups[i] = action.PatternGroup{Patterns: p.Patterns, ActionType: p.ActionType}
+	}
+
+	ghGroups := make([]action.PatternGroup, len(GithubActionPatterns()))
+	for i, p := range GithubActionPatterns() {
+		ghGroups[i] = action.PatternGroup{Patterns: p.Patterns, ActionType: p.ActionType}
+	}
+
+	destDefs := make([]action.DestructivePatternDef, len(DestructivePatterns()))
+	for i, p := range DestructivePatterns() {
+		destDefs[i] = action.DestructivePatternDef{
+			Pattern:     p.Pattern,
+			Flags:       p.Flags,
+			Description: p.Description,
+			RiskLevel:   p.RiskLevel,
+			Category:    p.Category,
+		}
+	}
+
+	return action.NewScanner(gitGroups, ghGroups, destDefs)
+}
+
+// NewDefaultNormalizer creates an action.Normalizer pre-loaded with the
+// embedded tool-action map and a default scanner.
+func NewDefaultNormalizer() *action.Normalizer {
+	return action.NewNormalizer(ToolActionMap(), NewDefaultScanner())
 }
