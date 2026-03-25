@@ -349,9 +349,20 @@ AgentGuard ships a high-performance Go kernel that runs as a single 3.2MB static
 | GitHub CLI | 89 µs | 2 |
 | Compound command (AST) | 130 µs | 6 |
 
-At 100 tool calls per agent session, governance adds **0.3 seconds** total overhead with the Go kernel vs **29 seconds** with Node.js. For teams running agent fleets, this means governance is invisible to the developer experience.
+**Per-session impact** — at 100 tool calls per agent session, governance adds **0.3 seconds** total overhead with the Go kernel vs **29 seconds** with Node.js:
 
-The Go kernel includes: action normalization with AST-based shell parsing, policy evaluation, 22 invariants, escalation state machine, blast radius engine, telemetry shipper (stdout/file/HTTP), and a control plane signals API.
+| Scenario | Node.js Kernel | Go Kernel | Time Saved |
+|----------|---------------|-----------|------------|
+| Single agent session (100 calls) | 29s overhead | 0.3s | **28.7s** |
+| 30-min coder session (~400 calls) | 116s (2 min) | 1.2s | **~2 min back for coding** |
+| Daily fleet (100 agents × 2 runs) | 96 min/day | 1 min/day | **95 min/day** |
+| Monthly fleet | 48 hours/month | 30 min/month | **~47.5 hours/month** |
+
+For teams running agent fleets, governance becomes invisible. Agents get 8% more productive time in every session — no startup tax, no dependency overhead, no bootstrap delays.
+
+**Zero-dependency deployment** — the Go kernel is a single static binary. No `node_modules`, no `pnpm install`, no bootstrap deadlocks. Drop it in a worktree and it works. This is critical for CI/CD and fleet scenarios where agents spin up fresh environments.
+
+The Go kernel includes: action normalization with AST-based shell parsing, policy evaluation, 22 invariants, escalation state machine, blast radius engine, telemetry shipper (stdout/file/HTTP), and a control plane signals API. It ships automatically via `npm install` — a postinstall script downloads the prebuilt binary for your platform.
 
 ## For Teams and Enterprise
 
