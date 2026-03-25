@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-03-25T15:00:00.000Z",
+  "generatedAt": "2026-03-25T18:10:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
-  "health": "yellow",
-  "summary": "Major delivery cycle: both sprint PRs landed. PR #869 (fix/rust-kernel-tool-action-map-count-867) merged at 11:37 UTC and PR #870 (Go kernel rewrite + 9-squad swarm expansion — 9,474 lines, 242 tests across 8 packages) merged at 11:56 UTC. Previous blocker (ci-failure-pr-870) fully resolved. New open PR #888 (fix/848-npx-scoped-package-name) has a lint CI failure — all other checks green. Assigned to senior-coder. No P0/P1 issues in tracker.",
+  "health": "green",
+  "summary": "Squad is healthy. Previous blockers resolved — PRs #869 and #870 both merged. Go kernel landed (PR #885), v2.6.0 released (PR #887). 10 PRs merged since last cycle. One open PR (#888) is CI green and awaiting review. EM report PR #889 merged this cycle. No P0/P1 issues. Sprint goal complete — updating to maintenance mode.",
   "prQueue": {
     "open": 1,
     "prs": [
@@ -11,35 +11,47 @@
         "number": 888,
         "title": "fix: use npx @red-codes/agentguard in user-facing docs and messages",
         "branch": "fix/848-npx-scoped-package-name",
-        "ci": "failing",
+        "ci": "green",
         "checks": {
           "CodeQL": "success",
           "test-and-build": "success",
           "analyze": "success",
           "rust-kernel": "success",
-          "lint": "failure"
+          "lint": "success"
         },
         "reviews": 0,
-        "status": "ci_failing",
-        "scope": "Tier C (4 files, ~8 lines, no breaking changes)",
-        "action": "Fix lint failure. All other checks green. Small Tier C patch — unblock and merge."
-      }
-    ],
-    "merged_this_cycle": [
-      {
-        "number": 869,
-        "title": "fix(rust-kernel): derive data test counts from JSON source (#867)",
-        "mergedAt": "2026-03-25T11:37:58Z",
-        "mergedBy": "jpleva91"
-      },
-      {
-        "number": 870,
-        "title": "feat: Go kernel rewrite + 9-squad swarm org",
-        "mergedAt": "2026-03-25T11:56:44Z",
-        "mergedBy": "jpleva91"
+        "status": "awaiting_review",
+        "action": "Tier C scope (4 files, ~8 lines). CI green. Needs one review to merge."
       }
     ]
   },
+  "mergedThisCycle": [
+    {
+      "number": 889,
+      "title": "chore(kernel-em): EM cycle report 2026-03-25T15:00Z",
+      "mergedBy": "em"
+    },
+    {
+      "number": 887,
+      "title": "v2.6.0 — Go kernel, SHA pinning, unscoped npm, performance docs",
+      "mergedAt": "2026-03-25T15:00:07Z"
+    },
+    {
+      "number": 885,
+      "title": "feat(go): complete Go kernel — KE-2/4/5/6, ~100x faster governance",
+      "mergedAt": "2026-03-25T14:34:46Z"
+    },
+    {
+      "number": 884,
+      "title": "feat(issue-857): stranger test protocol and install fixes",
+      "mergedAt": "2026-03-25T14:39:31Z"
+    },
+    {
+      "number": 883,
+      "title": "chore(swarm): recovery controller — all healthy, mode normal",
+      "mergedAt": "2026-03-25T14:50:03Z"
+    }
+  ],
   "loopGuards": {
     "prBudget": {
       "open": 1,
@@ -58,37 +70,14 @@
   "triage": {
     "p0Issues": 0,
     "p1Issues": 0,
-    "newAssignments": [
-      {
-        "task": "Fix lint CI failure on PR #888",
-        "assignee": "senior-coder",
-        "priority": "P1",
-        "pr": 888
-      }
-    ]
+    "newAssignments": []
   },
-  "blockers": [
-    {
-      "id": "ci-failure-pr-888",
-      "pr": 888,
-      "description": "PR #888 (fix/npx-scoped-package-name) failing CI: lint job only. Tier C change — likely a formatting or ESLint violation.",
-      "firstSeen": "2026-03-25T15:00:00.000Z",
-      "runCount": 1,
-      "escalate": false
-    }
-  ],
-  "resolvedBlockers": [
-    {
-      "id": "ci-failure-pr-870",
-      "description": "PR #870 lint + rust-kernel CI failures — resolved by the squad; PR merged.",
-      "resolvedAt": "2026-03-25T11:56:44Z"
-    }
-  ],
+  "blockers": [],
   "escalations": [],
   "metrics": {
-    "prsOpened": 1,
-    "prsMerged": 2,
-    "issuesClosed": 1,
+    "prsOpened": 0,
+    "prsMerged": 1,
+    "issuesClosed": 0,
     "governanceDenials": 0,
     "retries": 0
   },
@@ -98,6 +87,6 @@
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "1 PR failing CI (lint only) on a Tier C patch. Health remains yellow until resolved. Prior blocker on #870 cleared this cycle."
+    "notes": "All clear. No failing CI, no blockers, no denials."
   }
 }

@@ -1,43 +1,34 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Land Go kernel rewrite (merged PR #870) and rust-kernel fix (merged PR #869); resolve lint CI failure on PR #888 (fix/npx-scoped-package-name)",
+    "goal": "Post-v2.6.0 stabilization: merge remaining fix PRs, monitor CI health",
     "issues": []
   },
   "assignments": {
-    "pr-888-lint-fix": {
-      "task": "Fix lint CI failure on PR #888 (fix/848-npx-scoped-package-name)",
+    "pr-888-review": {
+      "task": "Get review and merge PR #888 (fix: npx scoped package name, closes #848)",
       "assignee": "senior-coder",
-      "priority": "P1",
+      "priority": "P2",
       "pr": 888,
-      "status": "open",
-      "notes": "Lint job failing; test-and-build, rust-kernel, analyze, CodeQL all green. Tier C scope (4 files, ~8 lines). Likely a formatting or ESLint violation introduced in the patch."
+      "status": "awaiting_review",
+      "notes": "Tier C scope (4 files, ~8 lines). CI all green. Needs one approval to merge."
     }
   },
-  "blockers": [
-    {
-      "id": "ci-failure-pr-888",
-      "description": "PR #888 (fix/npx-scoped-package-name) failing CI: lint job only",
-      "pr": 888,
-      "firstSeen": "2026-03-25T15:00:00.000Z",
-      "runCount": 1
-    }
-  ],
+  "blockers": [],
   "prQueue": {
     "open": 1,
     "reviewed": 0,
-    "mergeable": 0,
+    "mergeable": 1,
     "prs": [
       {
         "number": 888,
-        "title": "fix: use npx @red-codes/agentguard in user-facing docs and messages",
-        "status": "ci_failing",
-        "ci": "failing",
-        "failingChecks": ["lint"]
+        "status": "awaiting_review",
+        "ci": "green",
+        "flaggedForArchitect": false
       }
     ]
   },
-  "health": "yellow",
-  "lastEmRun": "2026-03-25T15:00:00.000Z",
-  "updatedAt": "2026-03-25T15:00:00.000Z"
+  "health": "green",
+  "lastEmRun": "2026-03-25T18:10:00.000Z",
+  "updatedAt": "2026-03-25T18:10:00.000Z"
 }
