@@ -550,7 +550,16 @@ export interface RunSummaryEntry extends RunSummary {
 // ---------------------------------------------------------------------------
 
 /** Action class categories */
-export type ActionClass = 'file' | 'test' | 'git' | 'shell' | 'npm' | 'http' | 'deploy' | 'infra';
+export type ActionClass =
+  | 'file'
+  | 'test'
+  | 'git'
+  | 'github'
+  | 'shell'
+  | 'npm'
+  | 'http'
+  | 'deploy'
+  | 'infra';
 
 /** Extended action class including MCP and unknown categories */
 export type ActionClassExtended = ActionClass | 'mcp' | 'unknown';

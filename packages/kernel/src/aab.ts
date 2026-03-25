@@ -27,6 +27,7 @@ import {
   TOOL_ACTION_MAP_DATA,
   DESTRUCTIVE_PATTERNS_DATA,
   GIT_ACTION_PATTERNS_DATA,
+  GITHUB_ACTION_PATTERNS_DATA,
   getActionClass,
 } from '@red-codes/core';
 import { CommandScanner } from '@red-codes/matchers';
@@ -68,7 +69,11 @@ export interface AuthorizationResult {
 
 const TOOL_ACTION_MAP: Record<string, string> = TOOL_ACTION_MAP_DATA;
 
-const scanner = CommandScanner.create(DESTRUCTIVE_PATTERNS_DATA, GIT_ACTION_PATTERNS_DATA);
+const scanner = CommandScanner.create(
+  DESTRUCTIVE_PATTERNS_DATA,
+  GIT_ACTION_PATTERNS_DATA,
+  GITHUB_ACTION_PATTERNS_DATA
+);
 
 // Backward-compatible compiled patterns for consumers that import DESTRUCTIVE_PATTERNS directly.
 const DESTRUCTIVE_PATTERNS: DestructivePattern[] = DESTRUCTIVE_PATTERNS_DATA.map((p) => ({
@@ -81,6 +86,12 @@ const DESTRUCTIVE_PATTERNS: DestructivePattern[] = DESTRUCTIVE_PATTERNS_DATA.map
 function detectGitAction(command: string): string | null {
   if (!command || typeof command !== 'string') return null;
   const result = scanner.scanGitAction(command.trim());
+  return result ? result.actionType : null;
+}
+
+function detectGithubAction(command: string): string | null {
+  if (!command || typeof command !== 'string') return null;
+  const result = scanner.scanGithubAction(command.trim());
   return result ? result.actionType : null;
 }
 
@@ -213,15 +224,25 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
 
   if (action === 'shell.exec' && rawAction.command) {
     const scannable = stripQuotedContent(rawAction.command);
-    const gitAction = detectGitAction(scannable);
-    if (gitAction) {
-      action = gitAction;
-      // Use original command for branch extraction (needs the actual branch name)
-      target = extractBranch(rawAction.command) || target;
-    } else if (!target) {
-      // Use command as target for non-git shell actions so scope-based
-      // policy rules can match against the command text.
-      target = rawAction.command;
+    // GitHub detection must run before git detection — a `gh pr create`
+    // command should not be classified as shell.exec.
+    const githubAction = detectGithubAction(scannable);
+    if (githubAction) {
+      action = githubAction;
+      if (!target) {
+        target = rawAction.command;
+      }
+    } else {
+      const gitAction = detectGitAction(scannable);
+      if (gitAction) {
+        action = gitAction;
+        // Use original command for branch extraction (needs the actual branch name)
+        target = extractBranch(rawAction.command) || target;
+      } else if (!target) {
+        // Use command as target for non-git shell actions so scope-based
+        // policy rules can match against the command text.
+        target = rawAction.command;
+      }
     }
   }
 
@@ -427,6 +448,7 @@ export function normalizeToActionContext(
 
 export {
   detectGitAction,
+  detectGithubAction,
   isDestructiveCommand,
   getDestructiveDetails,
   stripQuotedContent,

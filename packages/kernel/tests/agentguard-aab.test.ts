@@ -3,6 +3,7 @@ import {
   normalizeIntent,
   authorize,
   detectGitAction,
+  detectGithubAction,
   isDestructiveCommand,
   getDestructiveDetails,
   DESTRUCTIVE_PATTERNS,
@@ -1056,6 +1057,108 @@ describe('agentguard/core/aab', () => {
         command: 'echo hello',
       });
       expect(intent.branch).toBeUndefined();
+    });
+  });
+
+  describe('detectGithubAction', () => {
+    it('detects gh pr list', () => {
+      expect(detectGithubAction('gh pr list')).toBe('github.pr.list');
+    });
+
+    it('detects gh pr create', () => {
+      expect(detectGithubAction('gh pr create --title "test"')).toBe('github.pr.create');
+    });
+
+    it('detects gh pr merge', () => {
+      expect(detectGithubAction('gh pr merge 123')).toBe('github.pr.merge');
+    });
+
+    it('detects gh pr close', () => {
+      expect(detectGithubAction('gh pr close 42')).toBe('github.pr.close');
+    });
+
+    it('detects gh pr view', () => {
+      expect(detectGithubAction('gh pr view 99')).toBe('github.pr.view');
+    });
+
+    it('detects gh pr checks', () => {
+      expect(detectGithubAction('gh pr checks 123')).toBe('github.pr.checks');
+    });
+
+    it('detects gh issue list', () => {
+      expect(detectGithubAction('gh issue list')).toBe('github.issue.list');
+    });
+
+    it('detects gh issue create', () => {
+      expect(detectGithubAction('gh issue create --title "bug"')).toBe('github.issue.create');
+    });
+
+    it('detects gh issue close', () => {
+      expect(detectGithubAction('gh issue close 10')).toBe('github.issue.close');
+    });
+
+    it('detects gh release create', () => {
+      expect(detectGithubAction('gh release create v1.0.0')).toBe('github.release.create');
+    });
+
+    it('detects gh run list', () => {
+      expect(detectGithubAction('gh run list')).toBe('github.run.list');
+    });
+
+    it('detects gh run view', () => {
+      expect(detectGithubAction('gh run view 123456')).toBe('github.run.view');
+    });
+
+    it('detects gh api', () => {
+      expect(detectGithubAction('gh api repos/owner/repo/pulls')).toBe('github.api');
+    });
+
+    it('returns null for non-github commands', () => {
+      expect(detectGithubAction('npm install')).toBeNull();
+      expect(detectGithubAction('git push')).toBeNull();
+      expect(detectGithubAction('')).toBeNull();
+    });
+  });
+
+  describe('normalizeIntent — github actions', () => {
+    it('normalizes gh pr create as github.pr.create', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'gh pr create --title "feat: new feature"',
+      });
+      expect(intent.action).toBe('github.pr.create');
+    });
+
+    it('normalizes gh pr list as github.pr.list', () => {
+      const intent = normalizeIntent({ tool: 'Bash', command: 'gh pr list' });
+      expect(intent.action).toBe('github.pr.list');
+    });
+
+    it('normalizes gh pr merge as github.pr.merge', () => {
+      const intent = normalizeIntent({ tool: 'Bash', command: 'gh pr merge 123 --squash' });
+      expect(intent.action).toBe('github.pr.merge');
+    });
+
+    it('normalizes gh release create as github.release.create', () => {
+      const intent = normalizeIntent({ tool: 'Bash', command: 'gh release create v2.0.0' });
+      expect(intent.action).toBe('github.release.create');
+    });
+
+    it('normalizes gh api as github.api', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'gh api repos/owner/repo/pulls/123/comments',
+      });
+      expect(intent.action).toBe('github.api');
+    });
+
+    it('does not classify quoted gh text as github action', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'echo "gh pr list" > output.txt',
+      });
+      // Quoted content is stripped, so the remaining text has no gh command
+      expect(intent.action).toBe('shell.exec');
     });
   });
 });

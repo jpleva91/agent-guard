@@ -6,6 +6,7 @@ import actionsData from './data/actions.json' with { type: 'json' };
 import toolActionMapData from './data/tool-action-map.json' with { type: 'json' };
 import destructivePatternsData from './data/destructive-patterns.json' with { type: 'json' };
 import gitActionPatternsData from './data/git-action-patterns.json' with { type: 'json' };
+import githubActionPatternsData from './data/github-action-patterns.json' with { type: 'json' };
 import blastRadiusData from './data/blast-radius.json' with { type: 'json' };
 import escalationData from './data/escalation.json' with { type: 'json' };
 import invariantPatternsData from './data/invariant-patterns.json' with { type: 'json' };
@@ -73,6 +74,28 @@ export function getGitActionPatterns(): CompiledGitActionPattern[] {
 
 export const GIT_ACTION_PATTERNS_DATA: GitActionPatternData[] =
   gitActionPatternsData as GitActionPatternData[];
+
+// --- GitHub action patterns ---
+
+export interface GithubActionPatternData {
+  patterns: string[];
+  actionType: string;
+}
+
+export interface CompiledGithubActionPattern {
+  patterns: RegExp[];
+  actionType: string;
+}
+
+export function getGithubActionPatterns(): CompiledGithubActionPattern[] {
+  return (githubActionPatternsData as GithubActionPatternData[]).map((p) => ({
+    patterns: p.patterns.map((s) => new RegExp(s)),
+    actionType: p.actionType,
+  }));
+}
+
+export const GITHUB_ACTION_PATTERNS_DATA: GithubActionPatternData[] =
+  githubActionPatternsData as GithubActionPatternData[];
 
 // --- Blast radius ---
 

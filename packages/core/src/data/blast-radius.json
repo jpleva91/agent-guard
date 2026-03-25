@@ -7,7 +7,12 @@
     "shell": 1.0,
     "sensitivePath": 5.0,
     "configPath": 2.0,
-    "destructive": 4.0
+    "destructive": 4.0,
+    "github.read": 0.1,
+    "github.create": 1.0,
+    "github.merge": 2.5,
+    "github.release": 3.0,
+    "github.api": 1.5
   },
   "sensitivePatterns": [".env", "credentials", ".pem", ".key", "secret", "token", ".password"],
   "configPatterns": [

@@ -7,7 +7,8 @@
 // 5000-5999  Invariant trigger
 // 6000-6999  Network / egress
 // 7000-7999  Permission escalation
-// 8000-8999  Transitive effect
+// 8000-8499  Transitive effect
+// 8500-8999  GitHub operations
 // 9000-9999  Infrastructure
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -81,6 +82,10 @@ export const RC_TRANSITIVE_FILE = 8000;
 export const RC_TRANSITIVE_PROCESS = 8010;
 export const RC_TRANSITIVE_NETWORK = 8020;
 
+// ─── 8500: GitHub operations ────────────────────────────────────────────────
+
+export const RC_GITHUB_OPERATION = 8500;
+
 // ─── 9000: Infrastructure ────────────────────────────────────────────────────
 
 export const RC_INFRA_CONTAINER = 9000;
@@ -107,6 +112,7 @@ const CATEGORY_BASE_CODES: Record<string, number> = {
   egress: RC_NETWORK_EGRESS,
   permission: RC_PERMISSION_ESCALATION,
   transitive: RC_TRANSITIVE_FILE,
+  'github-operation': RC_GITHUB_OPERATION,
   infra: RC_INFRA_CONTAINER,
 };
 

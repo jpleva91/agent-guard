@@ -1,5 +1,10 @@
 import { Trie } from '@tanishiking/aho-corasick';
-import type { DestructivePatternInput, GitActionPatternInput, MatchResult } from './types.js';
+import type {
+  DestructivePatternInput,
+  GitActionPatternInput,
+  GithubActionPatternInput,
+  MatchResult,
+} from './types.js';
 import { categoryToReasonCode } from './reason-codes.js';
 
 // ─── Internal types ─────────────────────────────────────────────────────────
@@ -26,6 +31,12 @@ interface RegexEntry {
 
 /** A compiled git action with its patterns and action type. */
 interface GitActionEntry {
+  regexes: RegExp[];
+  actionType: string;
+}
+
+/** A compiled GitHub action with its patterns and action type. */
+interface GithubActionEntry {
   regexes: RegExp[];
   actionType: string;
 }
@@ -86,17 +97,20 @@ export class CommandScanner {
   private readonly keywordEntries: Map<string, KeywordEntry[]>;
   private readonly regexEntries: RegexEntry[];
   private readonly gitActions: GitActionEntry[];
+  private readonly githubActions: GithubActionEntry[];
 
   private constructor(
     keywordTrie: Trie | null,
     keywordEntries: Map<string, KeywordEntry[]>,
     regexEntries: RegexEntry[],
-    gitActions: GitActionEntry[]
+    gitActions: GitActionEntry[],
+    githubActions: GithubActionEntry[]
   ) {
     this.keywordTrie = keywordTrie;
     this.keywordEntries = keywordEntries;
     this.regexEntries = regexEntries;
     this.gitActions = gitActions;
+    this.githubActions = githubActions;
   }
 
   /**
@@ -108,7 +122,8 @@ export class CommandScanner {
    */
   static create(
     destructive: DestructivePatternInput[],
-    git: GitActionPatternInput[]
+    git: GitActionPatternInput[],
+    github: GithubActionPatternInput[] = []
   ): CommandScanner {
     const keywords: string[] = [];
     const keywordEntries = new Map<string, KeywordEntry[]>();
@@ -163,7 +178,13 @@ export class CommandScanner {
       actionType: g.actionType,
     }));
 
-    return new CommandScanner(trie, keywordEntries, regexEntries, gitActions);
+    // Compile GitHub action patterns with native RegExp
+    const githubActions: GithubActionEntry[] = github.map((g) => ({
+      regexes: g.patterns.map((pat) => new RegExp(pat)),
+      actionType: g.actionType,
+    }));
+
+    return new CommandScanner(trie, keywordEntries, regexEntries, gitActions, githubActions);
   }
 
   /**
@@ -299,6 +320,37 @@ export class CommandScanner {
               patternId: `git:${action.actionType}`,
               description: action.actionType,
               category: 'git-operation',
+            },
+          };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Scan a command for GitHub action patterns. Returns the first matching action
+   * type and its match result, or null if no GitHub action is detected.
+   *
+   * Patterns are checked in order — more specific patterns should appear before
+   * general ones in the input.
+   */
+  scanGithubAction(command: string): { actionType: string; matchResult: MatchResult } | null {
+    if (!command) return null;
+
+    for (const action of this.githubActions) {
+      for (const regex of action.regexes) {
+        if (regex.test(command)) {
+          return {
+            actionType: action.actionType,
+            matchResult: {
+              matched: true,
+              code: categoryToReasonCode('github-operation', 0),
+              matchType: 'REGEX',
+              patternId: `github:${action.actionType}`,
+              description: action.actionType,
+              category: 'github-operation',
             },
           };
         }

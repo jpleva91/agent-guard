@@ -783,6 +783,29 @@ rules:
     effect: allow
     reason: HTTP requests allowed by default
 
+  # GitHub CLI operations (subject to deny rules above)
+  - action:
+      - github.pr.list
+      - github.pr.view
+      - github.pr.checks
+      - github.pr.create
+      - github.issue.list
+      - github.issue.create
+      - github.run.list
+      - github.run.view
+      - github.api
+    effect: allow
+    reason: GitHub CLI operations allowed by default
+
+  # GitHub state-changing operations require explicit allow
+  - action:
+      - github.pr.merge
+      - github.pr.close
+      - github.issue.close
+      - github.release.create
+    effect: allow
+    reason: GitHub state-changing operations allowed by default
+
   # MCP tool invocations (add your MCP servers here)
   # - action: mcp.call
   #   effect: allow

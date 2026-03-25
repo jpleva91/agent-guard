@@ -35,3 +35,9 @@ export interface GitActionPatternInput {
   patterns: string[];
   actionType: string;
 }
+
+/** A GitHub action pattern from JSON with its metadata. */
+export interface GithubActionPatternInput {
+  patterns: string[];
+  actionType: string;
+}

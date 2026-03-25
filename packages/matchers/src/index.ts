@@ -6,6 +6,7 @@ export type {
   PatternMeta,
   DestructivePatternInput,
   GitActionPatternInput,
+  GithubActionPatternInput,
 } from './types.js';
 
 // ─── Reason codes ────────────────────────────────────────────────────────────
@@ -65,6 +66,8 @@ export {
   RC_TRANSITIVE_FILE,
   RC_TRANSITIVE_PROCESS,
   RC_TRANSITIVE_NETWORK,
+  // GitHub operations (8500)
+  RC_GITHUB_OPERATION,
   // Infrastructure (9000-9999)
   RC_INFRA_CONTAINER,
   RC_INFRA_ORCHESTRATION,

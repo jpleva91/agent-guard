@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { CommandScanner } from '../src/command-scanner.js';
-import type { DestructivePatternInput, GitActionPatternInput, MatchResult } from '../src/types.js';
+import type {
+  DestructivePatternInput,
+  GitActionPatternInput,
+  GithubActionPatternInput,
+  MatchResult,
+} from '../src/types.js';
 
 // ─── Sample test data ─────────────────────────────────────────────────────────
 
@@ -46,10 +51,26 @@ const SAMPLE_GIT: GitActionPatternInput[] = [
   { patterns: ['\\bgit\\s+push\\b'], actionType: 'git.push' },
 ];
 
+const SAMPLE_GITHUB: GithubActionPatternInput[] = [
+  { patterns: ['\\bgh\\s+pr\\s+list\\b'], actionType: 'github.pr.list' },
+  { patterns: ['\\bgh\\s+pr\\s+(create|new)\\b'], actionType: 'github.pr.create' },
+  { patterns: ['\\bgh\\s+pr\\s+merge\\b'], actionType: 'github.pr.merge' },
+  { patterns: ['\\bgh\\s+pr\\s+(close|delete)\\b'], actionType: 'github.pr.close' },
+  { patterns: ['\\bgh\\s+pr\\s+view\\b'], actionType: 'github.pr.view' },
+  { patterns: ['\\bgh\\s+pr\\s+checks\\b'], actionType: 'github.pr.checks' },
+  { patterns: ['\\bgh\\s+issue\\s+list\\b'], actionType: 'github.issue.list' },
+  { patterns: ['\\bgh\\s+issue\\s+(create|new)\\b'], actionType: 'github.issue.create' },
+  { patterns: ['\\bgh\\s+issue\\s+close\\b'], actionType: 'github.issue.close' },
+  { patterns: ['\\bgh\\s+release\\s+create\\b'], actionType: 'github.release.create' },
+  { patterns: ['\\bgh\\s+run\\s+list\\b'], actionType: 'github.run.list' },
+  { patterns: ['\\bgh\\s+run\\s+view\\b'], actionType: 'github.run.view' },
+  { patterns: ['\\bgh\\s+api\\b'], actionType: 'github.api' },
+];
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('CommandScanner', () => {
-  const scanner = CommandScanner.create(SAMPLE_DESTRUCTIVE, SAMPLE_GIT);
+  const scanner = CommandScanner.create(SAMPLE_DESTRUCTIVE, SAMPLE_GIT, SAMPLE_GITHUB);
 
   // ─── scanDestructive ──────────────────────────────────────────────────────
 
@@ -187,6 +208,95 @@ describe('CommandScanner', () => {
     });
   });
 
+  // ─── scanGithubAction ────────────────────────────────────────────────────
+
+  describe('scanGithubAction', () => {
+    it('detects gh pr list as github.pr.list', () => {
+      const result = scanner.scanGithubAction('gh pr list --state open');
+      expect(result).not.toBeNull();
+      expect(result!.actionType).toBe('github.pr.list');
+      expect(result!.matchResult.matched).toBe(true);
+    });
+
+    it('detects gh pr create as github.pr.create', () => {
+      const result = scanner.scanGithubAction('gh pr create --title "test" --body "desc"');
+      expect(result).not.toBeNull();
+      expect(result!.actionType).toBe('github.pr.create');
+    });
+
+    it('detects gh pr merge as github.pr.merge', () => {
+      const result = scanner.scanGithubAction('gh pr merge 123 --squash');
+      expect(result).not.toBeNull();
+      expect(result!.actionType).toBe('github.pr.merge');
+    });
+
+    it('detects gh pr close as github.pr.close', () => {
+      const result = scanner.scanGithubAction('gh pr close 42');
+      expect(result).not.toBeNull();
+      expect(result!.actionType).toBe('github.pr.close');
+    });
+
+    it('detects gh pr view as github.pr.view', () => {
+      const result = scanner.scanGithubAction('gh pr view 99');
+      expect(result).not.toBeNull();
+      expect(result!.actionType).toBe('github.pr.view');
+    });
+
+    it('detects gh pr checks as github.pr.checks', () => {
+      const result = scanner.scanGithubAction('gh pr checks 123');
+      expect(result).not.toBeNull();
+      expect(result!.actionType).toBe('github.pr.checks');
+    });
+
+    it('detects gh issue list as github.issue.list', () => {
+      const result = scanner.scanGithubAction('gh issue list --label bug');
+      expect(result).not.toBeNull();
+      expect(result!.actionType).toBe('github.issue.list');
+    });
+
+    it('detects gh issue create as github.issue.create', () => {
+      const result = scanner.scanGithubAction('gh issue create --title "bug"');
+      expect(result).not.toBeNull();
+      expect(result!.actionType).toBe('github.issue.create');
+    });
+
+    it('detects gh issue close as github.issue.close', () => {
+      const result = scanner.scanGithubAction('gh issue close 10');
+      expect(result).not.toBeNull();
+      expect(result!.actionType).toBe('github.issue.close');
+    });
+
+    it('detects gh release create as github.release.create', () => {
+      const result = scanner.scanGithubAction('gh release create v1.0.0 --notes "Release"');
+      expect(result).not.toBeNull();
+      expect(result!.actionType).toBe('github.release.create');
+    });
+
+    it('detects gh run list as github.run.list', () => {
+      const result = scanner.scanGithubAction('gh run list --workflow ci.yml');
+      expect(result).not.toBeNull();
+      expect(result!.actionType).toBe('github.run.list');
+    });
+
+    it('detects gh run view as github.run.view', () => {
+      const result = scanner.scanGithubAction('gh run view 123456');
+      expect(result).not.toBeNull();
+      expect(result!.actionType).toBe('github.run.view');
+    });
+
+    it('detects gh api as github.api', () => {
+      const result = scanner.scanGithubAction('gh api repos/owner/repo/pulls');
+      expect(result).not.toBeNull();
+      expect(result!.actionType).toBe('github.api');
+    });
+
+    it('returns null for non-github commands', () => {
+      expect(scanner.scanGithubAction('ls -la')).toBeNull();
+      expect(scanner.scanGithubAction('git push origin main')).toBeNull();
+      expect(scanner.scanGithubAction('')).toBeNull();
+    });
+  });
+
   // ─── Edge cases ───────────────────────────────────────────────────────────
 
   describe('edge cases', () => {
@@ -217,6 +327,13 @@ describe('CommandScanner', () => {
       const empty = CommandScanner.create([], []);
       expect(empty.scanDestructive('rm -rf /')).toEqual([]);
       expect(empty.scanGitAction('git push')).toBeNull();
+      expect(empty.scanGithubAction('gh pr list')).toBeNull();
+    });
+
+    it('create works without github parameter (backward compatible)', () => {
+      const noGithub = CommandScanner.create(SAMPLE_DESTRUCTIVE, SAMPLE_GIT);
+      expect(noGithub.scanGitAction('git push')).not.toBeNull();
+      expect(noGithub.scanGithubAction('gh pr list')).toBeNull();
     });
   });
 });
