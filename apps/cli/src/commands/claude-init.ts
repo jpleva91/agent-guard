@@ -174,13 +174,14 @@ export async function claudeInit(args: string[] = []): Promise<void> {
         `  ${DIM}Continuing with init to repair...${RESET}\n\n`
       );
       // Fall through to re-run init and repair the broken state
-    } else {
+    } else if (!isReset) {
       process.stderr.write(
         `  ${FG.yellow}Already configured.${RESET} AgentGuard hook found in ${settingsLabel}.\n`
       );
-      process.stderr.write(`  ${DIM}Use --remove to uninstall.${RESET}\n\n`);
+      process.stderr.write(`  ${DIM}Use --remove to uninstall, or --reset to regenerate policy.${RESET}\n\n`);
       return;
     }
+    // --reset: fall through to regenerate policy even when hooks are intact
   }
 
   // Parse --mode and --pack flags for non-interactive mode
@@ -689,6 +690,104 @@ rules:
   - action: infra.destroy
     effect: deny
     reason: Infrastructure destruction requires explicit authorization
+
+  # ─── Allowed operations ──────────────────────────────────────────────
+  # With default-deny enabled, actions without an explicit allow rule are
+  # denied. The rules below cover standard development workflows.
+
+  # Reading is always safe
+  - action: file.read
+    effect: allow
+    reason: Reading is always safe
+
+  # File writes (subject to deny rules above for secrets)
+  - action: file.write
+    effect: allow
+    reason: File writes allowed by default
+
+  # File deletion and move
+  - action: file.delete
+    effect: allow
+    reason: File deletion allowed by default
+
+  - action: file.move
+    effect: allow
+    reason: File move allowed by default
+
+  # Shell commands (subject to deny rules above for rm -rf)
+  - action: shell.exec
+    effect: allow
+    reason: Shell execution allowed by default
+
+  # Git operations (subject to deny rules for protected branches)
+  - action: git.diff
+    effect: allow
+    reason: Viewing diffs is always safe
+
+  - action: git.commit
+    effect: allow
+    reason: Commits allowed by default
+
+  - action: git.push
+    effect: allow
+    reason: Pushes allowed to non-protected branches
+
+  - action: git.checkout
+    effect: allow
+    reason: Branch checkout allowed by default
+
+  - action: git.branch.create
+    effect: allow
+    reason: Branch creation allowed by default
+
+  - action: git.merge
+    effect: allow
+    reason: Merge allowed by default
+
+  # Worktree operations
+  - action: git.worktree.list
+    effect: allow
+    reason: Worktree listing is read-only and safe
+
+  - action: git.worktree.add
+    effect: allow
+    reason: Worktree creation encouraged for isolated agent work
+
+  - action: git.worktree.remove
+    effect: allow
+    reason: Worktree cleanup needed for housekeeping
+
+  - action: git.branch.delete
+    effect: allow
+    reason: Branch cleanup allowed for non-protected branches
+
+  # Testing is always encouraged
+  - action:
+      - test.run
+      - test.run.unit
+      - test.run.integration
+    effect: allow
+    reason: Running tests is always safe
+
+  # Package management
+  - action: npm.install
+    effect: allow
+    reason: Package installation allowed by default
+
+  - action: npm.script.run
+    effect: allow
+    reason: NPM script execution allowed by default
+
+  # HTTP requests
+  - action: http.request
+    effect: allow
+    reason: HTTP requests allowed by default
+
+  # MCP tool invocations (add your MCP servers here)
+  # - action: mcp.call
+  #   effect: allow
+  #   target: "your-mcp-server"
+  #   reason: MCP server access allowed
 `;
 };
 
