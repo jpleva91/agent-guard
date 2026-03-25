@@ -27,46 +27,6 @@ export type TracepointKind =
   | 'kernel.propose'; // Full kernel propose cycle (top-level span)
 
 // ---------------------------------------------------------------------------
-// Verbosity Levels — control telemetry detail
-// ---------------------------------------------------------------------------
-
-/**
- * Telemetry verbosity controls which spans are created:
- * - 'minimal': only kernel.propose (top-level) spans
- * - 'standard': all pipeline stage spans (default)
- * - 'verbose': all spans plus detailed attributes
- */
-export type VerbosityLevel = 'minimal' | 'standard' | 'verbose';
-
-/** Kinds included at each verbosity level. */
-export const VERBOSITY_KINDS: Record<VerbosityLevel, ReadonlySet<TracepointKind>> = {
-  minimal: new Set<TracepointKind>(['kernel.propose']),
-  standard: new Set<TracepointKind>([
-    'kernel.propose',
-    'aab.normalize',
-    'aab.authorize',
-    'policy.evaluate',
-    'invariant.checkAll',
-    'simulation.run',
-    'adapter.dispatch',
-    'decision.build',
-  ]),
-  verbose: new Set<TracepointKind>([
-    'kernel.propose',
-    'aab.normalize',
-    'aab.authorize',
-    'policy.evaluate',
-    'invariant.check',
-    'invariant.checkAll',
-    'simulation.run',
-    'adapter.dispatch',
-    'event.emit',
-    'event.store',
-    'decision.build',
-  ]),
-};
-
-// ---------------------------------------------------------------------------
 // Span — a unit of traced work
 // ---------------------------------------------------------------------------
 
@@ -79,14 +39,11 @@ export type SpanAttributes = Record<string, string | number | boolean>;
 /**
  * A trace span representing a unit of work in the governance pipeline.
  * Spans form a tree via parentSpanId, enabling reconstruction of the
- * full action processing timeline. Spans sharing the same traceId
- * belong to a single proposal and can be correlated.
+ * full action processing timeline.
  */
 export interface TraceSpan {
   /** Unique span identifier. */
   readonly spanId: string;
-  /** Trace ID correlating all spans within a single kernel.propose() call. */
-  readonly traceId: string;
   /** Parent span ID for nesting (undefined for root spans). */
   readonly parentSpanId: string | undefined;
   /** Which governance pipeline stage this span covers. */
@@ -185,6 +142,4 @@ export interface TracerConfig {
   backends?: TraceBackend[];
   /** If true, tracing is enabled even with no backends (spans are still created). */
   forceEnabled?: boolean;
-  /** Verbosity level controlling which span kinds are created. Default: 'standard'. */
-  verbosity?: VerbosityLevel;
 }

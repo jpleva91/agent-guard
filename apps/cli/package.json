@@ -12,6 +12,7 @@
   },
   "files": [
     "dist/",
+    "scripts/",
     "LICENSE",
     "README.md"
   ],
@@ -34,7 +35,7 @@
     "lint": "eslint src/",
     "ts:check": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "postinstall": "node dist/postinstall.js || true"
+    "postinstall": "node dist/postinstall.js || true; node scripts/install-go-kernel.js || true"
   },
   "dependencies": {
     "chokidar": "^5.0.0",

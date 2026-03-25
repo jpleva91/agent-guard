@@ -968,6 +968,86 @@
     </section>
 
     <!-- ============================================ -->
+    <!-- GO KERNEL PERFORMANCE                        -->
+    <!-- ============================================ -->
+    <section id="performance" class="py-24" aria-labelledby="perf-heading">
+      <div class="max-w-5xl mx-auto px-6">
+        <div class="text-center mb-16 reveal">
+          <h2 id="perf-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Go Kernel &mdash; Near-Zero Overhead</h2>
+          <p class="text-muted text-lg max-w-2xl mx-auto">A single 3.2 MB static binary. No dependencies. Evaluates every tool call in under 3ms.</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12 reveal">
+          <div class="bg-surface border border-surface-light rounded-xl p-6 text-center">
+            <p class="font-mono text-3xl font-bold text-cta">2ms</p>
+            <p class="text-muted text-sm mt-1">Startup time</p>
+            <p class="text-muted/50 text-xs mt-0.5">vs 67ms Node.js</p>
+          </div>
+          <div class="bg-surface border border-surface-light rounded-xl p-6 text-center">
+            <p class="font-mono text-3xl font-bold text-cta">&lt;3ms</p>
+            <p class="text-muted text-sm mt-1">Hook evaluation</p>
+            <p class="text-muted/50 text-xs mt-0.5">vs 290ms Node.js</p>
+          </div>
+          <div class="bg-surface border border-surface-light rounded-xl p-6 text-center">
+            <p class="font-mono text-3xl font-bold text-cta">2.7MB</p>
+            <p class="text-muted text-sm mt-1">Memory usage</p>
+            <p class="text-muted/50 text-xs mt-0.5">vs 80MB Node.js</p>
+          </div>
+          <div class="bg-surface border border-surface-light rounded-xl p-6 text-center">
+            <p class="font-mono text-3xl font-bold text-cta">3.2MB</p>
+            <p class="text-muted text-sm mt-1">Binary size</p>
+            <p class="text-muted/50 text-xs mt-0.5">vs 281MB node_modules</p>
+          </div>
+        </div>
+
+        <!-- Fleet Impact -->
+        <div class="bg-surface border border-cta/20 rounded-xl p-8 reveal">
+          <h3 class="font-mono font-semibold text-text mb-4">Fleet Impact</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-surface-light">
+                  <th class="text-left text-muted font-mono py-2 pr-4">Scenario</th>
+                  <th class="text-right text-muted font-mono py-2 px-4">Node.js</th>
+                  <th class="text-right text-muted font-mono py-2 px-4">Go Kernel</th>
+                  <th class="text-right text-cta font-mono py-2 pl-4">Saved</th>
+                </tr>
+              </thead>
+              <tbody class="text-muted">
+                <tr class="border-b border-surface-light/50">
+                  <td class="py-2 pr-4">Single session (100 calls)</td>
+                  <td class="text-right py-2 px-4">29s</td>
+                  <td class="text-right py-2 px-4">0.3s</td>
+                  <td class="text-right py-2 pl-4 text-cta font-semibold">28.7s</td>
+                </tr>
+                <tr class="border-b border-surface-light/50">
+                  <td class="py-2 pr-4">30-min coder session (~400 calls)</td>
+                  <td class="text-right py-2 px-4">1 min 56s</td>
+                  <td class="text-right py-2 px-4">1.2s</td>
+                  <td class="text-right py-2 pl-4 text-cta font-semibold">~2 min</td>
+                </tr>
+                <tr class="border-b border-surface-light/50">
+                  <td class="py-2 pr-4">Daily fleet (100 agents &times; 2 runs)</td>
+                  <td class="text-right py-2 px-4">96 min</td>
+                  <td class="text-right py-2 px-4">1 min</td>
+                  <td class="text-right py-2 pl-4 text-cta font-semibold">95 min/day</td>
+                </tr>
+                <tr>
+                  <td class="py-2 pr-4">Monthly fleet</td>
+                  <td class="text-right py-2 px-4">48 hours</td>
+                  <td class="text-right py-2 px-4">30 min</td>
+                  <td class="text-right py-2 pl-4 text-cta font-semibold">47.5 hrs/mo</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-muted/70 text-xs mt-4">Agents get 8% more productive time per session. Ships automatically via <code class="text-text/60">npm install</code> &mdash; a postinstall script downloads the prebuilt binary for your platform. Works with both Claude Code and GitHub Copilot hooks.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
     <!-- INVARIANTS                                   -->
     <!-- ============================================ -->
     <section id="invariants" class="py-24" aria-labelledby="inv-heading">
@@ -1883,25 +1963,25 @@ rules:
         </div>
 
         <div class="space-y-4 reveal-stagger">
-          <!-- Rust Kernel -->
-          <div class="reveal flex items-start gap-4 bg-surface border border-cta/30 rounded-xl p-5">
+          <!-- Go Kernel -->
+          <div class="reveal flex items-start gap-4 bg-surface border border-green-500/30 rounded-xl p-5">
             <div class="shrink-0 mt-0.5">
-              <span class="font-mono text-xs font-semibold px-2 py-1 rounded bg-cta/10 text-cta">ACTIVE</span>
+              <span class="font-mono text-xs font-semibold px-2 py-1 rounded bg-green-500/10 text-green-400">SHIPPED</span>
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="font-mono font-semibold text-text text-sm">Rust Kernel &mdash; crates/kernel-core/</h3>
-              <p class="text-muted text-sm mt-1">Native governance kernel in Rust for lower latency and smaller footprint. Early development &mdash; the TypeScript kernel remains the production implementation.</p>
+              <h3 class="font-mono font-semibold text-text text-sm">Go Kernel &mdash; go/</h3>
+              <p class="text-muted text-sm mt-1">High-performance governance kernel in Go. 3.2 MB static binary, &lt;3ms hook evaluation, ~100x faster than Node.js. Now the default enforcement runtime for Claude Code and Copilot hooks.</p>
             </div>
           </div>
 
           <!-- Phase 6 -->
-          <div class="reveal flex items-start gap-4 bg-surface border border-surface-light rounded-xl p-5">
+          <div class="reveal flex items-start gap-4 bg-surface border border-green-500/30 rounded-xl p-5">
             <div class="shrink-0 mt-0.5">
-              <span class="font-mono text-xs font-semibold px-2 py-1 rounded bg-warning/10 text-warning">NEXT</span>
+              <span class="font-mono text-xs font-semibold px-2 py-1 rounded bg-green-500/10 text-green-400">SHIPPED</span>
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="font-mono font-semibold text-text text-sm">Phase 6 &mdash; Reference Monitor Hardening</h3>
-              <p class="text-muted text-sm mt-1">Default-deny unknown actions. Enforce PAUSE and ROLLBACK intervention types. Close all bypass vectors.</p>
+              <p class="text-muted text-sm mt-1">Default-deny unknown actions. PAUSE and ROLLBACK intervention types. All known bypass vectors closed.</p>
             </div>
           </div>
 

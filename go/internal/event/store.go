@@ -1,31 +1,28 @@
 package event
 
-import (
-	"sync"
-	"time"
-)
+import "sync"
 
-// EventStore is a thread-safe in-memory event store.
-// It supports appending events and querying by kind, session, or time range.
-type EventStore struct {
+// Store is a thread-safe, append-only in-memory event store.
+// It provides query methods for filtering events by kind and time range.
+type Store struct {
 	mu     sync.RWMutex
 	events []Event
 }
 
-// NewEventStore creates an empty EventStore.
-func NewEventStore() *EventStore {
-	return &EventStore{}
+// NewStore creates an empty event store.
+func NewStore() *Store {
+	return &Store{}
 }
 
-// Append adds an event to the store.
-func (s *EventStore) Append(event Event) {
+// Append adds an event to the store. Thread-safe.
+func (s *Store) Append(e Event) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.events = append(s.events, event)
+	s.events = append(s.events, e)
 }
 
-// Events returns a copy of all stored events.
-func (s *EventStore) Events() []Event {
+// All returns a copy of all events. Thread-safe.
+func (s *Store) All() []Event {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	out := make([]Event, len(s.events))
@@ -33,8 +30,15 @@ func (s *EventStore) Events() []Event {
 	return out
 }
 
-// ByKind returns all events matching the given kind.
-func (s *EventStore) ByKind(kind EventKind) []Event {
+// Len returns the number of events. Thread-safe.
+func (s *Store) Len() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return len(s.events)
+}
+
+// QueryByKind returns all events of a given kind. Thread-safe.
+func (s *Store) QueryByKind(kind Kind) []Event {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	var out []Event
@@ -46,41 +50,68 @@ func (s *EventStore) ByKind(kind EventKind) []Event {
 	return out
 }
 
-// BySession returns all events matching the given session ID.
-func (s *EventStore) BySession(sessionID string) []Event {
+// QueryByKinds returns all events matching any of the given kinds. Thread-safe.
+func (s *Store) QueryByKinds(kinds ...Kind) []Event {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	kindSet := make(map[Kind]bool, len(kinds))
+	for _, k := range kinds {
+		kindSet[k] = true
+	}
 	var out []Event
 	for _, e := range s.events {
-		if e.SessionID == sessionID {
+		if kindSet[e.Kind] {
 			out = append(out, e)
 		}
 	}
 	return out
 }
 
-// Since returns all events with a timestamp at or after t.
-func (s *EventStore) Since(t time.Time) []Event {
+// QuerySince returns events with timestamp >= since. Thread-safe.
+func (s *Store) QuerySince(sinceMs int64) []Event {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	var out []Event
 	for _, e := range s.events {
-		if !e.Timestamp.Before(t) {
+		if e.Timestamp >= sinceMs {
 			out = append(out, e)
 		}
 	}
 	return out
 }
 
-// Count returns the number of stored events.
-func (s *EventStore) Count() int {
+// QueryByKindSince returns events of a kind with timestamp >= since. Thread-safe.
+func (s *Store) QueryByKindSince(kind Kind, sinceMs int64) []Event {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return len(s.events)
+	var out []Event
+	for _, e := range s.events {
+		if e.Kind == kind && e.Timestamp >= sinceMs {
+			out = append(out, e)
+		}
+	}
+	return out
 }
 
-// Clear removes all events from the store.
-func (s *EventStore) Clear() {
+// QueryByKindsSince returns events matching any kind with timestamp >= since. Thread-safe.
+func (s *Store) QueryByKindsSince(sinceMs int64, kinds ...Kind) []Event {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	kindSet := make(map[Kind]bool, len(kinds))
+	for _, k := range kinds {
+		kindSet[k] = true
+	}
+	var out []Event
+	for _, e := range s.events {
+		if kindSet[e.Kind] && e.Timestamp >= sinceMs {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+// Clear removes all events from the store. Thread-safe.
+func (s *Store) Clear() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.events = nil

@@ -10,7 +10,6 @@
     { "path": "../core" },
     { "path": "../events" },
     { "path": "../policy" },
-    { "path": "../invariants" },
-    { "path": "../telemetry" }
+    { "path": "../invariants" }
   ]
 }

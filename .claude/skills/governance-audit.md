@@ -2,7 +2,7 @@
 name: governance-audit
 description: "Analyze governance logs for violations and trends"
 ---
-# Skill: Governance Audit
+# Governance Audit
 
 ## Agent Identity
 

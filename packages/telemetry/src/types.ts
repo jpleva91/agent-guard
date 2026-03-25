@@ -28,27 +28,3 @@ export interface TelemetrySink {
   write(event: TelemetryEvent): void;
   flush?(): void;
 }
-
-/**
- * Per-stage performance breakdown for a single kernel.propose() call.
- * All durations are in milliseconds. Fields are undefined if the
- * stage was skipped (e.g., no simulation configured).
- */
-export interface PerformanceBreakdown {
-  /** Total wall-clock time for the entire propose pipeline. */
-  totalMs: number;
-  /** Time spent in AAB normalization (raw action → ActionContext). */
-  normalizeMs?: number;
-  /** Time spent in policy evaluation (rule matching). */
-  policyEvalMs?: number;
-  /** Time spent checking invariants. */
-  invariantCheckMs?: number;
-  /** Time spent in pre-execution simulation. */
-  simulationMs?: number;
-  /** Time spent in adapter execution. */
-  adapterMs?: number;
-  /** Time spent building the governance decision record. */
-  decisionBuildMs?: number;
-  /** Trace ID correlating all spans in this proposal. */
-  traceId?: string;
-}
