@@ -212,6 +212,9 @@ importers:
       '@red-codes/policy':
         specifier: workspace:*
         version: link:../policy
+      '@red-codes/telemetry':
+        specifier: workspace:*
+        version: link:../telemetry
 
   packages/matchers:
     dependencies:

@@ -33,6 +33,7 @@
     "@red-codes/events": "workspace:*",
     "@red-codes/matchers": "workspace:*",
     "@red-codes/policy": "workspace:*",
-    "@red-codes/invariants": "workspace:*"
+    "@red-codes/invariants": "workspace:*",
+    "@red-codes/telemetry": "workspace:*"
   }
 }

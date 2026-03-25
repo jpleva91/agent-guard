@@ -56,16 +56,8 @@ import type { SimulatorRegistry, ImpactForecast } from './simulation/types.js';
 import { buildImpactForecast } from './simulation/forecast.js';
 import type { IntentSpec, IntentDriftResult } from './intent.js';
 import { checkIntentAlignment } from './intent.js';
-/** Minimal tracer interface (previously from @red-codes/telemetry, now inlined). */
-interface TraceSpan {
-  setAttribute(key: string, value: string | number | boolean): void;
-  end(): void;
-  endWithError(message: string): void;
-}
-interface Tracer {
-  startSpan(name: string, label: string): TraceSpan;
-  shutdown(): void;
-}
+import type { Tracer } from '@red-codes/telemetry';
+import type { PerformanceBreakdown } from '@red-codes/telemetry';
 
 export interface KernelResult {
   allowed: boolean;
@@ -91,6 +83,8 @@ export interface KernelResult {
   tier?: EvaluationTier;
   /** Corrective suggestion when the action is denied (from policy rule or built-in generator) */
   suggestion?: Suggestion;
+  /** Per-stage performance breakdown for this proposal */
+  performanceBreakdown?: PerformanceBreakdown;
 }
 
 /**
@@ -146,7 +140,7 @@ export interface KernelConfig extends MonitorConfig {
   rng?: SeededRng;
   /** Maximum time (ms) for the full propose pipeline. Default: 30000 */
   proposalTimeoutMs?: number;
-  /** Optional tracer for kernel-level tracing. Spans are sent to registered backends. */
+  /** Optional tracer for kernel-level tracing. Hierarchical spans with correlation IDs are sent to registered backends. */
   tracer?: Tracer;
   /** Callback for PAUSE interventions. If not provided, PAUSE auto-denies. */
   pauseHandler?: PauseHandler;
@@ -282,7 +276,14 @@ export function createKernel(config: KernelConfig = {}): Kernel {
         ? rawAction
         : normalizeToActionContext(rawAction, (rawAction.metadata?.source as string) || 'unknown');
 
-      const span = tracer?.startSpan('kernel.propose', `propose:${ctx.action}`) ?? null;
+      const rootHandle =
+        tracer?.startTrace(`propose:${ctx.action}`, { action: ctx.action, target: ctx.target }) ??
+        null;
+      const traceId = rootHandle?.span.traceId ?? undefined;
+      const rootSpanId = rootHandle?.span.spanId ?? undefined;
+
+      // Alias for backward compat: span tracks the top-level propose lifecycle
+      const span = rootHandle;
 
       // Tier classification — performed before proposalBody so it's available for the wrapper
       let outerTier: EvaluationTier = 'standard';
@@ -594,7 +595,18 @@ export function createKernel(config: KernelConfig = {}): Kernel {
         }
 
         // KE-2: Pass the ActionContext to the monitor (flows through engine → authorize)
+        const policySpan = tracer?.startSpan(
+          'policy.evaluate',
+          `policy:${ctx.action}`,
+          rootSpanId,
+          undefined,
+          traceId
+        );
+        const policyStart = performance.now();
         let decision = monitor.process(ctx, enrichedContext);
+        const policyDurationMs = performance.now() - policyStart;
+        policySpan?.setAttribute('outcome', decision.allowed ? 'allow' : 'deny');
+        policySpan?.end();
 
         // 3. Create canonical action object for execution
         let action: CanonicalAction | null = null;
@@ -1253,11 +1265,24 @@ export function createKernel(config: KernelConfig = {}): Kernel {
         // 5b. ALLOWED — run simulation if available, then re-check
         let simulationResult = null;
         let forecast: ImpactForecast | null = null;
+        let simulationDurationMs: number | undefined;
 
         if (simulators && simulators.find(decision.intent)) {
           const simulator = simulators.find(decision.intent)!;
+          const simSpan = tracer?.startSpan(
+            'simulation.run',
+            `sim:${ctx.action}`,
+            rootSpanId,
+            undefined,
+            traceId
+          );
+          const simStart = performance.now();
           try {
             simulationResult = await simulator.simulate(decision.intent, systemContext);
+            simulationDurationMs = performance.now() - simStart;
+            simSpan?.setAttribute('riskLevel', simulationResult.riskLevel);
+            simSpan?.setAttribute('blastRadius', simulationResult.blastRadius);
+            simSpan?.end();
 
             // Build structured impact forecast
             forecast = buildImpactForecast(decision.intent, simulationResult, blastRadiusThreshold);
@@ -1391,6 +1416,8 @@ export function createKernel(config: KernelConfig = {}): Kernel {
               }
             }
           } catch (simErr) {
+            simulationDurationMs = performance.now() - simStart;
+            simSpan?.endWithError(simErr instanceof Error ? simErr.message : String(simErr));
             // Simulation failure is non-fatal — emit event and continue with execution
             const simFailEvent = createEvent(SIMULATION_COMPLETED, {
               simulatorId: 'unknown',
@@ -1480,10 +1507,19 @@ export function createKernel(config: KernelConfig = {}): Kernel {
               policyHash: decision.decision.matchedPolicy?.id || 'none',
             };
 
+            const adapterSpan = tracer?.startSpan(
+              'adapter.dispatch',
+              `adapter:${action.type}`,
+              rootSpanId,
+              undefined,
+              traceId
+            );
             const startTime = Date.now();
             try {
               execution = await adapters.execute(action, adapterDecisionRecord);
               executionDurationMs = Date.now() - startTime;
+              adapterSpan?.setAttribute('success', execution.success);
+              adapterSpan?.end();
 
               if (execution.success) {
                 const executedEvent = createEvent(ACTION_EXECUTED, {
@@ -1513,6 +1549,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
               }
             } catch (err) {
               executionDurationMs = Date.now() - startTime;
+              adapterSpan?.endWithError((err as Error).message);
               execution = { success: false, error: (err as Error).message };
               const failedEvent = createEvent(ACTION_FAILED, {
                 actionType: action.type,
@@ -1667,11 +1704,19 @@ export function createKernel(config: KernelConfig = {}): Kernel {
           decisionRecord,
           ...(wasModified ? { modified: true, intervention: INTERVENTION.MODIFY } : {}),
           ...(intentDrift ? { intentDrift } : {}),
+          performanceBreakdown: {
+            totalMs: 0, // filled in by the outer wrapper after proposalBody completes
+            policyEvalMs: policyDurationMs,
+            simulationMs: simulationDurationMs,
+            adapterMs: executionDurationMs ?? undefined,
+            traceId,
+          },
         };
         actionLog.push(result);
         return result;
       };
 
+      const proposalStart = performance.now();
       try {
         let result: KernelResult;
         if (proposalTimeoutMs <= 0 || proposalTimeoutMs === Infinity) {
@@ -1696,6 +1741,10 @@ export function createKernel(config: KernelConfig = {}): Kernel {
           if (!result.tier) {
             result = { ...result, tier: outerTier };
           }
+        }
+        // Fill in total pipeline duration for the performance breakdown
+        if (result.performanceBreakdown) {
+          result.performanceBreakdown.totalMs = performance.now() - proposalStart;
         }
         span?.setAttribute('outcome', result.allowed ? 'allow' : 'deny');
         span?.end();
