@@ -30,7 +30,14 @@ const EXTENSION_TYPES = [
 
 type ExtensionType = (typeof EXTENSION_TYPES)[number];
 
-const TEMPLATE_NAMES = ['strict', 'permissive', 'ci-only', 'development'] as const;
+const TEMPLATE_NAMES = [
+  'strict',
+  'permissive',
+  'ci-only',
+  'ci-safe',
+  'development',
+  'enterprise',
+] as const;
 
 type TemplateName = (typeof TEMPLATE_NAMES)[number];
 
@@ -45,7 +52,7 @@ interface ScaffoldFile {
 export async function init(args: string[]): Promise<number> {
   const parsed = parseArgs(args, {
     string: ['--extension', '--name', '--dir', '--template', '--tiers'],
-    boolean: ['--force'],
+    boolean: ['--force', '--non-interactive'],
     alias: { '-e': '--extension', '-n': '--name', '-d': '--dir', '-t': '--template' },
   });
 
@@ -68,6 +75,11 @@ export async function init(args: string[]): Promise<number> {
   // Swarm scaffolding mode
   if (extensionType === 'swarm') {
     return initSwarm(parsed);
+  }
+
+  // Studio wizard — interactive project bootstrap
+  if (extensionType === 'studio') {
+    return initStudio(parsed);
   }
 
   if (!extensionType) {
@@ -1391,6 +1403,290 @@ function buildRegisterSkill(result: {
   return lines.join('\n');
 }
 
+// ---------------------------------------------------------------------------
+// Studio wizard — interactive project bootstrap
+// ---------------------------------------------------------------------------
+
+interface ProjectDetection {
+  projectType: string;
+  cicd: string[];
+  testFrameworks: string[];
+  agentRuntimes: string[];
+  packageManager: string;
+  isMonorepo: boolean;
+}
+
+function detectProject(projectRoot: string): ProjectDetection {
+  const has = (path: string) => existsSync(join(projectRoot, path));
+  const result: ProjectDetection = {
+    projectType: 'unknown',
+    cicd: [],
+    testFrameworks: [],
+    agentRuntimes: [],
+    packageManager: 'npm',
+    isMonorepo: false,
+  };
+
+  // Package manager
+  if (has('pnpm-lock.yaml') || has('pnpm-workspace.yaml')) {
+    result.packageManager = 'pnpm';
+  } else if (has('yarn.lock')) {
+    result.packageManager = 'yarn';
+  } else if (has('bun.lockb')) {
+    result.packageManager = 'bun';
+  }
+
+  // Monorepo detection
+  if (has('pnpm-workspace.yaml') || has('lerna.json') || has('nx.json') || has('turbo.json')) {
+    result.isMonorepo = true;
+    result.projectType = 'monorepo';
+  } else if (has('Cargo.toml')) {
+    result.projectType = 'rust';
+  } else if (has('go.mod')) {
+    result.projectType = 'go';
+  } else if (has('requirements.txt') || has('pyproject.toml') || has('setup.py')) {
+    result.projectType = 'python';
+  } else if (has('package.json')) {
+    result.projectType = 'node';
+  }
+
+  // CI/CD detection
+  if (has('.github/workflows')) result.cicd.push('GitHub Actions');
+  if (has('.gitlab-ci.yml')) result.cicd.push('GitLab CI');
+  if (has('.circleci/config.yml')) result.cicd.push('CircleCI');
+  if (has('Jenkinsfile')) result.cicd.push('Jenkins');
+  if (has('bitbucket-pipelines.yml')) result.cicd.push('Bitbucket Pipelines');
+
+  // Test framework detection
+  if (has('vitest.config.ts') || has('vitest.workspace.ts')) result.testFrameworks.push('Vitest');
+  if (has('jest.config.js') || has('jest.config.ts')) result.testFrameworks.push('Jest');
+  if (has('playwright.config.ts') || has('playwright.config.js'))
+    result.testFrameworks.push('Playwright');
+  if (has('cypress.config.ts') || has('cypress.config.js')) result.testFrameworks.push('Cypress');
+  if (has('pytest.ini') || has('conftest.py')) result.testFrameworks.push('pytest');
+  if (has('Cargo.toml')) result.testFrameworks.push('cargo test');
+
+  // Agent runtime detection
+  if (has('.claude') || has('CLAUDE.md')) result.agentRuntimes.push('Claude Code');
+  if (has('.github/copilot')) result.agentRuntimes.push('GitHub Copilot');
+  if (has('.cursor')) result.agentRuntimes.push('Cursor');
+  if (has('.continue')) result.agentRuntimes.push('Continue');
+
+  return result;
+}
+
+const PROFILE_DESCRIPTIONS: Record<string, string> = {
+  development: 'Balanced — protect branches and secrets, allow most operations',
+  'ci-safe': 'CI agents — allow commits/pushes to feature branches, no deploys',
+  'ci-only': 'Read-only CI — build and test only, no mutations',
+  strict: 'Maximum guardrails — deny all destructive ops',
+  enterprise: 'Strict + compliance — audit trail, approval workflows, SOC2/HIPAA',
+  permissive: 'Minimal — only block the most dangerous operations',
+};
+
+const SWARM_PRESETS: Record<string, string[]> = {
+  full: ['core', 'governance', 'ops', 'quality', 'marketing'],
+  'qa-focused': ['core', 'quality'],
+  'dev-ops': ['core', 'governance', 'ops'],
+  minimal: ['core'],
+};
+
+async function studioPrompt(question: string, options: string[], defaultIdx = 0): Promise<number> {
+  if (!process.stdin.isTTY) return defaultIdx;
+
+  const { createInterface } = await import('node:readline');
+  const rl = createInterface({ input: process.stdin, output: process.stderr });
+
+  process.stderr.write(`\n  ${question}\n`);
+  for (let i = 0; i < options.length; i++) {
+    const marker = i === defaultIdx ? `\x1b[32m❯\x1b[0m` : ' ';
+    process.stderr.write(`    ${marker} ${i + 1}) ${options[i]}\n`);
+  }
+
+  return new Promise<number>((resolve) => {
+    rl.question(`  \x1b[2mEnter choice [${defaultIdx + 1}]:\x1b[0m `, (answer) => {
+      rl.close();
+      const num = parseInt(answer.trim(), 10);
+      resolve(num >= 1 && num <= options.length ? num - 1 : defaultIdx);
+    });
+  });
+}
+
+async function studioConfirm(question: string, defaultYes = true): Promise<boolean> {
+  if (!process.stdin.isTTY) return defaultYes;
+
+  const { createInterface } = await import('node:readline');
+  const rl = createInterface({ input: process.stdin, output: process.stderr });
+  const hint = defaultYes ? 'Y/n' : 'y/N';
+
+  return new Promise<boolean>((resolve) => {
+    rl.question(`  ${question} [${hint}] `, (answer) => {
+      rl.close();
+      const a = answer.trim().toLowerCase();
+      resolve(a === '' ? defaultYes : a === 'y' || a === 'yes');
+    });
+  });
+}
+
+async function initStudio(parsed: ReturnType<typeof parseArgs>): Promise<number> {
+  const dir = parsed.flags.dir as string | undefined;
+  const nonInteractive = parsed.flags['non-interactive'] === true;
+  const projectRoot = resolve(dir ?? '.');
+
+  console.log(`\n  ${bold('AgentGuard Studio')} — Governed workspace bootstrap\n`);
+
+  // Step 1: Detect project
+  const detection = detectProject(projectRoot);
+
+  console.log(`  ${bold('Project detected:')}`);
+  console.log(`    ${dim('Type:')}          ${detection.projectType}${detection.isMonorepo ? ' (monorepo)' : ''}`);
+  console.log(`    ${dim('Package mgr:')}   ${detection.packageManager}`);
+  console.log(`    ${dim('CI/CD:')}         ${detection.cicd.length ? detection.cicd.join(', ') : dim('none detected')}`);
+  console.log(`    ${dim('Test:')}          ${detection.testFrameworks.length ? detection.testFrameworks.join(', ') : dim('none detected')}`);
+  console.log(`    ${dim('Agent runtimes:')} ${detection.agentRuntimes.length ? detection.agentRuntimes.join(', ') : dim('none detected')}`);
+
+  // Step 2: Select execution profile
+  const profileNames = Object.keys(PROFILE_DESCRIPTIONS);
+  const profileOptions = profileNames.map((p) => `${bold(p)} — ${PROFILE_DESCRIPTIONS[p]}`);
+
+  // Default: ci-safe for CI, development for monorepos, development otherwise
+  let defaultProfileIdx = profileNames.indexOf('development');
+  if (detection.cicd.length > 0 && detection.agentRuntimes.length === 0) {
+    defaultProfileIdx = profileNames.indexOf('ci-safe');
+  }
+
+  let profileIdx: number;
+  if (nonInteractive) {
+    profileIdx = defaultProfileIdx;
+  } else {
+    profileIdx = await studioPrompt('Select execution profile:', profileOptions, defaultProfileIdx);
+  }
+  const selectedProfile = profileNames[profileIdx];
+
+  // Step 3: Select swarm preset
+  const presetNames = Object.keys(SWARM_PRESETS);
+  const presetOptions = presetNames.map(
+    (p) => `${bold(p)} — tiers: ${SWARM_PRESETS[p].join(', ')}`
+  );
+
+  let defaultPresetIdx = 0; // full
+  if (!detection.isMonorepo) {
+    defaultPresetIdx = presetNames.indexOf('minimal');
+  }
+
+  let swarmPresetIdx: number;
+  let includeSwarm: boolean;
+  if (nonInteractive) {
+    includeSwarm = true;
+    swarmPresetIdx = defaultPresetIdx;
+  } else {
+    includeSwarm = await studioConfirm(`\n  ${bold('Include agent swarm?')}`, true);
+    swarmPresetIdx = includeSwarm
+      ? await studioPrompt('Select swarm preset:', presetOptions, defaultPresetIdx)
+      : 0;
+  }
+
+  // Step 4: Scaffold execution profile
+  mkdirSync(projectRoot, { recursive: true });
+  const templatesDir = resolveTemplatesDir();
+  const templatePath = join(templatesDir, `${selectedProfile}.yaml`);
+  const outputPath = join(projectRoot, 'agentguard.yaml');
+
+  if (existsSync(templatePath)) {
+    const content = readFileSync(templatePath, 'utf8');
+    if (existsSync(outputPath)) {
+      const overwrite = nonInteractive || (await studioConfirm(`  agentguard.yaml already exists. Overwrite?`, false));
+      if (!overwrite) {
+        console.log(`  ${dim('Keeping existing agentguard.yaml')}`);
+      } else {
+        writeFileSync(outputPath, content, 'utf8');
+        console.log(`\n  ${color('✓', 'green')} Policy: ${bold(selectedProfile)} profile written to agentguard.yaml`);
+      }
+    } else {
+      writeFileSync(outputPath, content, 'utf8');
+      console.log(`\n  ${color('✓', 'green')} Policy: ${bold(selectedProfile)} profile written to agentguard.yaml`);
+    }
+  } else {
+    console.error(`  ${color('⚠', 'yellow')} Template ${selectedProfile}.yaml not found — skipping policy scaffold`);
+  }
+
+  // Step 5: Scaffold swarm (if selected)
+  if (includeSwarm) {
+    const selectedPreset = presetNames[swarmPresetIdx];
+    const tiers = SWARM_PRESETS[selectedPreset];
+
+    let scaffoldFn: typeof import('@red-codes/swarm').scaffold;
+    try {
+      const swarmModule = await import('@red-codes/swarm');
+      scaffoldFn = swarmModule.scaffold;
+    } catch {
+      console.error(`\n  ${color('⚠', 'yellow')} @red-codes/swarm not found — skipping swarm scaffold`);
+      scaffoldFn = null as unknown as typeof import('@red-codes/swarm').scaffold;
+    }
+
+    if (scaffoldFn) {
+      try {
+        const result = scaffoldFn({ projectRoot, tiers });
+
+        console.log(
+          `  ${color('✓', 'green')} Swarm: ${bold(selectedPreset)} preset (${result.agents.length} agents, ${tiers.join(', ')})`
+        );
+        console.log(
+          `    ${dim('Skills written:')} ${result.skillsWritten}  ${dim('Skipped:')} ${result.skillsSkipped}`
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`  ${color('⚠', 'yellow')} Swarm scaffold failed: ${msg}`);
+      }
+    }
+  }
+
+  // Step 6: Set up Claude Code hooks (if Claude Code detected)
+  if (detection.agentRuntimes.includes('Claude Code')) {
+    const setupHooks = nonInteractive || (await studioConfirm(`\n  ${bold('Configure Claude Code governance hooks?')}`, true));
+    if (setupHooks) {
+      try {
+        const { claudeInit } = await import('./claude-init.js');
+        await claudeInit(['--reset']);
+        console.log(`  ${color('✓', 'green')} Claude Code hooks configured`);
+      } catch {
+        console.error(`  ${color('⚠', 'yellow')} Failed to configure Claude Code hooks`);
+      }
+    }
+  }
+
+  // Step 7: Offer Cloud connection
+  if (!nonInteractive) {
+    const connectCloud = await studioConfirm(`\n  ${bold('Connect to AgentGuard Cloud?')} (telemetry + fleet dashboard)`, false);
+    if (connectCloud) {
+      console.log(`\n  ${dim('Run:')} aguard cloud connect`);
+    }
+  }
+
+  // Summary
+  console.log(`\n  ${color('✓', 'green')} ${bold('Studio initialized')}\n`);
+  console.log(`  ${bold('What was set up:')}`);
+  console.log(`    ${dim('Policy:')}    ${selectedProfile} execution profile`);
+  if (includeSwarm) {
+    const selectedPreset = presetNames[swarmPresetIdx];
+    console.log(`    ${dim('Swarm:')}     ${selectedPreset} preset (${SWARM_PRESETS[selectedPreset].join(', ')})`);
+  }
+  if (detection.agentRuntimes.includes('Claude Code')) {
+    console.log(`    ${dim('Hooks:')}     Claude Code governance hooks`);
+  }
+
+  console.log(`\n  ${bold('Next steps:')}`);
+  console.log(`    ${dim('#')} Review and customize agentguard.yaml`);
+  console.log(`    aguard guard --dry-run`);
+  if (includeSwarm) {
+    console.log(`    ${dim('#')} Register swarm tasks in Claude Code`);
+    console.log(`    ${dim('#')} See .claude/skills/register-swarm-tasks.md`);
+  }
+  console.log('');
+
+  return 0;
+}
+
 function printInitHelp(): void {
   console.log(`
   ${bold('agentguard init')} — Scaffold a new governance extension, policy template, or agent swarm
@@ -1408,17 +1704,22 @@ function printInitHelp(): void {
     replay-processor   Custom replay processor
     simulator          Custom action simulator
 
+  ${bold('Studio wizard:')}
+    studio             Interactive workspace bootstrap — detect project, select profile + swarm
+
   ${bold('Agent swarm:')}
     swarm              Scaffold the full agent swarm (skills, config, task definitions)
 
   ${bold('Storage backends:')}
     firestore          Set up Firestore backend (security rules + credentials guide)
 
-  ${bold('Policy templates:')}
+  ${bold('Policy templates (execution profiles):')}
     strict             Maximum protection — deny all destructive ops
     permissive         Default-allow with safety nets for dangerous ops
     ci-only            Read-only CI pipeline mode — build and test only
+    ci-safe            CI agents — allow commits/pushes to feature branches, no deploys
     development        Balanced protection for active development
+    enterprise         Strict + compliance — audit trail, SOC2/HIPAA pack bindings
 
   ${bold('Flags:')}
     --extension, -e    Extension type
@@ -1427,6 +1728,7 @@ function printInitHelp(): void {
     --dir, -d          Output directory (default: ./<name> or . for templates)
     --tiers            Comma-separated tiers for swarm (core,governance,ops,quality,marketing)
     --force            Overwrite existing skill files during swarm init
+    --non-interactive  Skip prompts, use detected defaults (for CI/scripting)
 
   ${bold('Examples:')}
     agentguard init --template strict
@@ -1436,6 +1738,8 @@ function printInitHelp(): void {
     agentguard init policy-pack --name strict-policy
     agentguard init simulator --name docker-build
     agentguard init firestore
+    agentguard init studio
+    agentguard init studio --non-interactive
     agentguard init swarm
     agentguard init swarm --tiers core,governance
     agentguard init swarm --force

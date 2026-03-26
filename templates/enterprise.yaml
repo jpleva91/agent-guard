@@ -1,0 +1,194 @@
+# AgentGuard Policy — Enterprise
+#
+# Maximum security with compliance invariant bindings. Extends strict mode with
+# additional controls for regulated environments: audit trail enforcement,
+# approval workflows for sensitive operations, and compliance pack integration.
+#
+# Best for: SOC2/HIPAA-regulated environments, enterprise teams, production codebases.
+#
+# Scaffolded by: agentguard init --template enterprise
+# Docs: https://github.com/AgentGuardHQ/agentguard#policy
+
+id: enterprise-policy
+name: Enterprise Safety Policy
+description: Maximum security with compliance — strict + audit + approval workflows
+severity: 5
+
+# Compliance packs — uncomment the packs relevant to your environment.
+# These bind additional invariants for regulatory compliance.
+# packs:
+#   - soc2
+#   - hipaa
+
+rules:
+  # ─── Git safety (deny-heavy) ─────────────────────────────────────────
+  # All pushes denied — agents must create PRs via GitHub CLI.
+  - action: git.push
+    effect: deny
+    reason: All pushes denied — use pull requests for all changes
+
+  - action: git.force-push
+    effect: deny
+    reason: Force push prohibited
+
+  - action: git.reset
+    effect: deny
+    reason: Git reset is destructive — use revert
+
+  - action: git.branch.delete
+    effect: deny
+    reason: Branch deletion denied — branches archived for audit trail
+
+  - action: git.merge
+    effect: deny
+    reason: Merges must go through PR review process
+
+  # ─── File safety (strict) ────────────────────────────────────────────
+  - action: file.delete
+    effect: deny
+    reason: File deletion denied — requires manual approval
+
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: Secrets file modification denied
+
+  - action: file.write
+    effect: deny
+    target: "*.pem"
+    reason: Certificate file modification denied
+
+  - action: file.write
+    effect: deny
+    target: "*.key"
+    reason: Private key file modification denied
+
+  - action: file.write
+    effect: deny
+    target: ".github/workflows/*"
+    reason: CI/CD pipeline modification denied — requires security review
+
+  - action: file.write
+    effect: deny
+    target: "Dockerfile*"
+    reason: Container config modification denied — requires security review
+
+  - action: file.write
+    effect: deny
+    target: "docker-compose*"
+    reason: Container config modification denied — requires security review
+
+  # ─── Blast radius (tight) ────────────────────────────────────────────
+  - action: file.write
+    effect: deny
+    limit: 5
+    reason: Blast radius exceeded — max 5 files per action in enterprise mode
+
+  # ─── Shell safety ────────────────────────────────────────────────────
+  - action: shell.exec
+    effect: deny
+    target: rm -rf
+    reason: Recursive delete blocked
+
+  - action: shell.exec
+    effect: deny
+    target: "chmod 777"
+    reason: Overly permissive chmod denied
+
+  - action: shell.exec
+    effect: deny
+    target: "curl * | sh"
+    reason: Piped script execution blocked
+
+  - action: shell.exec
+    effect: deny
+    target: "wget * | sh"
+    reason: Piped script execution blocked
+
+  # ─── Publishing, deployment, infrastructure ──────────────────────────
+  - action: npm.publish
+    effect: deny
+    reason: Publishing denied — use release pipeline
+
+  - action: deploy.trigger
+    effect: deny
+    reason: Deployment denied — use approved deploy pipeline
+
+  - action: infra.apply
+    effect: deny
+    reason: Infrastructure changes denied — requires change advisory board
+
+  - action: infra.destroy
+    effect: deny
+    reason: Infrastructure destruction denied
+
+  # ─── Allowed operations ──────────────────────────────────────────────
+  # Reading files is always safe.
+  - action: file.read
+    effect: allow
+
+  # File writes allowed (subject to deny rules and blast radius above).
+  - action: file.write
+    effect: allow
+
+  # File move/rename.
+  - action: file.move
+    effect: allow
+
+  # Shell commands for builds and scripts (subject to deny rules above).
+  - action: shell.exec
+    effect: allow
+
+  # Running tests is always encouraged.
+  - action:
+      - test.run
+      - test.run.unit
+      - test.run.integration
+    effect: allow
+
+  # Viewing diffs is safe.
+  - action: git.diff
+    effect: allow
+
+  # Git operations needed for basic workflow.
+  - action: git.commit
+    effect: allow
+
+  - action: git.checkout
+    effect: allow
+
+  - action: git.branch.create
+    effect: allow
+
+  # Worktree operations for isolated agent work.
+  - action: git.worktree.list
+    effect: allow
+
+  - action: git.worktree.add
+    effect: allow
+
+  - action: git.worktree.remove
+    effect: allow
+
+  # NPM operations for dependency management.
+  - action: npm.install
+    effect: allow
+
+  - action: npm.script.run
+    effect: allow
+
+  # HTTP requests (for API testing, not arbitrary egress).
+  - action: http.request
+    effect: allow
+
+  # GitHub CLI for PR creation (since direct push is denied).
+  - action:
+      - github.pr.create
+      - github.pr.list
+      - github.pr.view
+      - github.pr.checks
+      - github.issue.list
+      - github.issue.create
+      - github.issue.view
+    effect: allow
+    reason: GitHub CLI operations allowed for PR-based workflow
