@@ -1,24 +1,10 @@
 {
   "posts": [
     {
-      "title": "Why AI Agents Need Governance Before They Need More Power",
-      "date": "2026-03-14",
+      "title": "AI Doesn't Break Systems. Unchecked Actions Do.",
+      "date": "2026-03-22",
       "excerpt": "Most AI coding agents execute with zero oversight. They can delete files, push to main, and expose secrets — all in a single tool call. Here's why governance at the execution layer changes everything.",
-      "url": "https://linkedin.com/posts/example-1",
-      "image": null
-    },
-    {
-      "title": "21 Safety Invariants Every AI Agent Should Respect",
-      "date": "2026-03-07",
-      "excerpt": "We built 21 invariants into AgentGuard that catch destructive patterns before they execute. From secret exposure to force-push protection, here's what they are and why they matter.",
-      "url": "https://linkedin.com/posts/example-2",
-      "image": null
-    },
-    {
-      "title": "The Governed Action Kernel: How AgentGuard Makes Every AI Action Auditable",
-      "date": "2026-02-28",
-      "excerpt": "Every action an AI agent takes passes through a 7-stage pipeline: propose, normalize, evaluate, simulate, execute, emit, persist. This is how we built a deterministic governance layer.",
-      "url": "https://linkedin.com/posts/example-3",
+      "url": "https://www.linkedin.com/pulse/ai-doesnt-break-systems-unchecked-actions-do-jared-pleva-recrc/",
       "image": null
     }
   ]
