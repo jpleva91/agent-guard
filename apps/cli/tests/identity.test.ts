@@ -20,13 +20,23 @@ describe('detectDriver', () => {
   it('returns claude-code when CLAUDE_MODEL is set', () => {
     delete process.env.GITHUB_ACTIONS;
     delete process.env.COPILOT_AGENT;
+    delete process.env.OPENCODE_HOME;
     process.env.CLAUDE_MODEL = 'claude-opus-4-6';
     expect(detectDriver()).toBe('claude-code');
+  });
+
+  it('returns opencode when OPENCODE_HOME is set', () => {
+    delete process.env.GITHUB_ACTIONS;
+    delete process.env.COPILOT_AGENT;
+    delete process.env.CLAUDE_MODEL;
+    process.env.OPENCODE_HOME = '/home/user/.opencode';
+    expect(detectDriver()).toBe('opencode');
   });
 
   it('returns human as fallback', () => {
     delete process.env.GITHUB_ACTIONS;
     delete process.env.COPILOT_AGENT;
+    delete process.env.OPENCODE_HOME;
     delete process.env.CLAUDE_MODEL;
     expect(detectDriver()).toBe('human');
   });

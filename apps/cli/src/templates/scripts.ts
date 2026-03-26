@@ -71,7 +71,7 @@ export const WRITE_PERSONA = `#!/usr/bin/env bash
 # write-persona.sh — Writes .agentguard/persona.env for session identity
 # Usage: scripts/write-persona.sh <driver> <role> [trust-tier] [autonomy]
 #
-# driver: human | claude-code | copilot | ci
+# driver: human | claude-code | copilot | opencode | ci
 # role:   developer | reviewer | ops | security | planner
 
 set -euo pipefail
@@ -84,6 +84,7 @@ case "\$DRIVER" in
   human)       DEFAULT_TRUST="standard"; DEFAULT_AUTONOMY="supervised" ;;
   claude-code) DEFAULT_TRUST="standard"; DEFAULT_AUTONOMY="semi-autonomous" ;;
   copilot)     DEFAULT_TRUST="limited";  DEFAULT_AUTONOMY="semi-autonomous" ;;
+  opencode)    DEFAULT_TRUST="standard"; DEFAULT_AUTONOMY="semi-autonomous" ;;
   ci)          DEFAULT_TRUST="standard"; DEFAULT_AUTONOMY="autonomous" ;;
   *)           DEFAULT_TRUST="standard"; DEFAULT_AUTONOMY="supervised" ;;
 esac
@@ -114,13 +115,15 @@ esac
 # Derive provider from model/driver
 PROVIDER="anthropic"
 case "\$DRIVER" in
-  copilot) PROVIDER="github" ;;
+  copilot)  PROVIDER="github" ;;
+  opencode) PROVIDER="opencode" ;;
 esac
 
 RUNTIME="claude-code"
 case "\$DRIVER" in
-  copilot) RUNTIME="copilot" ;;
-  ci)      RUNTIME="github-actions" ;;
+  copilot)  RUNTIME="copilot" ;;
+  opencode) RUNTIME="opencode" ;;
+  ci)       RUNTIME="github-actions" ;;
 esac
 
 # Ensure directory exists
@@ -163,7 +166,7 @@ echo "[AgentGuard] No agent identity set for this session."
 echo "Project: \$PROJECT | Model: \$MODEL"
 echo "Please ask the user:"
 echo "  1. What role are you working in? (developer / reviewer / ops / security / planner)"
-echo "  2. Who is driving this session? (human / claude-code / copilot / ci)"
+echo "  2. Who is driving this session? (human / claude-code / copilot / opencode / ci)"
 echo "Then run: scripts/write-persona.sh <driver> <role>"
 exit 0
 `;

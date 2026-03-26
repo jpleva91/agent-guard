@@ -15,6 +15,7 @@ case "$DRIVER" in
   human)       DEFAULT_TRUST="standard"; DEFAULT_AUTONOMY="supervised" ;;
   claude-code) DEFAULT_TRUST="standard"; DEFAULT_AUTONOMY="semi-autonomous" ;;
   copilot)     DEFAULT_TRUST="limited";  DEFAULT_AUTONOMY="semi-autonomous" ;;
+  opencode)    DEFAULT_TRUST="standard"; DEFAULT_AUTONOMY="semi-autonomous" ;;
   ci)          DEFAULT_TRUST="standard"; DEFAULT_AUTONOMY="autonomous" ;;
   *)           DEFAULT_TRUST="standard"; DEFAULT_AUTONOMY="supervised" ;;
 esac
@@ -45,13 +46,15 @@ esac
 # Derive provider from model/driver
 PROVIDER="anthropic"
 case "$DRIVER" in
-  copilot) PROVIDER="github" ;;
+  copilot)  PROVIDER="github" ;;
+  opencode) PROVIDER="opencode" ;;
 esac
 
 RUNTIME="claude-code"
 case "$DRIVER" in
-  copilot) RUNTIME="copilot" ;;
-  ci)      RUNTIME="github-actions" ;;
+  copilot)  RUNTIME="copilot" ;;
+  opencode) RUNTIME="opencode" ;;
+  ci)       RUNTIME="github-actions" ;;
 esac
 
 # Ensure directory exists

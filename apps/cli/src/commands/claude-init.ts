@@ -434,7 +434,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
 
 At session start, if you see \`[AgentGuard] No agent identity set\`, ask the user:
 1. **Role**: developer / reviewer / ops / security / planner
-2. **Driver**: human / claude-code / copilot / ci
+2. **Driver**: human / claude-code / copilot / opencode / ci
 
 Then run: \`scripts/write-persona.sh <driver> <role>\`
 `;
