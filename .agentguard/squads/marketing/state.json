@@ -4,12 +4,24 @@
     "goal": "",
     "issues": []
   },
-  "assignments": {},
-  "blockers": [],
+  "assignments": {
+    "marketing-launch-agent": [
+      "Update site/index.html destructive patterns count from 87 to 93",
+      "Prepare invariant count update (23 → 24) for when PR #1002 merges"
+    ]
+  },
+  "blockers": [
+    {
+      "type": "content-drift",
+      "description": "Destructive patterns count stale on landing page (87 → 93)",
+      "assignee": "marketing-launch-agent",
+      "priority": "medium"
+    }
+  ],
   "prQueue": {
     "open": 0,
     "reviewed": 0,
     "mergeable": 0
   },
-  "updatedAt": "2026-03-25T00:00:00.000Z"
+  "updatedAt": "2026-03-26T20:00:00.000Z"
 }

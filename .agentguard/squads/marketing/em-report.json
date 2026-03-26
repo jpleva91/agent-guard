@@ -1,0 +1,49 @@
+{
+  "squad": "marketing",
+  "emIdentity": "claude-code:opus:marketing:em",
+  "timestamp": "2026-03-26T20:00:00.000Z",
+  "health": "yellow",
+  "healthReason": "Site destructive patterns count stale (87 claimed, 93 actual). No marketing issues in backlog. Sprint goal unset.",
+  "contentPipeline": {
+    "status": "active",
+    "newsletterPosts": 1,
+    "landingPage": "live",
+    "contentAlignmentIssues": [
+      {
+        "file": "site/index.html",
+        "claim": "87 destructive patterns",
+        "actual": "93 destructive patterns",
+        "severity": "medium",
+        "action": "Update count references in site/index.html to 93"
+      }
+    ],
+    "upcomingContentNeeds": [
+      "Update invariant count from 23 to 24 after PR #1002 merges (adds no-verify-bypass)",
+      "Update destructive patterns count from 87 to 93"
+    ]
+  },
+  "conferenceReadiness": {
+    "status": "no-events-scheduled",
+    "notes": "No known upcoming conference dates. No materials flagged."
+  },
+  "prQueue": {
+    "open": 1,
+    "marketingPRs": 0,
+    "notes": "PR #1002 (feat: no-verify-bypass invariant) is engineering, not marketing. 2 CI checks failing. Will require site count update after merge."
+  },
+  "blockers": [
+    {
+      "type": "content-drift",
+      "description": "Destructive patterns count on landing page is 87, actual is 93",
+      "priority": "medium"
+    },
+    {
+      "type": "missing-sprint-goal",
+      "description": "No sprint goal set for marketing squad",
+      "priority": "low"
+    }
+  ],
+  "escalations": [],
+  "governanceDenials": 0,
+  "dogfoodNotes": "No governance denials encountered this run. Persona script worked. No issues with hook evaluation."
+}
