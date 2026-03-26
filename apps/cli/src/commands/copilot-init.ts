@@ -25,6 +25,10 @@ function resolveCliPrefix(isGlobal: boolean): { cli: string; isLocal: boolean } 
     if (existsSync(nmBin)) {
       return { cli: './node_modules/.bin/agentguard', isLocal: false };
     }
+    const nmBinAguard = join(mainRoot, 'node_modules', '.bin', 'aguard');
+    if (existsSync(nmBinAguard)) {
+      return { cli: './node_modules/.bin/aguard', isLocal: false };
+    }
   }
   return { cli: 'agentguard', isLocal: false };
 }
