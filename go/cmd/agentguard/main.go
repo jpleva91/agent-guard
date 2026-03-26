@@ -68,8 +68,23 @@ func runNormalize() {
 	fmt.Println(string(out))
 }
 
-// runEvaluate loads a policy, reads a JSON tool call from stdin, normalizes it,
-// evaluates it against the policy, and outputs the result. Exits 2 if denied.
+// runEvaluate loads a policy, reads a JSON action from stdin, evaluates it
+// against the policy, and outputs the result. Exits 2 if denied.
+//
+// Two input formats are supported:
+//
+//  1. Raw tool call (Claude Code hook format):
+//     {"tool":"Write","input":{"file_path":"foo.ts","content":"..."}}
+//     The action is normalized before evaluation.
+//
+//  2. Pre-normalized ActionContext (output of `normalize` command):
+//     {"action":"file.write","target":"foo.ts"}
+//     Detected by the presence of the "action" field; normalization is skipped.
+//     This allows piping: normalize | evaluate --policy agentguard.yaml
+//
+// Note: the "pack:" field in policy YAML is stored as metadata but pack rules
+// are not automatically resolved. Use a policy file with explicit rules, or
+// pre-merge pack rules into your policy before passing to evaluate.
 func runEvaluate(args []string) {
 	fs := flag.NewFlagSet("evaluate", flag.ExitOnError)
 	policyPath := fs.String("policy", "", "Path to agentguard.yaml")
@@ -101,18 +116,12 @@ func runEvaluate(args []string) {
 		os.Exit(1)
 	}
 
-	var payload struct {
-		Tool  string         `json:"tool"`
-		Input map[string]any `json:"input"`
-	}
-	if err := json.Unmarshal(stdinData, &payload); err != nil {
+	ctx, err := parseActionInput(stdinData)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "parse json: %v\n", err)
 		os.Exit(1)
 	}
 
-	raw := parseRawAction(payload.Tool, payload.Input)
-	normalizer := config.NewDefaultNormalizer()
-	ctx := normalizer.Normalize(raw, "cli")
 	result := engine.Evaluate(ctx, []*action.LoadedPolicy{policy}, &engine.EvalOptions{DefaultDeny: true})
 
 	out, _ := json.MarshalIndent(result, "", "  ")
@@ -121,6 +130,43 @@ func runEvaluate(args []string) {
 	if !result.Allowed {
 		os.Exit(2)
 	}
+}
+
+// parseActionInput accepts either a pre-normalized ActionContext or a raw tool
+// call payload and returns a ready-to-evaluate ActionContext.
+//
+// Detection heuristic: if the top-level JSON object has an "action" field it is
+// treated as a pre-normalized ActionContext; otherwise it is treated as a raw
+// {"tool":..., "input":{...}} payload and passed through the normalizer.
+func parseActionInput(data []byte) (action.ActionContext, error) {
+	// Peek at the top-level keys without full unmarshaling.
+	var probe struct {
+		Action string `json:"action"`
+	}
+	if err := json.Unmarshal(data, &probe); err != nil {
+		return action.ActionContext{}, fmt.Errorf("invalid JSON: %w", err)
+	}
+
+	if probe.Action != "" {
+		// Pre-normalized ActionContext — unmarshal directly.
+		var ctx action.ActionContext
+		if err := json.Unmarshal(data, &ctx); err != nil {
+			return action.ActionContext{}, fmt.Errorf("unmarshal ActionContext: %w", err)
+		}
+		return ctx, nil
+	}
+
+	// Raw tool call format — normalize before evaluating.
+	var payload struct {
+		Tool  string         `json:"tool"`
+		Input map[string]any `json:"input"`
+	}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return action.ActionContext{}, fmt.Errorf("unmarshal tool payload: %w", err)
+	}
+	raw := parseRawAction(payload.Tool, payload.Input)
+	normalizer := config.NewDefaultNormalizer()
+	return normalizer.Normalize(raw, "cli"), nil
 }
 
 // runGuard creates a kernel, reads actions from stdin, and outputs governance
