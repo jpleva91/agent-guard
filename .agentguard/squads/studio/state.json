@@ -1,15 +1,85 @@
 {
   "squad": "studio",
   "sprint": {
-    "goal": "",
-    "issues": []
+    "goal": "Dashboard wiring — Phase 1: 3 working pages by April 17",
+    "issues": [43, 50],
+    "daysRemaining": 22
   },
-  "assignments": {},
-  "blockers": [],
+  "assignments": {
+    "studio-sr": {
+      "issue": null,
+      "status": "available",
+      "completedWork": [
+        {
+          "issue": 72,
+          "prs": [75, 76],
+          "status": "done",
+          "summary": "Double-start race condition fully resolved — Phase 1 (flock guard + queue dedup) and Phase 2 (PID-file tracking) both merged."
+        }
+      ],
+      "nextAssignment": "Reopen v3.1 PR (was #977 in agent-guard, closed without merge — fix lint errors and rebase). Then pivot to sprint goal #43 (dashboard wiring)."
+    }
+  },
+  "blockers": [
+    {
+      "issue": "P0: All 32 worker PIDs stale on readybench — no live workers",
+      "ref": "agent-guard#979",
+      "severity": "P0",
+      "status": "escalated to human"
+    },
+    {
+      "issue": "8 enabled agents on readybench missing SKILL.md files",
+      "ref": "agent-guard#980",
+      "severity": "P2"
+    },
+    {
+      "issue": "PR #977 closed without merge — lint failure + merge conflicts",
+      "ref": "agent-guard#977",
+      "severity": "P1",
+      "action": "studio-sr to fix and reopen"
+    },
+    {
+      "issue": "Cloud PRs #400, #402, #403 all CONFLICTING",
+      "ref": "agentguard-cloud",
+      "severity": "P2"
+    }
+  ],
   "prQueue": {
     "open": 0,
     "reviewed": 0,
-    "mergeable": 0
+    "mergeable": 0,
+    "mergedThisCycle": [76],
+    "crossRepo": {
+      "agentGuard": [],
+      "agentGuardCloud": [
+        { "number": 400, "title": "Go kernel HTTP ingest endpoint", "status": "CONFLICTING", "criticality": "P1 — critical path for #60" },
+        { "number": 402, "title": "Agent performance API endpoint", "status": "CONFLICTING" },
+        { "number": 403, "title": "Onboarding wizard fix", "status": "CONFLICTING" }
+      ]
+    }
   },
-  "updatedAt": "2026-03-25T07:25:54.157Z"
+  "infraHealth": "red",
+  "lastQACycle": {
+    "at": "2026-03-26T04:00:00.000Z",
+    "findings": {
+      "workers": "all 32 PIDs stale — no live workers (P0 #979 open, escalated to human)",
+      "queueDepth": 0,
+      "failures24h": [
+        "qa-coder-agent: 2 failures (1x timeout exit 124, 1x API 500 exit 1)",
+        "qa-issue-fixer-agent: 1 failure (timeout exit 124)",
+        "qa-regression-analyzer: 2 failures (timeout exit 124)"
+      ],
+      "schedule": "valid JSON, 111 enabled / 2 disabled, 8 readybench agents missing SKILL.md (#980), 5 cron collisions",
+      "cronCollisions": [
+        "0 */6 * * *: swarm-health-agent + rollout-canary-validator",
+        "20 */2 * * *: coder-agent + tier-c-copilot-implementer",
+        "22 */3 * * *: qa-em + office-sim-em",
+        "50 */2 * * *: tier-c-copilot-implementer-oss + coder-agent-cloud",
+        "55 */3 * * *: studio-qa + office-sim-qa"
+      ]
+    },
+    "health": "red",
+    "reason": "stale workers + 5 agent failures in 24h (3 timeouts likely caused by dead workers)"
+  },
+  "updatedAt": "2026-03-26T04:00:00.000Z"
 }
