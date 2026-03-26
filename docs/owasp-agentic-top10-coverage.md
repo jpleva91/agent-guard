@@ -1,6 +1,6 @@
 # OWASP Agentic Top 10 Coverage — AgentGuard
 
-> Audit date: 2026-03-25 | AgentGuard kernel: 22 invariants, 27 action types, 95+ command patterns
+> Audit date: 2026-03-25 | AgentGuard kernel: 24 invariants, 41 action types, 95+ command patterns
 
 ## Coverage Summary
 
@@ -49,7 +49,7 @@
 
 | Mechanism | Component | What It Does |
 |-----------|-----------|-------------|
-| Canonical action types | `packages/core/src/actions.ts` | 27 types across 9 classes with strict hierarchy |
+| Canonical action types | `packages/core/src/actions.ts` | 41 types across 10 classes with strict hierarchy |
 | Execution adapters | `packages/adapters/src/*.ts` | Separate handlers for file, shell, git, claude-code, copilot-cli |
 | Hook integrity | `packages/adapters/src/hook-integrity.ts` | Validates hook signatures and settings before execution |
 | Execution failure events | `ACTION_FAILED` event kind | All failures emit audit events |
@@ -220,7 +220,7 @@
 |----------|-----------|------------------------|
 | Prompt Injection | Moderate (detect + block destructive) | Claimed 10/10 |
 | Insecure Tool Impl | Strong (typed actions, adapters) | Claimed 10/10 |
-| Excessive Agency | Strong (22 invariants, escalation) | Claimed 10/10 |
+| Excessive Agency | Strong (24 invariants, escalation) | Claimed 10/10 |
 | Insecure Output | Weak (PII/secret detection only) | Claimed 10/10 |
 | Inadequate Sandboxing | Minimal (no OS isolation) | Claimed 10/10 |
 | Implicit Trust | Strong (crypto trust chain) | Claimed 10/10 |

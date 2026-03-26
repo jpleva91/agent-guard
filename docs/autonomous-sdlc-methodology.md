@@ -7,7 +7,7 @@ AgentGuard — a 70,000-line, 20-package governed action runtime — was built i
 **Key metrics:**
 - 33,668 lines of production TypeScript, 39,160 lines of tests
 - 20 workspace packages, 3 applications (CLI, VS Code extension, telemetry server)
-- 142 test files, 17 invariants, 49 event types, 23 action types
+- 142 test files, 24 invariants, 47 event kinds, 41 action types
 - Equivalent to 240 story points / 6-8 months of traditional senior engineering
 - Delivered in <2 weeks by one person with an autonomous agent swarm
 

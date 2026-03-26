@@ -771,7 +771,7 @@
             <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
               <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
-            <h3 class="font-mono font-semibold text-text mb-2">23 Safety Invariants</h3>
+            <h3 class="font-mono font-semibold text-text mb-2">24 Safety Invariants</h3>
             <p class="text-muted text-sm leading-relaxed">Secret detection, credential protection, branch guards, blast radius limits, lockfile integrity, script injection, CI/CD protection, network egress control, governance self-modification prevention. Always on.</p>
           </div>
 
@@ -1057,7 +1057,7 @@
     <section id="invariants" class="py-24" aria-labelledby="inv-heading">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-16 reveal">
-          <h2 id="inv-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">23 Built-in Invariants</h2>
+          <h2 id="inv-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">24 Built-in Invariants</h2>
           <p class="text-muted text-lg max-w-2xl mx-auto">Safety checks that run on every action. Zero configuration. Always on.</p>
         </div>
 
@@ -1185,6 +1185,11 @@
                 <td class="py-3 px-4 font-mono text-text">script-execution-tracking</td>
                 <td class="py-3 px-4"><span class="sev-high text-xs font-mono font-semibold px-2 py-0.5 rounded">HIGH</span></td>
                 <td class="py-3 px-4 text-muted">Prevents governance bypass via write-then-execute indirection</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text">no-verify-bypass</td>
+                <td class="py-3 px-4"><span class="sev-high text-xs font-mono font-semibold px-2 py-0.5 rounded">HIGH</span></td>
+                <td class="py-3 px-4 text-muted">Forbids --no-verify flag on git push/commit to prevent skipping hooks</td>
               </tr>
             </tbody>
           </table>
@@ -1578,7 +1583,7 @@ rules:
     <section id="cli" class="py-24" aria-labelledby="cli-heading">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-16 reveal">
-          <h2 id="cli-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">30 CLI Commands</h2>
+          <h2 id="cli-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">32 CLI Commands</h2>
           <p class="text-muted text-lg max-w-2xl mx-auto">Full lifecycle governance from your terminal.</p>
         </div>
 
@@ -1637,7 +1642,9 @@ rules:
             <h3 class="font-mono font-semibold text-cta text-xs uppercase tracking-wider mb-3">Setup &amp; Integration</h3>
             <ul class="space-y-2 text-sm font-mono">
               <li class="text-muted"><span class="text-text">claude-init</span> &mdash; Claude Code hooks</li>
+              <li class="text-muted"><span class="text-text">claude-hook</span> &mdash; Claude Code hook handler</li>
               <li class="text-muted"><span class="text-text">copilot-init</span> &mdash; GitHub Copilot hooks</li>
+              <li class="text-muted"><span class="text-text">copilot-hook</span> &mdash; Copilot hook handler</li>
               <li class="text-muted"><span class="text-text">cloud login</span> &mdash; Device code auth (browser OAuth)</li>
               <li class="text-muted"><span class="text-text">cloud events/runs</span> &mdash; Query cloud data</li>
               <li class="text-muted"><span class="text-text">auto-setup</span> &mdash; Auto-detect &amp; configure</li>

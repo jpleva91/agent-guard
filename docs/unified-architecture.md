@@ -129,8 +129,8 @@ Pure domain logic with no environment dependencies.
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
-| Canonical actions | `packages/core/src/actions.ts` | 23 action types, 8 classes |
-| Canonical events | `packages/events/src/schema.ts` | 50+ event kinds, factory, validation |
+| Canonical actions | `packages/core/src/actions.ts` | 41 action types, 10 classes |
+| Canonical events | `packages/events/src/schema.ts` | 47 event kinds, factory, validation |
 | Reference monitor | `packages/kernel/src/decision.ts` | Action authorization with decision trail |
 | Adapter registry | `packages/adapters/src/registry.ts` | Action class → handler mapping |
 | Event store | `packages/events/src/store.ts` | In-memory event persistence |

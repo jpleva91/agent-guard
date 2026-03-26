@@ -22,11 +22,11 @@ AgentGuard is the **mandatory execution control plane for AI agents** — the ru
 
 | Component | Status | Maturity |
 |-----------|--------|----------|
-| Governed action kernel (27 action types, 9 classes) | Implemented | Production |
+| Governed action kernel (41 action types, 10 classes) | Implemented | Production |
 | Action Authorization Boundary (AAB) | Implemented | Bypass vectors closed (3 fixed in v2.4.0) |
 | Policy evaluator (YAML/JSON, composition, packs) | Implemented | Production |
-| 21 built-in invariants | Implemented | Production |
-| Canonical event model (50+ event kinds) | Implemented | Production |
+| 24 built-in invariants | Implemented | Production |
+| Canonical event model (47 event kinds) | Implemented | Production |
 | Pre-execution simulation engine (3 simulators) | Implemented | Production |
 | Blast radius computation | Implemented | Production |
 | Escalation state machine (NORMAL → LOCKDOWN) | Implemented | Production |
