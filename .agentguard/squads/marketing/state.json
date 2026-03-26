@@ -1,15 +1,26 @@
 {
   "squad": "marketing",
   "sprint": {
-    "goal": "",
-    "issues": []
+    "goal": "Unblock content agents and publish Go kernel launch content",
+    "issues": ["#925", "#934", "#938", "#1004", "#1007"]
   },
-  "assignments": {},
-  "blockers": [],
+  "assignments": {
+    "marketing-launch-agent": ["#1007", "#941"],
+    "marketing-content-agent": ["#925", "#934", "#1004"],
+    "em-direct": ["#925"]
+  },
+  "blockers": [
+    {
+      "issue": "#995",
+      "description": "Governance catch-22 blocks all content agents — pnpm install blocked by hook before kernel exists",
+      "owner": "ops/hq-em",
+      "severity": "high"
+    }
+  ],
   "prQueue": {
     "open": 0,
     "reviewed": 0,
     "mergeable": 0
   },
-  "updatedAt": "2026-03-25T00:00:00.000Z"
+  "updatedAt": "2026-03-26T20:10:00.000Z"
 }

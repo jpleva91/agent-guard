@@ -1,0 +1,71 @@
+{
+  "squad": "marketing",
+  "timestamp": "2026-03-26T20:10:00.000Z",
+  "health": "yellow",
+  "summary": "3rd consecutive cycle with zero content agent output. Marketing-content-agent blocked by governance catch-22 (#995). Site stats partially fixed (PRs #1005, #1009) but test counter still stale (2,637 vs 4,134). Demo video placeholder and capture funnel remain unaddressed.",
+  "contentPipeline": {
+    "drafts": 0,
+    "published": 0,
+    "scheduled": 5,
+    "weeklyContentPack": "#1004 generated but agent blocked — no execution"
+  },
+  "siteAlignment": {
+    "status": "partial",
+    "recentFixes": [
+      "PR #1005: destructive patterns 87→93, event kinds 49→47, ROADMAP numbers updated",
+      "PR #1009: CLI commands 29→30, patterns/events synced",
+      "PR #1011: OG image and social meta tags completed"
+    ],
+    "staleContent": [
+      "Test counter shows 2,637 — actual is 4,134+ (PR #983 QA report)",
+      "Terminal animation shows 'vitest (2,637 passed)' — stale",
+      "Swarm section shows '26 agents across 5 tiers' — actual is 49 agents across 8 squads (PR #1009 flagged redesign needed)",
+      "Demo video section still shows 'coming soon' placeholder (#1007)"
+    ],
+    "missing": [
+      "User capture funnel — zero capture mechanisms on site (#938, v3.0 blocker)",
+      "Office-sim screenshot/embed (#941)"
+    ]
+  },
+  "sprintIssues": {
+    "active": [
+      { "issue": "#925", "title": "OWASP blog", "status": "blocked", "note": "ESCALATED from last cycle — EM to draft directly" },
+      { "issue": "#934", "title": "v2.7.x announcement", "status": "blocked", "note": "Content agent blocked by #995" },
+      { "issue": "#938", "title": "User capture funnel", "status": "open", "note": "v3.0 blocker, no progress" },
+      { "issue": "#1007", "title": "Demo video placeholder", "status": "open", "note": "Needs recording or section removal" },
+      { "issue": "#1004", "title": "Weekly content pack", "status": "generated", "note": "Content ready but agent can't execute" }
+    ]
+  },
+  "prQueue": {
+    "open": 0,
+    "reviewed": 0,
+    "mergeable": 0,
+    "recentlyMerged": ["#1011", "#1009", "#1005"]
+  },
+  "blockers": [
+    {
+      "severity": "high",
+      "description": "marketing-content-agent-cloud blocked by governance catch-22 (#995): hook blocks pnpm install needed to install the governance kernel",
+      "impact": "All content agents unable to execute — zero output for 3 consecutive cycles",
+      "requiredAction": "Human intervention to bootstrap kernel in worktree, or hook adjustment to allow bootstrapping commands"
+    },
+    {
+      "severity": "medium",
+      "description": "Test counter on site stale (2,637 vs 4,134)",
+      "impact": "Understates project maturity — 36% lower than actual",
+      "requiredAction": "Update data-target in site/index.html stats bar and terminal animation"
+    }
+  ],
+  "escalations": [
+    "HIGH: Content agents silent for 3 consecutive cycles due to governance catch-22 (#995). Requires ops intervention to fix worktree bootstrapping.",
+    "MEDIUM: EM committed to drafting OWASP blog (#925) directly — will execute next cycle if agent unblock doesn't happen.",
+    "LOW: Weekly content pack #1004 has excellent material (Go kernel, aguard rebrand, studio wizard) but no agent to publish it."
+  ],
+  "productInsights": [
+    "Go kernel (100x faster governance) is the strongest marketing story this quarter — needs blog post urgently",
+    "Weekly content pack #1004 contains 5 ready-to-post LinkedIn articles and Twitter threads — high-quality material going to waste",
+    "aguard CLI rebrand (v2.7.0) is a user-facing win worth announcing: shorter command, same governance",
+    "Governance catch-22 (#995) is itself a compelling dogfood story — 'we found a circular dependency in our own tool'"
+  ],
+  "agentIdentity": "claude-code:opus:marketing:em"
+}
