@@ -1,5 +1,5 @@
 // Tests for postinstall script — dual-hook setup (Claude Code + Copilot CLI)
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -9,6 +9,10 @@ import {
   writeClaudeCodeHooks,
   writeCopilotCliHooks,
   writeStarterPolicy,
+  isTelemetryEnabled,
+  detectCiEnvironment,
+  resolveInstallId,
+  reportInstallTelemetry,
 } from '../src/postinstall.js';
 
 /** Create a unique temp directory for each test. */
@@ -494,7 +498,6 @@ describe('postinstall integration', () => {
 // ---------------------------------------------------------------------------
 // Regression: hook commands must use `npx --no-install` to resolve binaries
 // ---------------------------------------------------------------------------
-// The published package is `@red-codes/agentguard` but registers bin name `agentguard`.
 // Bare `agentguard` fails because node_modules/.bin isn't in PATH for hook subprocesses.
 // `npx agentguard` (without --no-install) falls back to downloading a nonexistent
 // `agentguard` package from npm, producing a 404 error.
@@ -584,5 +587,130 @@ describe('regression: hook commands use npx --no-install', () => {
       // Must NOT use `npx` without `--no-install` (would try to download from registry)
       expect(cmd).not.toMatch(/^npx agentguard /);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Install telemetry — isTelemetryEnabled, detectCiEnvironment, resolveInstallId
+// ---------------------------------------------------------------------------
+
+describe('isTelemetryEnabled', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('returns true by default (no opt-out vars set)', () => {
+    vi.stubEnv('AGENTGUARD_TELEMETRY', '');
+    vi.stubEnv('DO_NOT_TRACK', '');
+    expect(isTelemetryEnabled()).toBe(true);
+  });
+
+  it('returns false when AGENTGUARD_TELEMETRY=off', () => {
+    vi.stubEnv('AGENTGUARD_TELEMETRY', 'off');
+    expect(isTelemetryEnabled()).toBe(false);
+  });
+
+  it('returns true when AGENTGUARD_TELEMETRY=anonymous', () => {
+    vi.stubEnv('AGENTGUARD_TELEMETRY', 'anonymous');
+    expect(isTelemetryEnabled()).toBe(true);
+  });
+
+  it('returns false when DO_NOT_TRACK=1', () => {
+    vi.stubEnv('DO_NOT_TRACK', '1');
+    expect(isTelemetryEnabled()).toBe(false);
+  });
+
+  it('returns false when DO_NOT_TRACK=true', () => {
+    vi.stubEnv('DO_NOT_TRACK', 'true');
+    expect(isTelemetryEnabled()).toBe(false);
+  });
+
+  it('returns true when DO_NOT_TRACK is a non-opt-out value', () => {
+    vi.stubEnv('DO_NOT_TRACK', '0');
+    expect(isTelemetryEnabled()).toBe(true);
+  });
+});
+
+describe('detectCiEnvironment', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('returns null when no CI vars are set', () => {
+    vi.stubEnv('GITHUB_ACTIONS', '');
+    vi.stubEnv('VERCEL', '');
+    vi.stubEnv('GITLAB_CI', '');
+    vi.stubEnv('CI', '');
+    expect(detectCiEnvironment()).toBeNull();
+  });
+
+  it('detects GitHub Actions', () => {
+    vi.stubEnv('GITHUB_ACTIONS', 'true');
+    expect(detectCiEnvironment()).toBe('github-actions');
+  });
+
+  it('detects Vercel', () => {
+    vi.stubEnv('GITHUB_ACTIONS', '');
+    vi.stubEnv('VERCEL', '1');
+    expect(detectCiEnvironment()).toBe('vercel');
+  });
+
+  it('detects GitLab CI', () => {
+    vi.stubEnv('GITHUB_ACTIONS', '');
+    vi.stubEnv('VERCEL', '');
+    vi.stubEnv('GITLAB_CI', 'true');
+    expect(detectCiEnvironment()).toBe('gitlab-ci');
+  });
+
+  it('detects generic CI', () => {
+    vi.stubEnv('GITHUB_ACTIONS', '');
+    vi.stubEnv('VERCEL', '');
+    vi.stubEnv('GITLAB_CI', '');
+    vi.stubEnv('CI', 'true');
+    expect(detectCiEnvironment()).toBe('ci');
+  });
+});
+
+describe('resolveInstallId', () => {
+  let tempDir: string;
+
+  afterEach(() => {
+    if (tempDir) rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('returns a valid UUID when no identity file exists', () => {
+    // No file at ~/.agentguard/telemetry.json — returns fresh UUID
+    const id = resolveInstallId();
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+  });
+
+  it('returns consistent UUID across calls without file (each call is fresh)', () => {
+    const id1 = resolveInstallId();
+    const id2 = resolveInstallId();
+    // Both are valid UUIDs (may differ since they're freshly generated)
+    expect(id1).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(id2).toMatch(/^[0-9a-f-]{36}$/i);
+  });
+});
+
+describe('reportInstallTelemetry', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('does not throw when telemetry is disabled', () => {
+    vi.stubEnv('AGENTGUARD_TELEMETRY', 'off');
+    // Should complete without throwing
+    expect(() => reportInstallTelemetry('/tmp/fake-script-dir')).not.toThrow();
+  });
+
+  it('does not throw when DO_NOT_TRACK=1', () => {
+    vi.stubEnv('DO_NOT_TRACK', '1');
+    expect(() => reportInstallTelemetry('/tmp/fake-script-dir')).not.toThrow();
+  });
+
+  it('does not throw even with an invalid script dir (network will fail silently)', () => {
+    vi.stubEnv('AGENTGUARD_TELEMETRY', 'off');
+    expect(() => reportInstallTelemetry('/nonexistent/path/that/does/not/exist')).not.toThrow();
   });
 });
