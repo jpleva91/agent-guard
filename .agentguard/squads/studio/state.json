@@ -7,9 +7,9 @@
   },
   "assignments": {
     "studio-sr": {
-      "issue": 100,
-      "status": "assigned",
-      "currentPR": "pending",
+      "issue": 107,
+      "status": "in-progress",
+      "currentPR": 113,
       "completedWork": [
         {
           "issue": 72,
@@ -70,14 +70,21 @@
           "prs": [],
           "status": "done",
           "summary": "Phase 1 security bug verification — all 3 bugs confirmed fixed (path traversal, JWT revocation, RLS fallback). Created scripts/verify-security-bugs.sh for regression detection."
+        },
+        {
+          "issue": 100,
+          "prs": [111],
+          "status": "done",
+          "summary": "Stranger test dry-run — automated script covering all 10 checklist items. Local: 6 pass, 0 fail, 3 warn, 2 skip, 2 blocked. PR #111 merged."
         }
       ],
       "currentWork": {
-        "issue": 100,
-        "description": "Stranger test dry-run — full demo on clean machine. Prep work while dashboard deployment (#106) progresses.",
-        "dependencies": ["workspace#106 — dashboard must be deployed before full stranger test"]
+        "issue": 107,
+        "description": "Conference enforcement stories — added --no-verify bypass scenarios to demo script (section 3.5). 5 new scenarios, 64/64 total passing. Demo policy updated with git.commit and git.push --no-verify deny rules.",
+        "dependencies": ["analytics#21 — real enforcement data for production examples (April 3 target)"],
+        "pr": 113
       },
-      "nextAssignment": "#98 (Go kernel fast-path) after #100 completes. Blocked by #50 human review."
+      "nextAssignment": "#98 (Go kernel fast-path). Blocked by #50 human review."
     }
   },
   "blockers": [
@@ -110,10 +117,10 @@
     }
   ],
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
-    "mergedThisCycle": ["workspace#108", "workspace#109"],
+    "mergedThisCycle": ["workspace#108", "workspace#109", "workspace#111"],
     "crossRepo": {
       "agentGuard": {
         "merged": [
@@ -133,5 +140,5 @@
     "health": "green",
     "reason": "All systems nominal. Workers 32/32 active. Queue empty. Telemetry healthy. 118/118 agents with SKILL.md. Zero cron collisions."
   },
-  "updatedAt": "2026-03-26T20:15:00.000Z"
+  "updatedAt": "2026-03-26T22:40:00.000Z"
 }
