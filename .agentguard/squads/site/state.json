@@ -1,15 +1,15 @@
 {
   "squad": "site",
   "sprint": {
-    "goal": "",
+    "goal": "Keep site numeric claims in sync with codebase",
     "issues": []
   },
   "assignments": {},
   "blockers": [],
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0
   },
-  "updatedAt": "2026-03-25T00:00:00.000Z"
+  "updatedAt": "2026-03-26T20:40:00.000Z"
 }

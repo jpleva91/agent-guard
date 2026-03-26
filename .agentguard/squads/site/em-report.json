@@ -1,0 +1,51 @@
+{
+  "squad": "site",
+  "timestamp": "2026-03-26T20:40:00.000Z",
+  "health": "green",
+  "summary": "Site healthy. Fixed invariant count drift (23→24) and CLI commands count (29→32) after recent codebase changes. No open issues or PRs. OG image and meta tags intact after recent PR #1011 fix.",
+  "siteBuild": {
+    "status": "pass",
+    "notes": "Static site structure valid: index.html, posts.html, posts.json, sitemap.xml, robots.txt, og-image.png all present and well-formed."
+  },
+  "contentFreshness": {
+    "status": "fixed",
+    "drift": [
+      {
+        "claim": "invariants count",
+        "was": 23,
+        "now": 24,
+        "cause": "PR #1002 added no-verify-bypass invariant",
+        "fixed": true
+      },
+      {
+        "claim": "CLI commands count",
+        "was": 29,
+        "now": 32,
+        "cause": "New commands added since last site sync",
+        "fixed": true
+      }
+    ],
+    "verified": [
+      "93 destructive patterns — matches codebase",
+      "47 event kinds — matches codebase",
+      "41 action types — matches codebase"
+    ]
+  },
+  "prQueue": {
+    "open": 0,
+    "reviewed": 0,
+    "merged": [
+      "#1015 — marketing EM report",
+      "#1011 — OG image PNG + social meta tags",
+      "#1009 — site stats sync",
+      "#1005 — stale numeric claims fix"
+    ]
+  },
+  "blockers": [],
+  "escalations": [],
+  "governanceDenials": 0,
+  "nextActions": [
+    "Open PR for invariant + CLI command count fix",
+    "Monitor for further invariant additions that cause site drift"
+  ]
+}
