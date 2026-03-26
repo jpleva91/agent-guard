@@ -35,9 +35,10 @@ await esbuild.build({
   entryPoints: ['src/bin.ts', 'src/postinstall.ts'],
 });
 
-// Copy hooks/ and templates/ into dist so they ship with the npm package
+// Copy hooks/, templates/, and policies/ into dist so they ship with the npm package
 // (npm rejects path traversals like ../../hooks/ in the files array)
 cpSync('../../hooks', 'dist/hooks', { recursive: true });
 cpSync('../../templates', 'dist/templates', { recursive: true });
+cpSync('../../policies', 'dist/policies', { recursive: true });
 
 console.log('CLI build complete.');
