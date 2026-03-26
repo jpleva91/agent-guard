@@ -3,6 +3,7 @@
 
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname, join, normalize } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { loadYamlPolicy, parseYamlPolicy } from '@red-codes/policy';
 import { resolveExtends, mergePolicies } from '@red-codes/policy';
@@ -250,7 +251,9 @@ export function loadComposedPolicies(policyPaths?: string[]): CompositionResult 
  * Resolve a pack short name to a file path.
  * Search order:
  * 1. <project-root>/policies/<name>.yaml
- * 2. <agentguard-install-dir>/policies/<name>.yaml (bundled packs)
+ * 2. <cwd>/policies/<name>.yaml
+ * 3. <agentguard-install-dir>/dist/policies/<name>.yaml (bundled packs)
+ * 4. <main-git-repo-root>/policies/<name>.yaml (dev/source tree fallback)
  */
 export function resolvePackByName(name: string, projectRoot?: string): string | null {
   // Project-local packs
@@ -263,10 +266,19 @@ export function resolvePackByName(name: string, projectRoot?: string): string | 
   const cwdLocal = join(process.cwd(), 'policies', `${name}.yaml`);
   if (existsSync(cwdLocal)) return cwdLocal;
 
-  // Bundled packs (relative to main repo root)
+  // Bundled packs — shipped in dist/policies/ alongside the installed CLI binary
+  try {
+    const thisDir = fileURLToPath(new URL('.', import.meta.url));
+    const bundledInDist = join(thisDir, 'policies', `${name}.yaml`);
+    if (existsSync(bundledInDist)) return bundledInDist;
+  } catch {
+    // import.meta.url unavailable in some environments — skip
+  }
+
+  // Source tree fallback (dev mode — main repo root)
   const mainRoot = resolveMainRepoRoot();
-  const bundled = join(mainRoot, 'policies', `${name}.yaml`);
-  if (existsSync(bundled)) return bundled;
+  const sourceTree = join(mainRoot, 'policies', `${name}.yaml`);
+  if (existsSync(sourceTree)) return sourceTree;
 
   return null;
 }
