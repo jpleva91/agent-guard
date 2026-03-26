@@ -408,6 +408,156 @@ function extractTargetPath(payload: ClaudeCodeHookPayload): string | undefined {
   return undefined;
 }
 
+// ---------------------------------------------------------------------------
+// Go kernel fast-path — delegates policy evaluation to the Go binary when
+// available. Returns { used: true, allowed: true } on fast-path allow,
+// { used: true, allowed: false } on fast-path deny, or { used: false }
+// when the Go binary is unavailable or errors (caller falls through to TS).
+// ---------------------------------------------------------------------------
+
+export interface GoFastPathResult {
+  used: boolean;
+  allowed?: boolean;
+  reason?: string;
+  suggestion?: string;
+  correctedCommand?: string;
+}
+
+/**
+ * Resolve the Go kernel binary path. Searches in order:
+ * 1. AGENTGUARD_GO_BIN environment variable
+ * 2. dist/go-bin/agentguard-go relative to the running CLI binary
+ * 3. go/bin/agentguard-go in the repo (dev mode)
+ */
+export function resolveGoBinaryPath(): string | null {
+  const envPath = process.env.AGENTGUARD_GO_BIN;
+  if (envPath && existsSync(envPath)) return envPath;
+
+  const ext = process.platform === 'win32' ? '.exe' : '';
+  const binaryName = `agentguard-go${ext}`;
+
+  // Relative to the running CLI script (works in npm install)
+  try {
+    const scriptDir = dirname(process.argv[1] ?? '');
+    const distPath = join(scriptDir, 'go-bin', binaryName);
+    if (existsSync(distPath)) return distPath;
+  } catch {
+    // process.argv[1] might not exist
+  }
+
+  // Dev mode: check go/bin/ in the repo
+  try {
+    const mainRoot = resolveMainRepoRoot();
+    const devPath = join(mainRoot, 'go', 'bin', binaryName);
+    if (existsSync(devPath)) return devPath;
+  } catch {
+    // Not in a repo
+  }
+
+  return null;
+}
+
+/**
+ * Try Go kernel fast-path for policy evaluation.
+ * Pre-resolves policies via TS (handles pack:/extends:), serializes to a temp
+ * JSON file, and spawns the Go binary's `evaluate` command.
+ */
+export function tryGoFastPath(
+  policyDefs: unknown[],
+  payload: ClaudeCodeHookPayload
+): GoFastPathResult {
+  if (process.env.AGENTGUARD_SKIP_GO === '1') return { used: false };
+  if (policyDefs.length === 0) return { used: false };
+
+  const goBin = resolveGoBinaryPath();
+  if (!goBin) return { used: false };
+
+  // Build the action payload in the format Go's evaluate expects
+  const toolInput = (payload.tool_input ?? {}) as Record<string, unknown>;
+  const actionPayload = JSON.stringify({
+    tool: payload.tool_name,
+    input: toolInput,
+  });
+
+  // Write pre-resolved policies as a JSON policy file the Go binary can read.
+  // We merge all resolved policies into a single document since Go's evaluate
+  // command loads one policy file. Rules are concatenated in precedence order.
+  const mergedPolicy = {
+    id: 'ts-resolved',
+    name: 'Pre-resolved policies',
+    rules: (policyDefs as LoadedPolicy[]).flatMap((p) => p.rules ?? []),
+    severity: Math.max(...(policyDefs as LoadedPolicy[]).map((p) => p.severity ?? 0)),
+  };
+
+  const tmpPolicyPath = join(
+    tmpdir(),
+    `agentguard-policy-${process.pid}-${Date.now()}.json`
+  );
+
+  try {
+    writeFileSync(tmpPolicyPath, JSON.stringify(mergedPolicy), 'utf8');
+
+    const result = execFileSync(goBin, ['evaluate', '--policy', tmpPolicyPath], {
+      input: actionPayload,
+      encoding: 'utf8',
+      timeout: 200,
+      maxBuffer: 64 * 1024,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    const evalResult = JSON.parse(result) as {
+      allowed: boolean;
+      decision: string;
+      reason?: string;
+      suggestion?: string;
+      correctedCommand?: string;
+    };
+
+    return {
+      used: true,
+      allowed: evalResult.allowed,
+      reason: evalResult.reason,
+      suggestion: evalResult.suggestion,
+      correctedCommand: evalResult.correctedCommand,
+    };
+  } catch (err: unknown) {
+    // Go binary returned exit code 2 (denied) — stdout still has the result
+    if (
+      err &&
+      typeof err === 'object' &&
+      'status' in err &&
+      (err as { status: number }).status === 2 &&
+      'stdout' in err
+    ) {
+      try {
+        const evalResult = JSON.parse((err as { stdout: string }).stdout) as {
+          allowed: boolean;
+          reason?: string;
+          suggestion?: string;
+          correctedCommand?: string;
+        };
+        return {
+          used: true,
+          allowed: false,
+          reason: evalResult.reason,
+          suggestion: evalResult.suggestion,
+          correctedCommand: evalResult.correctedCommand,
+        };
+      } catch {
+        // Parse failure — fall through to TS
+      }
+    }
+    // Any other error (binary crashed, timeout, parse error) — silent fallback to TS
+    return { used: false };
+  } finally {
+    try {
+      unlinkSync(tmpPolicyPath);
+    } catch {
+      // Cleanup failure is non-fatal
+    }
+  }
+}
+
 /** Returns true if the action was denied. */
 async function handlePreToolUse(
   payload: ClaudeCodeHookPayload,
@@ -449,6 +599,18 @@ async function handlePreToolUse(
     process.stderr.write(
       `agentguard: warning — no policy loaded (${policyErr instanceof Error ? policyErr.message : 'unknown error'}). All actions will be allowed.\n`
     );
+  }
+
+  // --- Go kernel fast-path: try the Go binary for policy evaluation (~2ms vs ~290ms) ---
+  // If the Go binary is installed and policies loaded, delegate to it for fast evaluation.
+  // On allow: return immediately (skip TS kernel entirely — massive perf win).
+  // On deny: fall through to the TS kernel for full mode handling, formatting, and telemetry.
+  if (policyDefs.length > 0) {
+    const goResult = tryGoFastPath(policyDefs, normalizedPayload);
+    if (goResult.used && goResult.allowed) {
+      return false; // Action allowed by Go fast-path — not denied
+    }
+    // If Go denied or was not used, continue to TS kernel for full processing
   }
 
   // Generate run ID
