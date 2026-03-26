@@ -1,32 +1,52 @@
 {
-  "generatedAt": "2026-03-25T23:05:00.000Z",
+  "generatedAt": "2026-03-26T09:00:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
-  "health": "green",
-  "summary": "Steady-state cycle. Closed stale PR #960 (EM report with merge conflicts). PR #961 (shell.exec simulator + git.force-push) confirmed merged. Sprint goal updated from #924 (resolved) to #955 (wire Go kernel into npm hook path — 100x latency win). Senior coder assigned #955/#957/#964 bundle. 0 open PRs, full budget available. 4129 tests passing across 19 packages.",
+  "health": "yellow",
+  "summary": "Health downgraded to YELLOW. Three new dogfood bugs discovered (#971, #972, #973). #972 is P0 — hook deny reason includes retry metadata text that causes Claude Code to block ALL tool use in governed sessions. #973 compounds it — essentials pack not bundled in npm, so every hook invocation hits default-deny. Sprint reprioritized: fix #972 + #973 first, then resume #955 (Go kernel delegation). PR #969 (closes #964) has merge conflicts — needs rebase. Closed stale EM PR #966.",
   "prQueue": {
-    "open": 0,
-    "prs": []
+    "open": 1,
+    "prs": [
+      {
+        "number": 969,
+        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
+        "ciStatus": "passed",
+        "mergeState": "CONFLICTING",
+        "note": "CI green but merge conflicts — needs rebase before merge"
+      }
+    ]
   },
-  "mergedThisCycle": [
-    {
-      "number": 961,
-      "title": "fix(simulate): add shell.exec simulator and git.force-push action type",
-      "mergedAt": "2026-03-25T21:41:36Z",
-      "note": "Confirmed merged (was stale-open in state.json)"
-    }
-  ],
   "closedThisCycle": [
     {
-      "number": 960,
-      "title": "chore(kernel-em): EM cycle report 2026-03-26T04:25Z",
-      "note": "Stale EM report with merge conflicts — superseded by current cycle"
+      "number": 966,
+      "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
+      "note": "Stale EM report — superseded by current cycle"
     }
   ],
-  "newIssues": [],
+  "mergedThisCycle": [],
+  "newIssues": [
+    {
+      "number": 972,
+      "title": "Hook deny reason includes '(attempt N/N)' text that Claude Code misinterprets as blocking error",
+      "severity": "P0",
+      "note": "Breaks ALL governed sessions. Deny reason text causes Claude Code to block all tool use. Sprint-blocking."
+    },
+    {
+      "number": 973,
+      "title": "claude-init --reset references essentials pack not bundled in npm package",
+      "severity": "P0",
+      "note": "Essentials pack only exists in repo source tree, not npm. Every hook invocation warns 'Pack not found' → default-deny."
+    },
+    {
+      "number": 971,
+      "title": "Hook crash after aguard rename + cross-user queue lock permission",
+      "severity": "P1",
+      "note": "Two dogfood bugs: (1) hook config references old 'agentguard' binary after rename to 'aguard', (2) cross-user queue.lock permission denied on jared box. Bug 1 is kernel, Bug 2 is ops."
+    }
+  ],
   "loopGuards": {
     "prBudget": {
-      "open": 0,
+      "open": 1,
       "max": 3,
       "pass": true
     },
@@ -40,31 +60,56 @@
     }
   },
   "triage": {
-    "p0Issues": 0,
-    "p1Issues": 0,
+    "p0Issues": 2,
+    "p1Issues": 1,
+    "sprintReprioritized": true,
+    "reprioritizationReason": "Can't ship Go kernel delegation (#955) if the TS hook path itself is broken. #972 + #973 must be fixed first — they affect every npm user running governed sessions.",
     "newAssignments": [
       {
         "agent": "senior",
+        "issues": [972, 973],
+        "note": "P0 fast-track: fix deny reason retry text (#972) + bundle essentials pack (#973). Both break the hook integration path."
+      }
+    ],
+    "deferredWork": [
+      {
         "issues": [955, 957, 964],
-        "note": "P0 sprint bundle: wire Go kernel into claude-hook.ts, resolve pack/YAML in Go, fix binary path in hook init"
+        "note": "Go kernel wire-up — resume after #972/#973 are fixed. PR #969 (closes #964) needs rebase."
       }
     ],
     "notableIssues": [
       {
-        "numbers": [955, 957, 964],
-        "note": "Current sprint: Go kernel integration — claude-hook.ts → Go binary delegation, pack resolution, hook binary path. P0 per roadmap."
+        "number": 965,
+        "note": "Dogfood gap: direct push to master not blocked. Needs investigation but lower priority than #972/#973."
       },
       {
-        "numbers": [919, 920],
-        "note": "v3.0 gate issues (stranger test, ActionContext) — priority:high, next-up after #955 bundle ships"
+        "number": 971,
+        "note": "Two bugs: aguard rename compat (kernel) + queue lock perms (ops). Bug 2 should be escalated to ops."
       }
     ]
   },
-  "blockers": [],
-  "escalations": [],
+  "blockers": [
+    {
+      "issue": 972,
+      "description": "P0: Hook deny reason retry text breaks Claude Code integration",
+      "since": "2026-03-26"
+    },
+    {
+      "issue": 973,
+      "description": "P0: Essentials pack not in npm → all hooks default-deny",
+      "since": "2026-03-26"
+    }
+  ],
+  "escalations": [
+    {
+      "target": "ops",
+      "issue": 971,
+      "reason": "Bug 2 (cross-user queue.lock permission denied) is an ops/deploy issue — jared workers can't dequeue"
+    }
+  ],
   "metrics": {
     "prsOpened": 0,
-    "prsMerged": 1,
+    "prsMerged": 0,
     "prsClosed": 1,
     "issuesClosed": 0,
     "governanceDenials": 0,
@@ -83,6 +128,6 @@
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "No escalation triggers. All clear. Sprint transitioned from #924 (closed) to #955 (Go kernel integration)."
+    "notes": "No CI escalation triggers, but #972 is a P0 production blocker discovered via dogfooding. Health set to YELLOW per severity."
   }
 }

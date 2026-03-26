@@ -1,48 +1,61 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Wire Go kernel into npm hook path (#955). TS claude-hook must delegate to Go binary for 100x latency win.",
-    "issues": [955, 957, 964]
+    "goal": "Fix P0 hook-breaking bugs (#972, #973), then resume Go kernel wire-up (#955). Hook path must work before Go delegation can ship.",
+    "issues": [972, 973, 955, 957, 964]
   },
   "assignments": {
     "senior": {
-      "issue": [955, 957, 964],
-      "title": "Wire Go kernel into claude-hook.ts — delegate evaluation to Go binary",
+      "issue": [972, 973],
+      "title": "P0: Fix hook deny reason retry metadata (#972) + bundle essentials pack in npm (#973)",
       "status": "unassigned",
       "branch": null,
       "pr": null,
       "claimedAt": null,
-      "note": "P0: claude-hook.ts must detect Go binary, pre-resolve YAML/pack policies to flat JSON, delegate to go/bin/agentguard evaluate on stdin. #957 (Go pack resolution) and #964 (full binary path in hooks) are sub-tasks."
+      "note": "P0 fast-track: #972 breaks all governed sessions (retry text in deny reason → Claude Code blocks all tool use). #973 compounds it (essentials pack missing → default-deny on everything). Fix both before resuming #955 Go delegation."
     }
   },
-  "blockers": [],
+  "blockers": [
+    {
+      "issue": 972,
+      "description": "Hook deny reason includes '(attempt N/N)' — Claude Code misinterprets as blocking error, killing all tool use in governed sessions",
+      "severity": "P0",
+      "since": "2026-03-26T00:00:00.000Z"
+    },
+    {
+      "issue": 973,
+      "description": "essentials policy pack not bundled in npm — all hook invocations hit default-deny",
+      "severity": "P0",
+      "since": "2026-03-26T00:00:00.000Z"
+    }
+  ],
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
       {
-        "number": 961,
-        "title": "fix(simulate): add shell.exec simulator and git.force-push action type",
-        "branch": "agent/kernel-sr-20260325-213002",
-        "status": "merged",
+        "number": 969,
+        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
+        "branch": "agent/kernel-sr-20260325-230503",
+        "status": "open",
         "ciStatus": "passed",
-        "openedAt": "2026-03-25T21:37:00.000Z",
-        "mergedAt": "2026-03-25T21:41:36.000Z"
+        "mergeState": "CONFLICTING",
+        "openedAt": "2026-03-26T00:00:00.000Z",
+        "note": "CI green but merge conflicts. Needs rebase before merge."
       },
       {
-        "number": 960,
-        "title": "chore(kernel-em): EM cycle report 2026-03-26T04:25Z",
-        "branch": "agent/kernel-em-20260326-042500",
+        "number": 966,
+        "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
+        "branch": "agent/kernel-em-20260326-001002",
         "status": "closed",
-        "ciStatus": null,
-        "openedAt": "2026-03-25T21:27:00.000Z",
-        "closedAt": "2026-03-25T23:05:00.000Z",
-        "note": "Stale EM report with merge conflicts, closed this cycle"
+        "ciStatus": "passed",
+        "closedAt": "2026-03-26T09:00:00.000Z",
+        "note": "Stale EM report, superseded by current cycle"
       }
     ]
   },
-  "health": "green",
+  "health": "yellow",
   "testHealth": {
     "total": 4129,
     "passed": 4129,
@@ -51,7 +64,7 @@
     "lastRun": "2026-03-25T23:05:00.000Z",
     "status": "all_passing"
   },
-  "lastEmRun": "2026-03-25T23:05:00.000Z",
+  "lastEmRun": "2026-03-26T09:00:00.000Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-25T23:05:00.000Z"
+  "updatedAt": "2026-03-26T09:00:00.000Z"
 }
