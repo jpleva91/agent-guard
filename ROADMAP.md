@@ -24,11 +24,11 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 
 | Component | Status | Maturity |
 |-----------|--------|----------|
-| Governed action kernel (27 action types, 9 classes) | Implemented | Production |
+| Governed action kernel (41 action types, 10 classes) | Implemented | Production |
 | Action Authorization Boundary (AAB) | Implemented | Bypass vectors closed (3 fixed in v2.4.0) |
 | Policy evaluator (YAML/JSON, composition, packs) | Implemented | Production |
-| 22 built-in invariants | Implemented | Production |
-| Canonical event model (50+ event kinds) | Implemented | Production |
+| 23 built-in invariants | Implemented | Production |
+| Canonical event model (47 event kinds) | Implemented | Production |
 | Pre-execution simulation engine (3 simulators) | Implemented | Production |
 | Blast radius computation | Implemented | Production |
 | Escalation state machine (NORMAL → LOCKDOWN) | Implemented | Production |
@@ -73,7 +73,7 @@ This is the architectural hinge that transforms AgentGuard from advisory interce
 
 - [x] ~~Default-deny unknown actions~~ — ✅ Done 2026-03-24 — Evaluator defaults to `defaultDeny: true`; all 8 policy packs + starter policy updated with explicit allow rules for safe actions
 - [x] ~~Deny actions with no registered adapter~~ — Emit `ActionDenied` instead of silently skipping
-- [x] ~~Expand destructive command patterns~~ — 87 patterns (sudo, pkill, docker, systemctl, DB commands, etc.)
+- [x] ~~Expand destructive command patterns~~ — 93 patterns (sudo, pkill, docker, systemctl, DB commands, etc.)
 - [x] ~~Governance self-modification invariant~~ — Agents cannot modify `agentguard.yaml` or policies/
 - [x] ~~Path traversal prevention in file adapter~~ — ✅ Done 2026-03-21 (v2.3.0)
 - [x] ~~Enforce PAUSE and ROLLBACK~~ — ✅ Done 2026-03-18 (PRs #475, #617 — enforced kernel behaviors, not just metadata labels)
