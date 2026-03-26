@@ -2542,6 +2542,68 @@ describe('checkAllInvariants interaction tests', () => {
 });
 
 // ---------------------------------------------------------------------------
+// no-verify-bypass
+// ---------------------------------------------------------------------------
+
+describe('no-verify-bypass', () => {
+  const inv = findInvariant('no-verify-bypass');
+
+  it('holds when no command is set', () => {
+    const result = inv.check({});
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds for normal git push', () => {
+    const result = inv.check({ currentCommand: 'git push origin main' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds for normal git commit', () => {
+    const result = inv.check({ currentCommand: 'git commit -m "fix: stuff"' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('fails for git push --no-verify', () => {
+    const result = inv.check({ currentCommand: 'git push --no-verify origin main' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('--no-verify');
+  });
+
+  it('fails for git commit --no-verify', () => {
+    const result = inv.check({ currentCommand: 'git commit --no-verify -m "skip hooks"' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('--no-verify');
+  });
+
+  it('fails for git push with --no-verify at end', () => {
+    const result = inv.check({ currentCommand: 'git push origin main --no-verify' });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails for git commit with --no-verify at end', () => {
+    const result = inv.check({
+      currentCommand: 'git commit -m "msg" --no-verify',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('holds for non-git commands containing --no-verify', () => {
+    const result = inv.check({ currentCommand: 'npm test --no-verify' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds for git diff (not push/commit)', () => {
+    const result = inv.check({ currentCommand: 'git diff --no-verify' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds for empty command string', () => {
+    const result = inv.check({ currentCommand: '' });
+    expect(result.holds).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // hasFileRedirect
 // ---------------------------------------------------------------------------
 

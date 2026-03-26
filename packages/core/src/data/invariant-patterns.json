@@ -58,6 +58,7 @@
     { "id": "transitive-effect-analysis", "name": "Transitive Effect Analysis", "description": "Detects when an agent writes a script or config file whose contents would produce effects that would be denied if executed directly — closes the creative circumvention gap", "severity": 4 },
     { "id": "no-ide-socket-access", "name": "No IDE Socket Access", "description": "Blocks agent access to IDE inter-process communication sockets (VS Code, JetBrains, Cursor) — prevents governance escape via host IDE manipulation", "severity": 4 },
     { "id": "commit-scope-guard", "name": "Commit Scope Guard", "description": "All files in a git commit must have been written or modified by the current session — prevents accidental inclusion of pre-staged files", "severity": 4 },
-    { "id": "script-execution-tracking", "name": "Script Execution Tracking", "description": "Detects when a shell command executes a file written in the current session — prevents governance bypass via write-then-execute indirection", "severity": 4 }
+    { "id": "script-execution-tracking", "name": "Script Execution Tracking", "description": "Detects when a shell command executes a file written in the current session — prevents governance bypass via write-then-execute indirection", "severity": 4 },
+    { "id": "no-verify-bypass", "name": "No Verify Bypass", "description": "--no-verify flag on git push/commit is forbidden — prevents skipping pre-push/pre-commit hooks", "severity": 4 }
   ]
 }

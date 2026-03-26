@@ -1760,4 +1760,37 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       };
     },
   },
+
+  {
+    id: 'no-verify-bypass',
+    name: 'No Verify Bypass',
+    description:
+      '--no-verify flag on git push/commit is forbidden — prevents skipping pre-push/pre-commit hooks',
+    severity: 4,
+    check(state) {
+      const command = (state.currentCommand || '').trim();
+      if (!command) {
+        return { holds: true, expected: 'No --no-verify flag', actual: 'No command' };
+      }
+
+      const isGitPushOrCommit = /\bgit\s+(?:push|commit)\b/.test(command);
+      if (!isGitPushOrCommit) {
+        return {
+          holds: true,
+          expected: 'No --no-verify flag',
+          actual: 'Not a git push/commit command',
+        };
+      }
+
+      const hasNoVerify = /(?:^|\s)--no-verify(?:\s|$)/.test(command);
+
+      return {
+        holds: !hasNoVerify,
+        expected: 'No --no-verify flag on git push/commit',
+        actual: hasNoVerify
+          ? `--no-verify bypass detected in: ${command.slice(0, 100)}`
+          : 'No --no-verify flag',
+      };
+    },
+  },
 ];

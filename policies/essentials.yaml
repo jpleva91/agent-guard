@@ -9,6 +9,7 @@ severity: 4
 invariants:
   no-secret-exposure: enforce
   no-force-push: enforce
+  no-verify-bypass: enforce
   protected-branch: enforce
   no-credential-file-creation: enforce
   no-permission-escalation: enforce

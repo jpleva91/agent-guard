@@ -34,6 +34,17 @@ rules:
     effect: deny
     reason: "Force push rewrites shared history — use revert instead"
 
+  # --- No --no-verify bypass — prevents skipping safety hooks ---
+  - action: shell.exec
+    effect: deny
+    target: "git push --no-verify"
+    reason: "--no-verify bypasses pre-push hooks — safety checks must not be skipped"
+
+  - action: shell.exec
+    effect: deny
+    target: "git commit --no-verify"
+    reason: "--no-verify bypasses pre-commit hooks — safety checks must not be skipped"
+
   # --- No destructive git operations ---
   - action: git.reset
     effect: deny
