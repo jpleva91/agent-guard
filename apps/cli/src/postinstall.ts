@@ -3,8 +3,11 @@
 // Must NEVER fail npm install — all errors caught and silently ignored.
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { join, resolve, parse, sep } from 'node:path';
+import { join, resolve, parse, sep, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { homedir } from 'node:os';
+import { randomUUID } from 'node:crypto';
+import * as https from 'node:https';
 
 // ── Constants ──
 
@@ -183,6 +186,11 @@ interface CopilotHooksConfig {
     [key: string]: unknown;
   };
 }
+
+const TELEMETRY_ENDPOINT_HOST = 'agentguard-cloud.vercel.app';
+const TELEMETRY_INSTALL_PATH = '/api/v1/telemetry/install';
+const TELEMETRY_TIMEOUT_MS = 5000;
+const AGENTGUARD_IDENTITY_PATH = join(homedir(), '.agentguard', 'telemetry.json');
 
 // ── Exported functions (for testability) ──
 
@@ -380,6 +388,116 @@ export function writeStarterPolicy(projectRoot: string): 'created' | 'skipped' {
   return 'created';
 }
 
+/**
+ * Returns true if install telemetry is enabled (checks AGENTGUARD_TELEMETRY and DO_NOT_TRACK).
+ */
+export function isTelemetryEnabled(): boolean {
+  const mode = process.env.AGENTGUARD_TELEMETRY;
+  if (mode === 'off') return false;
+  const dnt = process.env.DO_NOT_TRACK;
+  if (dnt === '1' || dnt === 'true') return false;
+  return true;
+}
+
+/**
+ * Detect CI environment from well-known environment variables.
+ * Returns a short identifier string or null if not running in CI.
+ */
+export function detectCiEnvironment(): string | null {
+  if (process.env.GITHUB_ACTIONS === 'true') return 'github-actions';
+  if (process.env.VERCEL) return 'vercel';
+  if (process.env.GITLAB_CI === 'true') return 'gitlab-ci';
+  if (process.env.CI === 'true' || process.env.CI === '1') return 'ci';
+  return null;
+}
+
+/**
+ * Resolve the anonymous install ID from the persisted identity file.
+ * Falls back to a fresh UUID if no identity exists or the file is unreadable.
+ */
+export function resolveInstallId(): string {
+  try {
+    if (existsSync(AGENTGUARD_IDENTITY_PATH)) {
+      const data = JSON.parse(readFileSync(AGENTGUARD_IDENTITY_PATH, 'utf8')) as {
+        install_id?: string;
+      };
+      if (data.install_id) return data.install_id;
+    }
+  } catch {
+    // fall through to fresh UUID
+  }
+  return randomUUID();
+}
+
+/**
+ * Send a fire-and-forget install event to the telemetry endpoint.
+ * Errors are silently ignored — this must never break npm install.
+ */
+function sendInstallEvent(payload: Record<string, unknown>): void {
+  try {
+    const body = JSON.stringify(payload);
+    const req = https.request({
+      hostname: TELEMETRY_ENDPOINT_HOST,
+      path: TELEMETRY_INSTALL_PATH,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+      },
+      timeout: TELEMETRY_TIMEOUT_MS,
+    });
+    req.on('error', () => {
+      /* ignore */
+    });
+    req.on('timeout', () => {
+      req.destroy();
+    });
+    req.write(body);
+    req.end();
+  } catch {
+    // Telemetry must never break npm install
+  }
+}
+
+/**
+ * Report an install event to AgentGuard Cloud telemetry (opt-in, fire-and-forget).
+ * Respects AGENTGUARD_TELEMETRY=off and DO_NOT_TRACK=1.
+ * Reports: package version, OS, Node version, CI environment, anonymous install ID.
+ */
+export function reportInstallTelemetry(scriptDir: string): void {
+  try {
+    if (!isTelemetryEnabled()) return;
+
+    // Resolve package version from the package.json adjacent to the compiled script
+    let packageVersion = 'unknown';
+    try {
+      const pkgPath = join(dirname(scriptDir), 'package.json');
+      const pkgAlt = join(scriptDir, '..', 'package.json');
+      const pkgFile = existsSync(pkgPath) ? pkgPath : pkgAlt;
+      if (existsSync(pkgFile)) {
+        const pkg = JSON.parse(readFileSync(pkgFile, 'utf8')) as { version?: string };
+        packageVersion = pkg.version ?? 'unknown';
+      }
+    } catch {
+      // version stays 'unknown'
+    }
+
+    const payload: Record<string, unknown> = {
+      event: 'install',
+      install_id: resolveInstallId(),
+      version: packageVersion,
+      os: process.platform,
+      node_version: process.version,
+      ci: detectCiEnvironment(),
+      timestamp: Date.now(),
+    };
+
+    sendInstallEvent(payload);
+  } catch {
+    // Never break npm install
+  }
+}
+
 // ── Private helpers ──
 
 function hasClaudeHook(settings: ClaudeSettings): boolean {
@@ -470,6 +588,8 @@ function main(): void {
   const claudeResult = writeClaudeCodeHooks(projectRoot);
   const copilotResult = writeCopilotCliHooks(projectRoot);
   const policyResult = writeStarterPolicy(projectRoot);
+
+  reportInstallTelemetry(scriptDir);
 
   printSummary(claudeResult, copilotResult, policyResult, projectRoot);
 }
