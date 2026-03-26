@@ -30,41 +30,38 @@
     }
   ],
   "prQueue": {
-    "open": 1,
+    "open": 0,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
       {
         "number": 969,
         "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "branch": "agent/kernel-sr-20260325-230503",
-        "status": "open",
+        "branch": "agent/kernel-sr-20260325-230535",
+        "status": "merged",
         "ciStatus": "passed",
-        "mergeState": "CONFLICTING",
-        "openedAt": "2026-03-26T00:00:00.000Z",
-        "note": "CI green but merge conflicts. Needs rebase before merge."
-      },
-      {
-        "number": 966,
-        "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
-        "branch": "agent/kernel-em-20260326-001002",
-        "status": "closed",
-        "ciStatus": "passed",
-        "closedAt": "2026-03-26T09:00:00.000Z",
-        "note": "Stale EM report, superseded by current cycle"
+        "mergedAt": "2026-03-26T00:30:00.000Z",
+        "note": "Merged successfully. All CI checks passed."
       }
     ]
   },
   "health": "yellow",
   "testHealth": {
-    "total": 4129,
-    "passed": 4129,
+    "total": 4134,
+    "passed": 4134,
     "failed": 0,
     "packages": 19,
-    "lastRun": "2026-03-25T23:05:00.000Z",
-    "status": "all_passing"
+    "lastRun": "2026-03-26T00:51:00.000Z",
+    "status": "all_passing",
+    "delta": "+5 tests since last run (4129 → 4134)",
+    "coverageGaps": [
+      {
+        "file": "apps/cli/src/commands/copilot-init.ts",
+        "note": "No dedicated test file. Recently modified in PR #969 (same hook path fix as claude-init). claude-init has 39 tests; copilot-init has zero."
+      }
+    ]
   },
   "lastEmRun": "2026-03-26T09:00:00.000Z",
-  "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-26T09:00:00.000Z"
+  "lastQaRun": "2026-03-26T00:51:00.000Z",
+  "updatedAt": "2026-03-26T00:51:00.000Z"
 }
