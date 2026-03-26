@@ -12,6 +12,15 @@ export {
   writeDirectorBrief,
 } from './squad-state.js';
 export { checkLoopGuards } from './loop-guards.js';
+export {
+  SWARM_MANIFEST_SCHEMA,
+  SQUAD_MANIFEST_SCHEMA,
+  SWARM_CONFIG_SCHEMA,
+  validateSwarmManifest,
+  validateSquadManifest,
+  validateSwarmConfig,
+} from './schema.js';
+export type { ValidationError, ValidationResult } from './schema.js';
 export type { LoopGuardContext, GuardViolation, LoopGuardResult } from './loop-guards.js';
 export type {
   SwarmAgent,

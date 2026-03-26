@@ -1,0 +1,155 @@
+# AgentGuard Policy — CI-Safe
+#
+# Restricted policy for CI/CD agents that need to create commits and push to
+# feature branches, but must never touch protected branches, delete files, or
+# deploy. Balances automation capability with safety.
+#
+# Best for: autonomous CI agents, PR bots, automated refactoring pipelines.
+#
+# Scaffolded by: agentguard init --template ci-safe
+# Docs: https://github.com/AgentGuardHQ/agentguard#policy
+
+id: ci-safe-policy
+name: CI-Safe Safety Policy
+description: Restricted CI — allows commits and pushes to feature branches only
+severity: 4
+
+rules:
+  # ─── Branch protection ────────────────────────────────────────────────
+  # CI agents must never push to protected branches.
+  - action: git.push
+    effect: deny
+    branches: [main, master, release, production, develop]
+    reason: CI agents must not push to protected branches — use feature branches
+
+  - action: git.force-push
+    effect: deny
+    reason: Force push prohibited in CI
+
+  - action: git.reset
+    effect: deny
+    reason: Git reset prohibited in CI
+
+  - action: git.branch.delete
+    effect: deny
+    reason: Branch deletion prohibited in CI
+
+  # ─── File safety ─────────────────────────────────────────────────────
+  # No file deletion — CI agents should only create or modify.
+  - action: file.delete
+    effect: deny
+    reason: File deletion prohibited in CI-safe mode
+
+  # Secrets and credentials must never be touched.
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: Secrets file modification denied
+
+  - action: file.write
+    effect: deny
+    target: "*.pem"
+    reason: Certificate file modification denied
+
+  - action: file.write
+    effect: deny
+    target: "*.key"
+    reason: Private key file modification denied
+
+  # ─── Blast radius ────────────────────────────────────────────────────
+  - action: file.write
+    effect: deny
+    limit: 15
+    reason: Blast radius exceeded — max 15 files per action in CI
+
+  # ─── No publishing or deployment ─────────────────────────────────────
+  - action: npm.publish
+    effect: deny
+    reason: Publishing must use a dedicated release pipeline
+
+  - action: deploy.trigger
+    effect: deny
+    reason: Deployment must use a dedicated deploy pipeline
+
+  - action: infra.apply
+    effect: deny
+    reason: Infrastructure changes prohibited in CI
+
+  - action: infra.destroy
+    effect: deny
+    reason: Infrastructure destruction prohibited in CI
+
+  # ─── Destructive commands ────────────────────────────────────────────
+  - action: shell.exec
+    effect: deny
+    target: rm -rf
+    reason: Recursive delete blocked
+
+  - action: shell.exec
+    effect: deny
+    target: "chmod 777"
+    reason: Overly permissive chmod denied
+
+  # ─── Allowed operations ──────────────────────────────────────────────
+  # Reading is always safe.
+  - action: file.read
+    effect: allow
+
+  # File writes (subject to deny rules above for secrets and blast radius).
+  - action: file.write
+    effect: allow
+
+  # File move/rename allowed.
+  - action: file.move
+    effect: allow
+
+  # Git operations on non-protected branches.
+  - action: git.push
+    effect: allow
+
+  - action: git.commit
+    effect: allow
+
+  - action: git.diff
+    effect: allow
+
+  - action: git.checkout
+    effect: allow
+
+  - action: git.branch.create
+    effect: allow
+
+  - action: git.merge
+    effect: allow
+
+  # Worktree operations for isolated agent work.
+  - action: git.worktree.list
+    effect: allow
+
+  - action: git.worktree.add
+    effect: allow
+
+  - action: git.worktree.remove
+    effect: allow
+
+  # Testing is encouraged.
+  - action:
+      - test.run
+      - test.run.unit
+      - test.run.integration
+    effect: allow
+
+  # Shell commands for builds and scripts.
+  - action: shell.exec
+    effect: allow
+
+  # NPM operations.
+  - action: npm.install
+    effect: allow
+
+  - action: npm.script.run
+    effect: allow
+
+  # HTTP requests for API testing.
+  - action: http.request
+    effect: allow

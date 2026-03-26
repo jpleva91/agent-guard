@@ -1,8 +1,14 @@
 {
   "squad": "studio",
   "sprint": {
-    "goal": "",
-    "issues": []
+    "goal": "Ship agentguard init studio wizard + execution profiles + swarm template schema formalization (v3.1 prep)",
+    "issues": [
+      "Formalize swarm template schema (JSON Schema validation)",
+      "Implement agentguard init studio interactive wizard",
+      "Define execution profiles (development, ci-safe, strict, enterprise)",
+      "Runner / Cloud protocol integration",
+      "Sync studio worktree with master (33 commits behind - DONE 2026-03-25)"
+    ]
   },
   "assignments": {},
   "blockers": [],
@@ -11,5 +17,5 @@
     "reviewed": 0,
     "mergeable": 0
   },
-  "updatedAt": "2026-03-25T07:25:54.157Z"
+  "updatedAt": "2026-03-25T23:50:00.000Z"
 }
