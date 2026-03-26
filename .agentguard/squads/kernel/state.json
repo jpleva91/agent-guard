@@ -1,48 +1,57 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Land Go kernel rewrite (PR #870) with CI clean; merge rust-kernel fix (PR #869) after architect review",
-    "issues": []
+    "goal": "Wire Go kernel into npm hook path (#955). TS claude-hook must delegate to Go binary for 100x latency win.",
+    "issues": [955, 957, 964]
   },
   "assignments": {
-    "pr-870-ci-fix": {
-      "task": "Fix lint and rust-kernel CI failures on PR #870 (feat/squad-swarm-spec)",
-      "assignee": "senior-coder",
-      "priority": "P1",
-      "pr": 870,
-      "status": "open",
-      "notes": "lint job failing + rust-kernel job failing. Likely formatting violations or count desyncs similar to #867."
+    "senior": {
+      "issue": [955, 957],
+      "title": "Wire Go kernel into claude-hook.ts — delegate evaluation to Go binary + resolve pack/YAML",
+      "status": "in_progress",
+      "branch": null,
+      "pr": null,
+      "claimedAt": null,
+      "note": "#964 has PR #969 up (CI green, awaiting review). Senior should focus on #955 (claude-hook.ts delegates to Go binary) and #957 (TS pre-resolves pack/YAML to flat JSON before handing to Go evaluate)."
     }
   },
-  "blockers": [
-    {
-      "id": "ci-failure-pr-870",
-      "description": "PR #870 failing CI: lint + rust-kernel jobs",
-      "pr": 870,
-      "firstSeen": "2026-03-25T08:35:00.000Z",
-      "runCount": 1
-    }
-  ],
+  "blockers": [],
   "prQueue": {
-    "open": 2,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
       {
-        "number": 869,
+        "number": 969,
+        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
+        "branch": "agent/kernel-sr-20260325-230535",
         "status": "awaiting_review",
-        "ci": "green",
-        "flaggedForArchitect": true
+        "ciStatus": "passed",
+        "openedAt": "2026-03-25T23:11:08Z",
+        "note": "CI all green (5/5). Needs architect review before merge."
       },
       {
-        "number": 870,
-        "status": "ci_failing",
-        "ci": "failing",
-        "failingChecks": ["lint", "rust-kernel"]
+        "number": 966,
+        "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
+        "branch": "agent/kernel-em-20260325-230535",
+        "status": "closed",
+        "ciStatus": null,
+        "openedAt": "2026-03-25T23:08:39Z",
+        "closedAt": "2026-03-26T00:00:00.000Z",
+        "note": "Stale EM report, closed this cycle as superseded"
       }
     ]
   },
-  "health": "yellow",
-  "lastEmRun": "2026-03-25T08:35:00.000Z",
-  "updatedAt": "2026-03-25T08:35:00.000Z"
+  "health": "green",
+  "testHealth": {
+    "total": 4129,
+    "passed": 4129,
+    "failed": 0,
+    "packages": 19,
+    "lastRun": "2026-03-25T23:05:00.000Z",
+    "status": "all_passing"
+  },
+  "lastEmRun": "2026-03-26T00:00:00.000Z",
+  "lastQaRun": "2026-03-25T18:50:00.000Z",
+  "updatedAt": "2026-03-26T00:00:00.000Z"
 }
