@@ -643,6 +643,80 @@ describe('no-credential-file-creation', () => {
     });
     expect(result.holds).toBe(false);
   });
+
+  // Shell bypass tests (issue #618)
+  it('fails when shell.exec runs sed -i targeting .env file', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: "sed -i 's/old/new/' .env",
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('command references credential files');
+  });
+
+  it('fails when shell.exec runs tee targeting .env.local', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'tee .env.local',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when shell.exec redirects output to .npmrc', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'echo "//registry:_authToken=tok" > .npmrc',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when shell.exec copies to SSH key path', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'cp /tmp/key ~/.ssh/id_rsa',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails when shell.exec writes to AWS credentials', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'echo "[default]" >> ~/.aws/credentials',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('holds when shell.exec reads credential file with cat (read-only)', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'cat .env',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when shell.exec greps credential file (read-only)', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'grep SECRET .env',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when shell.exec runs command with no credential file references', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'echo hello > output.txt',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('fails when cat redirects to credential file', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'cat /tmp/stolen > .env',
+    });
+    expect(result.holds).toBe(false);
+  });
 });
 
 describe('no-package-script-injection', () => {
