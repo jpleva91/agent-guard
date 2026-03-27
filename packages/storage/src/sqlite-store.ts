@@ -229,10 +229,7 @@ export function getRunAgent(db: Database.Database, runId: string): string | null
 }
 
 /** Resolve agent identity for multiple runs in a single query */
-export function getRunAgents(
-  db: Database.Database,
-  runIds: string[]
-): Map<string, string> {
+export function getRunAgents(db: Database.Database, runIds: string[]): Map<string, string> {
   if (runIds.length === 0) return new Map();
   const placeholders = runIds.map(() => '?').join(', ');
   const rows = db
