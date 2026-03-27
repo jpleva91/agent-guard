@@ -47,21 +47,42 @@
   },
   "health": "yellow",
   "testHealth": {
-    "total": 4134,
-    "passed": 4134,
+    "total": 4235,
+    "passed": 4235,
     "failed": 0,
-    "packages": 19,
-    "lastRun": "2026-03-26T00:51:00.000Z",
+    "packages": 18,
+    "lastRun": "2026-03-27T02:39:00.000Z",
     "status": "all_passing",
-    "delta": "+5 tests since last run (4129 → 4134)",
-    "coverageGaps": [
+    "delta": "+101 tests since last run (4134 → 4235)",
+    "coverageGaps": [],
+    "fixes": [
       {
-        "file": "apps/cli/src/commands/copilot-init.ts",
-        "note": "No dedicated test file. Recently modified in PR #969 (same hook path fix as claude-init). claude-init has 39 tests; copilot-init has zero."
+        "file": "packages/kernel/tests/agentguard-engine.test.ts",
+        "note": "Updated invariant count assertion 23→24 after no-verify-bypass was added as 24th default invariant. PR #1028 existed but had lint/format failures; this QA run also fixed the pre-existing Prettier regression in claude-hook.ts."
+      }
+    ],
+    "openPrNotes": [
+      {
+        "pr": 1028,
+        "title": "fix(kernel): update invariant count assertion 23→24 after no-verify-bypass",
+        "issue": "CI failing: lint (pnpm format) + test-and-build. Same fix as this QA cycle's commit. Consider closing in favor of this PR.",
+        "status": "needs-attention"
+      },
+      {
+        "pr": 1032,
+        "title": "fix(invariants): detect credential file writes via shell commands",
+        "issue": "CI failing: lint (pnpm format). Has tests. Format fix needed.",
+        "status": "needs-format-fix"
+      },
+      {
+        "pr": 1035,
+        "title": "chore(kernel-qa): QA cycle report 2026-03-27T01:38Z + fix prettier regression",
+        "issue": "Old QA report, superseded by this run.",
+        "status": "stale"
       }
     ]
   },
   "lastEmRun": "2026-03-26T09:00:00.000Z",
-  "lastQaRun": "2026-03-26T00:51:00.000Z",
-  "updatedAt": "2026-03-26T00:51:00.000Z"
+  "lastQaRun": "2026-03-27T02:39:00.000Z",
+  "updatedAt": "2026-03-27T02:39:00.000Z"
 }
