@@ -62,7 +62,8 @@ packages/
 ├── renderers/     @red-codes/renderers — Renderer plugin system (registry, TUI renderer)
 ├── sdk/           @red-codes/sdk — Agent SDK for programmatic governance integration
 ├── swarm/         @red-codes/swarm — Shareable agent swarm templates
-└── telemetry-client/ @red-codes/telemetry-client — Telemetry client (identity, signing, queue, sender)
+├── telemetry-client/ @red-codes/telemetry-client — Telemetry client (identity, signing, queue, sender)
+└── scheduler/      @red-codes/scheduler — Task scheduler, queue, lease manager, and worker orchestration
 
 apps/
 ├── cli/           @red-codes/agentguard — CLI entry point and commands (published npm package)
