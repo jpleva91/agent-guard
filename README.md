@@ -14,7 +14,7 @@ Install in 30 seconds. Your agents can't break what matters.</p>
 
 ---
 
-AI coding agents (Claude Code, GitHub Copilot, any MCP client) run autonomously — writing files, executing commands, pushing code. AgentGuard prevents them from doing catastrophic things: no accidental pushes to main, no credential leaks, no runaway destructive loops. 22 built-in safety checks, zero config required.
+AI coding agents (Claude Code, Codex CLI, GitHub Copilot CLI, Google Gemini CLI, OpenCode, DeepAgents) run autonomously — writing files, executing commands, pushing code. AgentGuard prevents them from doing catastrophic things: no accidental pushes to main, no credential leaks, no runaway destructive loops. 22 built-in safety checks, zero config required.
 
 **For individuals:** stop your AI from wrecking your machine or repo.
 **For teams:** run fleets of agents safely at scale, with audit trails that pass compliance.
@@ -106,7 +106,23 @@ Identity consists of a **role** (`developer`, `reviewer`, `ops`, `security`, `pl
 | **Agent SDK** | Programmatic governance for custom integrations and RunManifest-driven workflows |
 | **Agent identity** | Declare agent role + driver for governance telemetry — automatic prompt or CLI flag |
 | **Pre-push hooks** | Branch protection enforcement via git pre-push hooks, configured from agentguard.yaml |
-| **Works with** | Claude Code, GitHub Copilot, any MCP client |
+| **Works with** | Claude Code, Codex CLI, GitHub Copilot CLI, Google Gemini CLI, OpenCode (coming), DeepAgents (coming) |
+
+## Ecosystem
+
+AgentGuard is the governance gateway for the agentic AI stack:
+
+| Project | What It Does | Integration |
+|---------|-------------|-------------|
+| [**ShellForge**](https://github.com/AgentGuardHQ/shellforge) | Local agent runtime — Ollama + governance on your Mac | ✅ Native |
+| [**RTK**](https://github.com/rtk-ai/rtk) | Rust Token Killer — 70-90% terminal compression | 🔜 Planned |
+| **TurboQuant** (Google, ICLR 2026) | 6x KV cache compression for local LLMs | 🔜 Research |
+| [**DefenseClaw**](https://github.com/cisco-ai-defense/defenseclaw) (Cisco) | Supply chain — scan agent skills + MCP servers | 🔜 Planned |
+| [**OpenShell**](https://github.com/NVIDIA/OpenShell) (NVIDIA) | Kernel sandbox — Landlock + Seccomp isolation | 🔜 Planned |
+| [**DeepAgents**](https://github.com/langchain-ai/deepagents) (LangChain) | Multi-step autonomous planning | 🔜 Adapter |
+| [**OpenCode**](https://opencode.ai) | OSS terminal coding agent | 🔜 Adapter |
+
+> AgentGuard sits **between every agent tool call and your environment** — the governance gateway. The agent decides what to do. AgentGuard decides if it's allowed.
 
 ## Policy Format (YAML)
 
