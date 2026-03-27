@@ -75,7 +75,7 @@ New action classes follow the existing `<class>.<verb>` pattern from `src/core/a
 | `power` | `power.state`, `power.shutdown`, `power.reboot` | Device power management |
 | `motion` | `motion.drive`, `motion.rotate`, `motion.stop` | Locomotion commands (wheeled/tracked platforms) |
 
-These integrate with the existing 8 action classes (file, test, git, shell, npm, http, deploy, infra) to give 13 total classes.
+These integrate with the existing 10 action classes (file, test, git, shell, npm, http, deploy, infra, github, mcp) to give 15 total classes.
 
 ## Physical Invariants
 

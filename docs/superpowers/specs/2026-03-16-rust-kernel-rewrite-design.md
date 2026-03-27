@@ -35,10 +35,10 @@ agent-guard/
 │   │   └── src/
 │   │       ├── lib.rs        # Re-exports
 │   │       ├── types.rs      # Core types: NormalizedIntent, RawAgentAction, EvalResult
-│   │       ├── actions.rs    # 23 canonical action types as enum ActionType
+│   │       ├── actions.rs    # 41 canonical action types as enum ActionType
 │   │       ├── aab.rs        # Action Authorization Boundary (normalize + authorize)
 │   │       ├── policy.rs     # Policy evaluator (two-phase deny-first engine)
-│   │       ├── invariants.rs # 20 invariant definitions + checker
+│   │       ├── invariants.rs # 24 invariant definitions + checker
 │   │       ├── blast.rs      # Weighted blast radius computation
 │   │       ├── monitor.rs    # Escalation state machine (NORMAL→ELEVATED→HIGH→LOCKDOWN)
 │   │       ├── decision.rs   # Runtime assurance engine (policy + invariants → intervention)
@@ -547,7 +547,7 @@ napi-build = "2"
 ## Testing Strategy
 
 ### Level 1: Rust Unit Tests
-`cargo test` in kernel-core. Port existing test cases: 44 AAB tests, policy evaluation tests, 20 invariant tests, blast radius tests, monitor state machine tests, evidence pack tests.
+`cargo test` in kernel-core. Port existing test cases: 44 AAB tests, policy evaluation tests, 24 invariant tests, blast radius tests, monitor state machine tests, evidence pack tests.
 
 ### Level 2: napi Integration Tests
 vitest tests calling the Rust module through `@red-codes/kernel-napi`.
@@ -560,7 +560,7 @@ Run both TS and Rust codepaths on every test case. Diff outputs.
 | Phase | Scope | Deliverable | Success Criteria |
 |---|---|---|---|
 | P1 | types + AAB + policy eval | `cargo test` passes | normalize/evaluate match TS output |
-| P2 | invariants + blast radius + monitor | Full EngineDecision from Rust | All 20 invariants match TS behavior |
+| P2 | invariants + blast radius + monitor | Full EngineDecision from Rust | All 24 invariants match TS behavior |
 | P3 | evidence + events | Complete decision pipeline | Evidence packs are byte-compatible |
 | P4 | kernel-napi bindings | TS kernel calls Rust via env flag | `AGENTGUARD_RUST_KERNEL=true` works |
 | P5 | Conformance test suite | Rust/TS identical on full test suite | Zero divergences on 118 test files |

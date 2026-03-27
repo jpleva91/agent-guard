@@ -22,12 +22,12 @@
 
 ## P2: Invariants + Blast Radius + Monitor
 
-**Goal:** Full `EngineDecision` from Rust — all 20 invariants match TS behavior.
+**Goal:** Full `EngineDecision` from Rust — all 24 invariants match TS behavior.
 
 ### TODO: invariants.rs
 - [ ] Port `SystemState` struct (22 optional fields, matches `packages/invariants/src/definitions.ts`)
 - [ ] Port `InvariantDef` struct with check function signature
-- [ ] Implement all 20 invariant check functions:
+- [ ] Implement all 24 invariant check functions:
   - `no-secret-exposure` (severity 5) — match modifiedFiles against SENSITIVE_FILE_PATTERNS
   - `protected-branch` (severity 4) — !isProtected || !directPush
   - `blast-radius-limit` (severity 3) — count <= limit
@@ -139,7 +139,7 @@
 - [ ] Create conformance test harness: run same inputs through TS and Rust, diff JSON outputs
 - [ ] Port all 44 AAB test fixtures as shared JSON
 - [ ] Port policy evaluation test fixtures
-- [ ] Port 20 invariant test fixtures
+- [ ] Port 24 invariant test fixtures
 - [ ] Port blast radius test fixtures
 - [ ] Port monitor state machine test fixtures
 - [ ] Port evidence pack test fixtures

@@ -81,7 +81,7 @@ Agents cannot perform anything outside this set. That gives deterministic govern
 
 ### Mapping to AgentGuard's Action Types
 
-AgentGuard already defines 23 canonical action types across 8 classes (`src/core/actions.ts:27-51`). The 5 SDLC syscalls are a higher-level abstraction over these implementation-level types:
+AgentGuard already defines 41 canonical action types across 10 classes (`packages/core/src/data/actions.json`). The 5 SDLC syscalls are a higher-level abstraction over these implementation-level types:
 
 | Syscall | AgentGuard Action Types |
 |---------|------------------------|
@@ -728,7 +728,7 @@ CI
 |-----------|--------|----------|
 | Action type normalization (AAB) | Exists | `src/kernel/aab.ts` |
 | Policy evaluation | Exists | `src/policy/evaluator.ts` |
-| 6 invariant checks | Exists | `src/invariants/definitions.ts` |
+| 24 invariant checks | Exists | `packages/invariants/src/definitions.ts` |
 | Escalation monitor (4 levels) | Exists | `src/kernel/monitor.ts` |
 | JSONL event persistence | Exists | `src/events/jsonl.ts` |
 | GovernanceDecisionRecord | Exists | `src/kernel/decisions/` |

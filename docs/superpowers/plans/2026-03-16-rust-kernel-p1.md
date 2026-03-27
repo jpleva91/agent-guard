@@ -646,7 +646,7 @@ The TS codebase uses string action types (`"file.write"`, `"git.push"`, etc.). T
 ```rust
 use serde::{Deserialize, Serialize};
 
-/// The 23 canonical action types plus Unknown.
+/// The 41 canonical action types plus Unknown.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ActionType {
     #[serde(rename = "file.read")]    FileRead,
@@ -851,7 +851,7 @@ Expected: all tests PASS
 
 ```bash
 git add crates/kernel-core/src/actions.rs
-git commit -m "feat(rust): add ActionType enum with 23 canonical types + class mapping"
+git commit -m "feat(rust): add ActionType enum with 41 canonical types + class mapping"
 ```
 
 ---

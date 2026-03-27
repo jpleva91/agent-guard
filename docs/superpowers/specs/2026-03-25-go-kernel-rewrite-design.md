@@ -237,7 +237,7 @@ Each phase is an independent spec → plan → implementation cycle. Later phase
 The Go kernel must produce identical decisions to the TS kernel for all inputs. This is validated continuously:
 
 **Test corpus:** `go/test/testdata/payloads/` — 100+ sample hook payloads covering:
-- All 27 action types
+- All 41 action types
 - All deny rules (protected branches, force push, secrets, rm -rf, deploy, infra)
 - All allow rules (file.read, shell.exec, git.commit, github.pr.create, etc.)
 - Edge cases (compound commands, template variables, governance self-modification)

@@ -48,7 +48,7 @@ The `claude-init` wizard walks you through setup interactively:
 
   Enable a policy pack?
     ❯ 1) essentials — secrets, force push, protected branches, credentials
-      2) strict — all 23 invariants enforced
+      2) strict — all 24 invariants enforced
       3) none — monitor only, configure later
 ```
 
@@ -97,14 +97,14 @@ agentguard guard --agent-name my-agent
 # Or omit --agent-name and an interactive prompt will ask for role + driver
 ```
 
-Identity consists of a **role** (`developer`, `reviewer`, `ops`, `security`, `planner`) and a **driver** (`human`, `claude-code`, `copilot`, `ci`). Identity flows to cloud telemetry for attribution, dashboard grouping, and persona-scoped policy rules.
+Identity consists of a **role** (`developer`, `reviewer`, `ops`, `security`, `ci`) and a **driver** (`human`, `claude-code`, `copilot`, `ci`). Identity flows to cloud telemetry for attribution, dashboard grouping, and persona-scoped policy rules.
 
 ## What It Does
 
 | Capability | Details |
 |------------|---------|
 | **Policy enforcement** | YAML rules with deny / allow / escalate — drop `agentguard.yaml` in your repo |
-| **23 built-in invariants** | Secret exposure, protected branches, blast radius, path traversal, CI/CD config, package script injection, and more |
+| **24 built-in invariants** | Secret exposure, protected branches, blast radius, path traversal, CI/CD config, package script injection, and more |
 | **47 event kinds** | Full lifecycle telemetry: `ActionRequested → ActionAllowed/Denied → ActionExecuted` |
 | **Real-time cloud dashboard** | Telemetry streams to your team dashboard; opt-in, anonymous by default |
 | **Multi-tenant** | Team workspaces, GitHub/Google OAuth, SSO-ready |
@@ -247,9 +247,9 @@ rules:
   - action: deploy.trigger
     effect: deny
     persona:
-      trustTier: [unverified, unknown]
+      trustTier: [untrusted, limited]
       autonomy: [autonomous]
-    reason: Only verified agents can deploy
+    reason: Only trusted agents can deploy
 
   # Forecast-conditioned rule (predictive governance)
   - action: git.push
@@ -286,11 +286,14 @@ rules:
 | `requireFormat` | `boolean` | Require passing format check |
 | `persona` | `object` | Agent persona conditions (`trustTier`, `role`, `autonomy`, `riskTolerance`, `tags`) |
 | `forecast` | `object` | Predictive conditions (`testRiskScore`, `blastRadiusScore`, `predictedFileCount`, `dependencyCount`, `riskLevel`) |
-| `intervention` | `string` | Intervention type: `DENY`, `PAUSE`, `ROLLBACK`, `TEST_ONLY` |
+| `intervention` | `string` | Intervention type: `deny`, `pause`, `rollback`, `modify` |
+| `suggestion` | `string` | Suggested alternative command or action |
+| `correctedCommand` | `string` | Auto-corrected command (e.g., safer equivalent) |
+| `requireWorktree` | `boolean` | Require action to run inside a git worktree |
 
 ## Built-in Invariants
 
-23 safety invariants run on every action evaluation:
+24 safety invariants run on every action evaluation:
 
 | Invariant | Severity | What it blocks |
 |-----------|----------|----------------|
@@ -317,6 +320,7 @@ rules:
 | `test-before-push` | Medium | Requires tests to pass before push |
 | `recursive-operation-guard` | Low | `find -exec`, `xargs` with write/delete |
 | `lockfile-integrity` | Low | `package.json` changes without lockfile sync |
+| `no-verify-bypass` | High | `git push/commit --no-verify` — prevents skipping pre-push/pre-commit hooks |
 
 ## Architecture
 
@@ -327,7 +331,7 @@ Agent tool call
 AgentGuard Kernel
   1. Normalize   — map tool call to canonical action type
   2. Evaluate    — match policy rules (deny / allow / escalate)
-  3. Check       — run 23 built-in invariants
+  3. Check       — run 24 built-in invariants
   4. Execute     — run action via adapter (file, shell, git)
   5. Emit        — 47 event kinds → SQLite audit trail + cloud telemetry
 ```
@@ -371,7 +375,7 @@ For teams running agent fleets, governance becomes invisible. Agents get 8% more
 
 **Zero-dependency deployment** — the Go kernel is a single static binary. No `node_modules`, no `pnpm install`, no bootstrap deadlocks. Drop it in a worktree and it works. This is critical for CI/CD and fleet scenarios where agents spin up fresh environments.
 
-The Go kernel includes: action normalization with AST-based shell parsing, policy evaluation, 23 invariants, escalation state machine, blast radius engine, telemetry shipper (stdout/file/HTTP), and a control plane signals API. It ships automatically via `npm install` — a postinstall script downloads the prebuilt binary for your platform.
+The Go kernel includes: action normalization with AST-based shell parsing, policy evaluation, 24 invariants, escalation state machine, blast radius engine, telemetry shipper (stdout/file/HTTP), and a control plane signals API. It ships automatically via `npm install` — a postinstall script downloads the prebuilt binary for your platform.
 
 ## For Teams and Enterprise
 
@@ -423,7 +427,7 @@ agentguard analytics                      # Violation pattern analysis
 
 # Policy
 agentguard policy validate <file>         # Validate a policy file
-agentguard policy-verify <file>           # Verify policy structure and rules
+agentguard policy verify <file>           # Verify policy structure and rules
 agentguard init --template <name>         # Scaffold from template (strict/permissive/ci-only/development)
 ```
 
@@ -469,7 +473,7 @@ extends:
 | `engineering-standards` | Balanced dev-friendly guardrails: test-before-push, format checks, safe deps |
 | `ci-safe` | Strict CI/CD pipeline protection |
 | `enterprise` | Full enterprise governance |
-| `strict` | Maximum restriction — all 23 invariants enforced |
+| `strict` | Maximum restriction — all 24 invariants enforced |
 | `open-source` | OSS contribution-friendly defaults |
 
 ## Community & Updates

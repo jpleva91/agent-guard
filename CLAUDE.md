@@ -8,7 +8,7 @@ The system has one architectural spine: the **canonical event model**. All syste
 
 **Key characteristics:**
 - Governed action kernel: propose → normalize → evaluate → execute → emit
-- 23 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, no skill modification, no scheduled task modification, credential file creation, package script injection, lockfile integrity, recursive operation guard, large file write, CI/CD config modification, permission escalation, governance self-modification, container config modification, environment variable modification, network egress, destructive migration, transitive effect analysis, IDE socket access, commit scope guard, script execution tracking)
+- 24 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, no skill modification, no scheduled task modification, credential file creation, package script injection, lockfile integrity, recursive operation guard, large file write, CI/CD config modification, permission escalation, governance self-modification, container config modification, environment variable modification, network egress, destructive migration, transitive effect analysis, IDE socket access, commit scope guard, script execution tracking, no-verify-bypass)
 - YAML/JSON policy format with pattern matching, scopes, and branch conditions
 - Escalation tracking: NORMAL → ELEVATED → HIGH → LOCKDOWN
 - SQLite event persistence for audit trail and replay (JSONL export still supported)
@@ -43,7 +43,7 @@ This is a **pnpm monorepo** orchestrated by **Turbo**. Workspace packages live i
 packages/
 ├── core/src/                   # @red-codes/core — Shared utilities
 │   ├── types.ts                # Shared TypeScript type definitions (includes RunManifest)
-│   ├── actions.ts              # 27 canonical action types across 9 classes
+│   ├── actions.ts              # 41 canonical action types across 10 classes
 │   ├── governance-data.ts      # Governance data loader (typed access to shared JSON data)
 │   ├── data/                   # JSON governance data (actions, blast-radius, destructive-patterns, escalation, git-action-patterns, invariant-patterns, tool-action-map)
 │   ├── hash.ts                 # Content hashing utilities
@@ -73,7 +73,7 @@ packages/
 │   ├── policy-trust.ts         # Policy trust verification
 │   └── yaml-loader.ts          # YAML policy parser
 ├── invariants/src/             # @red-codes/invariants — Invariant system
-│   ├── definitions.ts          # 23 built-in invariant definitions
+│   ├── definitions.ts          # 24 built-in invariant definitions
 │   └── checker.ts              # Invariant evaluation engine
 ├── matchers/src/               # @red-codes/matchers — Structured matchers (KE-1)
 │   ├── path-matcher.ts         # Glob-based path matching (picomatch)
@@ -173,7 +173,7 @@ apps/
 │   ├── session-store.ts        # Session management
 │   ├── file-event-store.ts     # File-based event persistence
 │   ├── evidence-summary.ts     # Evidence summary generator for PR reports
-│   └── commands/               # guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, policy-verify, claude-hook, claude-init, copilot-hook, copilot-init, cloud, init, diff, evidence-pr, traces, session-viewer, status, analytics, auto-setup, config, audit-verify, demo, adoption, learn, migrate, trust
+│   └── commands/               # guard, inspect, replay, export, import, simulate, ci-check, plugin, policy (validate, suggest, verify), claude-hook, claude-init, copilot-hook, copilot-init, cloud, init, diff, evidence-pr, traces, session-viewer, status, analytics, auto-setup, config, audit-verify, demo, adoption, learn, migrate, trust
 ├── mcp-server/src/             # @red-codes/mcp-server — MCP governance server
 │   ├── index.ts                # Entry point
 │   ├── server.ts               # MCP server implementation
@@ -269,7 +269,7 @@ Each workspace package maps to a single architectural concept:
 - `agentguard import <file>` — Import a governance session from a portable JSONL file
 - `agentguard replay` — Replay a governance session timeline
 - `agentguard session-viewer [runId]` — Generate interactive HTML dashboard (auto-opens on session end; `--share` for cloud sharing; `--merge-recent <n>` to combine runs)
-- `agentguard plugin list|install|remove|search` — Manage plugins
+- `agentguard plugin list|install|remove|enable|disable|search` — Manage plugins
 - `agentguard simulate <action-json>` — Simulate an action and display predicted impact without executing
 - `agentguard ci-check <session-file>` — CI governance verification (check a session for violations)
 - `agentguard policy validate <file>` — Validate a policy file (YAML/JSON)
@@ -280,17 +280,17 @@ Each workspace package maps to a single architectural concept:
 - `agentguard traces [runId]` — Display policy evaluation traces for a run
 - `agentguard init <type>` — Scaffold governance extensions (invariant, policy-pack, adapter, renderer, replay-processor)
 - `agentguard status` — Show current governance session status
-- `agentguard policy-verify <file>` — Verify policy file structure and rules
+- `agentguard policy verify <file>` — Verify policy file structure and rules
 - `agentguard analytics` — Analyze violation patterns across sessions
 - `agentguard auto-setup` — Auto-detect AgentGuard and configure Claude Code hooks
-- `agentguard config show|get|set` — Manage AgentGuard configuration
+- `agentguard config show|get|set|path|keys` — Manage AgentGuard configuration
 - `agentguard audit-verify` — Verify tamper-resistant audit chain integrity
 - `agentguard demo` — Interactive governance showcase
 - `agentguard adoption` — Adoption metrics and onboarding status
 - `agentguard learn` — Interactive tutorials and learning paths
 - `agentguard migrate` — Migrate configuration between versions
 - `agentguard trust` — Manage policy and hook trust verification
-- `agentguard cloud login|connect|status|events|runs|summary|disconnect` — Cloud governance analytics
+- `agentguard cloud login|signup|connect|status|events|runs|summary|disconnect` — Cloud governance analytics
 - `agentguard copilot-hook` — Handle GitHub Copilot PreToolUse/PostToolUse hook events
 - `agentguard copilot-init` — Set up GitHub Copilot hook integration
 - `agentguard team-report` — Team-level governance observability across agents
@@ -317,15 +317,16 @@ The canonical event model is the architectural spine. Event kinds defined in `pa
 - **Environmental Enforcement**: `IdeSocketAccessBlocked`
 
 ### Action Classes & Types
-27 canonical action types across 9 classes, defined in `packages/core/src/actions.ts`:
+41 canonical action types across 10 classes, defined in `packages/core/src/actions.ts`:
 - **file**: `file.read`, `file.write`, `file.delete`, `file.move`
 - **test**: `test.run`, `test.run.unit`, `test.run.integration`
-- **git**: `git.diff`, `git.commit`, `git.push`, `git.branch.create`, `git.branch.delete`, `git.checkout`, `git.reset`, `git.merge`, `git.worktree.add`, `git.worktree.remove`, `git.worktree.list`
+- **git**: `git.diff`, `git.commit`, `git.push`, `git.force-push`, `git.branch.create`, `git.branch.delete`, `git.checkout`, `git.reset`, `git.merge`, `git.worktree.add`, `git.worktree.remove`, `git.worktree.list`
 - **shell**: `shell.exec`
 - **npm**: `npm.install`, `npm.script.run`, `npm.publish`
 - **http**: `http.request`
 - **deploy**: `deploy.trigger`
 - **infra**: `infra.apply`, `infra.destroy`
+- **github**: `github.pr.list`, `github.pr.create`, `github.pr.merge`, `github.pr.close`, `github.pr.view`, `github.pr.checks`, `github.issue.list`, `github.issue.create`, `github.issue.close`, `github.release.create`, `github.run.list`, `github.run.view`, `github.api`
 - **mcp**: `mcp.call`
 
 ### Build & Module System
@@ -388,7 +389,7 @@ pnpm test --filter=@red-codes/kernel  # Test a single package
 ## Agent Identity
 
 At session start, if you see `[AgentGuard] No agent identity set`, ask the user:
-1. **Role**: developer / reviewer / ops / security / planner
+1. **Role**: developer / reviewer / ops / security / ci
 2. **Driver**: human / claude-code / copilot / ci
 
 Then run: `scripts/write-persona.sh <driver> <role>`

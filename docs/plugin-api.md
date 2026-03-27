@@ -258,7 +258,7 @@ rules:
 
 ### 3. Invariant Plugins
 
-Invariant plugins add custom safety checks evaluated before every action. AgentGuard ships 23 built-in invariants; plugins extend this with domain-specific checks.
+Invariant plugins add custom safety checks evaluated before every action. AgentGuard ships 24 built-in invariants; plugins extend this with domain-specific checks.
 
 **Integration point:** `packages/invariants/src/` — implement the `AgentGuardInvariant` interface.
 
