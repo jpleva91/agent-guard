@@ -1,51 +1,93 @@
 {
   "squad": "site",
-  "timestamp": "2026-03-26T20:40:00.000Z",
+  "timestamp": "2026-03-27T20:40:00.000Z",
   "health": "green",
-  "summary": "Site healthy. Fixed invariant count drift (23→24) and CLI commands count (29→32) after recent codebase changes. No open issues or PRs. OG image and meta tags intact after recent PR #1011 fix.",
+  "summary": "Site healthy. Fixed test count drift (2637→4161). All other numeric claims verified accurate. No PRs mergeable — all 7 open PRs have CI failures (lint or test-and-build). Upcoming: when PR #1109 (OpenCode adapter) lands, CLI commands will drift from 32→34.",
   "siteBuild": {
     "status": "pass",
-    "notes": "Static site structure valid: index.html, posts.html, posts.json, sitemap.xml, robots.txt, og-image.png all present and well-formed."
+    "notes": "Static site structure valid: index.html, posts.html, posts.json, sitemap.xml, robots.txt, og-image.png all present."
   },
   "contentFreshness": {
     "status": "fixed",
     "drift": [
       {
-        "claim": "invariants count",
-        "was": 23,
-        "now": 24,
-        "cause": "PR #1002 added no-verify-bypass invariant",
-        "fixed": true
-      },
-      {
-        "claim": "CLI commands count",
-        "was": 29,
-        "now": 32,
-        "cause": "New commands added since last site sync",
+        "claim": "tests count",
+        "was": 2637,
+        "now": 4161,
+        "cause": "Significant test additions across telemetry-client, storage, adapters, and other packages since last site sync",
         "fixed": true
       }
     ],
     "verified": [
-      "93 destructive patterns — matches codebase",
-      "47 event kinds — matches codebase",
-      "41 action types — matches codebase"
+      "93 destructive patterns — matches packages/core/src/data/destructive-patterns.json",
+      "47 event kinds — matches packages/events/src/schema.ts (47 EventKind constant exports)",
+      "41 action types — matches packages/core/src/actions.ts",
+      "24 invariants — matches packages/invariants/src/definitions.ts",
+      "32 CLI commands — matches apps/cli/src/bin.ts case count",
+      "8 built-in packs — ci-safe, engineering-standards, enterprise, essentials, hipaa, open-source, soc2, strict"
     ]
   },
   "prQueue": {
-    "open": 0,
+    "open": 7,
     "reviewed": 0,
-    "merged": [
-      "#1015 — marketing EM report",
-      "#1011 — OG image PNG + social meta tags",
-      "#1009 — site stats sync",
-      "#1005 — stale numeric claims fix"
+    "merged": [],
+    "pending": [
+      {
+        "number": 1109,
+        "title": "feat: OpenCode framework adapter — governance hooks for opencode.ai agent",
+        "blockers": ["lint FAILURE", "CodeQL FAILURE"],
+        "siteImpact": "adds opencode-hook + opencode-init commands → CLI count should update 32→34 when merged"
+      },
+      {
+        "number": 1108,
+        "title": "fix(format): fix prettier violations in storage and inspect",
+        "blockers": ["test-and-build FAILURE"],
+        "siteImpact": "none"
+      },
+      {
+        "number": 1104,
+        "title": "fix(adapters): educate mode always allows regardless of suggestion presence",
+        "blockers": ["lint FAILURE", "test-and-build FAILURE"],
+        "siteImpact": "none"
+      },
+      {
+        "number": 1098,
+        "title": "feat(storage): parse driver:agent identity format, add driver_type to sessions",
+        "blockers": ["lint FAILURE"],
+        "siteImpact": "none"
+      },
+      {
+        "number": 1090,
+        "title": "test: add tests for telemetry/runtimeLogger",
+        "blockers": ["lint FAILURE", "test-and-build FAILURE"],
+        "siteImpact": "test count will rise when merged"
+      },
+      {
+        "number": 1087,
+        "title": "feat(telemetry): add driverType field to AgentEvent wire format",
+        "blockers": ["lint FAILURE", "test-and-build FAILURE"],
+        "siteImpact": "none"
+      },
+      {
+        "number": 1083,
+        "title": "test(storage): add coverage for agentId, agent helpers, and v5 migration backfill",
+        "blockers": ["lint FAILURE", "test-and-build FAILURE"],
+        "siteImpact": "test count will rise when merged"
+      }
     ]
   },
-  "blockers": [],
+  "blockers": [
+    "All 7 open PRs have CI failures — lint failures appear systemic across unrelated PRs, may indicate ESLint config change on main"
+  ],
   "escalations": [],
   "governanceDenials": 0,
   "nextActions": [
-    "Open PR for invariant + CLI command count fix",
-    "Monitor for further invariant additions that cause site drift"
-  ]
+    "Monitor PR #1109 (OpenCode adapter) — update CLI commands 32→34 when it lands",
+    "Investigate systemic lint failures across PRs — likely shared ESLint config drift",
+    "Track test count after each test-heavy PR wave; currently 4161"
+  ],
+  "dogfood": {
+    "issues": [],
+    "notes": "No governance denials encountered during this run"
+  }
 }

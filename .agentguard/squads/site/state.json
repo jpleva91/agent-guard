@@ -4,12 +4,24 @@
     "goal": "Keep site numeric claims in sync with codebase",
     "issues": []
   },
-  "assignments": {},
-  "blockers": [],
-  "prQueue": {
-    "open": 1,
-    "reviewed": 0,
-    "mergeable": 0
+  "assignments": {
+    "site-builder": "Monitor PR #1109 (OpenCode adapter) — update CLI commands 32→34 when it merges",
+    "site-docs-sync": "Investigate systemic lint failures blocking all 7 open PRs"
   },
-  "updatedAt": "2026-03-26T20:40:00.000Z"
+  "blockers": [
+    "All 7 open PRs failing CI — lint failures appear systemic across unrelated PRs"
+  ],
+  "prQueue": {
+    "open": 7,
+    "reviewed": 0,
+    "mergeable": 0,
+    "watchlist": [1109, 1108, 1104, 1098, 1090, 1087, 1083]
+  },
+  "siteHealth": {
+    "status": "green",
+    "lastChecked": "2026-03-27T20:40:00.000Z",
+    "claimsVerified": ["93 patterns", "47 events", "41 actions", "24 invariants", "32 commands", "8 packs"],
+    "claimsFixed": ["tests: 2637→4161"]
+  },
+  "updatedAt": "2026-03-27T20:40:00.000Z"
 }
