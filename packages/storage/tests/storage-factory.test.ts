@@ -18,11 +18,14 @@ function makeEvent(id: string): DomainEvent {
 
 describe('resolveStorageConfig', () => {
   const origEnv = process.env.AGENTGUARD_STORE;
+  const origNoSqlite = process.env.AGENTGUARD_NO_SQLITE;
 
   afterEach(() => {
     if (origEnv === undefined) delete process.env.AGENTGUARD_STORE;
     else process.env.AGENTGUARD_STORE = origEnv;
     delete process.env.AGENTGUARD_DB_PATH;
+    if (origNoSqlite === undefined) delete process.env.AGENTGUARD_NO_SQLITE;
+    else process.env.AGENTGUARD_NO_SQLITE = origNoSqlite;
   });
 
   it('defaults to sqlite', () => {
@@ -92,6 +95,21 @@ describe('resolveStorageConfig', () => {
   it('jsonlPath is undefined when not specified', () => {
     const config = resolveStorageConfig([]);
     expect(config.jsonlPath).toBeUndefined();
+  });
+  it('--no-sqlite flag returns none backend', () => {
+    const config = resolveStorageConfig(['--no-sqlite']);
+    expect(config.backend).toBe('none');
+  });
+
+  it('AGENTGUARD_NO_SQLITE=1 returns none backend', () => {
+    process.env.AGENTGUARD_NO_SQLITE = '1';
+    const config = resolveStorageConfig([]);
+    expect(config.backend).toBe('none');
+  });
+
+  it('--no-sqlite takes precedence over other flags', () => {
+    const config = resolveStorageConfig(['--store', 'sqlite', '--no-sqlite']);
+    expect(config.backend).toBe('none');
   });
 });
 
@@ -180,6 +198,22 @@ describe('createStorageBundle', () => {
     expect(typeof bundle.close).toBe('function');
 
     bundle.close();
+  });
+
+  it('creates a no-op bundle for none backend', async () => {
+    const bundle = await createStorageBundle({ backend: 'none' });
+
+    expect(bundle.db).toBeUndefined();
+    expect(bundle.sessions).toBeUndefined();
+
+    // Sinks should be callable without throwing
+    const eventSink = bundle.createEventSink('run_test');
+    const decisionSink = bundle.createDecisionSink('run_test');
+    expect(() =>
+      eventSink.write({ id: 'e1', kind: 'ActionRequested', timestamp: Date.now() } as DomainEvent)
+    ).not.toThrow();
+    expect(() => decisionSink.write({} as never)).not.toThrow();
+    expect(() => bundle.close()).not.toThrow();
   });
 
   it('creates a sqlite bundle with database', async () => {

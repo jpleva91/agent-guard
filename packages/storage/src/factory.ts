@@ -24,7 +24,23 @@ export interface StorageBundle {
 
 /** Create a storage bundle based on configuration */
 export async function createStorageBundle(config: StorageConfig): Promise<StorageBundle> {
+  if (config.backend === 'none') {
+    return createNoOpBundle();
+  }
   return createSqliteBundle(config);
+}
+
+/** No-op storage bundle — used when SQLite is unavailable or explicitly disabled */
+function createNoOpBundle(): StorageBundle {
+  return {
+    createEventSink(_runId: string) {
+      return { write() {} };
+    },
+    createDecisionSink(_runId: string) {
+      return { write() {} };
+    },
+    close() {},
+  };
 }
 
 async function createSqliteBundle(config: StorageConfig): Promise<StorageBundle> {
@@ -107,6 +123,11 @@ export function resolveSqlitePath(config: StorageConfig): string {
 
 /** Resolve storage config from CLI args and environment */
 export function resolveStorageConfig(args: string[]): StorageConfig {
+  // --no-sqlite flag or AGENTGUARD_NO_SQLITE=1 env var disables SQLite storage
+  if (args.includes('--no-sqlite') || process.env.AGENTGUARD_NO_SQLITE === '1') {
+    return { backend: 'none' };
+  }
+
   const dirIdx = args.findIndex((a) => a === '--dir' || a === '-d');
   const baseDir = dirIdx !== -1 ? args[dirIdx + 1] : undefined;
 

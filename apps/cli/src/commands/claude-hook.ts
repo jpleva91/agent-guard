@@ -513,7 +513,7 @@ export function tryGoFastPath(
     const result = execFileSync(goBin, ['evaluate', '--policy', tmpPolicyPath], {
       input: actionPayload,
       encoding: 'utf8',
-      timeout: 200,
+      timeout: 500,
       maxBuffer: 64 * 1024,
       stdio: ['pipe', 'pipe', 'pipe'],
     });

@@ -1,26 +1,26 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Fix P0 hook-breaking bugs (#972, #973), then resume Go kernel wire-up (#955). Hook path must work before Go delegation can ship.",
+    "goal": "Fix governance startup in worktrees (#1118 via --no-sqlite flag), land educate mode fix (PR #1104), begin false-positive matcher scope narrowing (#1119)",
     "issues": [
-      972,
-      973,
-      955,
-      957,
-      964
+      1118,
+      1026,
+      1119,
+      1142,
+      1086
     ]
   },
   "assignments": {
     "senior": {
       "issue": [
-        972,
-        973
+        1118,
+        1142
       ],
-      "title": "P0: Fix hook deny reason retry metadata (#972) + bundle essentials pack in npm (#973)",
-      "status": "unassigned",
-      "branch": null,
+      "title": "P0: --no-sqlite flag for guard (#1118) + fix go-fast-path CI timeout (#1142)",
+      "status": "implementing",
+      "branch": "agent/kernel-sr-20260327-213002",
       "pr": null,
-      "claimedAt": null,
+      "claimedAt": "2026-03-27T21:30:08Z",
       "note": "P0 fast-track: #972 breaks all governed sessions (retry text in deny reason \u2192 Claude Code blocks all tool use). #973 compounds it (essentials pack missing \u2192 default-deny on everything). Fix both before resuming #955 Go delegation."
     }
   },
@@ -69,5 +69,5 @@
   },
   "lastEmRun": "2026-03-26T09:00:00.000Z",
   "lastQaRun": "2026-03-27T03:50:00.000Z",
-  "updatedAt": "2026-03-27T03:50:00.000Z"
+  "updatedAt": "2026-03-27T21:30:08Z"
 }
