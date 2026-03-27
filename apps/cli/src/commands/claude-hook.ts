@@ -18,6 +18,22 @@ import type { CloudSinkBundle } from '@red-codes/telemetry';
 import { detectDriver, detectModel, VALID_ROLES } from '../identity.js';
 import type { Driver } from '../identity.js';
 
+/**
+ * Read-only tools that should fail-open (not fail-closed) when no policy rule matches.
+ * These tools cannot mutate state, so blocking them by default when policies exist
+ * is overly strict and breaks common workflows (e.g. reading files in sub-repos).
+ * Write/exec tools remain fail-closed (default-deny) for security.
+ */
+const READ_ONLY_TOOLS = new Set([
+  'Read',
+  'Glob',
+  'Grep',
+  'LS',
+  'NotebookRead',
+  'WebSearch',
+  'WebFetch',
+]);
+
 // --- Session state: persist formatPass/testsPass across hook invocations ----
 // Each Claude Code session is stateless per hook call. We bridge this by writing
 // a small JSON file keyed by session_id so format/test results from one call are
@@ -598,6 +614,13 @@ async function handlePreToolUse(
     );
   }
 
+  // Read-only fast-exit: if this is a read-only tool and no policies loaded, skip kernel entirely.
+  // Even with policies loaded, read-only tools use fail-open, so if Go denies only
+  // because of default-deny (no matching rule), the TS kernel would allow anyway.
+  if (READ_ONLY_TOOLS.has(normalizedPayload.tool_name) && policyDefs.length === 0) {
+    return false;
+  }
+
   // --- Go kernel fast-path: try the Go binary for policy evaluation (~2ms vs ~290ms) ---
   // If the Go binary is installed and policies loaded, delegate to it for fast evaluation.
   // On allow: return immediately (skip TS kernel entirely — massive perf win).
@@ -713,7 +736,9 @@ async function handlePreToolUse(
     runId,
     policyDefs,
     dryRun: true,
-    evaluateOptions: { defaultDeny: policyDefs.length > 0 },
+    evaluateOptions: {
+      defaultDeny: policyDefs.length > 0 && !READ_ONLY_TOOLS.has(normalizedPayload.tool_name),
+    },
     sinks: allEventSinks,
     decisionSinks: allDecisionSinks,
     ...(invariants ? { invariants } : {}),
