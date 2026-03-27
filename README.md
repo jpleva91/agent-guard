@@ -14,7 +14,7 @@ Install in 30 seconds. Your agents can't break what matters.</p>
 
 ---
 
-AI coding agents (Claude Code, GitHub Copilot, any MCP client) run autonomously — writing files, executing commands, pushing code. AgentGuard prevents them from doing catastrophic things: no accidental pushes to main, no credential leaks, no runaway destructive loops. 23 built-in safety checks, zero config required.
+AI coding agents (Claude Code, GitHub Copilot, any MCP client) run autonomously — writing files, executing commands, pushing code. AgentGuard prevents them from doing catastrophic things: no accidental pushes to main, no credential leaks, no runaway destructive loops. 24 built-in safety checks, zero config required.
 
 **For individuals:** stop your AI from wrecking your machine or repo.
 **For teams:** run fleets of agents safely at scale, with audit trails that pass compliance.

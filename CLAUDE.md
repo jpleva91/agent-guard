@@ -187,7 +187,7 @@ apps/
 
 # TS test files (vitest) distributed across packages/ and apps/ directories
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
-policies/                   # Policy packs (YAML: ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
+policies/                   # Policy packs (dirs: ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict; YAML: essentials, readybench)
 docs/                       # System documentation (architecture, event model, specs)
 hooks/                      # Git hooks (post-commit, post-merge)
 examples/                   # Example governance scenarios and error demos
@@ -196,7 +196,7 @@ paper/                      # White paper (agentguard-whitepaper.md, diagrams, r
 scripts/                    # Build and utility scripts
 site/                       # GitHub Pages static site
 spec/                       # Feature specifications and templates
-templates/                  # Policy templates (ci-only, development, permissive, strict)
+templates/                  # Policy templates (ci-only, ci-safe, development, enterprise, permissive, strict; manifest variants: ci-only, full-dev, read-only-audit)
 ```
 
 ## Development Commands
