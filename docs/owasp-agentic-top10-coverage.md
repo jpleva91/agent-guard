@@ -180,7 +180,7 @@
 
 | Mechanism | Component | What It Does |
 |-----------|-----------|-------------|
-| 38+ event kinds | `packages/events/src/schema.ts` | Governance, reference monitor, decision, simulation, integrity, heartbeat |
+| 47 event kinds | `packages/events/src/schema.ts` | Governance, reference monitor, decision, simulation, integrity, heartbeat |
 | SQLite persistence | `packages/storage/src/sqlite-sink.ts` | All events sunk to indexed database with migrations |
 | Policy traces | `PolicyTraceRecorded` event | Logs all rules checked, conditions evaluated, outcomes |
 | Heartbeat monitoring | `packages/kernel/src/heartbeat.ts` | `HeartbeatEmitted`, `HeartbeatMissed`, `AgentUnresponsive` |
