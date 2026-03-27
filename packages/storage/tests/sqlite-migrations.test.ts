@@ -14,7 +14,7 @@ describe('SQLite migrations', () => {
 
   it('creates all tables on first run', () => {
     const applied = runMigrations(db);
-    expect(applied).toBe(3);
+    expect(applied).toBe(4);
 
     const tables = db
       .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
@@ -48,20 +48,23 @@ describe('SQLite migrations', () => {
     // v2 indexes
     expect(names).toContain('idx_events_action_type');
     expect(names).toContain('idx_decisions_severity');
+
+    // v5 indexes
+    expect(names).toContain('idx_sessions_agent_id');
   });
 
   it('is idempotent — running twice applies nothing the second time', () => {
     const first = runMigrations(db);
     const second = runMigrations(db);
 
-    expect(first).toBe(3);
+    expect(first).toBe(4);
     expect(second).toBe(0);
   });
 
   it('tracks schema version', () => {
     expect(getSchemaVersion(db)).toBe(0);
     runMigrations(db);
-    expect(getSchemaVersion(db)).toBe(3);
+    expect(getSchemaVersion(db)).toBe(5);
   });
 
   it('enables WAL mode (on file-based databases)', () => {
@@ -114,8 +117,8 @@ describe('SQLite migrations', () => {
     expect(getSchemaVersion(db)).toBe(1);
 
     const applied = runMigrations(db);
-    expect(applied).toBe(2);
-    expect(getSchemaVersion(db)).toBe(3);
+    expect(applied).toBe(3);
+    expect(getSchemaVersion(db)).toBe(5);
 
     const indexes = db
       .prepare(
@@ -210,9 +213,9 @@ describe('SQLite migration v2 — action_type and severity columns', () => {
       JSON.stringify({ id: 'evt_2', kind: 'RunStarted', timestamp: 1001, fingerprint: 'fp2' })
     );
 
-    // Run v2+v3 migrations
+    // Run v2+v3+v5 migrations (v5 adds agent_id to sessions)
     const applied = runMigrations(db);
-    expect(applied).toBe(2);
+    expect(applied).toBe(3);
 
     const row1 = db.prepare('SELECT action_type FROM events WHERE id = ?').get('evt_1') as {
       action_type: string | null;

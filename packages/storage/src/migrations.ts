@@ -114,6 +114,14 @@ const MIGRATIONS: readonly Migration[] = [
       db.exec('CREATE INDEX IF NOT EXISTS idx_decisions_severity ON decisions (severity)');
     },
   },
+  {
+    version: 5,
+    description: 'Add agent_id to sessions for driver/agent identity tracking',
+    up(db) {
+      db.exec('ALTER TABLE sessions ADD COLUMN agent_id TEXT');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_sessions_agent_id ON sessions (agent_id)');
+    },
+  },
 ];
 
 /**

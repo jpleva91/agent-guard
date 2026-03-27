@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "BeforeTool": [
+      {
+        "matcher": "Shell|WriteFile|EditFile",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node apps/cli/dist/bin.js gemini-hook pre"
+          }
+        ]
+      }
+    ],
+    "AfterTool": [
+      {
+        "matcher": "Shell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node apps/cli/dist/bin.js gemini-hook post"
+          }
+        ]
+      }
+    ]
+  }
+}

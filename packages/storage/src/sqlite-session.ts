@@ -9,6 +9,7 @@ export interface SessionStartData {
   readonly dryRun?: boolean;
   readonly storageBackend?: string;
   readonly simulatorCount?: number;
+  readonly agentId?: string;
 }
 
 export interface SessionEndData {
@@ -39,10 +40,11 @@ export function insertSession(
   try {
     const now = new Date().toISOString();
     const repo = safeGetCwd();
+    const agentId = startData.agentId ?? null;
     const data = JSON.stringify({ ...startData, status: 'running' });
     db.prepare(
-      'INSERT OR IGNORE INTO sessions (id, started_at, ended_at, command, repo, data) VALUES (?, ?, NULL, ?, ?, ?)'
-    ).run(sessionId, now, command, repo, data);
+      'INSERT OR IGNORE INTO sessions (id, started_at, ended_at, command, repo, data, agent_id) VALUES (?, ?, NULL, ?, ?, ?, ?)'
+    ).run(sessionId, now, command, repo, data, agentId);
   } catch (err) {
     onError?.(err as Error);
   }

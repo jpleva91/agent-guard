@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node apps/cli/dist/bin.js codex-hook pre",
+            "statusMessage": "AgentGuard governance check"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node apps/cli/dist/bin.js codex-hook post",
+            "statusMessage": "AgentGuard error monitoring"
+          }
+        ]
+      }
+    ]
+  }
+}
