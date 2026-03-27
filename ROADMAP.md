@@ -2,7 +2,7 @@
 
 > Deterministic governance for AI coding agents.
 
-**Last updated**: 2026-03-24
+**Last updated**: 2026-03-27
 **License**: Apache 2.0
 **Repository**: [AgentGuardHQ/agent-guard](https://github.com/AgentGuardHQ/agent-guard)
 
@@ -27,7 +27,7 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | Governed action kernel (41 action types, 10 classes) | Implemented | Production |
 | Action Authorization Boundary (AAB) | Implemented | Bypass vectors closed (3 fixed in v2.4.0) |
 | Policy evaluator (YAML/JSON, composition, packs) | Implemented | Production |
-| 23 built-in invariants | Implemented | Production |
+| 24 built-in invariants | Implemented | Production |
 | Canonical event model (47 event kinds) | Implemented | Production |
 | Pre-execution simulation engine (3 simulators) | Implemented | Production |
 | Blast radius computation | Implemented | Production |
@@ -58,7 +58,14 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | PAUSE and ROLLBACK enforcement | **Shipped v2.4.0** | `packages/kernel/` (PRs #475, #617) |
 | KE-3 Governance Event Envelope | **Shipped v2.5.0** | `packages/events/src/schema.ts` (#686) |
 | Commit scope guard invariant (#22) | **Shipped v2.5.0** | `packages/invariants/src/definitions.ts` |
-| Go kernel rewrite (Phase 1 — velocity-first) | Planned | Architecture phase |
+| No-verify-bypass invariant (#24) — blocks `git push/commit --no-verify` | **Shipped v2.6.0** | `packages/invariants/src/definitions.ts` |
+| Read-only operations permitted on protected paths | **Shipped v2.7.0** | `packages/adapters/src/file.ts` (closes #648) |
+| Install attribution telemetry — opt-in postinstall ping (version, OS, Node, CI env, anon ID) | **Shipped v2.7.0** | `apps/cli/src/postinstall.ts` (PR #991) |
+| `agentguard init studio` wizard, execution profiles, swarm template schema | **Shipped v2.7.0** | `apps/cli/src/commands/init.ts`, `packages/swarm/` (PR #987) |
+| OpenCode driver support | **Shipped v2.7.0** | Agent driver registry (PR #1019) |
+| Codex CLI adapter (PreToolUse/PostToolUse hook commands) | **Shipped v2.8.0** | `packages/adapters/src/codex-cli.ts` (PR #1024) |
+| Gemini CLI adapter (BeforeTool/AfterTool hook commands) | **Shipped v2.8.0** | `packages/adapters/src/gemini-cli.ts` (PR #1024) |
+| Go kernel rewrite (Phase 1 — velocity-first) | **In Progress** | Fast-path delegation operational in `apps/cli` (PRs #1000, #1001) |
 | Rust kernel research (types, AAB, policy) | Paused | Experimental — informs Go design |
 
 ---
@@ -177,12 +184,7 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
   - Cloud waitlist / signup link in CLI output after `agentguard claude-init`
   - Enable GitHub Discussions on the repo (category: "Show & Tell", "Q&A")
   - `agentguard cloud signup` prompt during first-run flow (non-blocking, skippable)
-- [ ] **Install attribution tracking** — The postinstall script (`apps/cli/src/postinstall.ts`) already runs on every `npm install` but doesn't report install events. Add a lightweight, opt-in install ping to the cloud endpoint:
-  - Report: package version, OS, Node version, CI detection (GitHub Actions, Vercel, GitLab, etc.), anonymous install ID
-  - Respect `AGENTGUARD_TELEMETRY=off` and `DO_NOT_TRACK=1`
-  - Fail silently (never break installs)
-  - Enables answering: "How many real humans vs CI pipelines install this? Which versions? Which environments?"
-  - Note: npm download stats are unreliable for attribution — Vercel/CI ephemeral builds inflate counts (see traction note below)
+- [x] ~~**Install attribution tracking**~~ — ✅ Done 2026-03-26 (v2.7.x) — opt-in postinstall ping reports version, OS, Node, CI environment, anonymous install ID; respects `AGENTGUARD_TELEMETRY=off` and `DO_NOT_TRACK=1`; fails silently; never breaks installs (closes #892, PR #991)
 - [ ] 30-second demo video (install → configure → govern → Cloud dashboard)
 - [ ] Site update with demo embed
 - [ ] LinkedIn + dev community announcement
@@ -190,7 +192,7 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 
 **Traction note (2026-03-24)**: npm reports ~1,761 weekly downloads, but investigation shows the majority are internal Vercel CI builds of `agentguard-cloud` which pins `@red-codes/agentguard@2.0.0`. Each Vercel build (ephemeral containers, preview deploys, branch builds) triggers a fresh `npm install`. Real external adoption is likely in the low hundreds. This makes install attribution tracking and the user capture funnel critical — without them, we cannot distinguish real adoption from CI noise. The version drift (cloud at 2.0.0 vs OSS at 2.4.0) should also be resolved.
 
-**Release cadence**: v3.0 (kernel + stranger test + capture funnel), v3.1 (Runner + `agentguard init studio` wizard + swarm template schema + install attribution), v3.2 (Copilot adapters + execution profiles).
+**Release cadence**: v3.0 (KE-2 ActionContext + stranger test + capture funnel), v3.1 (Runner + `apps/runner`), v3.2+ (advanced integrations). Note: `agentguard init studio` wizard, execution profiles, swarm template schema, and install attribution all shipped early in v2.7.x ahead of schedule; Codex CLI + Gemini CLI adapters shipped in v2.8.0.
 
 ### Next — Pull-Based Runner (Phase 6.5 — `apps/runner`)
 
@@ -212,34 +214,15 @@ Depends on: v3.0 released + Cloud Phase 2A (orchestrator + runner protocol).
 - [ ] `agentguard runner install-service` — Generate systemd service for server deployment
 - [ ] Adapter registry — Map runtime string → adapter implementation, fallback for unknown types
 
-### Next — Studio Runtime (Phase 6.75 — v3.1)
+### ~~Next~~ — Studio Runtime (Phase 6.75 — v3.1) ✅ Done 2026-03-26
 
 > Formalize the operational layer between the Kernel and Cloud. Make governed workspaces easy to bootstrap.
 
-Depends on: v3.0 released (stranger test passed).
+Shipped ahead of schedule in v2.7.x; dependency on v3.0 stranger test waived for early delivery.
 
-- [ ] **`agentguard init studio` wizard** — Interactive CLI wizard:
-  - Detect project type (monorepo, single package, framework)
-  - Detect CI/CD (GitHub Actions, GitLab CI, etc.)
-  - Detect test framework (Vitest, Jest, Playwright, etc.)
-  - Detect agent runtimes (Claude Code, Copilot, Cursor)
-  - Suggest execution profile (development, ci-safe, strict, enterprise)
-  - Select swarm template (QA, backlog refinement, feature implementation, etc.)
-  - Generate `agentguard.yaml` with inferred configuration
-  - Optionally connect to Cloud (`agentguard cloud connect`)
-- [ ] **Execution profiles** — Predefined governance configurations selectable via `agentguard init studio --profile <name>` or `agentguard init --profile <name>`:
-  - `development` — Permissive, all adapters enabled, logging verbose
-  - `ci-safe` — No interactive commands, restricted file scope, CI-optimized
-  - `strict` — Default-deny, minimal tool allowlist, audit everything
-  - `enterprise` — Strict + compliance invariants (SOC2, HIPAA pack bindings)
-- [ ] **Swarm template schema** — Canonical YAML schema for swarm template definitions:
-  - Agent roles (name, description, model tier, capabilities)
-  - Allowed tools per agent role
-  - Schedules (cron expressions, concurrency limits)
-  - Escalation rules (risk threshold → human review)
-  - PR caps and branch naming conventions
-  - Required policy pack bindings
-  - Template composition (extend base templates)
+- [x] ~~**`agentguard init studio` wizard**~~ — ✅ Done 2026-03-26 — detects project type (monorepo/single), CI/CD, test framework, agent runtimes; offers execution profile + swarm preset selection (full/qa-focused/dev-ops/minimal); `--non-interactive` mode for CI; optional Cloud connection (PR #987)
+- [x] ~~**Execution profiles**~~ — ✅ Done 2026-03-26 — `ci-safe` and `enterprise` profiles shipped; 6 profiles total via `agentguard init --profile <name>` (PR #987)
+- [x] ~~**Swarm template schema**~~ — ✅ Done 2026-03-26 — canonical JSON schema for swarm manifest, squad manifest, swarm config with zero-dependency runtime validator (PR #987)
 
 ### Next — Capability-Scoped Sessions (Phase 7)
 
@@ -264,9 +247,12 @@ Depends on: KE-2 (ActionContext provides vendor-neutral normalization).
 - [x] ~~Monitor mode for claude-hook~~ — ✅ Done 2026-03-21 (v2.3.0)
 - [ ] JetBrains plugin (IntelliJ/WebStorm)
 - [ ] Cursor integration
-- [ ] Framework-specific adapters (LangGraph, CrewAI, AutoGen, OpenAI Agents SDK)
+- [ ] Framework-specific adapters (LangGraph, CrewAI, AutoGen, OpenAI Agents SDK, DeepAgents)
 - [x] ~~Agent SDK for programmatic governance integration~~ — ✅ Done 2026-03-21 (v2.3.0)
 - [ ] Generic MCP adapter for any MCP-compatible tool
+- [x] ~~OpenCode driver support~~ — ✅ Done 2026-03-26 (v2.7.x) — `opencode` registered as supported agent driver (PR #1019)
+- [x] ~~Codex CLI adapter (PreToolUse/PostToolUse)~~ — ✅ Done 2026-03-27 (v2.8.0) — `agentguard codex-hook` + `agentguard codex-init` (PR #1024)
+- [x] ~~Gemini CLI adapter (BeforeTool/AfterTool)~~ — ✅ Done 2026-03-27 (v2.8.0) — `agentguard gemini-hook` + `agentguard gemini-init` (PR #1024)
 - [ ] **Runtime sandbox adapters** — Optional modules that enrich governance with sandbox metadata. Integrate, don't depend:
   - `@agentguard/runtime-nemoclaw` — NVIDIA NemoClaw adapter: detect sandbox environment, map sandbox permissions → governance rules, fuse behavioral telemetry (AgentGuard) with system constraints (NemoClaw) for full-stack audit trail. Enterprise credibility multiplier — "contained + governed" covers prevent/detect/contain/audit. **Not a dependency** — kernel remains runtime-independent.
   - Future: Docker/Podman, Firecracker, Bubblewrap adapters via same pattern
@@ -314,7 +300,7 @@ Depends on: KE-2 (ActionContext provides vendor-neutral normalization).
 - [ ] Formal verification via Z3/SMT solver (liveness, safety, least privilege)
 - [ ] Remote governance runtime (`agentguard serve`)
 
-### Ongoing — Go Kernel Rewrite (Velocity-First)
+### Ongoing — Go Kernel Rewrite (Velocity-First) — **In Progress**
 
 > Ship a production-worthy kernel fast without painting into a corner.
 
@@ -323,6 +309,7 @@ Depends on: KE-2 (ActionContext provides vendor-neutral normalization).
 **Architecture for replaceability**: The kernel is a specification, not just code. Canonical Action Model (CAR), policy engine semantics, enforcement contract, decision outputs, event schema, and invariants are all language-independent. The kernel exposes a narrow boundary (gRPC / local socket / WASM / FFI / CLI contract) so implementations can be swapped.
 
 **Phase 1 — Go Kernel (Ship Fast)**:
+- [x] ~~Go binary fast-path delegation operational~~ — ✅ Done 2026-03-26 — `go/cmd/agentguard/evaluate` wired as fast-path in claude-hook; normalized ActionContext accepted (PRs #1000, #1001)
 - [ ] Validate architecture end-to-end in Go
 - [ ] Harden semantics and find edge cases with real users
 - [ ] Achieve sub-millisecond enforcement targets
