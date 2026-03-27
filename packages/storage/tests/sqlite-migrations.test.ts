@@ -14,7 +14,7 @@ describe('SQLite migrations', () => {
 
   it('creates all tables on first run', () => {
     const applied = runMigrations(db);
-    expect(applied).toBe(5);
+    expect(applied).toBe(6);
 
     const tables = db
       .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
@@ -54,20 +54,23 @@ describe('SQLite migrations', () => {
 
     // v5 index
     expect(names).toContain('idx_sessions_agent_id');
+
+    // v6 index
+    expect(names).toContain('idx_sessions_driver_type');
   });
 
   it('is idempotent — running twice applies nothing the second time', () => {
     const first = runMigrations(db);
     const second = runMigrations(db);
 
-    expect(first).toBe(5);
+    expect(first).toBe(6);
     expect(second).toBe(0);
   });
 
   it('tracks schema version', () => {
     expect(getSchemaVersion(db)).toBe(0);
     runMigrations(db);
-    expect(getSchemaVersion(db)).toBe(5);
+    expect(getSchemaVersion(db)).toBe(6);
   });
 
   it('enables WAL mode (on file-based databases)', () => {
@@ -120,8 +123,8 @@ describe('SQLite migrations', () => {
     expect(getSchemaVersion(db)).toBe(1);
 
     const applied = runMigrations(db);
-    expect(applied).toBe(4);
-    expect(getSchemaVersion(db)).toBe(5);
+    expect(applied).toBe(5);
+    expect(getSchemaVersion(db)).toBe(6);
 
     const indexes = db
       .prepare(
@@ -216,9 +219,9 @@ describe('SQLite migration v2 — action_type and severity columns', () => {
       JSON.stringify({ id: 'evt_2', kind: 'RunStarted', timestamp: 1001, fingerprint: 'fp2' })
     );
 
-    // Run v2+v3+v4+v5 migrations
+    // Run v2+v3+v4+v5+v6 migrations
     const applied = runMigrations(db);
-    expect(applied).toBe(4);
+    expect(applied).toBe(5);
 
     const row1 = db.prepare('SELECT action_type FROM events WHERE id = ?').get('evt_1') as {
       action_type: string | null;
@@ -341,8 +344,8 @@ describe('SQLite migration v2 — action_type and severity columns', () => {
     expect(getSchemaVersion(db2)).toBe(3);
 
     const applied = runMigrations(db2);
-    expect(applied).toBe(2);
-    expect(getSchemaVersion(db2)).toBe(5);
+    expect(applied).toBe(3);
+    expect(getSchemaVersion(db2)).toBe(6);
 
     const indexes = db2
       .prepare(

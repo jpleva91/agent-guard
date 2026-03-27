@@ -9,6 +9,7 @@ import {
   getSession,
   listSessions,
   createSessionTracker,
+  parseDriverType,
 } from '@red-codes/storage';
 import type { SessionStartData, SessionEndData } from '@red-codes/storage';
 
@@ -167,6 +168,69 @@ describe('sqlite-session', () => {
 
       const all = tracker.list();
       expect(all).toHaveLength(1);
+    });
+  });
+
+  describe('parseDriverType', () => {
+    it('splits composite driver:agentName identity', () => {
+      expect(parseDriverType('claude-code:kernel-qa')).toEqual({
+        driverType: 'claude-code',
+        agentName: 'kernel-qa',
+      });
+    });
+
+    it('splits on first colon only', () => {
+      expect(parseDriverType('copilot:my:agent')).toEqual({
+        driverType: 'copilot',
+        agentName: 'my:agent',
+      });
+    });
+
+    it('returns undefined driverType for legacy identities without colon', () => {
+      expect(parseDriverType('kernel-sr')).toEqual({
+        driverType: undefined,
+        agentName: 'kernel-sr',
+      });
+    });
+
+    it('handles empty string gracefully', () => {
+      expect(parseDriverType('')).toEqual({ driverType: undefined, agentName: '' });
+    });
+  });
+
+  describe('driver_type storage', () => {
+    it('stores driver_type when agentId has composite format', () => {
+      insertSession(db, 'sess_drv1', 'guard', { agentId: 'claude-code:kernel-qa' });
+      const row = db
+        .prepare('SELECT agent_id, driver_type FROM sessions WHERE id = ?')
+        .get('sess_drv1') as Record<string, unknown>;
+      expect(row.agent_id).toBe('claude-code:kernel-qa');
+      expect(row.driver_type).toBe('claude-code');
+    });
+
+    it('stores driver_type as null for legacy identity without colon', () => {
+      insertSession(db, 'sess_drv2', 'guard', { agentId: 'kernel-sr' });
+      const row = db
+        .prepare('SELECT agent_id, driver_type FROM sessions WHERE id = ?')
+        .get('sess_drv2') as Record<string, unknown>;
+      expect(row.agent_id).toBe('kernel-sr');
+      expect(row.driver_type).toBeNull();
+    });
+
+    it('stores null driver_type when agentId is absent', () => {
+      insertSession(db, 'sess_drv3', 'guard');
+      const row = db
+        .prepare('SELECT agent_id, driver_type FROM sessions WHERE id = ?')
+        .get('sess_drv3') as Record<string, unknown>;
+      expect(row.agent_id).toBeNull();
+      expect(row.driver_type).toBeNull();
+    });
+
+    it('SessionRow includes driver_type field', () => {
+      insertSession(db, 'sess_drv4', 'guard', { agentId: 'copilot:my-agent' });
+      const row = getSession(db, 'sess_drv4');
+      expect(row).not.toBeNull();
+      expect(row!.driver_type).toBe('copilot');
     });
   });
 });

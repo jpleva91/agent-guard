@@ -4,6 +4,20 @@
 
 import type Database from 'better-sqlite3';
 
+/**
+ * Parse the composite `<driver>:<agentName>` identity format.
+ * Returns `{ driverType, agentName }`. If no `:` is present, `driverType`
+ * is `undefined` and `agentName` is the full string (backward compat).
+ */
+export function parseDriverType(agentId: string): {
+  driverType: string | undefined;
+  agentName: string;
+} {
+  const idx = agentId.indexOf(':');
+  if (idx === -1) return { driverType: undefined, agentName: agentId };
+  return { driverType: agentId.slice(0, idx), agentName: agentId.slice(idx + 1) };
+}
+
 export interface SessionStartData {
   readonly policyFile?: string;
   readonly dryRun?: boolean;
@@ -29,6 +43,7 @@ export interface SessionRow {
   readonly repo: string | null;
   readonly data: string;
   readonly agent_id: string | null;
+  readonly driver_type: string | null;
 }
 
 export function insertSession(
@@ -43,9 +58,10 @@ export function insertSession(
     const repo = safeGetCwd();
     const { agentId, ...rest } = startData;
     const data = JSON.stringify({ ...rest, status: 'running' });
+    const { driverType } = agentId ? parseDriverType(agentId) : { driverType: undefined };
     db.prepare(
-      'INSERT OR IGNORE INTO sessions (id, started_at, ended_at, command, repo, data, agent_id) VALUES (?, ?, NULL, ?, ?, ?, ?)'
-    ).run(sessionId, now, command, repo, data, agentId ?? null);
+      'INSERT OR IGNORE INTO sessions (id, started_at, ended_at, command, repo, data, agent_id, driver_type) VALUES (?, ?, NULL, ?, ?, ?, ?, ?)'
+    ).run(sessionId, now, command, repo, data, agentId ?? null, driverType ?? null);
   } catch (err) {
     onError?.(err as Error);
   }
