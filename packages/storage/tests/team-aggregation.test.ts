@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { runMigrations, agentSummaries, teamReport } from '@red-codes/storage';
+import {
+  runMigrations,
+  agentSummaries,
+  teamReport,
+  insertSession,
+  countEventsByKind,
+  countDecisionsByOutcome,
+} from '@red-codes/storage';
 
 function insertEvent(
   db: Database.Database,
@@ -320,6 +327,158 @@ describe('Team Aggregation Queries', () => {
       // Should only include the recent agent
       expect(report.agents).toHaveLength(1);
       expect(report.agents[0].agent).toBe('new-agent');
+    });
+  });
+
+  describe('agentId filter', () => {
+    it('filters agentSummaries to a single agent by sessions.agent_id', () => {
+      const now = Date.now();
+
+      // Create sessions with agent_id via insertSession
+      insertSession(db, 'run_1', 'guard', { agentId: 'agent-alpha' });
+      insertSession(db, 'run_2', 'guard', { agentId: 'agent-beta' });
+
+      // Agent alpha: one session with events
+      insertEvent(db, {
+        runId: 'run_1',
+        kind: 'RunStarted',
+        timestamp: now - 2000,
+        data: { agentName: 'agent-alpha' },
+      });
+      insertDecision(db, { runId: 'run_1', outcome: 'allowed', timestamp: now - 1000 });
+      insertDecision(db, { runId: 'run_1', outcome: 'denied', timestamp: now - 900 });
+
+      // Agent beta: one session with events
+      insertEvent(db, {
+        runId: 'run_2',
+        kind: 'RunStarted',
+        timestamp: now - 500,
+        data: { agentName: 'agent-beta' },
+      });
+      insertDecision(db, { runId: 'run_2', outcome: 'allowed', timestamp: now - 400 });
+
+      // Without filter: both agents
+      const all = agentSummaries(db);
+      expect(all).toHaveLength(2);
+
+      // With agentId filter: only alpha
+      const filtered = agentSummaries(db, { agentId: 'agent-alpha' });
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].agent).toBe('agent-alpha');
+      expect(filtered[0].totalActions).toBe(2);
+      expect(filtered[0].denied).toBe(1);
+    });
+
+    it('filters countEventsByKind by agentId', () => {
+      const now = Date.now();
+
+      insertSession(db, 'run_1', 'guard', { agentId: 'agent-alpha' });
+      insertSession(db, 'run_2', 'guard', { agentId: 'agent-beta' });
+
+      insertEvent(db, {
+        runId: 'run_1',
+        kind: 'ActionAllowed',
+        timestamp: now - 1000,
+      });
+      insertEvent(db, {
+        runId: 'run_1',
+        kind: 'ActionDenied',
+        timestamp: now - 900,
+      });
+      insertEvent(db, {
+        runId: 'run_2',
+        kind: 'ActionAllowed',
+        timestamp: now - 500,
+      });
+
+      // Without filter: 2 ActionAllowed + 1 ActionDenied
+      const all = countEventsByKind(db);
+      expect(all.find((r) => r.kind === 'ActionAllowed')?.count).toBe(2);
+
+      // With agentId filter: only run_1 events
+      const filtered = countEventsByKind(db, { agentId: 'agent-alpha' });
+      expect(filtered.find((r) => r.kind === 'ActionAllowed')?.count).toBe(1);
+      expect(filtered.find((r) => r.kind === 'ActionDenied')?.count).toBe(1);
+    });
+
+    it('filters countDecisionsByOutcome by agentId', () => {
+      const now = Date.now();
+
+      insertSession(db, 'run_1', 'guard', { agentId: 'agent-alpha' });
+      insertSession(db, 'run_2', 'guard', { agentId: 'agent-beta' });
+
+      insertDecision(db, { runId: 'run_1', outcome: 'allowed', timestamp: now - 1000 });
+      insertDecision(db, { runId: 'run_1', outcome: 'denied', timestamp: now - 900 });
+      insertDecision(db, { runId: 'run_2', outcome: 'allowed', timestamp: now - 500 });
+
+      const filtered = countDecisionsByOutcome(db, { agentId: 'agent-beta' });
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0]).toEqual({ outcome: 'allowed', count: 1 });
+    });
+
+    it('filters teamReport by agentId', () => {
+      const now = Date.now();
+
+      insertSession(db, 'run_1', 'guard', { agentId: 'agent-alpha' });
+      insertSession(db, 'run_2', 'guard', { agentId: 'agent-beta' });
+
+      insertEvent(db, {
+        runId: 'run_1',
+        kind: 'RunStarted',
+        timestamp: now - 2000,
+        data: { agentName: 'agent-alpha' },
+      });
+      insertDecision(db, { runId: 'run_1', outcome: 'allowed', timestamp: now - 1000 });
+
+      insertEvent(db, {
+        runId: 'run_2',
+        kind: 'RunStarted',
+        timestamp: now - 500,
+        data: { agentName: 'agent-beta' },
+      });
+      insertDecision(db, { runId: 'run_2', outcome: 'denied', timestamp: now - 400 });
+
+      const report = teamReport(db, { agentId: 'agent-alpha' });
+      expect(report.agents).toHaveLength(1);
+      expect(report.agents[0].agent).toBe('agent-alpha');
+      expect(report.overview.totalDecisions).toBe(1);
+    });
+
+    it('returns empty results for non-existent agentId', () => {
+      const now = Date.now();
+
+      insertSession(db, 'run_1', 'guard', { agentId: 'agent-alpha' });
+      insertEvent(db, {
+        runId: 'run_1',
+        kind: 'RunStarted',
+        timestamp: now,
+        data: { agentName: 'agent-alpha' },
+      });
+      insertDecision(db, { runId: 'run_1', outcome: 'allowed', timestamp: now });
+
+      const summaries = agentSummaries(db, { agentId: 'nonexistent' });
+      expect(summaries).toEqual([]);
+    });
+
+    it('agentSummaries prefers sessions.agent_id over event JSON', () => {
+      const now = Date.now();
+
+      // Session has agent_id set via insertSession
+      insertSession(db, 'run_1', 'guard', { agentId: 'canonical-name' });
+
+      // RunStarted event has a different agentName in JSON
+      insertEvent(db, {
+        runId: 'run_1',
+        kind: 'RunStarted',
+        timestamp: now,
+        data: { agentName: 'json-name' },
+      });
+      insertDecision(db, { runId: 'run_1', outcome: 'allowed', timestamp: now });
+
+      const summaries = agentSummaries(db);
+      expect(summaries).toHaveLength(1);
+      // sessions.agent_id takes precedence via COALESCE
+      expect(summaries[0].agent).toBe('canonical-name');
     });
   });
 });

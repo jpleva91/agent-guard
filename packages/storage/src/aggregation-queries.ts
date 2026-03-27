@@ -11,6 +11,8 @@ export interface AggregationTimeFilter {
   readonly until?: number;
   /** Restrict to the N most recent sessions */
   readonly sessionLimit?: number;
+  /** Filter to a specific agent by sessions.agent_id */
+  readonly agentId?: string;
 }
 
 /** Event count grouped by kind */
@@ -92,6 +94,12 @@ function buildTimeConditions(
   }
   if (filter?.sessionLimit !== undefined && filter.sessionLimit > 0) {
     conditions.push(buildRunIdSubquery(filter.sessionLimit));
+  }
+  if (filter?.agentId !== undefined) {
+    conditions.push(
+      `${table}.run_id IN (SELECT id FROM sessions WHERE agent_id = ?)`
+    );
+    params.push(filter.agentId);
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -355,17 +363,20 @@ export function agentSummaries(
 ): AgentSummary[] {
   const { where, params } = buildTimeConditions(filter, 'events');
 
-  // Step 1: Map run_id → agent name from RunStarted events
+  // Step 1: Map run_id → agent name.
+  // Prefer sessions.agent_id (indexed, fast) with fallback to RunStarted event JSON.
   const agentMapSql = `
     SELECT
-      run_id,
+      events.run_id,
       COALESCE(
-        json_extract(data, '$.agentName'),
-        json_extract(data, '$.agentId'),
+        s.agent_id,
+        json_extract(events.data, '$.agentName'),
+        json_extract(events.data, '$.agentId'),
         'unknown'
       ) as agent
     FROM events
-    ${where ? `${where} AND kind = 'RunStarted'` : "WHERE kind = 'RunStarted'"}
+    LEFT JOIN sessions s ON s.id = events.run_id
+    ${where ? `${where} AND events.kind = 'RunStarted'` : "WHERE events.kind = 'RunStarted'"}
   `;
   const agentMap = db.prepare(agentMapSql).all(...params) as Array<{
     run_id: string;

@@ -122,6 +122,31 @@ const MIGRATIONS: readonly Migration[] = [
       db.exec('CREATE INDEX IF NOT EXISTS idx_decisions_action_type ON decisions (action_type)');
     },
   },
+
+  {
+    version: 5,
+    description: 'Add agent_id column to sessions table with index; backfill from RunStarted events',
+    up(db) {
+      db.exec('ALTER TABLE sessions ADD COLUMN agent_id TEXT');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_sessions_agent_id ON sessions (agent_id)');
+
+      // Backfill agent_id from RunStarted events where possible
+      const rows = db
+        .prepare(
+          `SELECT run_id,
+                  COALESCE(json_extract(data, '$.agentName'), json_extract(data, '$.agentId')) as agent
+           FROM events
+           WHERE kind = 'RunStarted'
+             AND COALESCE(json_extract(data, '$.agentName'), json_extract(data, '$.agentId')) IS NOT NULL`
+        )
+        .all() as Array<{ run_id: string; agent: string }>;
+
+      const update = db.prepare('UPDATE sessions SET agent_id = ? WHERE id = ? AND agent_id IS NULL');
+      for (const row of rows) {
+        update.run(row.agent, row.run_id);
+      }
+    },
+  },
 ];
 
 /**
