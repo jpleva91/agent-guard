@@ -1,52 +1,65 @@
 {
   "schemaVersion": "1.0",
-  "updatedAt": "2026-03-27T02:45:00Z",
-  "updatedBy": "backlog-hygiene--roadmap-triage-agent",
+  "updatedAt": "2026-03-27T16:07Z",
+  "updatedBy": "risk-escalation-agent",
   "mode": "normal",
-  "recommendedMode": "normal",
-  "modeReason": "Roadmap triage agent confirms normal mode. v2.8.0 shipped (Codex CLI + Gemini CLI adapters). Phase 6.75 (Studio Runtime) completed ahead of schedule. Install attribution (v3.0 blocker) shipped in v2.7.x. Go kernel fast-path delegation operational. Security issue #648 (read-only ops) RESOLVED via PR #982. Risk profile steady.",
+  "recommendedMode": "conservative",
+  "modeReason": "Risk escalation agent: composite risk 41/100 (HIGH). PR queue has 2,399 lines of open blast radius (largest: PR #1109 at 1,338 lines). CI failure rate 50% across last 20 runs. Extreme churn: 46 PRs in 24h, 14 closed-without-merge. Recommending conservative mode until CI failures are resolved and PR #1109 is reviewed. See escalation alert #1124.",
   "riskAssessment": {
-    "compositeScore": 8,
-    "escalationLevel": "NORMAL",
-    "assessedAt": "2026-03-27T02:45:00Z",
+    "compositeScore": 41,
+    "escalationLevel": "HIGH",
+    "assessedAt": "2026-03-27T16:07Z",
     "dimensions": {
       "prBlastRadius": {
-        "score": 0,
+        "score": 20,
         "max": 25,
-        "openPRs": 0,
-        "conflictedPRs": 0,
-        "note": "PR queue empty. v2.8.0 merged cleanly."
+        "openPRs": 7,
+        "totalBlastRadius": 2399,
+        "largestPR": 1109,
+        "largestPRBlastRadius": 1338,
+        "note": "PR #1109 (feat: OpenCode adapter) has 1,338 lines across 6 files — HIGH. Total open queue: 2,399 lines (threshold 2,000 exceeded). Gated with do-not-merge."
       },
       "testFailureRate": {
-        "score": 2,
+        "score": 20,
         "max": 25,
-        "note": "Main branch CI green. No persistent test failures."
+        "failureRate": 0.50,
+        "runsAnalyzed": 20,
+        "failures": 10,
+        "mainBranchFailures": 0,
+        "note": "50% failure rate across last 20 CI runs. Every push triggers paired success+failure — one CI workflow consistently failing. Main branch not directly tested in last 20 runs."
       },
       "governanceDenialRate": {
-        "score": 3,
+        "score": 0,
         "max": 25,
-        "highPriorityIssuesOpen": 6,
-        "securityBypassVectors": [
-          "#618 (credential write bypass)",
-          "#640 (path manipulation)",
-          "#639 (credential stripping)"
-        ],
-        "note": "6 HIGH-priority issues open (down from 8). #648 (read-only blocking) RESOLVED via PR #982. #618, #640, #639 remain without assigned PRs."
+        "note": "No telemetry data available — runtime-events.jsonl empty. Governance analytics inactive. Scored as HEALTHY (0) by default."
       },
       "mergeConflictRate": {
         "score": 0,
         "max": 25,
         "conflictedPRs": 0,
-        "openPRs": 0,
-        "note": "No open PRs, no conflicts."
+        "unknownPRs": 2,
+        "mergeablePRs": 5,
+        "openPRs": 7,
+        "note": "0 CONFLICTING PRs. 2 UNKNOWN (freshly opened). Scored as HEALTHY (0)."
       }
     },
+    "churnSignals": {
+      "prsOpenedLast24h": 46,
+      "prsClosedWithoutMergeLast24h": 14,
+      "churnLevel": "HIGH",
+      "note": "46 PRs opened, 14 closed-without-merge in 24h. Agent hyperactivity detected. +1 conservative bump applied to composite score at boundary."
+    },
+    "gatingActions": [
+      { "action": "do-not-merge + needs:careful-review", "target": "PR #1109", "reason": "1,338-line blast radius" },
+      { "action": "needs:careful-review", "target": "PR #1090", "reason": "332-line blast radius" }
+    ],
+    "escalationAlertIssue": 1124,
     "deltaFromPrior": {
-      "priorScore": 10,
-      "currentScore": 8,
-      "delta": -2,
-      "direction": "improved",
-      "cause": "v2.8.0 released (Codex+Gemini CLI). Phase 6.75 DONE. Install attribution shipped. #648 RESOLVED. Security issue count 8->6."
+      "priorScore": 8,
+      "currentScore": 41,
+      "delta": 33,
+      "direction": "degraded",
+      "cause": "PR queue grew significantly (2,399 lines). CI failure rate at 50% across all recent runs. Extreme agent churn (46 PRs/24h, 14 wasted). Prior assessment (02:45Z) found queue empty and CI green."
     }
   },
   "phaseTracking": {
