@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agentguard codex-hook pre",
+            "statusMessage": "AgentGuard governance check"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agentguard codex-hook post",
+            "statusMessage": "AgentGuard error monitoring"
+          }
+        ]
+      }
+    ]
+  }
+}

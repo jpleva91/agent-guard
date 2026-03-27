@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "BeforeTool": [
+      {
+        "matcher": "Shell|WriteFile|EditFile",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agentguard gemini-hook pre"
+          }
+        ]
+      }
+    ],
+    "AfterTool": [
+      {
+        "matcher": "Shell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "agentguard gemini-hook post"
+          }
+        ]
+      }
+    ]
+  }
+}
