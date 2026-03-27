@@ -30,10 +30,18 @@
     }
   ],
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
+      {
+        "number": 1028,
+        "title": "fix(kernel): update invariant count assertion 23→24 after no-verify-bypass",
+        "branch": "agent/kernel-qa-20260327-005002",
+        "status": "open",
+        "ciStatus": "failing",
+        "note": "Fixes invariant count regression. CI blocked by 2 pre-existing issues on main: (1) Prettier formatting in claude-hook.ts, (2) go-fast-path.test.ts fails in CI (passes locally — Go binary not available in CI runner)."
+      },
       {
         "number": 969,
         "title": "fix(claude-init): write hooks with full binary path (closes #964)",
@@ -47,21 +55,44 @@
   },
   "health": "yellow",
   "testHealth": {
-    "total": 4134,
-    "passed": 4134,
-    "failed": 0,
-    "packages": 19,
-    "lastRun": "2026-03-26T00:51:00.000Z",
-    "status": "all_passing",
-    "delta": "+5 tests since last run (4129 → 4134)",
+    "total": 4222,
+    "passed": 4216,
+    "failed": 1,
+    "skipped": 5,
+    "packages": 18,
+    "lastRun": "2026-03-27T01:38:00.000Z",
+    "status": "regression",
+    "delta": "+88 tests since last run (4134 → 4222)",
+    "regressions": [
+      {
+        "test": "agentguard/core/engine > createEngine > creates an engine with defaults",
+        "file": "packages/kernel/tests/agentguard-engine.test.ts",
+        "error": "expected 24 to be 23 — invariant count assertion stale after no-verify-bypass invariant added (PR #1002)",
+        "fix": "PR #1028 (open, CI blocked by pre-existing issues)"
+      }
+    ],
+    "ciBlockers": [
+      {
+        "issue": "Prettier formatting regression on main",
+        "file": "apps/cli/src/commands/claude-hook.ts",
+        "impact": "Blocks CI lint step for ALL PRs",
+        "note": "Pre-existing on main. Needs a 1-line prettier --write fix."
+      },
+      {
+        "issue": "go-fast-path.test.ts fails in CI",
+        "file": "apps/cli/tests/go-fast-path.test.ts",
+        "impact": "Blocks CI test step for ALL PRs",
+        "note": "Passes locally (Go binary available). Fails in CI (Go binary not present in runner). Test needs skip-if-no-binary guard."
+      }
+    ],
     "coverageGaps": [
       {
         "file": "apps/cli/src/commands/copilot-init.ts",
-        "note": "No dedicated test file. Recently modified in PR #969 (same hook path fix as claude-init). claude-init has 39 tests; copilot-init has zero."
+        "note": "Test file exists (cli-copilot-init.test.ts) but coverage is minimal compared to claude-init (39 tests). Needs parity."
       }
     ]
   },
   "lastEmRun": "2026-03-26T09:00:00.000Z",
-  "lastQaRun": "2026-03-26T00:51:00.000Z",
-  "updatedAt": "2026-03-26T00:51:00.000Z"
+  "lastQaRun": "2026-03-27T01:38:00.000Z",
+  "updatedAt": "2026-03-27T01:38:00.000Z"
 }
