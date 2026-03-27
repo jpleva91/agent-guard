@@ -1,60 +1,95 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Fix P0 hook-breaking bugs (#972, #973), then resume Go kernel wire-up (#955). Hook path must work before Go delegation can ship.",
+    "goal": "Fix systemic CI failure (blocking all merges), then resume Go kernel wire-up (#955). P0s #972+#973 resolved last cycle.",
     "issues": [
-      972,
-      973,
       955,
       957,
-      964
+      1026,
+      1034
     ]
   },
   "assignments": {
     "senior": {
-      "issue": [
-        972,
-        973
-      ],
-      "title": "P0: Fix hook deny reason retry metadata (#972) + bundle essentials pack in npm (#973)",
+      "issue": ["ci-investigation", 955],
+      "title": "P0: Diagnose systemic CI failure (test-and-build + lint failing on all PRs) → then resume #955 Go kernel delegation",
       "status": "unassigned",
       "branch": null,
       "pr": null,
       "claimedAt": null,
-      "note": "P0 fast-track: #972 breaks all governed sessions (retry text in deny reason \u2192 Claude Code blocks all tool use). #973 compounds it (essentials pack missing \u2192 default-deny on everything). Fix both before resuming #955 Go delegation."
+      "note": "All 6 open PRs fail test-and-build + lint. Likely a main-branch regression or dependency break. Root cause must be found before any PR can merge. Once CI is green, resume #955 Go kernel wire-up. PRs #1104 (closes #1026) and #1098 (closes #1034) are ready to merge as soon as CI is fixed."
     }
   },
   "blockers": [
     {
-      "issue": 972,
-      "description": "Hook deny reason includes '(attempt N/N)' \u2014 Claude Code misinterprets as blocking error, killing all tool use in governed sessions",
+      "issue": "systemic-ci-failure",
+      "description": "All 6 open PRs failing test-and-build + lint CI checks. Systemic — not PR-specific. Likely a main-branch break. Blocks all merges.",
       "severity": "P0",
-      "since": "2026-03-26T00:00:00.000Z"
+      "since": "2026-03-27T00:00:00.000Z"
     },
     {
-      "issue": 973,
-      "description": "essentials policy pack not bundled in npm \u2014 all hook invocations hit default-deny",
+      "issue": 1128,
+      "description": "Swarm health P0 — 78% of agent worktrees stuck (5/9). All stopped activity ~01:17-01:44 UTC 2026-03-27. Escalated to director.",
       "severity": "P0",
-      "since": "2026-03-26T00:00:00.000Z"
+      "since": "2026-03-27T18:05:00.000Z"
     }
   ],
   "prQueue": {
-    "open": 0,
+    "open": 6,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
       {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "branch": "agent/kernel-sr-20260325-230535",
-        "status": "merged",
-        "ciStatus": "passed",
-        "mergedAt": "2026-03-26T00:30:00.000Z",
-        "note": "Merged successfully. All CI checks passed."
+        "number": 1126,
+        "title": "feat: DeepAgents framework adapter (closes #1055)",
+        "branch": "feat/deepagents-adapter-1055",
+        "status": "ci_failing",
+        "ciStatus": "failed",
+        "note": "test-and-build + lint + CodeQL all failing. Do not merge."
+      },
+      {
+        "number": 1117,
+        "title": "fix(site): sync test count 2637→4161",
+        "branch": "agent/site-em-20260327-141017",
+        "status": "ci_failing",
+        "ciStatus": "failed",
+        "note": "test-and-build + lint failing. Systemic — site-only change shouldn't fail tests."
+      },
+      {
+        "number": 1109,
+        "title": "feat: OpenCode framework adapter (closes #1054)",
+        "branch": "feat/opencode-adapter-1054",
+        "status": "blocked",
+        "ciStatus": "unknown",
+        "note": "Has do-not-merge + needs:careful-review labels. Do not touch."
+      },
+      {
+        "number": 1104,
+        "title": "fix(adapters): educate mode always allows (closes #1026)",
+        "branch": "fix/1026-educate-mode-always-allow",
+        "status": "ci_failing",
+        "ciStatus": "failed",
+        "note": "Good fix — ready code-wise. test-and-build + lint failing. Merge as soon as CI fixed."
+      },
+      {
+        "number": 1098,
+        "title": "feat(storage): driver_type sessions (closes #1034)",
+        "branch": "feat/1034-driver-type-sessions",
+        "status": "ci_failing",
+        "ciStatus": "failed",
+        "note": "Lint passes (unique among all PRs). test-and-build still failing. Merge priority after CI fix."
+      },
+      {
+        "number": 1090,
+        "title": "test: add tests for telemetry/runtimeLogger",
+        "branch": "agent/copilot-test-writer-oss-20260327-053002",
+        "status": "ci_failing",
+        "ciStatus": "failed",
+        "note": "needs:careful-review label. test-and-build + lint failing."
       }
     ]
   },
-  "health": "yellow",
+  "health": "red",
   "testHealth": {
     "total": 4298,
     "passed": 4298,
@@ -62,12 +97,14 @@
     "packages": 18,
     "lastRun": "2026-03-27T03:50:00.000Z",
     "status": "all_passing",
-    "delta": "+63 tests since last run (4235 \u2192 4298); +25 new storage tests this cycle",
+    "delta": "Local suite clean. CI checks on PRs all failing — environment divergence suspected.",
     "coverageGaps": [],
     "fixes": [],
-    "openPrNotes": []
+    "openPrNotes": [
+      "All 6 open PRs failing CI test-and-build. Systemic main-branch issue suspected."
+    ]
   },
-  "lastEmRun": "2026-03-26T09:00:00.000Z",
+  "lastEmRun": "2026-03-27T18:30:00.000Z",
   "lastQaRun": "2026-03-27T03:50:00.000Z",
-  "updatedAt": "2026-03-27T03:50:00.000Z"
+  "updatedAt": "2026-03-27T18:30:00.000Z"
 }

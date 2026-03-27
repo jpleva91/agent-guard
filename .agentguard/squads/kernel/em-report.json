@@ -1,58 +1,95 @@
 {
-  "generatedAt": "2026-03-26T09:00:00.000Z",
+  "generatedAt": "2026-03-27T18:30:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
-  "health": "yellow",
-  "summary": "Health downgraded to YELLOW. Three new dogfood bugs discovered (#971, #972, #973). #972 is P0 — hook deny reason includes retry metadata text that causes Claude Code to block ALL tool use in governed sessions. #973 compounds it — essentials pack not bundled in npm, so every hook invocation hits default-deny. Sprint reprioritized: fix #972 + #973 first, then resume #955 (Go kernel delegation). PR #969 (closes #964) has merge conflicts — needs rebase. Closed stale EM PR #966.",
+  "health": "red",
+  "summary": "Health upgraded to RED. Sprint P0s (#972, #973) are CLOSED — hook deny-reason bug and essentials pack issue both fixed. However: (1) New P0 #1128 — swarm health alert, 78% of agent worktrees stuck/dead (5 of 9 agents). (2) Systemic CI failure — all 6 open PRs are failing test-and-build + lint. This is almost certainly a main-branch break causing all PRs to fail, not individual PR regressions. (3) PR budget exceeded: 6 open vs max 3. No PRs are mergeable this cycle. Sprint goal updated: investigate + fix systemic CI failure, then resume #955 (Go kernel delegation).",
   "prQueue": {
-    "open": 1,
+    "open": 6,
+    "reviewed": 0,
+    "mergeable": 0,
     "prs": [
       {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "ciStatus": "passed",
-        "mergeState": "CONFLICTING",
-        "note": "CI green but merge conflicts — needs rebase before merge"
+        "number": 1126,
+        "title": "feat: DeepAgents framework adapter",
+        "ciStatus": "failing",
+        "checks": { "test-and-build": "failure", "lint": "failure", "rust-kernel": "success", "codeql": "failure" },
+        "mergeState": "BLOCKED",
+        "note": "All CI checks failing. Do not merge."
+      },
+      {
+        "number": 1117,
+        "title": "fix(site): sync test count 2637→4161",
+        "ciStatus": "failing",
+        "checks": { "test-and-build": "failure", "lint": "failure", "rust-kernel": "success", "codeql": "success" },
+        "mergeState": "BLOCKED",
+        "note": "CI failing. Likely systemic — unrelated to site-only change."
+      },
+      {
+        "number": 1109,
+        "title": "feat: OpenCode framework adapter",
+        "ciStatus": "unknown",
+        "mergeState": "BLOCKED",
+        "note": "Has do-not-merge + needs:careful-review labels. Skip until labels cleared."
+      },
+      {
+        "number": 1104,
+        "title": "fix(adapters): educate mode always allows regardless of suggestion presence",
+        "ciStatus": "failing",
+        "checks": { "test-and-build": "failure", "lint": "failure", "rust-kernel": "success", "codeql": "success" },
+        "mergeState": "BLOCKED",
+        "note": "Good fix for #1026 but CI failing. Flag for architect review once CI is green."
+      },
+      {
+        "number": 1098,
+        "title": "feat(storage): parse driver:agent identity format, add driver_type to sessions",
+        "ciStatus": "failing",
+        "checks": { "test-and-build": "failure", "lint": "success", "rust-kernel": "success", "codeql": "success" },
+        "mergeState": "BLOCKED",
+        "note": "Lint passes (only PR where it does). test-and-build failure suggests main regression, not this PR."
+      },
+      {
+        "number": 1090,
+        "title": "test: add tests for telemetry/runtimeLogger",
+        "ciStatus": "failing",
+        "checks": { "test-and-build": "failure", "lint": "failure", "rust-kernel": "success", "codeql": "success" },
+        "mergeState": "BLOCKED",
+        "note": "needs:careful-review label. CI failing."
       }
     ]
   },
   "closedThisCycle": [
     {
-      "number": 966,
-      "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
-      "note": "Stale EM report — superseded by current cycle"
+      "number": 972,
+      "title": "Hook deny reason includes '(attempt N/N)' text — P0 RESOLVED",
+      "note": "Closed 2026-03-26. Sprint P0 fixed."
+    },
+    {
+      "number": 973,
+      "title": "claude-init --reset references essentials pack not bundled in npm — P0 RESOLVED",
+      "note": "Closed 2026-03-26. Sprint P0 fixed."
     }
   ],
   "mergedThisCycle": [],
   "newIssues": [
     {
-      "number": 972,
-      "title": "Hook deny reason includes '(attempt N/N)' text that Claude Code misinterprets as blocking error",
+      "number": 1128,
+      "title": "Swarm Health Alert — 2026-03-27",
       "severity": "P0",
-      "note": "Breaks ALL governed sessions. Deny reason text causes Claude Code to block all tool use. Sprint-blocking."
-    },
-    {
-      "number": 973,
-      "title": "claude-init --reset references essentials pack not bundled in npm package",
-      "severity": "P0",
-      "note": "Essentials pack only exists in repo source tree, not npm. Every hook invocation warns 'Pack not found' → default-deny."
-    },
-    {
-      "number": 971,
-      "title": "Hook crash after aguard rename + cross-user queue lock permission",
-      "severity": "P1",
-      "note": "Two dogfood bugs: (1) hook config references old 'agentguard' binary after rename to 'aguard', (2) cross-user queue.lock permission denied on jared box. Bug 1 is kernel, Bug 2 is ops."
+      "note": "78% of agent worktrees stuck (5/9 agents). All stopped activity at ~01:17-01:44 UTC. Swarm state is 15h stale. Escalate to director."
     }
   ],
   "loopGuards": {
     "prBudget": {
-      "open": 1,
+      "open": 6,
       "max": 3,
-      "pass": true
+      "pass": false,
+      "note": "PR budget EXCEEDED (2x limit). All PRs blocked on systemic CI failure."
     },
     "retryLoops": {
-      "stuckAgents": 0,
-      "pass": true
+      "stuckAgents": 5,
+      "pass": false,
+      "note": "5 agent worktrees stuck per #1128. All at HEAD ae37b15, no agent-specific commits."
     },
     "blastRadius": {
       "withinLimits": true,
@@ -60,74 +97,82 @@
     }
   },
   "triage": {
-    "p0Issues": 2,
-    "p1Issues": 1,
+    "p0Issues": 1,
+    "p1Issues": 0,
     "sprintReprioritized": true,
-    "reprioritizationReason": "Can't ship Go kernel delegation (#955) if the TS hook path itself is broken. #972 + #973 must be fixed first — they affect every npm user running governed sessions.",
+    "reprioritizationReason": "P0s #972/#973 are resolved. New P0 #1128 (swarm health). Systemic CI failure blocks all merges. Senior must investigate CI before resuming #955.",
     "newAssignments": [
       {
         "agent": "senior",
-        "issues": [972, 973],
-        "note": "P0 fast-track: fix deny reason retry text (#972) + bundle essentials pack (#973). Both break the hook integration path."
+        "issues": ["ci-investigation", 955],
+        "note": "Priority 1: Identify root cause of systemic CI failure (test-and-build + lint failing on all PRs). Priority 2: Resume #955 Go kernel delegation once CI is green."
       }
     ],
     "deferredWork": [
       {
-        "issues": [955, 957, 964],
-        "note": "Go kernel wire-up — resume after #972/#973 are fixed. PR #969 (closes #964) needs rebase."
+        "issues": [957, 1026, 1034],
+        "note": "PRs #1104 (closes #1026) and #1098 (closes #1034) are ready code-wise — defer merge until CI is fixed."
       }
     ],
     "notableIssues": [
       {
-        "number": 965,
-        "note": "Dogfood gap: direct push to master not blocked. Needs investigation but lower priority than #972/#973."
+        "number": 1128,
+        "note": "P0 swarm health — 78% agents stuck. Escalate to director. Prunable worktrees from 2026-03-25 should be cleaned up."
       },
       {
-        "number": 971,
-        "note": "Two bugs: aguard rename compat (kernel) + queue lock perms (ops). Bug 2 should be escalated to ops."
+        "number": 1109,
+        "note": "do-not-merge label on OpenCode adapter. Do not touch until label is cleared by architect."
       }
     ]
   },
   "blockers": [
     {
-      "issue": 972,
-      "description": "P0: Hook deny reason retry text breaks Claude Code integration",
-      "since": "2026-03-26"
+      "issue": "systemic-ci-failure",
+      "description": "All 6 open PRs failing test-and-build + lint. Likely main-branch break. Blocks all merges.",
+      "since": "2026-03-27",
+      "severity": "P0"
     },
     {
-      "issue": 973,
-      "description": "P0: Essentials pack not in npm → all hooks default-deny",
-      "since": "2026-03-26"
+      "issue": 1128,
+      "description": "Swarm health P0 — 78% agents stuck. 5 worktrees with no commits since ~01:40 UTC.",
+      "since": "2026-03-27",
+      "severity": "P0"
     }
   ],
   "escalations": [
     {
-      "target": "ops",
-      "issue": 971,
-      "reason": "Bug 2 (cross-user queue.lock permission denied) is an ops/deploy issue — jared workers can't dequeue"
+      "target": "director",
+      "issue": 1128,
+      "reason": "P0 swarm health alert — 78% of agent worktrees stuck. Swarm state 15h stale. Swarm-level intervention needed."
+    },
+    {
+      "target": "architect",
+      "issue": "systemic-ci-failure",
+      "reason": "All 6 open PRs failing CI (test-and-build + lint). Pattern suggests main-branch break rather than individual PR regressions. Needs architect investigation."
     }
   ],
   "metrics": {
-    "prsOpened": 0,
+    "prsOpened": 5,
     "prsMerged": 0,
-    "prsClosed": 1,
-    "issuesClosed": 0,
+    "prsClosed": 0,
+    "issuesClosed": 2,
     "governanceDenials": 0,
     "retries": 0
   },
   "testHealth": {
-    "total": 4129,
-    "passed": 4129,
+    "total": 4298,
+    "passed": 4298,
     "failed": 0,
-    "packages": 19,
-    "status": "all_passing"
+    "packages": 18,
+    "status": "all_passing",
+    "note": "Local test suite still clean (last QA run 2026-03-27T03:50Z). CI failures are in PR check runs — different environment."
   },
   "escalationRules": {
     "triggered": {
-      "twoPlusFailingCI": false,
+      "twoPlusFailingCI": true,
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "No CI escalation triggers, but #972 is a P0 production blocker discovered via dogfooding. Health set to YELLOW per severity."
+    "notes": "twoPlusFailingCI triggered (6 PRs, all failing). Health set to RED. Systemic failure + swarm P0 both require escalation."
   }
 }
