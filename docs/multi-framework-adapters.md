@@ -1,6 +1,19 @@
 # Multi-Framework Adapter System — AgentGuard
 
-This document describes the architecture for extending AgentGuard beyond Claude Code to support multiple AI agent frameworks.
+This document describes the architecture for integrating AgentGuard governance with multiple AI agent frameworks.
+
+## Status
+
+AgentGuard supports four hook-based driver adapters as of v2.8.0:
+
+| Driver | Adapter | Hook commands | Status |
+|--------|---------|---------------|--------|
+| **Claude Code** | `packages/adapters/src/claude-code.ts` | `agentguard claude-hook`, `claude-init` | ✅ Shipped |
+| **GitHub Copilot CLI** | `packages/adapters/src/copilot-cli.ts` | `agentguard copilot-hook`, `copilot-init` | ✅ Shipped |
+| **OpenAI Codex CLI** | `packages/adapters/src/codex-cli.ts` | `agentguard codex-hook`, `codex-init` | ✅ Shipped (v2.8.0) |
+| **Google Gemini CLI** | `packages/adapters/src/gemini-cli.ts` | `agentguard gemini-hook`, `gemini-init` | ✅ Shipped (v2.8.0) |
+
+The governance kernel is framework-agnostic — it accepts `RawAgentAction` objects and returns `GovernanceDecisionRecord` results. Each driver adapter translates its framework-specific PreToolUse/PostToolUse hook payload into the canonical `RawAgentAction` format.
 
 ## Context
 

@@ -14,7 +14,7 @@ Install in 30 seconds. Your agents can't break what matters.</p>
 
 ---
 
-AI coding agents (Claude Code, GitHub Copilot, any MCP client) run autonomously — writing files, executing commands, pushing code. AgentGuard prevents them from doing catastrophic things: no accidental pushes to main, no credential leaks, no runaway destructive loops. 23 built-in safety checks, zero config required.
+AI coding agents (Claude Code, Codex CLI, GitHub Copilot CLI, Google Gemini CLI, OpenCode, and more) run autonomously — writing files, executing commands, pushing code. AgentGuard prevents them from doing catastrophic things: no accidental pushes to main, no credential leaks, no runaway destructive loops. 24 built-in safety checks, zero config required.
 
 **For individuals:** stop your AI from wrecking your machine or repo.
 **For teams:** run fleets of agents safely at scale, with audit trails that pass compliance.
@@ -97,7 +97,7 @@ agentguard guard --agent-name my-agent
 # Or omit --agent-name and an interactive prompt will ask for role + driver
 ```
 
-Identity consists of a **role** (`developer`, `reviewer`, `ops`, `security`, `ci`) and a **driver** (`human`, `claude-code`, `copilot`, `ci`). Identity flows to cloud telemetry for attribution, dashboard grouping, and persona-scoped policy rules.
+Identity consists of a **role** (`developer`, `reviewer`, `ops`, `security`, `ci`) and a **driver** (`human`, `claude-code`, `copilot`, `codex`, `gemini`, `ci`). Identity flows to cloud telemetry for attribution, dashboard grouping, and persona-scoped policy rules.
 
 ## What It Does
 
@@ -112,7 +112,7 @@ Identity consists of a **role** (`developer`, `reviewer`, `ops`, `security`, `ci
 | **Agent SDK** | Programmatic governance for custom integrations and RunManifest-driven workflows |
 | **Agent identity** | Declare agent role + driver for governance telemetry — automatic prompt or CLI flag |
 | **Pre-push hooks** | Branch protection enforcement via git pre-push hooks, configured from agentguard.yaml |
-| **Works with** | Claude Code, GitHub Copilot, any MCP client |
+| **Works with** | Claude Code, Codex CLI, GitHub Copilot CLI, Google Gemini CLI, OpenCode, any MCP client |
 
 ## Policy Format (YAML)
 
@@ -396,7 +396,9 @@ The Go kernel includes: action normalization with AST-based shell parsing, polic
 agentguard claude-init                    # Interactive wizard: mode + pack → creates policy + hooks
 agentguard claude-init --global           # Install hooks globally (~/.claude/settings.json)
 agentguard claude-init --mode guide --pack essentials  # Non-interactive setup
-agentguard claude-init                    # Also installs pre-push hooks for branch protection
+agentguard copilot-init                   # Set up GitHub Copilot CLI hook integration
+agentguard codex-init                     # Set up OpenAI Codex CLI hook integration
+agentguard gemini-init                    # Set up Google Gemini CLI hook integration
 agentguard init --template strict         # Scaffold policy from a template
 agentguard status                         # Show governance status
 

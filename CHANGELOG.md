@@ -1,5 +1,84 @@
 # Changelog
 
+## 2.8.1 (2026-03-27)
+
+### Features
+
+* **Agent identity in all driver hooks** — All four hook drivers (Claude Code, Copilot CLI, Codex CLI, Gemini CLI) now resolve and pass agent identity into session tracking. Identity flows into SQLite session records for attribution and analytics.
+* **Session `agentId` tracking** — Migration v5 adds an `agent_id` column and index to the sessions table, enabling per-agent session queries and aggregation filters.
+* **`agentId` filter in aggregation queries** — Storage aggregation queries support filtering by `agentId` for agent-level analytics.
+* **Agent identity in `inspect` output** — `aguard inspect` now displays the resolved agent identity alongside run metadata.
+
+### Bug Fixes
+
+* **Init all driver hooks** — Re-initializing hooks via `agentguard *-init` commands now correctly re-writes hook configs for all four drivers.
+
+---
+
+## 2.8.0 (2026-03-26)
+
+### Features
+
+* **Codex CLI hook support** — New `agentguard codex-hook` and `agentguard codex-init` commands integrate AgentGuard governance into OpenAI Codex CLI workflows via PreToolUse/PostToolUse hooks. New adapter: `packages/adapters/src/codex-cli.ts`.
+* **Gemini CLI hook support** — New `agentguard gemini-hook` and `agentguard gemini-init` commands integrate AgentGuard governance into Google Gemini CLI workflows. New adapter: `packages/adapters/src/gemini-cli.ts`.
+* **Four-driver hook parity** — Claude Code, Copilot CLI, Codex CLI, and Gemini CLI all support the same PreToolUse/PostToolUse governance hook pattern with consistent block/allow/guide responses.
+
+---
+
+## 2.7.3 (2026-03-25)
+
+### Features
+
+* **Denial-retry-escalation invariant** — New invariant that detects and escalates repeated denial retries within a session (closes #908).
+* **Decisions index** — Added `action_type` index on the decisions table for faster filtered queries (closes #727).
+
+### Bug Fixes
+
+* **Path manipulation hardening** — Policy scope matching in `packages/matchers` is hardened against path traversal manipulation (closes #640).
+* **Credential pattern expansion** — Shell command stripping now catches additional AI/k8s/vault credential patterns (closes #639).
+* **CLI exports subpaths** — Added missing `bin` and `postinstall` subpaths to `apps/cli` package exports (closes missing export paths).
+
+---
+
+## 2.7.2 (2026-03-25)
+
+### Other
+
+* **CLI rename** — CLI binary renamed from `agentguard` to `aguard` (shorter alias). Documentation updated across 58 files.
+
+---
+
+## 2.7.1 (2026-03-25)
+
+### Bug Fixes
+
+* **Version bump** — Patch release to sync CLI version after 2.7.0 publish.
+
+---
+
+## 2.7.0 (2026-03-25)
+
+### Features
+
+* **`aguard` convenience package** — Registered `aguard` (and `aiguard`) as unscoped npm packages for shorter install and invocation: `npx aguard guard`.
+
+---
+
+## 2.6.0 (2026-03-25)
+
+### Features
+
+* **Go kernel** — Complete Go rewrite of the governance kernel ships as a static binary (`apps/cli/dist/go-bin/agentguard-go`). Delivered in phases: event system, invariant suite, hook protocol, decisions + escalation, blast radius engine, simulation, and full kernel orchestrator. Binary is distributed via GitHub Releases and downloaded via npm postinstall.
+* **Go kernel performance** — Single 3.2 MB static binary; hook evaluation < 3ms end-to-end (33× faster startup, ~100× faster hook evaluation vs Node.js kernel). Zero npm dependencies at runtime.
+* **Go kernel: AST shell parser** — Structural parsing of compound shell commands for normalization (KE-5).
+* **Go kernel: control plane signals API** — External governance intelligence API for consuming escalation state and decisions from outside the kernel process (KE-6).
+* **Go kernel: telemetry shipper** — Structured telemetry with stdout/file/HTTP sinks, correlation IDs, and performance span tracking (KE-4).
+* **Telemetry spans** — Structured spans, correlation IDs, and performance metrics added to Node.js telemetry pipeline.
+* **Write-then-execute bypass fix** — Invariants now correctly detect governance bypasses that write a file and immediately execute it in the same session (#862).
+* **Supply chain hardening** — All GitHub Actions workflow steps pinned to full SHA digests.
+
+---
+
 ## 2.5.0 (2026-03-25)
 
 ### Features

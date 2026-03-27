@@ -1,4 +1,17 @@
-# Hook Architecture — How AgentGuard Integrates with Claude Code
+# Hook Architecture — How AgentGuard Integrates with AI Coding Agents
+
+## Supported Drivers
+
+AgentGuard supports four AI coding agent drivers via the same inline hook pattern:
+
+| Driver | Init command | Hook command | Config file |
+|--------|-------------|-------------|------------|
+| **Claude Code** | `agentguard claude-init` | `agentguard claude-hook pre\|post` | `.claude/settings.json` |
+| **GitHub Copilot CLI** | `agentguard copilot-init` | `agentguard copilot-hook pre\|post` | `.github/hooks/hooks.json` |
+| **OpenAI Codex CLI** | `agentguard codex-init` | `agentguard codex-hook pre\|post` | `.codex/hooks.json` |
+| **Google Gemini CLI** | `agentguard gemini-init` | `agentguard gemini-hook pre\|post` | `.gemini/settings.json` |
+
+All four drivers follow the same governance flow: the agent fires a `PreToolUse` hook before each tool call, AgentGuard evaluates the action against policy and invariants, and responds with an allow or block decision. Agent identity (role + driver) is resolved at session start and flows into all hook evaluations and telemetry.
 
 ## Design: Inline Hooks, Not a Daemon
 
@@ -187,8 +200,17 @@ echo '{"tool":"Bash","input":{"command":"git push origin main"}}' | agentguard c
 
 | File | Purpose |
 |------|---------|
-| `apps/cli/src/commands/claude-hook.ts` | Hook command (PreToolUse governance + PostToolUse monitoring) |
-| `apps/cli/src/commands/claude-init.ts` | Hook setup and teardown |
-| `packages/adapters/src/claude-code.ts` | Payload normalization and action mapping |
+| `apps/cli/src/commands/claude-hook.ts` | Claude Code hook command (PreToolUse governance + PostToolUse monitoring) |
+| `apps/cli/src/commands/claude-init.ts` | Claude Code hook setup and teardown |
+| `apps/cli/src/commands/copilot-hook.ts` | GitHub Copilot CLI hook command |
+| `apps/cli/src/commands/copilot-init.ts` | GitHub Copilot CLI hook setup |
+| `apps/cli/src/commands/codex-hook.ts` | OpenAI Codex CLI hook command |
+| `apps/cli/src/commands/codex-init.ts` | OpenAI Codex CLI hook setup |
+| `apps/cli/src/commands/gemini-hook.ts` | Google Gemini CLI hook command |
+| `apps/cli/src/commands/gemini-init.ts` | Google Gemini CLI hook setup |
+| `packages/adapters/src/claude-code.ts` | Claude Code payload normalization and action mapping |
+| `packages/adapters/src/copilot-cli.ts` | Copilot CLI payload normalization |
+| `packages/adapters/src/codex-cli.ts` | Codex CLI payload normalization |
+| `packages/adapters/src/gemini-cli.ts` | Gemini CLI payload normalization |
 | `packages/kernel/src/kernel.ts` | Governed action kernel (policy + invariant evaluation) |
 | `packages/kernel/src/aab.ts` | Action Authorization Boundary (tool → action type) |

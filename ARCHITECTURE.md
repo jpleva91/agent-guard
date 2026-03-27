@@ -51,17 +51,18 @@ packages/
 ├── core/          @red-codes/core — Shared utilities (types, actions, hash, execution-log)
 ├── events/        @red-codes/events — Canonical event model (schema, bus, store)
 ├── policy/        @red-codes/policy — Policy system (composer, evaluator, loaders, pack loader)
-├── invariants/    @red-codes/invariants — Invariant system (21 built-in definitions, checker)
+├── invariants/    @red-codes/invariants — Invariant system (24 built-in definitions, checker)
 ├── invariant-data-protection/ @red-codes/invariant-data-protection — Data protection invariant plugin
 ├── matchers/      @red-codes/matchers — Structured matchers (Aho-Corasick, globs, hash sets)
 ├── kernel/        @red-codes/kernel — Governed action kernel (orchestrate, normalize, decide, escalate)
-├── adapters/      @red-codes/adapters — Execution adapters (file, shell, git, claude-code, copilot-cli)
+├── adapters/      @red-codes/adapters — Execution adapters (file, shell, git, claude-code, copilot-cli, codex-cli, gemini-cli)
 ├── storage/       @red-codes/storage — SQLite storage backend (opt-in)
 ├── telemetry/     @red-codes/telemetry — Runtime telemetry and logging
 ├── plugins/       @red-codes/plugins — Plugin ecosystem (discovery, registry, validation, sandboxing)
 ├── renderers/     @red-codes/renderers — Renderer plugin system (registry, TUI renderer)
 ├── sdk/           @red-codes/sdk — Agent SDK for programmatic governance integration
 ├── swarm/         @red-codes/swarm — Shareable agent swarm templates
+├── scheduler/     @red-codes/scheduler — Task scheduler, queue, lease manager, and worker orchestration
 └── telemetry-client/ @red-codes/telemetry-client — Telemetry client (identity, signing, queue, sender)
 
 apps/
@@ -117,7 +118,7 @@ The `claude-init` command provides an interactive wizard that generates a starte
 Agents declare their identity (role + driver) at the start of each governance session. If the `--agent-name` flag is not provided, an interactive prompt collects the identity.
 
 **Roles:** `developer`, `reviewer`, `ops`, `security`, `planner`
-**Drivers:** `human`, `claude-code`, `copilot`, `ci`
+**Drivers:** `human`, `claude-code`, `copilot`, `codex`, `gemini`, `ci`
 
 Identity serves three purposes:
 
