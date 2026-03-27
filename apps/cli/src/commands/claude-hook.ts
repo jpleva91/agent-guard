@@ -489,10 +489,7 @@ export function tryGoFastPath(
     severity: Math.max(...(policyDefs as LoadedPolicy[]).map((p) => p.severity ?? 0)),
   };
 
-  const tmpPolicyPath = join(
-    tmpdir(),
-    `agentguard-policy-${process.pid}-${Date.now()}.json`
-  );
+  const tmpPolicyPath = join(tmpdir(), `agentguard-policy-${process.pid}-${Date.now()}.json`);
 
   try {
     writeFileSync(tmpPolicyPath, JSON.stringify(mergedPolicy), 'utf8');
