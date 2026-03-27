@@ -500,6 +500,15 @@ export function isCredentialPath(filePath: string): boolean {
   return false;
 }
 
+/** Checks whether a shell command references a well-known credential file path.
+ * Splits the command into tokens and checks each against `isCredentialPath`. */
+export function shellCommandReferencesCredentialFile(command: string): boolean {
+  if (!command) return false;
+  // Split on whitespace, then strip surrounding quotes from each token
+  const tokens = command.split(/\s+/).map((t) => t.replace(/^['"]|['"]$/g, ''));
+  return tokens.some((token) => token !== '' && isCredentialPath(token));
+}
+
 /** Shell command patterns that indicate network egress (case-insensitive). */
 const NETWORK_COMMAND_PATTERNS: RegExp[] = [
   /\bcurl\b/,
@@ -755,9 +764,25 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     severity: 5,
     check(state) {
       const actionType = state.currentActionType || '';
-      const writingActions = ['file.write', 'file.move'];
 
-      // Only applies to write/move actions — reading credential files is allowed
+      // Read-only action types are always allowed
+      if (READ_ONLY_ACTIONS.includes(actionType)) {
+        return { holds: true, expected: 'N/A', actual: `Action type ${actionType} is read-only` };
+      }
+
+      // For shell.exec, skip read-only commands (cat, grep, ls, etc.)
+      if (actionType === 'shell.exec') {
+        const command = (state.currentCommand || '').trim();
+        const baseCmd = extractBaseCommand(command);
+        if (READ_ONLY_CMDS.includes(baseCmd) && !hasFileRedirect(command)) {
+          return { holds: true, expected: 'N/A', actual: 'Read-only shell command' };
+        }
+      }
+
+      // Actions that can modify credential files
+      const writingActions = ['file.write', 'file.move', 'shell.exec'];
+
+      // Non-writing actions are allowed (e.g. file.read, file.delete)
       if (actionType !== '' && !writingActions.includes(actionType)) {
         return {
           holds: true,
@@ -767,16 +792,35 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       }
 
       const target = state.currentTarget || '';
-      if (target === '') {
-        return { holds: true, expected: 'N/A', actual: 'No target specified' };
+      const command = state.currentCommand || '';
+
+      // Check target path against credential patterns
+      const targetViolation = target !== '' && isCredentialPath(target);
+
+      // For shell.exec, also check if command arguments reference credential files
+      const commandViolation =
+        actionType === 'shell.exec' &&
+        command !== '' &&
+        shellCommandReferencesCredentialFile(command);
+
+      const holds = !targetViolation && !commandViolation;
+
+      if (holds) {
+        return {
+          holds: true,
+          expected: 'No creation or modification of credential files',
+          actual: 'No credential files affected',
+        };
       }
 
-      const violation = isCredentialPath(target);
+      const violations: string[] = [];
+      if (targetViolation) violations.push(`target: ${target}`);
+      if (commandViolation) violations.push('command references credential files');
 
       return {
-        holds: !violation,
+        holds: false,
         expected: 'No creation or modification of credential files',
-        actual: violation ? `Credential file targeted: ${target}` : 'No credential files affected',
+        actual: `Credential file targeted (${violations.join('; ')})`,
       };
     },
   },
