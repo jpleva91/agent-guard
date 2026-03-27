@@ -6,6 +6,9 @@ import {
   listRunIds,
   getLatestRunId,
   loadRunEvents,
+  getRunAgent,
+  getRunAgents,
+  listRunIdsByAgent,
 } from '@red-codes/storage';
 import type { DomainEvent } from '@red-codes/core';
 
@@ -274,6 +277,121 @@ describe('SQLite EventStore', () => {
     it('listRunIds returns empty array when no events exist', () => {
       const runs = listRunIds(db);
       expect(runs).toEqual([]);
+    });
+  });
+
+  describe('agent identity helpers', () => {
+    function insertRunStarted(rid: string, agentName?: string, agentId?: string, ts = Date.now()) {
+      const payload: Record<string, unknown> = {
+        id: `evt_rs_${rid}`,
+        kind: 'RunStarted',
+        timestamp: ts,
+        fingerprint: 'fp',
+      };
+      if (agentName !== undefined) payload.agentName = agentName;
+      if (agentId !== undefined) payload.agentId = agentId;
+
+      db.prepare(
+        'INSERT INTO events (id, run_id, kind, timestamp, fingerprint, data, action_type) VALUES (?, ?, ?, ?, ?, ?, NULL)'
+      ).run(`evt_rs_${rid}`, rid, 'RunStarted', ts, 'fp', JSON.stringify(payload));
+    }
+
+    describe('getRunAgent', () => {
+      it('returns agentName from RunStarted event', () => {
+        insertRunStarted('run_a', 'kernel-sr');
+        expect(getRunAgent(db, 'run_a')).toBe('kernel-sr');
+      });
+
+      it('falls back to agentId when agentName is absent', () => {
+        insertRunStarted('run_b', undefined, 'copilot-cli:kernel:sr');
+        expect(getRunAgent(db, 'run_b')).toBe('copilot-cli:kernel:sr');
+      });
+
+      it('prefers agentName over agentId', () => {
+        insertRunStarted('run_c', 'my-agent', 'fallback-id');
+        expect(getRunAgent(db, 'run_c')).toBe('my-agent');
+      });
+
+      it('returns null when no RunStarted event exists', () => {
+        const store = createSqliteEventStore(db, 'run_empty');
+        store.append(makeEvent({ id: 'e1', kind: 'ActionRequested' }));
+        expect(getRunAgent(db, 'run_empty')).toBeNull();
+      });
+
+      it('returns null for unknown run ID', () => {
+        expect(getRunAgent(db, 'nonexistent')).toBeNull();
+      });
+    });
+
+    describe('getRunAgents', () => {
+      it('returns agent mapping for multiple runs', () => {
+        insertRunStarted('run_1', 'alpha');
+        insertRunStarted('run_2', 'beta');
+        insertRunStarted('run_3', 'gamma');
+
+        const agents = getRunAgents(db, ['run_1', 'run_2', 'run_3']);
+        expect(agents.size).toBe(3);
+        expect(agents.get('run_1')).toBe('alpha');
+        expect(agents.get('run_2')).toBe('beta');
+        expect(agents.get('run_3')).toBe('gamma');
+      });
+
+      it('returns empty map for empty input', () => {
+        const agents = getRunAgents(db, []);
+        expect(agents.size).toBe(0);
+      });
+
+      it('omits runs without RunStarted events', () => {
+        insertRunStarted('run_with', 'agent-a');
+        const store = createSqliteEventStore(db, 'run_without');
+        store.append(makeEvent({ id: 'e1', kind: 'ActionRequested' }));
+
+        const agents = getRunAgents(db, ['run_with', 'run_without']);
+        expect(agents.size).toBe(1);
+        expect(agents.get('run_with')).toBe('agent-a');
+        expect(agents.has('run_without')).toBe(false);
+      });
+
+      it('defaults to "unknown" when neither agentName nor agentId is set', () => {
+        insertRunStarted('run_anon');
+        const agents = getRunAgents(db, ['run_anon']);
+        expect(agents.get('run_anon')).toBe('unknown');
+      });
+    });
+
+    describe('listRunIdsByAgent', () => {
+      it('returns run IDs matching agentName', () => {
+        insertRunStarted('run_1', 'kernel-sr', undefined, 100);
+        insertRunStarted('run_2', 'kernel-sr', undefined, 200);
+        insertRunStarted('run_3', 'qa-bot', undefined, 300);
+
+        const runs = listRunIdsByAgent(db, 'kernel-sr');
+        expect(runs).toEqual(['run_2', 'run_1']);
+      });
+
+      it('returns run IDs matching agentId', () => {
+        insertRunStarted('run_x', undefined, 'copilot-cli:kernel:sr', 100);
+        const runs = listRunIdsByAgent(db, 'copilot-cli:kernel:sr');
+        expect(runs).toEqual(['run_x']);
+      });
+
+      it('returns runs ordered by timestamp DESC', () => {
+        insertRunStarted('run_old', 'my-agent', undefined, 100);
+        insertRunStarted('run_mid', 'my-agent', undefined, 200);
+        insertRunStarted('run_new', 'my-agent', undefined, 300);
+
+        const runs = listRunIdsByAgent(db, 'my-agent');
+        expect(runs).toEqual(['run_new', 'run_mid', 'run_old']);
+      });
+
+      it('returns empty array for non-matching agent', () => {
+        insertRunStarted('run_1', 'alpha');
+        expect(listRunIdsByAgent(db, 'nonexistent')).toEqual([]);
+      });
+
+      it('returns empty array on empty database', () => {
+        expect(listRunIdsByAgent(db, 'anyone')).toEqual([]);
+      });
     });
   });
 
