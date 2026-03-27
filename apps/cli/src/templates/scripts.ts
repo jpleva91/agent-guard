@@ -218,3 +218,47 @@ ${resolveBlock}
 exec \$AGENTGUARD_BIN claude-hook pre${storeSuffix}${dbPathSuffix}
 `;
 }
+
+export function claudeHookStopWrapper(
+  cliPrefix: string,
+  storeSuffix: string,
+  dbPathSuffix: string
+): string {
+  // For local dev (cliPrefix = "node apps/cli/dist/bin.js"), the binary is always resolvable.
+  // For installed package, resolve from workspace root to handle sub-repo CWD correctly.
+  const isLocal = cliPrefix.startsWith('node ');
+  const resolveBlock = isLocal
+    ? `AGENTGUARD_BIN="${cliPrefix}"`
+    : `# Resolve the agentguard binary from workspace root — not CWD — so sub-repos work
+AGENTGUARD_BIN=""
+if [ -x "\$AGENTGUARD_WORKSPACE/node_modules/.bin/agentguard" ]; then
+  AGENTGUARD_BIN="\$AGENTGUARD_WORKSPACE/node_modules/.bin/agentguard"
+elif command -v agentguard &>/dev/null; then
+  AGENTGUARD_BIN="agentguard"
+fi
+
+# Fail open — Stop is non-blocking, so silently exit if binary is missing
+if [ -z "\$AGENTGUARD_BIN" ]; then
+  exit 0
+fi`;
+
+  return `#!/usr/bin/env bash
+# claude-hook-stop-wrapper.sh — Resolves AgentGuard binary from workspace root for Stop hook.
+# Uses workspace root resolution so the hook works even when CWD is a sub-repo
+# that does not have its own node_modules/.bin/agentguard.
+
+# Resolve project root from git, then walk up if inside a worktree under .worktrees/
+_GIT_TOPLEVEL="\$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+_GIT_DIR="\$(git rev-parse --git-dir 2>/dev/null)"
+if [[ "\$_GIT_DIR" == *"/worktrees/"* ]] && [[ "\$_GIT_TOPLEVEL" == *"/.worktrees/"* ]]; then
+  AGENTGUARD_WORKSPACE="\${_GIT_TOPLEVEL%%/.worktrees/*}"
+else
+  AGENTGUARD_WORKSPACE="\$_GIT_TOPLEVEL"
+fi
+export AGENTGUARD_WORKSPACE
+
+${resolveBlock}
+
+exec \$AGENTGUARD_BIN claude-hook stop${storeSuffix}${dbPathSuffix}
+`;
+}
