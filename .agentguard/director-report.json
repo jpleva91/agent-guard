@@ -1,0 +1,145 @@
+{
+  "timestamp": "2026-03-27T18:00:00.000Z",
+  "runType": "evening",
+  "overallHealth": "yellow",
+  "summary": "Kernel P0s (#972, #973) resolved — stale state.json updated. Systemic CI failures across ALL 8 open PRs (test-and-build fails on 7/8, lint on 5/8) — likely Prettier regression cascading through branches. QA squad actively chasing the fix (#1121, #1123) but duplicate effort detected. Marketing still blocked by #995 (governance catch-22); HQ owns it but has no sprint goal. No squads at red. 3 squads idle (HQ, QA, Design) with no sprint goals.",
+  "squads": {
+    "kernel": {
+      "health": "green",
+      "previousHealth": "yellow",
+      "sprintGoal": "Fix P0 hook-breaking bugs (#972, #973), then resume Go kernel wire-up (#955)",
+      "notes": "Both P0 blockers (#972, #973) are now CLOSED. State.json was stale — updated this run. 4298 tests all passing (+63 since last cycle). Senior dev slot unassigned — should resume Go kernel wire-up (#955). Kernel EM last ran 2026-03-26T09:00Z (33+ hours stale).",
+      "actionItems": [
+        "Resume #955 (Go kernel wire-up) — assign senior slot",
+        "Trigger kernel EM run to refresh state"
+      ]
+    },
+    "qa": {
+      "health": "yellow",
+      "previousHealth": "green",
+      "sprintGoal": "(none set)",
+      "notes": "Two open PRs (#1121, #1123) both address Prettier regressions + go-fast-path flaky test. Duplicate effort — consolidate. Both have CI failures (test-and-build). Last run 2026-03-27T03:50Z produced 4298 passing tests locally, but CI disagrees.",
+      "actionItems": [
+        "Close #1121 (superseded by #1123)",
+        "Investigate systemic test-and-build CI failure root cause",
+        "Set a sprint goal"
+      ]
+    },
+    "site": {
+      "health": "green",
+      "previousHealth": "green",
+      "sprintGoal": "Keep site numeric claims in sync with codebase",
+      "notes": "PR #1117 (sync test count 2637→4161) open but CI failing (lint + test-and-build). Aligned with sprint goal.",
+      "actionItems": [
+        "Fix CI failures on #1117, likely same root cause as systemic issue"
+      ]
+    },
+    "marketing": {
+      "health": "yellow",
+      "previousHealth": "yellow",
+      "sprintGoal": "Unblock content agents and publish Go kernel launch content",
+      "notes": "Blocked by #995 (governance catch-22: pnpm install blocked by hook before kernel exists). Owner listed as ops/hq-em but HQ is idle. This blocker has persisted across multiple director runs.",
+      "actionItems": [
+        "Force-reassign #995 from HQ to kernel squad — they own the hook/governance path",
+        "Consider workaround: exempt pnpm install from governance during bootstrap"
+      ]
+    },
+    "studio": {
+      "health": "green",
+      "previousHealth": "green",
+      "sprintGoal": "Ship agentguard init studio wizard + execution profiles + swarm template schema",
+      "notes": "Sprint goal largely SHIPPED in v2.7.x per ROADMAP.md. State not updated in 2 days. Needs new sprint goal assignment.",
+      "actionItems": [
+        "Update state to reflect shipped work",
+        "Assign new sprint goal (Runner prep? Cloud protocol?)"
+      ]
+    },
+    "hq": {
+      "health": "idle",
+      "previousHealth": "idle",
+      "sprintGoal": "(none set)",
+      "notes": "No sprint goal, no assignments. Owns marketing blocker #995 but not acting on it. Last updated 2026-03-25.",
+      "actionItems": [
+        "Assign sprint goal or merge HQ responsibilities into other squads",
+        "Transfer #995 ownership to kernel squad"
+      ]
+    },
+    "design": {
+      "health": "idle",
+      "previousHealth": "idle",
+      "sprintGoal": "(none set)",
+      "notes": "No sprint goal, no assignments. Last updated 2026-03-25.",
+      "actionItems": []
+    }
+  },
+  "crossSquadIssues": [
+    {
+      "title": "Systemic CI failures across ALL open PRs",
+      "severity": "high",
+      "description": "All 8 open PRs have failing CI (test-and-build: 7/8 failing, lint: 5/8 failing). Root cause appears to be Prettier regressions — QA squad (#1121, #1123) is chasing the fix. This blocks all merges across all squads.",
+      "owner": "qa",
+      "deadline": "2026-03-28T06:00:00.000Z",
+      "status": "in_progress"
+    },
+    {
+      "title": "Marketing blocker #995 (governance catch-22) — persisting across runs",
+      "severity": "medium",
+      "description": "#995: pnpm install blocked by governance hook before kernel exists. Assigned to ops/hq-em but HQ is idle. Force-reassigning to kernel squad.",
+      "owner": "kernel",
+      "deadline": "2026-03-28T18:00:00.000Z",
+      "status": "force_assigned"
+    },
+    {
+      "title": "Duplicate QA PRs (#1121 vs #1123)",
+      "severity": "low",
+      "description": "Both PRs address Prettier regressions and go-fast-path flaky test. #1123 is newer and includes AGENTGUARD_GO_TIMEOUT configurable. Close #1121.",
+      "owner": "qa",
+      "deadline": "2026-03-28T06:00:00.000Z",
+      "status": "flagged"
+    }
+  ],
+  "strategicAlignment": {
+    "status": "on_track_with_gaps",
+    "notes": "Go kernel Phase 1 fast-path delegation is shipped. Kernel squad should now resume #955 (Go wire-up). Framework adapters (DeepAgents #1126, OpenCode #1109) align with Phase 9 roadmap but both have CI failures and #1109 is do-not-merge. KE-2 (ActionContext) is the next critical v3.0 blocker — no squad assigned yet. Studio work shipped ahead of schedule. v3.0 release path: unblock CI → ship KE-2 → stranger test → user capture funnel.",
+    "gaps": [
+      "KE-2 (ActionContext) — next v3.0 blocker — no squad assigned",
+      "v3.0 stranger test — not yet planned",
+      "Marketing content delayed by #995 blocker"
+    ]
+  },
+  "openPrs": {
+    "total": 8,
+    "ciPassing": 0,
+    "ciMixed": 1,
+    "ciFailing": 7,
+    "mergeable": 0,
+    "doNotMerge": 1,
+    "needsReview": 2,
+    "prs": [
+      { "number": 1126, "title": "feat: DeepAgents adapter", "ci": "failing", "squad": "kernel" },
+      { "number": 1123, "title": "fix(qa): Prettier + GO_TIMEOUT", "ci": "failing", "squad": "qa" },
+      { "number": 1121, "title": "fix(qa): go-fast-path + Prettier", "ci": "failing", "squad": "qa", "note": "superseded by #1123" },
+      { "number": 1117, "title": "fix(site): sync test count", "ci": "failing", "squad": "site" },
+      { "number": 1109, "title": "feat: OpenCode adapter", "ci": "mixed", "squad": "kernel", "labels": ["do-not-merge", "needs:careful-review"] },
+      { "number": 1104, "title": "fix(adapters): educate mode", "ci": "failing", "squad": "kernel" },
+      { "number": 1098, "title": "feat(storage): driver_type sessions", "ci": "failing", "squad": "kernel" },
+      { "number": 1090, "title": "test: runtimeLogger", "ci": "failing", "squad": "qa", "labels": ["needs:careful-review"] }
+    ]
+  },
+  "escalations": [],
+  "dogfoodIssues": [
+    {
+      "description": "dogfood-reporting.md not found at claude/shared/dogfood-reporting.md — cannot follow dogfood protocol",
+      "severity": "low"
+    },
+    {
+      "description": "cloud and analytics squad state files missing — .agentguard/squads/{cloud,analytics}/state.json do not exist",
+      "severity": "low"
+    },
+    {
+      "description": "WORKSPACE_STRATEGY.md not found — cannot verify strategic alignment against canonical strategy document",
+      "severity": "medium"
+    }
+  ],
+  "nextDirectorRun": "2026-03-28T06:00:00.000Z"
+}

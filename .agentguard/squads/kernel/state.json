@@ -1,60 +1,59 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Fix P0 hook-breaking bugs (#972, #973), then resume Go kernel wire-up (#955). Hook path must work before Go delegation can ship.",
+    "goal": "Resume Go kernel wire-up (#955). P0 hook bugs (#972, #973) resolved. Next: Go delegation + #995 governance catch-22 fix.",
     "issues": [
-      972,
-      973,
       955,
       957,
-      964
+      995
     ]
   },
   "assignments": {
     "senior": {
       "issue": [
-        972,
-        973
+        955
       ],
-      "title": "P0: Fix hook deny reason retry metadata (#972) + bundle essentials pack in npm (#973)",
+      "title": "Go kernel wire-up — complete fast-path delegation",
       "status": "unassigned",
       "branch": null,
       "pr": null,
       "claimedAt": null,
-      "note": "P0 fast-track: #972 breaks all governed sessions (retry text in deny reason \u2192 Claude Code blocks all tool use). #973 compounds it (essentials pack missing \u2192 default-deny on everything). Fix both before resuming #955 Go delegation."
+      "note": "P0s (#972, #973) resolved. Resume Go kernel work. Also pick up #995 (governance catch-22 blocking marketing agents) — force-assigned by director."
     }
   },
-  "blockers": [
-    {
-      "issue": 972,
-      "description": "Hook deny reason includes '(attempt N/N)' \u2014 Claude Code misinterprets as blocking error, killing all tool use in governed sessions",
-      "severity": "P0",
-      "since": "2026-03-26T00:00:00.000Z"
-    },
-    {
-      "issue": 973,
-      "description": "essentials policy pack not bundled in npm \u2014 all hook invocations hit default-deny",
-      "severity": "P0",
-      "since": "2026-03-26T00:00:00.000Z"
-    }
-  ],
+  "blockers": [],
   "prQueue": {
-    "open": 0,
+    "open": 3,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
       {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "branch": "agent/kernel-sr-20260325-230535",
-        "status": "merged",
-        "ciStatus": "passed",
-        "mergedAt": "2026-03-26T00:30:00.000Z",
-        "note": "Merged successfully. All CI checks passed."
+        "number": 1126,
+        "title": "feat: DeepAgents framework adapter",
+        "branch": "feat/deepagents-adapter-1055",
+        "status": "open",
+        "ciStatus": "failing",
+        "note": "CI failing (lint + test-and-build). Systemic issue."
+      },
+      {
+        "number": 1104,
+        "title": "fix(adapters): educate mode always allows regardless of suggestion presence",
+        "branch": "fix/1026-educate-mode-always-allow",
+        "status": "open",
+        "ciStatus": "failing",
+        "note": "CI failing. Needs rebase after systemic CI fix."
+      },
+      {
+        "number": 1098,
+        "title": "feat(storage): parse driver:agent identity format, add driver_type to sessions",
+        "branch": "feat/1034-driver-type-sessions",
+        "status": "open",
+        "ciStatus": "failing",
+        "note": "CI failing. Lint passes, test-and-build fails."
       }
     ]
   },
-  "health": "yellow",
+  "health": "green",
   "testHealth": {
     "total": 4298,
     "passed": 4298,
@@ -62,12 +61,13 @@
     "packages": 18,
     "lastRun": "2026-03-27T03:50:00.000Z",
     "status": "all_passing",
-    "delta": "+63 tests since last run (4235 \u2192 4298); +25 new storage tests this cycle",
+    "delta": "+63 tests since last run (4235 → 4298); +25 new storage tests this cycle",
     "coverageGaps": [],
     "fixes": [],
     "openPrNotes": []
   },
   "lastEmRun": "2026-03-26T09:00:00.000Z",
   "lastQaRun": "2026-03-27T03:50:00.000Z",
-  "updatedAt": "2026-03-27T03:50:00.000Z"
+  "updatedAt": "2026-03-27T18:00:00.000Z",
+  "directorNote": "P0s (#972, #973) confirmed CLOSED by director run 2026-03-27T18:00Z. Health upgraded yellow→green. #995 force-assigned from HQ. Kernel EM overdue (33h since last run) — needs trigger."
 }
