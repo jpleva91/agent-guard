@@ -353,3 +353,183 @@ describe('SQLite migration v2 — action_type and severity columns', () => {
     db2.close();
   });
 });
+
+describe('SQLite migration v5 — agent_id backfill', () => {
+  let db: Database.Database;
+
+  /** Helper to simulate a v4-only database */
+  function applyV4Only() {
+    db.exec(
+      'CREATE TABLE IF NOT EXISTS migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)'
+    );
+    for (let v = 1; v <= 4; v++) {
+      db.prepare('INSERT INTO migrations (version, applied_at) VALUES (?, ?)').run(
+        v,
+        '2026-01-01T00:00:00Z'
+      );
+    }
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS events (
+        id TEXT PRIMARY KEY, run_id TEXT NOT NULL, kind TEXT NOT NULL,
+        timestamp INTEGER NOT NULL, fingerprint TEXT NOT NULL, data TEXT NOT NULL,
+        action_type TEXT
+      );
+      CREATE TABLE IF NOT EXISTS decisions (
+        record_id TEXT PRIMARY KEY, run_id TEXT NOT NULL, timestamp INTEGER NOT NULL,
+        outcome TEXT NOT NULL, action_type TEXT NOT NULL, target TEXT NOT NULL,
+        reason TEXT NOT NULL, data TEXT NOT NULL, severity INTEGER
+      );
+      CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY, started_at TEXT NOT NULL, ended_at TEXT,
+        command TEXT, repo TEXT, data TEXT NOT NULL
+      );
+    `);
+  }
+
+  beforeEach(() => {
+    db = new Database(':memory:');
+  });
+
+  it('adds agent_id column to sessions table', () => {
+    runMigrations(db);
+    const cols = db.prepare("PRAGMA table_info('sessions')").all() as { name: string }[];
+    expect(cols.map((c) => c.name)).toContain('agent_id');
+  });
+
+  it('backfills agent_id from RunStarted events with agentName', () => {
+    applyV4Only();
+
+    // Insert a session and corresponding RunStarted event with agentName
+    db.prepare(
+      "INSERT INTO sessions (id, started_at, ended_at, command, repo, data) VALUES ('run_1', '2026-01-01', NULL, 'guard', NULL, '{}')"
+    ).run();
+
+    db.prepare('INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, NULL)').run(
+      'evt_1',
+      'run_1',
+      'RunStarted',
+      1000,
+      'fp1',
+      JSON.stringify({
+        id: 'evt_1',
+        kind: 'RunStarted',
+        agentName: 'kernel-sr',
+        timestamp: 1000,
+        fingerprint: 'fp1',
+      })
+    );
+
+    const applied = runMigrations(db);
+    expect(applied).toBe(1);
+
+    const row = db.prepare('SELECT agent_id FROM sessions WHERE id = ?').get('run_1') as {
+      agent_id: string | null;
+    };
+    expect(row.agent_id).toBe('kernel-sr');
+  });
+
+  it('backfills agent_id from RunStarted events with agentId fallback', () => {
+    applyV4Only();
+
+    db.prepare(
+      "INSERT INTO sessions (id, started_at, ended_at, command, repo, data) VALUES ('run_2', '2026-01-01', NULL, 'guard', NULL, '{}')"
+    ).run();
+
+    db.prepare('INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, NULL)').run(
+      'evt_2',
+      'run_2',
+      'RunStarted',
+      1000,
+      'fp1',
+      JSON.stringify({
+        id: 'evt_2',
+        kind: 'RunStarted',
+        agentId: 'copilot-cli:kernel:sr',
+        timestamp: 1000,
+        fingerprint: 'fp1',
+      })
+    );
+
+    runMigrations(db);
+
+    const row = db.prepare('SELECT agent_id FROM sessions WHERE id = ?').get('run_2') as {
+      agent_id: string | null;
+    };
+    expect(row.agent_id).toBe('copilot-cli:kernel:sr');
+  });
+
+  it('leaves agent_id null for sessions without RunStarted agentName/agentId', () => {
+    applyV4Only();
+
+    db.prepare(
+      "INSERT INTO sessions (id, started_at, ended_at, command, repo, data) VALUES ('run_3', '2026-01-01', NULL, 'guard', NULL, '{}')"
+    ).run();
+
+    db.prepare('INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, NULL)').run(
+      'evt_3',
+      'run_3',
+      'RunStarted',
+      1000,
+      'fp1',
+      JSON.stringify({
+        id: 'evt_3',
+        kind: 'RunStarted',
+        timestamp: 1000,
+        fingerprint: 'fp1',
+      })
+    );
+
+    runMigrations(db);
+
+    const row = db.prepare('SELECT agent_id FROM sessions WHERE id = ?').get('run_3') as {
+      agent_id: string | null;
+    };
+    expect(row.agent_id).toBeNull();
+  });
+
+  it('prefers agentName over agentId during backfill', () => {
+    applyV4Only();
+
+    db.prepare(
+      "INSERT INTO sessions (id, started_at, ended_at, command, repo, data) VALUES ('run_4', '2026-01-01', NULL, 'guard', NULL, '{}')"
+    ).run();
+
+    db.prepare('INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, NULL)').run(
+      'evt_4',
+      'run_4',
+      'RunStarted',
+      1000,
+      'fp1',
+      JSON.stringify({
+        id: 'evt_4',
+        kind: 'RunStarted',
+        agentName: 'preferred-name',
+        agentId: 'fallback-id',
+        timestamp: 1000,
+        fingerprint: 'fp1',
+      })
+    );
+
+    runMigrations(db);
+
+    const row = db.prepare('SELECT agent_id FROM sessions WHERE id = ?').get('run_4') as {
+      agent_id: string | null;
+    };
+    expect(row.agent_id).toBe('preferred-name');
+  });
+
+  it('handles sessions with no corresponding events', () => {
+    applyV4Only();
+
+    db.prepare(
+      "INSERT INTO sessions (id, started_at, ended_at, command, repo, data) VALUES ('orphan', '2026-01-01', NULL, 'guard', NULL, '{}')"
+    ).run();
+
+    expect(() => runMigrations(db)).not.toThrow();
+
+    const row = db.prepare('SELECT agent_id FROM sessions WHERE id = ?').get('orphan') as {
+      agent_id: string | null;
+    };
+    expect(row.agent_id).toBeNull();
+  });
+});

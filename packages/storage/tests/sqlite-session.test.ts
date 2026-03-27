@@ -147,6 +147,48 @@ describe('sqlite-session', () => {
     });
   });
 
+  describe('agentId field', () => {
+    it('stores agent_id when agentId is provided in startData', () => {
+      insertSession(db, 'sess_agent', 'guard', { agentId: 'kernel-sr' });
+      const row = db
+        .prepare('SELECT agent_id FROM sessions WHERE id = ?')
+        .get('sess_agent') as Record<string, unknown>;
+      expect(row.agent_id).toBe('kernel-sr');
+    });
+
+    it('stores null agent_id when agentId is omitted', () => {
+      insertSession(db, 'sess_no_agent', 'guard', { policyFile: 'test.yaml' });
+      const row = db
+        .prepare('SELECT agent_id FROM sessions WHERE id = ?')
+        .get('sess_no_agent') as Record<string, unknown>;
+      expect(row.agent_id).toBeNull();
+    });
+
+    it('does not include agentId in the JSON data column', () => {
+      insertSession(db, 'sess_agent_data', 'guard', { agentId: 'qa-bot', policyFile: 'p.yaml' });
+      const row = db
+        .prepare('SELECT data FROM sessions WHERE id = ?')
+        .get('sess_agent_data') as Record<string, unknown>;
+      const data = JSON.parse(row.data as string) as Record<string, unknown>;
+      expect(data.agentId).toBeUndefined();
+      expect(data.policyFile).toBe('p.yaml');
+    });
+
+    it('exposes agent_id on SessionRow via getSession', () => {
+      insertSession(db, 'sess_row', 'guard', { agentId: 'my-agent' });
+      const row = getSession(db, 'sess_row');
+      expect(row).not.toBeNull();
+      expect(row!.agent_id).toBe('my-agent');
+    });
+
+    it('returns null agent_id on SessionRow when not set', () => {
+      insertSession(db, 'sess_row_null', 'guard');
+      const row = getSession(db, 'sess_row_null');
+      expect(row).not.toBeNull();
+      expect(row!.agent_id).toBeNull();
+    });
+  });
+
   describe('createSessionTracker', () => {
     it('provides start/end/get/list interface', () => {
       const tracker = createSessionTracker(db);

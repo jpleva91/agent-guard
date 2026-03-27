@@ -2,29 +2,38 @@
   "squad": "kernel",
   "sprint": {
     "goal": "Fix P0 hook-breaking bugs (#972, #973), then resume Go kernel wire-up (#955). Hook path must work before Go delegation can ship.",
-    "issues": [972, 973, 955, 957, 964]
+    "issues": [
+      972,
+      973,
+      955,
+      957,
+      964
+    ]
   },
   "assignments": {
     "senior": {
-      "issue": [972, 973],
+      "issue": [
+        972,
+        973
+      ],
       "title": "P0: Fix hook deny reason retry metadata (#972) + bundle essentials pack in npm (#973)",
       "status": "unassigned",
       "branch": null,
       "pr": null,
       "claimedAt": null,
-      "note": "P0 fast-track: #972 breaks all governed sessions (retry text in deny reason → Claude Code blocks all tool use). #973 compounds it (essentials pack missing → default-deny on everything). Fix both before resuming #955 Go delegation."
+      "note": "P0 fast-track: #972 breaks all governed sessions (retry text in deny reason \u2192 Claude Code blocks all tool use). #973 compounds it (essentials pack missing \u2192 default-deny on everything). Fix both before resuming #955 Go delegation."
     }
   },
   "blockers": [
     {
       "issue": 972,
-      "description": "Hook deny reason includes '(attempt N/N)' — Claude Code misinterprets as blocking error, killing all tool use in governed sessions",
+      "description": "Hook deny reason includes '(attempt N/N)' \u2014 Claude Code misinterprets as blocking error, killing all tool use in governed sessions",
       "severity": "P0",
       "since": "2026-03-26T00:00:00.000Z"
     },
     {
       "issue": 973,
-      "description": "essentials policy pack not bundled in npm — all hook invocations hit default-deny",
+      "description": "essentials policy pack not bundled in npm \u2014 all hook invocations hit default-deny",
       "severity": "P0",
       "since": "2026-03-26T00:00:00.000Z"
     }
@@ -47,42 +56,18 @@
   },
   "health": "yellow",
   "testHealth": {
-    "total": 4235,
-    "passed": 4235,
+    "total": 4298,
+    "passed": 4298,
     "failed": 0,
     "packages": 18,
-    "lastRun": "2026-03-27T02:39:00.000Z",
+    "lastRun": "2026-03-27T03:50:00.000Z",
     "status": "all_passing",
-    "delta": "+101 tests since last run (4134 → 4235)",
+    "delta": "+63 tests since last run (4235 \u2192 4298); +25 new storage tests this cycle",
     "coverageGaps": [],
-    "fixes": [
-      {
-        "file": "packages/kernel/tests/agentguard-engine.test.ts",
-        "note": "Updated invariant count assertion 23→24 after no-verify-bypass was added as 24th default invariant. PR #1028 existed but had lint/format failures; this QA run also fixed the pre-existing Prettier regression in claude-hook.ts."
-      }
-    ],
-    "openPrNotes": [
-      {
-        "pr": 1028,
-        "title": "fix(kernel): update invariant count assertion 23→24 after no-verify-bypass",
-        "issue": "CI failing: lint (pnpm format) + test-and-build. Same fix as this QA cycle's commit. Consider closing in favor of this PR.",
-        "status": "needs-attention"
-      },
-      {
-        "pr": 1032,
-        "title": "fix(invariants): detect credential file writes via shell commands",
-        "issue": "CI failing: lint (pnpm format). Has tests. Format fix needed.",
-        "status": "needs-format-fix"
-      },
-      {
-        "pr": 1035,
-        "title": "chore(kernel-qa): QA cycle report 2026-03-27T01:38Z + fix prettier regression",
-        "issue": "Old QA report, superseded by this run.",
-        "status": "stale"
-      }
-    ]
+    "fixes": [],
+    "openPrNotes": []
   },
   "lastEmRun": "2026-03-26T09:00:00.000Z",
-  "lastQaRun": "2026-03-27T02:39:00.000Z",
-  "updatedAt": "2026-03-27T02:39:00.000Z"
+  "lastQaRun": "2026-03-27T03:50:00.000Z",
+  "updatedAt": "2026-03-27T03:50:00.000Z"
 }
