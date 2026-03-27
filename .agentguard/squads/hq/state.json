@@ -1,15 +1,52 @@
 {
   "squad": "hq",
   "sprint": {
-    "goal": "",
-    "issues": []
+    "goal": "Restore CI health and swarm operational capacity",
+    "issues": [1118, 1109, 1119, 1127, 1128]
   },
-  "assignments": {},
-  "blockers": [],
+  "assignments": {
+    "workspace-backlog-steward": {
+      "task": "Stale branch cleanup (#1127 — 149 branches)",
+      "status": "queued"
+    },
+    "hq-em": {
+      "task": "EM report filed, SQLite fix triage, codex denial pattern analysis",
+      "status": "in-progress"
+    }
+  },
+  "blockers": [
+    {
+      "description": "SQLite bindings fail for Node v22 ABI v127 in all scheduler-spawned worktrees",
+      "issue": 1118,
+      "severity": "P0",
+      "blocksAgents": ["kernel-sr", "pr-merger-agent", "workspace-pr-review-agent", "all scheduled agents"]
+    },
+    {
+      "description": "All open PRs have failing CI — 0 mergeable",
+      "severity": "high",
+      "detail": "lint (Prettier) failures on 5/6 PRs; test regression (go-fast-path) on 4/6 PRs"
+    }
+  ],
   "prQueue": {
-    "open": 0,
+    "open": 6,
     "reviewed": 0,
-    "mergeable": 0
+    "mergeable": 0,
+    "nearlyMergeable": [1109]
   },
-  "updatedAt": "2026-03-25T00:00:00.000Z"
+  "swarmHealth": {
+    "activeWorktrees": 2,
+    "stuckWorktrees": 5,
+    "prunableWorktrees": 2,
+    "totalWorktrees": 9,
+    "stuckRate": 0.78,
+    "lastUpdated": "2026-03-27T18:30:00.000Z"
+  },
+  "dogfoodIssues": {
+    "open": 4,
+    "p0": [1118],
+    "medium": [1119],
+    "low": [1120, 1113]
+  },
+  "updatedAt": "2026-03-27T18:30:00.000Z",
+  "updatedBy": "hq-em (claude-code:opus:hq:em)"
 }

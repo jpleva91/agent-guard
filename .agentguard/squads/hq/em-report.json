@@ -1,0 +1,139 @@
+{
+  "squad": "hq",
+  "generatedAt": "2026-03-27T18:30:00.000Z",
+  "generatedBy": "claude-code:opus:hq:em",
+  "runId": "hq-em-1167866",
+  "health": "red",
+  "summary": "Critical swarm health degradation — 78% of agent worktrees stuck since ~01:17 UTC. SQLite bindings failure blocks governance runtime in all scheduler-spawned worktrees. All 6 open PRs have failing CI. No PRs mergeable this cycle.",
+  "overallStatus": {
+    "ci": "red",
+    "prQueue": "red",
+    "swarmHealth": "red",
+    "dogfoodBugs": "yellow",
+    "documentation": "green"
+  },
+  "p0Issues": [
+    {
+      "issue": 1128,
+      "title": "Swarm Health Alert — 78% worktrees stuck",
+      "detail": "5/9 agent worktrees stuck since ~01:17 UTC (16+ hours). Agents: kernel-sr (x2), pr-merger-agent (x2), workspace-pr-review-agent. All at commit ae37b15 with no work committed — likely failed at startup. Root cause: SQLite bindings failure (#1118) prevents governance runtime from starting, which is a required prerequisite for scheduled agents.",
+      "action": "Prune dead worktrees, investigate startup failure, re-queue stalled agents"
+    },
+    {
+      "issue": 1118,
+      "title": "[dogfood] agentguard guard fails with SQLite bindings error in worktrees",
+      "detail": "better-sqlite3 bindings not compiled for Node v22 ABI v127 in scheduler-spawned worktrees. Every worktree launch fails the governance runtime prerequisite. Three options: (1) rebuild bindings workspace-wide, (2) expose agentguard on PATH, (3) add --no-sqlite flag for fail-open operation.",
+      "action": "Implement option 3 (--no-sqlite flag) as short-term fix; file task for workspace-level rebuild",
+      "recommendation": "Highest priority — unblocks all stuck agents"
+    }
+  ],
+  "ciFindings": {
+    "openPRs": 6,
+    "mergeablePRs": 0,
+    "prsWithLintFailure": 5,
+    "prsWithTestFailure": 4,
+    "rootCauses": [
+      {
+        "cause": "Prettier formatting violations",
+        "affectedPRs": [1126, 1117, 1109, 1104, 1090],
+        "detail": "Agents not running pnpm format:fix before committing. Affected files vary per PR. Files format correctly on main — this is per-branch agent behavior.",
+        "fix": "Add pre-push format:fix step to agent commit workflow, or configure format on CI auto-fix"
+      },
+      {
+        "cause": "go-fast-path test regression",
+        "affectedPRs": [1117, 1098, 1104, 1126],
+        "testFile": "apps/cli/tests/go-fast-path.test.ts",
+        "failingCase": "tryGoFastPath > merges rules from multiple policies",
+        "detail": "Test passes on main (12/12). Each PR that touches policy-related code introduces a regression. PRs need individual investigation.",
+        "fix": "Each PR author must identify what change breaks the multi-policy merge assertion and fix"
+      }
+    ],
+    "nearlyMergeable": [
+      {
+        "pr": 1109,
+        "title": "feat: OpenCode framework adapter",
+        "issue": "Lint only (Prettier) — tests pass",
+        "action": "Run pnpm format:fix and repush"
+      }
+    ]
+  },
+  "prQueue": {
+    "open": 6,
+    "reviewed": 0,
+    "mergeable": 0,
+    "stale48h": 0,
+    "prs": [
+      { "number": 1126, "title": "feat: DeepAgents framework adapter", "age_h": 1.5, "lint": "fail", "test": "fail" },
+      { "number": 1117, "title": "fix(site): sync test count 2637→4161", "age_h": 4.2, "lint": "fail", "test": "fail" },
+      { "number": 1109, "title": "feat: OpenCode framework adapter", "age_h": 5.4, "lint": "fail", "test": "pass" },
+      { "number": 1104, "title": "fix(adapters): educate mode always allows", "age_h": 7.5, "lint": "fail", "test": "fail" },
+      { "number": 1098, "title": "feat(storage): parse driver:agent identity format", "age_h": 9.5, "lint": "pass", "test": "fail" },
+      { "number": 1090, "title": "test: add tests for telemetry/runtimeLogger", "age_h": 13, "lint": "fail", "test": "fail" }
+    ]
+  },
+  "dogfoodBugs": {
+    "open": 4,
+    "newThisRun": 3,
+    "bugs": [
+      {
+        "issue": 1118,
+        "priority": "P0",
+        "title": "SQLite bindings fail in worktrees (Node v22 ABI v127)",
+        "impact": "Governance runtime non-functional in all scheduler worktrees"
+      },
+      {
+        "issue": 1119,
+        "priority": "medium",
+        "title": "False positive: destructive detection fires on report content",
+        "impact": "Agents cannot write analysis reports via shell heredoc",
+        "pattern": "7+ codex-driver agents hitting this — issues #1097-#1107 are likely symptoms"
+      },
+      {
+        "issue": 1120,
+        "priority": "low",
+        "title": "Stop hook fails in sub-repos without node_modules"
+      },
+      {
+        "issue": 1113,
+        "priority": "bug",
+        "title": "security_reminder_hook blocks Write on GH Actions workflows"
+      }
+    ]
+  },
+  "codexDenialPattern": {
+    "issueCount": 7,
+    "issues": [1097, 1099, 1100, 1101, 1102, 1103, 1107],
+    "driverType": "codex",
+    "hypothesis": "Most likely related to false-positive destructive detection (#1119). Codex agents writing reports or processing text that mentions blocked command patterns are getting denied. Recommend triaging each issue to confirm.",
+    "recommendation": "Batch-label these as related to #1119 and close as duplicates once root cause confirmed"
+  },
+  "staleBranches": {
+    "issue": 1127,
+    "count": 149,
+    "action": "workspace-backlog-steward to batch-delete via stale-branch-janitor"
+  },
+  "worktreeCleanup": {
+    "prunable": ["pr-merger-agent-1206357", "pr-merger-agent-1207653"],
+    "stuck": ["kernel-sr-3130733", "kernel-sr-3169888", "pr-merger-agent-3030165", "pr-merger-agent-3164366", "workspace-pr-review-agent-3186753"],
+    "action": "Run git worktree prune for prunable; investigate and re-queue stuck agents after SQLite fix"
+  },
+  "blockers": [
+    "SQLite bindings failure blocks governance runtime in all worktrees (#1118) — P0",
+    "All 6 open PRs have failing CI — 0 mergeable",
+    "Swarm operational capacity at 22% (2/9 active agents)"
+  ],
+  "escalations": [],
+  "crossRepoStatus": {
+    "agentGuard": "red — CI failing, governance runtime broken in worktrees",
+    "agentguardCloud": "yellow — pr-merger-agent found no eligible PRs; some drafts/conflicts",
+    "agentguardAnalytics": "yellow — analytics agents hitting false-positive governance denials"
+  },
+  "nextActions": [
+    { "priority": 1, "action": "Fix SQLite bindings error (#1118) — implement --no-sqlite flag or rebuild bindings workspace-wide" },
+    { "priority": 2, "action": "Fix PR #1109 (OpenCode adapter) lint failure — run pnpm format:fix, repush — closest to mergeable" },
+    { "priority": 3, "action": "Investigate go-fast-path test regression and provide guidance to PR authors" },
+    { "priority": 4, "action": "Prune dead worktrees (2 prunable) and re-queue stalled agents after SQLite fix" },
+    { "priority": 5, "action": "Triage codex denial issues #1097-#1107 — batch-link to #1119 false positive" },
+    { "priority": 6, "action": "Stale branch cleanup — 149 branches via workspace-backlog-steward" }
+  ]
+}
