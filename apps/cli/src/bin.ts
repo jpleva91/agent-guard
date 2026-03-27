@@ -886,6 +886,30 @@ async function main() {
       break;
     }
 
+    case 'codex-init': {
+      const { codexInit } = await import('./commands/codex-init.js');
+      await codexInit(args.slice(1));
+      break;
+    }
+
+    case 'codex-hook': {
+      const { codexHook } = await import('./commands/codex-hook.js');
+      await codexHook(args[1], args.slice(2)); // 'pre' or 'post', then remaining flags
+      break;
+    }
+
+    case 'gemini-init': {
+      const { geminiInit } = await import('./commands/gemini-init.js');
+      await geminiInit(args.slice(1));
+      break;
+    }
+
+    case 'gemini-hook': {
+      const { geminiHook } = await import('./commands/gemini-hook.js');
+      await geminiHook(args[1], args.slice(2)); // 'pre' or 'post', then remaining flags
+      break;
+    }
+
     case 'auto-setup': {
       if (wantsHelp) {
         console.log(formatHelp(COMMANDS['auto-setup']));
