@@ -50,17 +50,14 @@ export async function inspect(args: string[], storageConfig?: StorageConfig): Pr
   if (!targetArg || targetArg === '--list') {
     const storage = await openSqliteDb(storageConfig);
     if (!storage) return;
-    const { listRunIds, listRunIdsByAgent, getRunAgents, loadRunEvents } = await import(
-      '@red-codes/storage'
-    );
+    const { listRunIds, listRunIdsByAgent, getRunAgents, loadRunEvents } =
+      await import('@red-codes/storage');
     const db = storage.db as import('better-sqlite3').Database;
     const runs = agentFilter ? listRunIdsByAgent(db, agentFilter) : listRunIds(db);
 
     if (runs.length === 0) {
       if (agentFilter) {
-        process.stderr.write(
-          `\n  \x1b[2mNo runs found for agent: ${agentFilter}\x1b[0m\n\n`
-        );
+        process.stderr.write(`\n  \x1b[2mNo runs found for agent: ${agentFilter}\x1b[0m\n\n`);
       } else {
         process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
         process.stderr.write('  Run \x1b[1magentguard guard\x1b[0m to start recording.\n\n');

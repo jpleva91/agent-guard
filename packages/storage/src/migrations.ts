@@ -125,7 +125,8 @@ const MIGRATIONS: readonly Migration[] = [
 
   {
     version: 5,
-    description: 'Add agent_id column to sessions table with index; backfill from RunStarted events',
+    description:
+      'Add agent_id column to sessions table with index; backfill from RunStarted events',
     up(db) {
       db.exec('ALTER TABLE sessions ADD COLUMN agent_id TEXT');
       db.exec('CREATE INDEX IF NOT EXISTS idx_sessions_agent_id ON sessions (agent_id)');
@@ -141,7 +142,9 @@ const MIGRATIONS: readonly Migration[] = [
         )
         .all() as Array<{ run_id: string; agent: string }>;
 
-      const update = db.prepare('UPDATE sessions SET agent_id = ? WHERE id = ? AND agent_id IS NULL');
+      const update = db.prepare(
+        'UPDATE sessions SET agent_id = ? WHERE id = ? AND agent_id IS NULL'
+      );
       for (const row of rows) {
         update.run(row.agent, row.run_id);
       }

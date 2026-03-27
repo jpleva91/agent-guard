@@ -21,7 +21,11 @@ import type {
 import { anonymizeEvent } from './anonymize.js';
 import { createAgentEventQueue } from './agent-event-queue.js';
 import { createAgentEventSender } from './agent-event-sender.js';
-import { mapDomainEventToAgentEvent, mapDecisionToAgentEvent, parseDriverType } from './event-mapper.js';
+import {
+  mapDomainEventToAgentEvent,
+  mapDecisionToAgentEvent,
+  parseDriverType,
+} from './event-mapper.js';
 import type { AgentEvent } from './event-mapper.js';
 import type { AgentEventQueue } from './agent-event-queue.js';
 import type { AgentEventSender } from './agent-event-sender.js';
