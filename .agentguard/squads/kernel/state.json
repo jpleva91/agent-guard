@@ -1,45 +1,32 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Fix P0 hook-breaking bugs (#972, #973), then resume Go kernel wire-up (#955). Hook path must work before Go delegation can ship.",
+    "goal": "Fix governance startup in worktrees (#1118 via --no-sqlite flag) + CI stability (#1142 AGENTGUARD_GO_TIMEOUT). Next: resume Go kernel delegation (#955).",
     "issues": [
-      972,
-      973,
+      1118,
+      1142,
       955,
-      957,
-      964
+      1119,
+      1144
     ]
   },
   "assignments": {
     "senior": {
       "issue": [
-        972,
-        973
+        1118,
+        1142
       ],
-      "title": "P0: Fix hook deny reason retry metadata (#972) + bundle essentials pack in npm (#973)",
-      "status": "unassigned",
-      "branch": null,
-      "pr": null,
-      "claimedAt": null,
-      "note": "P0 fast-track: #972 breaks all governed sessions (retry text in deny reason \u2192 Claude Code blocks all tool use). #973 compounds it (essentials pack missing \u2192 default-deny on everything). Fix both before resuming #955 Go delegation."
+      "title": "fix: --no-sqlite guard flag + AGENTGUARD_GO_TIMEOUT for CI stability",
+      "status": "pr-created",
+      "branch": "agent/kernel-sr-20260327-224725",
+      "pr": 1147,
+      "claimedAt": "2026-03-27T22:47:31Z",
+      "note": "PR #1147 supersedes #1143 (closed). AGENTGUARD_GO_TIMEOUT env var is the correct fix for CI flakiness (500ms hard-coded was still insufficient under full test suite load). Previous sprint issues #972/#973/#955/#957/#964 all closed upstream."
     }
   },
-  "blockers": [
-    {
-      "issue": 972,
-      "description": "Hook deny reason includes '(attempt N/N)' \u2014 Claude Code misinterprets as blocking error, killing all tool use in governed sessions",
-      "severity": "P0",
-      "since": "2026-03-26T00:00:00.000Z"
-    },
-    {
-      "issue": 973,
-      "description": "essentials policy pack not bundled in npm \u2014 all hook invocations hit default-deny",
-      "severity": "P0",
-      "since": "2026-03-26T00:00:00.000Z"
-    }
-  ],
+  "blockers": [],
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
@@ -51,23 +38,34 @@
         "ciStatus": "passed",
         "mergedAt": "2026-03-26T00:30:00.000Z",
         "note": "Merged successfully. All CI checks passed."
+      },
+      {
+        "number": 1147,
+        "title": "fix: --no-sqlite guard flag + AGENTGUARD_GO_TIMEOUT for CI stability (closes #1118, closes #1142)",
+        "branch": "agent/kernel-sr-20260327-224725",
+        "status": "open",
+        "ciStatus": "pending",
+        "closes": [1118, 1142]
       }
     ]
   },
-  "health": "yellow",
+  "health": "green",
   "testHealth": {
-    "total": 4298,
-    "passed": 4298,
+    "total": 4350,
+    "passed": 4350,
     "failed": 0,
     "packages": 18,
-    "lastRun": "2026-03-27T03:50:00.000Z",
+    "lastRun": "2026-03-27T22:55:00.000Z",
     "status": "all_passing",
-    "delta": "+63 tests since last run (4235 \u2192 4298); +25 new storage tests this cycle",
+    "delta": "+4 storage tests (none backend) vs last QA run",
     "coverageGaps": [],
-    "fixes": [],
-    "openPrNotes": []
+    "fixes": [
+      "AGENTGUARD_GO_TIMEOUT env var prevents go-fast-path CI timeout",
+      "--no-sqlite flag enables worktree governance without SQLite bindings"
+    ],
+    "openPrNotes": ["PR #1147 CI pending"]
   },
-  "lastEmRun": "2026-03-26T09:00:00.000Z",
-  "lastQaRun": "2026-03-27T03:50:00.000Z",
-  "updatedAt": "2026-03-27T03:50:00.000Z"
+  "lastEmRun": "2026-03-27T21:10:00.000Z",
+  "lastQaRun": "2026-03-27T22:55:00.000Z",
+  "updatedAt": "2026-03-27T22:58:00.000Z"
 }
