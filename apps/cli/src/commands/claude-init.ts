@@ -14,6 +14,7 @@ import {
   WRITE_PERSONA,
   SESSION_PERSONA_CHECK,
   claudeHookWrapper,
+  claudeHookStopWrapper,
 } from '../templates/scripts.js';
 import { STARTER_SKILLS } from '../templates/skills.js';
 
@@ -339,7 +340,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `${cli} claude-hook stop${storeSuffix}${dbPathSuffix}`,
+        command: `bash scripts/claude-hook-stop-wrapper.sh`,
         timeout: 15000,
         blocking: false,
       },
@@ -362,6 +363,10 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     { name: 'write-persona.sh', content: WRITE_PERSONA },
     { name: 'session-persona-check.sh', content: SESSION_PERSONA_CHECK },
     { name: 'claude-hook-wrapper.sh', content: claudeHookWrapper(cli, storeSuffix, dbPathSuffix) },
+    {
+      name: 'claude-hook-stop-wrapper.sh',
+      content: claudeHookStopWrapper(cli, storeSuffix, dbPathSuffix),
+    },
   ];
 
   for (const { name, content } of scriptFiles) {
@@ -617,6 +622,7 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
     'write-persona.sh',
     'session-persona-check.sh',
     'claude-hook-wrapper.sh',
+    'claude-hook-stop-wrapper.sh',
   ];
   for (const name of identityScripts) {
     const scriptPath = join(repoRoot, 'scripts', name);
@@ -1001,6 +1007,7 @@ function hasAgentGuardHook(settings: Settings): boolean {
 /** Wrapper scripts that hooks may reference. */
 const WRAPPER_SCRIPTS = [
   'scripts/claude-hook-wrapper.sh',
+  'scripts/claude-hook-stop-wrapper.sh',
   'scripts/session-persona-check.sh',
   'scripts/agent-identity-bridge.sh',
   'scripts/write-persona.sh',

@@ -52,6 +52,10 @@ vi.mock('../src/templates/scripts.js', () => ({
     (cli: string, store: string, dbPath: string) =>
       `#!/usr/bin/env bash\nexec ${cli} claude-hook pre${store}${dbPath}`
   ),
+  claudeHookStopWrapper: vi.fn(
+    (cli: string, store: string, dbPath: string) =>
+      `#!/usr/bin/env bash\nexec ${cli} claude-hook stop${store}${dbPath}`
+  ),
 }));
 
 vi.mock('../src/templates/skills.js', () => ({
@@ -64,7 +68,7 @@ vi.mock('../src/templates/skills.js', () => ({
 
 import { claudeInit } from '../src/commands/claude-init.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { claudeHookWrapper } from '../src/templates/scripts.js';
+import { claudeHookWrapper, claudeHookStopWrapper } from '../src/templates/scripts.js';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -523,7 +527,7 @@ describe('claudeInit', () => {
         return p.includes('scripts/') || p.includes('scripts\\');
       });
 
-    // All 4 identity scripts should be written
+    // All 5 identity scripts should be written
     const scriptNames = scriptWrites.map((call) => {
       const p = call[0] as string;
       return p.split(/[/\\]/).pop();
@@ -532,7 +536,8 @@ describe('claudeInit', () => {
     expect(scriptNames).toContain('write-persona.sh');
     expect(scriptNames).toContain('session-persona-check.sh');
     expect(scriptNames).toContain('claude-hook-wrapper.sh');
-    expect(scriptWrites).toHaveLength(4);
+    expect(scriptNames).toContain('claude-hook-stop-wrapper.sh');
+    expect(scriptWrites).toHaveLength(5);
 
     // Every script path should end with .sh
     for (const call of scriptWrites) {
@@ -595,6 +600,31 @@ describe('claudeInit', () => {
     expect(written.hooks.PreToolUse[0].hooks[0].command).toContain('claude-hook-wrapper.sh');
   });
 
+  it('uses stop wrapper script for Stop hook (resolves binary from workspace root)', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit([]);
+
+    const written = writtenSettings();
+    // Stop hook must use the wrapper script, not an inline binary path,
+    // so binary resolution happens at runtime relative to workspace root (not CWD)
+    expect(written.hooks.Stop[0].hooks[0].command).toBe('bash scripts/claude-hook-stop-wrapper.sh');
+    expect(written.hooks.Stop[0].hooks[0].blocking).toBe(false);
+    expect(written.hooks.Stop[0].hooks[0].timeout).toBe(15000);
+  });
+
+  it('passes store suffix to claudeHookStopWrapper', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit(['--store', 'sqlite']);
+
+    expect(claudeHookStopWrapper).toHaveBeenCalledWith(
+      expect.any(String),
+      ' --store sqlite',
+      ''
+    );
+  });
+
   // --- Binary path resolution (#964) ---
 
   it('resolves ./node_modules/.bin/agentguard for project-level npm installs', async () => {
@@ -609,7 +639,7 @@ describe('claudeInit', () => {
     await claudeInit([]);
 
     const written = writtenSettings();
-    // PostToolUse, Stop, Notification hooks should use resolved binary path
+    // PostToolUse hook should use resolved binary path (Stop now uses a wrapper script)
     expect(written.hooks.PostToolUse[0].hooks[0].command).toContain(
       './node_modules/.bin/agentguard'
     );
