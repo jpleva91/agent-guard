@@ -6,7 +6,7 @@
 package simulation
 
 import (
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
 )
 
 // Impact severity constants.

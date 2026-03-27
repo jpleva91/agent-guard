@@ -6,7 +6,7 @@ package decision
 import (
 	"time"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
 )
 
 // DecisionType classifies the outcome of a governance evaluation.

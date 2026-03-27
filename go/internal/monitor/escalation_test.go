@@ -3,7 +3,7 @@ package monitor_test
 import (
 	"testing"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/monitor"
+	"github.com/AgentGuardHQ/agentguard/go/internal/monitor"
 )
 
 func TestEscalationLevelString(t *testing.T) {

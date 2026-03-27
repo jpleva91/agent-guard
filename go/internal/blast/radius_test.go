@@ -3,8 +3,8 @@ package blast_test
 import (
 	"testing"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
-	"github.com/AgentGuardHQ/agent-guard/go/internal/blast"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/blast"
 )
 
 func TestFileReadHasLowBlastRadius(t *testing.T) {

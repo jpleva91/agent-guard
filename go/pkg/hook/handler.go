@@ -3,9 +3,9 @@ package hook
 import (
 	"os"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
-	"github.com/AgentGuardHQ/agent-guard/go/internal/config"
-	"github.com/AgentGuardHQ/agent-guard/go/internal/engine"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/config"
+	"github.com/AgentGuardHQ/agentguard/go/internal/engine"
 )
 
 // Handler evaluates hook requests against loaded policies.

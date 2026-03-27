@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"time"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
 )
 
 // generateID returns a unique decision record ID using crypto/rand.

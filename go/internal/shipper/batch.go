@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/event"
+	"github.com/AgentGuardHQ/agentguard/go/internal/event"
 )
 
 // Batch accumulates events up to a max size or max age.

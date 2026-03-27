@@ -5,7 +5,7 @@ import (
 	"math"
 	"strings"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
 )
 
 // Registry holds registered simulators and routes actions to them.

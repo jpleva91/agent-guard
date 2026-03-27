@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
 )
 
 // protectedBranches are branch names that elevate git operation severity.

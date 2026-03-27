@@ -4,7 +4,7 @@ package engine
 import (
 	"strings"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
 )
 
 // EvalOptions controls evaluation behavior.

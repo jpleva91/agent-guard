@@ -3,7 +3,7 @@ package kernel
 import (
 	"fmt"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
 )
 
 // StageFunc is a callback invoked for each pipeline stage after the kernel

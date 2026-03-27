@@ -3,8 +3,8 @@ package simulation_test
 import (
 	"testing"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
-	"github.com/AgentGuardHQ/agent-guard/go/internal/simulation"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/simulation"
 )
 
 func TestGitCommitLowImpact(t *testing.T) {

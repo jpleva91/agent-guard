@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
-	"github.com/AgentGuardHQ/agent-guard/go/internal/decision"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/decision"
 )
 
 func TestNewAllowDecisionFields(t *testing.T) {

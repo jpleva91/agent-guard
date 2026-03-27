@@ -3,8 +3,8 @@ package action_test
 import (
 	"testing"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
-	"github.com/AgentGuardHQ/agent-guard/go/internal/config"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/config"
 )
 
 func setupNormalizer(b *testing.B) *action.Normalizer {

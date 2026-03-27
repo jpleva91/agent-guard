@@ -4,7 +4,7 @@
 package invariant
 
 import (
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
 )
 
 // InvariantID uniquely identifies a built-in invariant.

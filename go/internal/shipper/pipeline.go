@@ -5,7 +5,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/event"
+	"github.com/AgentGuardHQ/agentguard/go/internal/event"
 )
 
 // FilterFunc decides whether an event should be shipped.

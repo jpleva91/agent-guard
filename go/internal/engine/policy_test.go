@@ -3,8 +3,8 @@ package engine_test
 import (
 	"testing"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
-	"github.com/AgentGuardHQ/agent-guard/go/internal/engine"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/engine"
 )
 
 func testPolicy() *action.LoadedPolicy {

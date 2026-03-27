@@ -1,4 +1,4 @@
-module github.com/AgentGuardHQ/agent-guard/go
+module github.com/AgentGuardHQ/agentguard/go
 
 go 1.18
 

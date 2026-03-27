@@ -4,7 +4,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
 	"gopkg.in/yaml.v3"
 )
 
