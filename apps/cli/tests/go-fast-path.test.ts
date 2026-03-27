@@ -53,6 +53,12 @@ describe('resolveGoBinaryPath', () => {
 describe('tryGoFastPath', () => {
   const origEnv = { ...process.env };
 
+  beforeEach(() => {
+    // Use a generous timeout so mock shell scripts don't time out under system load
+    // (e.g. when running the full 4000+ test suite in parallel across packages).
+    process.env.AGENTGUARD_GO_TIMEOUT = '5000';
+  });
+
   afterEach(() => {
     process.env = { ...origEnv };
   });
