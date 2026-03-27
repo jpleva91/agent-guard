@@ -30,10 +30,26 @@
     }
   ],
   "prQueue": {
-    "open": 0,
-    "reviewed": 0,
-    "mergeable": 0,
+    "open": 2,
+    "reviewed": 1,
+    "mergeable": 1,
     "prs": [
+      {
+        "number": 1028,
+        "title": "fix(kernel): update invariant count assertion 23→24 after no-verify-bypass",
+        "branch": "agent/kernel-qa-20260327-005002",
+        "status": "open",
+        "ciStatus": "failing",
+        "note": "CI failures are pre-existing (prettier on claude-hook.ts, go-fast-path env-specific). The actual fix (23→24) is correct — verified locally, all 4235 tests pass."
+      },
+      {
+        "number": 1032,
+        "title": "fix(invariants): detect credential file writes via shell commands",
+        "branch": "fix/credential-file-shell-bypass-618",
+        "status": "open",
+        "ciStatus": "unknown",
+        "note": "Tier C PR. Good test coverage: 9 new tests (74 lines) covering sed, tee, redirect, cp, echo-append, and read-only exemptions. Modifies 2 files, ~125 lines."
+      },
       {
         "number": 969,
         "title": "fix(claude-init): write hooks with full binary path (closes #964)",
@@ -41,27 +57,43 @@
         "status": "merged",
         "ciStatus": "passed",
         "mergedAt": "2026-03-26T00:30:00.000Z",
-        "note": "Merged successfully. All CI checks passed."
+        "note": "Merged successfully."
       }
     ]
   },
   "health": "yellow",
   "testHealth": {
-    "total": 4134,
-    "passed": 4134,
-    "failed": 0,
-    "packages": 19,
-    "lastRun": "2026-03-26T00:51:00.000Z",
-    "status": "all_passing",
-    "delta": "+5 tests since last run (4129 → 4134)",
+    "total": 4235,
+    "passed": 4234,
+    "failed": 1,
+    "failedTests": [
+      {
+        "package": "@red-codes/kernel",
+        "file": "tests/agentguard-engine.test.ts",
+        "test": "creates an engine with defaults",
+        "reason": "Invariant count assertion stale (expected 23, got 24) after no-verify-bypass invariant added in PR #1002. Fix in PR #1028.",
+        "severity": "low",
+        "isRegression": true,
+        "fixPR": 1028
+      }
+    ],
+    "packages": 18,
+    "lastRun": "2026-03-27T01:33:00.000Z",
+    "duration": "5.4s",
+    "status": "regression",
+    "delta": "+101 tests since last run (4134 → 4235)",
     "coverageGaps": [
       {
         "file": "apps/cli/src/commands/copilot-init.ts",
-        "note": "No dedicated test file. Recently modified in PR #969 (same hook path fix as claude-init). claude-init has 39 tests; copilot-init has zero."
+        "note": "Has 18 tests (stale zero-test note corrected). Still significantly fewer than claude-init (80 tests). Parity gap remains."
+      },
+      {
+        "file": "apps/cli/src/templates/scripts.ts",
+        "note": "No dedicated test file. Modified for opencode driver support (PR #1019). Only exercised indirectly via claude-init/copilot-init tests."
       }
     ]
   },
   "lastEmRun": "2026-03-26T09:00:00.000Z",
-  "lastQaRun": "2026-03-26T00:51:00.000Z",
-  "updatedAt": "2026-03-26T00:51:00.000Z"
+  "lastQaRun": "2026-03-27T01:33:00.000Z",
+  "updatedAt": "2026-03-27T01:33:00.000Z"
 }
