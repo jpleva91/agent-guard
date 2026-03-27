@@ -255,14 +255,17 @@ export function formatCopilotHookResponse(
 ): string {
   const mode = options?.mode;
 
-  // --- Educate mode: allow the action, write suggestion to stderr ---
+  // --- Educate mode: always allow the action, optionally write suggestion to stderr ---
   // Copilot CLI has no additionalContext equivalent, so we emit to stderr as a warning.
-  if (mode === 'educate' && suggestion) {
-    const parts = [`[AgentGuard educate] ${suggestion.message}`];
-    if (suggestion.correctedCommand) {
-      parts.push(`Suggested command: ${suggestion.correctedCommand}`);
+  // Must check mode first before any deny path to avoid blocking in educate mode.
+  if (mode === 'educate') {
+    if (suggestion) {
+      const parts = [`[AgentGuard educate] ${suggestion.message}`];
+      if (suggestion.correctedCommand) {
+        parts.push(`Suggested command: ${suggestion.correctedCommand}`);
+      }
+      process.stderr.write(parts.join('\n') + '\n');
     }
-    process.stderr.write(parts.join('\n') + '\n');
     // Return empty string = allow
     return '';
   }

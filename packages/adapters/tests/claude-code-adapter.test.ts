@@ -504,11 +504,12 @@ describe('formatHookResponse — enforcement modes', () => {
       expect(parsed.hookSpecificOutput.additionalContext).not.toContain('Suggested command');
     });
 
-    it('falls back to default behavior when no suggestion is provided', () => {
+    it('still allows the action when no suggestion is provided', () => {
       const response = formatHookResponse(deniedResult, null, educateOptions);
       const parsed = JSON.parse(response);
-      // Without a suggestion, educate mode falls through to default deny
-      expect(parsed.hookSpecificOutput.permissionDecision).toBe('deny');
+      // Educate mode always allows — suggestion is optional context, not a gate
+      expect(parsed.hookSpecificOutput.permissionDecision).toBe('allow');
+      expect(parsed.hookSpecificOutput.additionalContext).toBeUndefined();
     });
   });
 

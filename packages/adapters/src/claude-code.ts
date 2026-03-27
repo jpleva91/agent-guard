@@ -356,19 +356,21 @@ export function formatHookResponse(
 ): string {
   const mode = options?.mode;
 
-  // --- Educate mode: allow the action but inject the suggestion as context ---
-  if (mode === 'educate' && suggestion) {
-    const contextParts = [`[AgentGuard educate] ${suggestion.message}`];
-    if (suggestion.correctedCommand) {
-      contextParts.push(`Suggested command: ${suggestion.correctedCommand}`);
+  // --- Educate mode: always allow the action, optionally inject suggestion as context ---
+  // Must check mode first before any deny path to avoid blocking in educate mode.
+  if (mode === 'educate') {
+    const output: Record<string, unknown> = {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'allow',
+    };
+    if (suggestion) {
+      const contextParts = [`[AgentGuard educate] ${suggestion.message}`];
+      if (suggestion.correctedCommand) {
+        contextParts.push(`Suggested command: ${suggestion.correctedCommand}`);
+      }
+      output.additionalContext = contextParts.join('\n');
     }
-    return JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecision: 'allow',
-        additionalContext: contextParts.join('\n'),
-      },
-    });
+    return JSON.stringify({ hookSpecificOutput: output });
   }
 
   // --- Guide mode: block with corrective suggestion ---

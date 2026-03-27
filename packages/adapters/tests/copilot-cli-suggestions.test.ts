@@ -95,11 +95,16 @@ describe('formatCopilotHookResponse — educate mode', () => {
     }
   });
 
-  it('falls back to default behavior when no suggestion is provided', () => {
-    const response = formatCopilotHookResponse(deniedResult, null, educateOptions);
-    const parsed = JSON.parse(response);
-    // Without a suggestion, educate mode falls through to default deny
-    expect(parsed.permissionDecision).toBe('deny');
+  it('still allows the action when no suggestion is provided', () => {
+    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    try {
+      const response = formatCopilotHookResponse(deniedResult, null, educateOptions);
+      // Educate mode always allows — suggestion is optional context, not a gate
+      expect(response).toBe('');
+      expect(stderrSpy).not.toHaveBeenCalled();
+    } finally {
+      stderrSpy.mockRestore();
+    }
   });
 
   it('falls back to default allow when result is allowed and no suggestion', () => {
