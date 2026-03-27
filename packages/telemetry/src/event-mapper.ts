@@ -16,6 +16,7 @@ import type {
 export interface AgentEvent {
   eventId?: string;
   agentId: string;
+  driverType?: string;
   timestamp?: string;
   eventType:
     | 'tool_call'
@@ -33,6 +34,21 @@ export interface AgentEvent {
   policyVersion?: string;
   sessionId?: string;
   parentSessionId?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Driver type extraction from composite agentId
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse `driverType` from a composite agentId string.
+ * Format: `<driver>:<agentName>` (e.g. `claude-code:kernel-qa`).
+ * Returns undefined if the agentId has no driver prefix.
+ */
+export function parseDriverType(agentId: string): string | undefined {
+  const colonIndex = agentId.indexOf(':');
+  if (colonIndex <= 0) return undefined;
+  return agentId.slice(0, colonIndex);
 }
 
 // ---------------------------------------------------------------------------
@@ -177,9 +193,12 @@ export function mapDomainEventToAgentEvent(event: DomainEvent): AgentEvent {
 
   const riskLevel = resolveRiskLevel(simulationRiskLevel, escalationLevel);
 
+  const driverType = parseDriverType(agentId);
+
   const agentEvent: AgentEvent = {
     eventId: randomUUID(),
     agentId,
+    ...(driverType !== undefined ? { driverType } : {}),
     timestamp: new Date(event.timestamp).toISOString(),
     eventType,
     action: actionType,
@@ -217,9 +236,13 @@ export function mapDecisionToAgentEvent(record: GovernanceDecisionRecord): Agent
   const escalationLevel = record.monitor?.escalationLevel;
   const riskLevel = resolveRiskLevel(simulationRiskLevel, escalationLevel);
 
+  const agentId = record.action.agent;
+  const driverType = parseDriverType(agentId);
+
   const agentEvent: AgentEvent = {
     eventId: randomUUID(),
-    agentId: record.action.agent,
+    agentId,
+    ...(driverType !== undefined ? { driverType } : {}),
     timestamp: new Date(record.timestamp).toISOString(),
     eventType: 'decision',
     action: record.action.type,

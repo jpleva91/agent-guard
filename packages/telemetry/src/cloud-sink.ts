@@ -21,7 +21,7 @@ import type {
 import { anonymizeEvent } from './anonymize.js';
 import { createAgentEventQueue } from './agent-event-queue.js';
 import { createAgentEventSender } from './agent-event-sender.js';
-import { mapDomainEventToAgentEvent, mapDecisionToAgentEvent } from './event-mapper.js';
+import { mapDomainEventToAgentEvent, mapDecisionToAgentEvent, parseDriverType } from './event-mapper.js';
 import type { AgentEvent } from './event-mapper.js';
 import type { AgentEventQueue } from './agent-event-queue.js';
 import type { AgentEventSender } from './agent-event-sender.js';
@@ -119,10 +119,14 @@ export async function createCloudSinks(config: CloudSinkConfig): Promise<CloudSi
   }
 
   function prepareEvent(agentEvent: AgentEvent): AgentEvent {
+    const resolvedAgentId = agentEvent.agentId === 'unknown' ? agentId : agentEvent.agentId;
+    const resolvedDriverType =
+      agentEvent.driverType ?? parseDriverType(resolvedAgentId) ?? parseDriverType(agentId);
     const prepared: AgentEvent = {
       ...agentEvent,
       sessionId: runId,
-      agentId: agentEvent.agentId === 'unknown' ? agentId : agentEvent.agentId,
+      agentId: resolvedAgentId,
+      ...(resolvedDriverType !== undefined ? { driverType: resolvedDriverType } : {}),
       ...(parentSessionId ? { parentSessionId } : {}),
     };
     if (isAnonymous) {

@@ -5,6 +5,7 @@ import {
   mapDomainEventToAgentEvent,
   mapDecisionToAgentEvent,
   mapEnvelopeToAgentEvent,
+  parseDriverType,
 } from '../src/event-mapper.js';
 
 // ---------------------------------------------------------------------------
@@ -960,5 +961,93 @@ describe('mapEnvelopeToAgentEvent', () => {
     expect(claudeResult.policyVersion).toBe(copilotResult.policyVersion);
     expect(claudeResult.metadata?.source).toBe('claude-code');
     expect(copilotResult.metadata?.source).toBe('copilot-cli');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// parseDriverType
+// ---------------------------------------------------------------------------
+
+describe('parseDriverType', () => {
+  it('parses driver from composite agentId', () => {
+    expect(parseDriverType('claude-code:kernel-qa')).toBe('claude-code');
+    expect(parseDriverType('copilot-cli:cloud-em')).toBe('copilot-cli');
+    expect(parseDriverType('codex-cli:studio-sr')).toBe('codex-cli');
+    expect(parseDriverType('gemini-cli:ops-agent')).toBe('gemini-cli');
+  });
+
+  it('returns undefined for legacy agentIds without driver prefix', () => {
+    expect(parseDriverType('kernel-sr')).toBeUndefined();
+    expect(parseDriverType('unknown')).toBeUndefined();
+  });
+
+  it('returns undefined for empty string', () => {
+    expect(parseDriverType('')).toBeUndefined();
+  });
+
+  it('handles agentId starting with colon as no driver', () => {
+    expect(parseDriverType(':missing-driver')).toBeUndefined();
+  });
+
+  it('handles multiple colons — only splits on first', () => {
+    expect(parseDriverType('claude-code:cloud:em')).toBe('claude-code');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// driverType propagation
+// ---------------------------------------------------------------------------
+
+describe('mapDomainEventToAgentEvent — driverType', () => {
+  it('sets driverType for composite agentId', () => {
+    const event = makeDomainEvent({
+      kind: 'ActionRequested',
+      actionType: 'file.write',
+      target: '/src/app.ts',
+      agentId: 'claude-code:kernel-qa',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.driverType).toBe('claude-code');
+    expect(result.agentId).toBe('claude-code:kernel-qa');
+  });
+
+  it('omits driverType for legacy agentId without driver prefix', () => {
+    const event = makeDomainEvent({
+      kind: 'ActionRequested',
+      actionType: 'file.write',
+      target: '/src/app.ts',
+      agentId: 'kernel-sr',
+    });
+    const result = mapDomainEventToAgentEvent(event);
+    expect(result.driverType).toBeUndefined();
+  });
+});
+
+describe('mapDecisionToAgentEvent — driverType', () => {
+  it('sets driverType for composite agentId in decision record', () => {
+    const record = makeDecisionRecord({
+      action: {
+        type: 'git.push',
+        target: 'main',
+        agent: 'copilot-cli:cloud-em',
+        destructive: false,
+      },
+    });
+    const result = mapDecisionToAgentEvent(record);
+    expect(result.driverType).toBe('copilot-cli');
+    expect(result.agentId).toBe('copilot-cli:cloud-em');
+  });
+
+  it('omits driverType for legacy agentId in decision record', () => {
+    const record = makeDecisionRecord({
+      action: {
+        type: 'git.push',
+        target: 'main',
+        agent: 'cloud-em',
+        destructive: false,
+      },
+    });
+    const result = mapDecisionToAgentEvent(record);
+    expect(result.driverType).toBeUndefined();
   });
 });
