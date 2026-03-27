@@ -1,62 +1,133 @@
 {
   "schemaVersion": "1.0",
-  "updatedAt": "2026-03-25T14:10:00Z",
-  "updatedBy": "recovery-controller-agent",
+  "updatedAt": "2026-03-27T02:45:00Z",
+  "updatedBy": "backlog-hygiene--roadmap-triage-agent",
   "mode": "normal",
   "recommendedMode": "normal",
-  "modeReason": "Recovery controller confirms normal mode. All 6 health dimensions green: PR queue empty, main CI green (last 10 runs all success), agents active (coder-agent branches from today), 0 merge conflicts, swarm state fresh, roadmap progressing. Risk score steady at 10. No remediation required.",
+  "modeReason": "Roadmap triage agent confirms normal mode. v2.8.0 shipped (Codex CLI + Gemini CLI adapters). Phase 6.75 (Studio Runtime) completed ahead of schedule. Install attribution (v3.0 blocker) shipped in v2.7.x. Go kernel fast-path delegation operational. Security issue #648 (read-only ops) RESOLVED via PR #982. Risk profile steady.",
   "riskAssessment": {
-    "compositeScore": 10,
+    "compositeScore": 8,
     "escalationLevel": "NORMAL",
-    "assessedAt": "2026-03-25T13:10:00Z",
+    "assessedAt": "2026-03-27T02:45:00Z",
     "dimensions": {
       "prBlastRadius": {
         "score": 0,
         "max": 25,
         "openPRs": 0,
         "conflictedPRs": 0,
-        "note": "PR queue empty. All 8 PRs from prior assessment have been merged or closed. Healthy state."
+        "note": "PR queue empty. v2.8.0 merged cleanly."
       },
       "testFailureRate": {
         "score": 2,
         "max": 25,
-        "note": "Main branch CI green. No persistent test failures. Issue #868 (agent PRs merging with failing CI) is open as a governance enforcement gap but not a current regression."
+        "note": "Main branch CI green. No persistent test failures."
       },
       "governanceDenialRate": {
-        "score": 5,
+        "score": 3,
         "max": 25,
-        "highPriorityIssuesOpen": 8,
-        "securityBypassVectors": ["#618 (credential write bypass)", "#648 (read-only blocking)", "#640 (path manipulation)", "#639 (credential stripping)"],
-        "note": "8 HIGH-priority issues open (down from 10). #815 (default-deny) RESOLVED via PR #879. Security issues #618, #648, #640, #639 remain without assigned PRs."
+        "highPriorityIssuesOpen": 6,
+        "securityBypassVectors": [
+          "#618 (credential write bypass)",
+          "#640 (path manipulation)",
+          "#639 (credential stripping)"
+        ],
+        "note": "6 HIGH-priority issues open (down from 8). #648 (read-only blocking) RESOLVED via PR #982. #618, #640, #639 remain without assigned PRs."
       },
       "mergeConflictRate": {
         "score": 0,
         "max": 25,
         "conflictedPRs": 0,
         "openPRs": 0,
-        "note": "No open PRs, no conflicts. Clean state."
+        "note": "No open PRs, no conflicts."
       }
     },
     "deltaFromPrior": {
-      "priorScore": 23,
-      "currentScore": 10,
-      "delta": -13,
+      "priorScore": 10,
+      "currentScore": 8,
+      "delta": -2,
       "direction": "improved",
-      "cause": "PR queue drained 8→0. Conflict on #822 resolved. Default-deny (#815) shipped via PR #879. KE-3 completed. Phase 6 completed. Risk profile significantly improved."
+      "cause": "v2.8.0 released (Codex+Gemini CLI). Phase 6.75 DONE. Install attribution shipped. #648 RESOLVED. Security issue count 8->6."
     }
   },
   "phaseTracking": {
-    "assessedAt": "2026-03-25T13:10:00Z",
+    "assessedAt": "2026-03-27T02:45:00Z",
     "completedPhases": [
-      { "phase": "Phase 0", "name": "Architecture Clarity", "status": "STABLE", "completion": 1.0, "checkboxes": "6/6" },
-      { "phase": "Phase 1", "name": "Canonical Event Model", "status": "STABLE", "completion": 1.0, "checkboxes": "8/8" },
-      { "phase": "Phase 2", "name": "AgentGuard Governance Runtime", "status": "STABLE", "completion": 1.0, "checkboxes": "16/16" },
-      { "phase": "Phase 3", "name": "Event Persistence + Replay", "status": "STABLE", "completion": 1.0, "checkboxes": "9/9" },
-      { "phase": "Phase 4", "name": "Plugin Ecosystem", "status": "STABLE", "completion": 1.0, "checkboxes": "5/5" },
-      { "phase": "Phase 6.5", "name": "Invariant Expansion", "status": "STABLE", "completion": 1.0, "checkboxes": "11/11" },
-      { "phase": "KE-1", "name": "Invariant Engine Evolution", "status": "DONE", "completion": 1.0, "checkboxes": "6/6", "shippedAt": "2026-03-21" },
-      { "phase": "KE-3", "name": "Governance Event Envelope", "status": "DONE", "completion": 1.0, "checkboxes": "5/5", "shippedAt": "2026-03-24" },
-      { "phase": "Phase 6", "name": "Reference Monitor Hardening", "status": "DONE", "completion": 1.0, "checkboxes": "7/7", "completedAt": "2026-03-24", "note": "All 7 roadmap items complete. Default-deny shipped 2026-03-24. PAUSE/ROLLBACK enforced 2026-03-18. Performance benchmark gate operational. Commit scope guard (#22) shipped v2.5.0." }
+      {
+        "phase": "Phase 0",
+        "name": "Architecture Clarity",
+        "status": "STABLE",
+        "completion": 1.0,
+        "checkboxes": "6/6"
+      },
+      {
+        "phase": "Phase 1",
+        "name": "Canonical Event Model",
+        "status": "STABLE",
+        "completion": 1.0,
+        "checkboxes": "8/8"
+      },
+      {
+        "phase": "Phase 2",
+        "name": "AgentGuard Governance Runtime",
+        "status": "STABLE",
+        "completion": 1.0,
+        "checkboxes": "16/16"
+      },
+      {
+        "phase": "Phase 3",
+        "name": "Event Persistence + Replay",
+        "status": "STABLE",
+        "completion": 1.0,
+        "checkboxes": "9/9"
+      },
+      {
+        "phase": "Phase 4",
+        "name": "Plugin Ecosystem",
+        "status": "STABLE",
+        "completion": 1.0,
+        "checkboxes": "5/5"
+      },
+      {
+        "phase": "Phase 6.5",
+        "name": "Invariant Expansion",
+        "status": "STABLE",
+        "completion": 1.0,
+        "checkboxes": "11/11"
+      },
+      {
+        "phase": "KE-1",
+        "name": "Invariant Engine Evolution",
+        "status": "DONE",
+        "completion": 1.0,
+        "checkboxes": "6/6",
+        "shippedAt": "2026-03-21"
+      },
+      {
+        "phase": "KE-3",
+        "name": "Governance Event Envelope",
+        "status": "DONE",
+        "completion": 1.0,
+        "checkboxes": "5/5",
+        "shippedAt": "2026-03-24"
+      },
+      {
+        "phase": "Phase 6",
+        "name": "Reference Monitor Hardening",
+        "status": "DONE",
+        "completion": 1.0,
+        "checkboxes": "7/7",
+        "completedAt": "2026-03-24",
+        "note": "All 7 roadmap items complete. Default-deny shipped 2026-03-24. PAUSE/ROLLBACK enforced 2026-03-18. Performance benchmark gate operational. Commit scope guard (#22) shipped v2.5.0."
+      },
+      {
+        "phase": "Phase 6.75",
+        "name": "Studio Runtime",
+        "status": "DONE",
+        "completion": 1.0,
+        "checkboxes": "3/3",
+        "completedAt": "2026-03-26",
+        "note": "All 3 items shipped ahead of schedule in v2.7.x (PR #987): agentguard init studio wizard, execution profiles (6 total), swarm template schema with zero-dep runtime validator."
+      }
     ],
     "activePhases": [
       {
@@ -64,27 +135,77 @@
         "name": "Kernel Evolution Sprint",
         "status": "IN PROGRESS",
         "kePhases": {
-          "KE-1": { "status": "DONE", "completion": 1.0, "checkboxes": "6/6", "shippedAt": "2026-03-21" },
-          "KE-2": { "status": "IN PROGRESS", "completion": 0.0, "checkboxes": "0/4", "trackingIssue": 856, "note": "ActionContext design — in-progress, priority:high, last updated 2026-03-25" },
-          "KE-3": { "status": "DONE", "completion": 1.0, "checkboxes": "5/5", "shippedAt": "2026-03-24" },
-          "KE-4": { "status": "IN REVIEW", "completion": 0.0, "checkboxes": "0/5", "trackingIssue": 687, "note": "Plane Separation — status:review, last updated 2026-03-24" },
-          "KE-5": { "status": "IN PROGRESS", "completion": 0.0, "checkboxes": "0/6", "trackingIssue": 716, "note": "Semantic CLI Expansion — in-progress" },
-          "KE-6": { "status": "PLANNED", "completion": 0.0, "checkboxes": "0/5", "trackingIssue": 717 }
+          "KE-1": {
+            "status": "DONE",
+            "completion": 1.0,
+            "checkboxes": "6/6",
+            "shippedAt": "2026-03-21"
+          },
+          "KE-2": {
+            "status": "IN PROGRESS",
+            "completion": 0.0,
+            "checkboxes": "0/4",
+            "trackingIssue": 856,
+            "note": "ActionContext design \u2014 in-progress, priority:high, last updated 2026-03-25"
+          },
+          "KE-3": {
+            "status": "DONE",
+            "completion": 1.0,
+            "checkboxes": "5/5",
+            "shippedAt": "2026-03-24"
+          },
+          "KE-4": {
+            "status": "IN REVIEW",
+            "completion": 0.0,
+            "checkboxes": "0/5",
+            "trackingIssue": 687,
+            "note": "Plane Separation \u2014 status:review, last updated 2026-03-24"
+          },
+          "KE-5": {
+            "status": "IN PROGRESS",
+            "completion": 0.0,
+            "checkboxes": "0/6",
+            "trackingIssue": 716,
+            "note": "Semantic CLI Expansion \u2014 in-progress"
+          },
+          "KE-6": {
+            "status": "PLANNED",
+            "completion": 0.0,
+            "checkboxes": "0/5",
+            "trackingIssue": 717
+          }
         },
         "overallCompletion": 0.37,
         "checkboxes": "11/30",
-        "note": "KE-1 and KE-3 complete. KE-2 is the critical path for v3.0. KE-4 in review. Sprint at 37% (up from 20%)."
+        "note": "KE-1 and KE-3 complete. KE-2 is the critical path for v3.0. KE-4 in review. Sprint at 37%. Go fast-path delegation shipped (PRs #1000, #1001) as precursor to full Go kernel."
       },
       {
         "phase": "v3.0",
         "name": "v3.0 Major Release",
         "status": "BLOCKED",
-        "completion": 0.0,
-        "checkboxes": "0/8",
+        "completion": 0.125,
+        "checkboxes": "1/8",
         "blockedBy": "KE-2 (ActionContext) must ship before v3.0 item 1 can be checked",
+        "shippedItems": [
+          {
+            "item": "Install attribution tracking",
+            "shippedAt": "2026-03-26",
+            "pr": 991
+          }
+        ],
         "openIssues": [
-          { "number": 857, "title": "Stranger test validation", "status": "pending", "priority": "high" },
-          { "number": 858, "title": "User capture funnel", "status": "pending", "priority": "high" }
+          {
+            "number": 857,
+            "title": "Stranger test validation",
+            "status": "pending",
+            "priority": "high"
+          },
+          {
+            "number": 938,
+            "title": "User capture funnel",
+            "status": "pending",
+            "priority": "high"
+          }
         ],
         "transitionReady": false
       },
@@ -92,23 +213,137 @@
         "phase": "Phase 9",
         "name": "Editor & Agent Integrations",
         "status": "IN PROGRESS",
-        "completion": 0.25,
-        "checkboxes": "2/8",
+        "completion": 0.55,
+        "checkboxes": "5/9",
+        "shippedItems": [
+          {
+            "item": "Monitor mode for claude-hook",
+            "shippedAt": "2026-03-21",
+            "version": "v2.3.0"
+          },
+          {
+            "item": "Agent SDK for programmatic governance",
+            "shippedAt": "2026-03-21",
+            "version": "v2.3.0"
+          },
+          {
+            "item": "OpenCode driver support",
+            "shippedAt": "2026-03-26",
+            "pr": 1019
+          },
+          {
+            "item": "Codex CLI adapter",
+            "shippedAt": "2026-03-27",
+            "version": "v2.8.0",
+            "pr": 1024
+          },
+          {
+            "item": "Gemini CLI adapter",
+            "shippedAt": "2026-03-27",
+            "version": "v2.8.0",
+            "pr": 1024
+          }
+        ],
         "openIssues": [
-          { "number": 331, "title": "Claude Code deep integration", "status": "in-progress", "lastUpdated": "2026-03-25" }
+          {
+            "number": 331,
+            "title": "Claude Code deep integration",
+            "status": "in-progress",
+            "lastUpdated": "2026-03-25"
+          },
+          {
+            "number": 1049,
+            "title": "JetBrains plugin (IntelliJ/WebStorm)",
+            "status": "pending"
+          },
+          {
+            "number": 1055,
+            "title": "DeepAgents framework adapter",
+            "status": "pending"
+          },
+          {
+            "number": 1054,
+            "title": "OpenCode framework adapter (full)",
+            "status": "pending"
+          }
         ],
         "transitionReady": false
+      },
+      {
+        "phase": "Go Kernel",
+        "name": "Go Kernel Rewrite (Phase 1)",
+        "status": "IN PROGRESS",
+        "completion": 0.2,
+        "checkboxes": "1/5",
+        "shippedItems": [
+          {
+            "item": "Go binary fast-path delegation in claude-hook",
+            "shippedAt": "2026-03-26",
+            "prs": [
+              1000,
+              1001
+            ]
+          }
+        ],
+        "note": "Fast-path delegation operational. Full architecture end-to-end validation still pending."
       }
     ],
     "plannedPhases": [
-      { "phase": "Phase 6.5 (new)", "name": "Pull-Based Runner", "completion": 0.0, "checkboxes": "0/10", "note": "Depends on v3.0 release + Cloud Phase 2A", "issues": [748, 751, 752] },
-      { "phase": "Phase 6.75", "name": "Studio Runtime", "completion": 0.0, "checkboxes": "0/3", "note": "Depends on v3.0 stranger test" },
-      { "phase": "Phase 7", "name": "Capability-Scoped Sessions", "completion": 0.0, "checkboxes": "0/6", "note": "Depends on Phase 6 (DONE) + KE-2", "issues": [728] },
-      { "phase": "Phase 8", "name": "Policy Ecosystem", "completion": 0.29, "checkboxes": "2/7", "issues": [729] },
-      { "phase": "Phase 10-11", "name": "Storage & Observability", "completion": 0.0, "checkboxes": "0/4", "issues": [727] },
-      { "phase": "Phase 12", "name": "CI/CD Enforcement", "completion": 0.40, "checkboxes": "2/5", "issues": [131] },
-      { "phase": "Phases 13-18", "name": "Advanced Research", "completion": 0.0, "checkboxes": "0/7" },
-      { "phase": "Go Kernel", "name": "Go Kernel Rewrite", "completion": 0.0, "checkboxes": "0/5" }
+      {
+        "phase": "Phase 6.5 (new)",
+        "name": "Pull-Based Runner",
+        "completion": 0.0,
+        "checkboxes": "0/10",
+        "note": "Depends on v3.0 release + Cloud Phase 2A",
+        "issues": [
+          748,
+          751,
+          752
+        ]
+      },
+      {
+        "phase": "Phase 7",
+        "name": "Capability-Scoped Sessions",
+        "completion": 0.0,
+        "checkboxes": "0/6",
+        "note": "Depends on Phase 6 (DONE) + KE-2",
+        "issues": [
+          728
+        ]
+      },
+      {
+        "phase": "Phase 8",
+        "name": "Policy Ecosystem",
+        "completion": 0.29,
+        "checkboxes": "2/7",
+        "issues": [
+          729
+        ]
+      },
+      {
+        "phase": "Phase 10-11",
+        "name": "Storage & Observability",
+        "completion": 0.0,
+        "checkboxes": "0/4",
+        "issues": [
+          727
+        ]
+      },
+      {
+        "phase": "Phase 12",
+        "name": "CI/CD Enforcement",
+        "completion": 0.4,
+        "checkboxes": "2/5",
+        "issues": [
+          131
+        ]
+      },
+      {
+        "phase": "Phases 13-18",
+        "name": "Advanced Research",
+        "completion": 0.0,
+        "checkboxes": "0/7"
+      }
     ],
     "milestones": [
       {
@@ -124,123 +359,149 @@
         "name": "Governance Event Envelope",
         "detectedAt": "2026-03-25T13:10:00Z",
         "significance": "All telemetry now follows versioned schema. Cloud ingestion consumes envelopes directly with zero special cases."
+      },
+      {
+        "event": "PHASE_COMPLETED",
+        "phase": "Phase 6.75",
+        "name": "Studio Runtime",
+        "detectedAt": "2026-03-27T02:45:00Z",
+        "significance": "Studio wizard, execution profiles, and swarm template schema shipped ahead of schedule in v2.7.x (PR #987). Removes this dependency from v3.1 timeline. Runner is now the sole v3.1 item."
+      },
+      {
+        "event": "VERSION_RELEASED",
+        "version": "v2.8.0",
+        "releasedAt": "2026-03-27T00:26:00Z",
+        "significance": "Added Codex CLI and Gemini CLI adapters. AgentGuard now governs 4 CLI agents: Claude Code, Copilot CLI, Codex CLI, Gemini CLI.",
+        "prs": [
+          1024,
+          1025
+        ]
       }
     ]
   },
   "backlogExpansionRate": {
-    "assessedAt": "2026-03-25T13:10:00Z",
-    "totalOpenIssues": 97,
-    "openWorkIssues": 89,
-    "last7Days": {
-      "created": 146,
-      "closed": 131,
-      "netExpansion": 15,
-      "expansionRatio": 1.11
-    },
-    "expansionTrend": "stable",
-    "note": "Backlog expanding at 1.11x rate (146 created vs 131 closed in 7 days). Most created issues are recurring agent reports (sprint plans, observability, governance reports) that get auto-closed. Net work issue expansion is modest. 97 total open issues, 89 non-report work items."
+    "assessedAt": "2026-03-27T02:45:00Z",
+    "totalOpenIssues": 50,
+    "note": "50 open issues at triage. ~15 actionable work items. Key triaged: #1048 (install attribution \u2014 closed, shipped via PR #991), #1049 (JetBrains plugin \u2014 Phase 9), #1055 (DeepAgents adapter \u2014 Phase 9 new), #1047 (KE-6 \u2014 already tracked), #1048 closed as duplicate of PR #991."
   },
   "stallDetection": {
     "stalledPhases": [],
-    "warningPhases": [],
-    "note": "No phases have exceeded the 14-day stall threshold. Phase 6 and KE-3 both completed in the last 24 hours. KE-2 (#856) is actively in-progress (updated today). Phase 9 (#331) updated 2026-03-25."
+    "warningPhases": [
+      {
+        "phase": "KE-2",
+        "note": "KE-2 (ActionContext, #856) in-progress since 2026-03-25 with 0/4 checkboxes. Critical path for v3.0. Monitor closely."
+      }
+    ],
+    "note": "No phases have exceeded the 14-day stall threshold. KE-2 is the main risk."
   },
   "healthChecks": {
     "prQueue": {
       "status": "healthy",
       "openPRs": 0,
       "conflictedPRs": 0,
-      "note": "PR queue empty. Confirmed via live gh pr list. Clean state sustained."
+      "note": "PR queue empty. v2.8.0 merged cleanly."
     },
     "ciOnMain": {
       "status": "healthy",
-      "note": "Main branch CI green. Last 10 workflow runs all succeeded. Most recent: CI + CodeQL on agent/progress-controller-agent branch (2026-03-25T13:11Z)."
+      "note": "Main branch CI green at HEAD ae37b15."
     },
     "agentLiveness": {
       "status": "active",
-      "note": "9 coder-agent branches from 2026-03-25 (08:00–12:20 UTC). Swarm actively producing work."
+      "note": "Multiple agent branches active as of 2026-03-27. Swarm producing work."
     },
     "mergeConflicts": {
       "status": "healthy",
       "conflictedPRs": 0,
-      "note": "No open PRs, no conflicts. Clean state confirmed."
+      "note": "No open PRs, no conflicts."
     },
     "swarmStateFreshness": {
       "status": "healthy",
-      "note": "Prior update: 2026-03-25T13:10Z (progress-controller-agent). This update: 2026-03-25T14:10Z (recovery-controller-agent). Cadence within target."
+      "note": "Updated by backlog-hygiene--roadmap-triage-agent 2026-03-27T02:45Z."
     },
     "roadmapProgress": {
       "status": "on-track",
-      "completedPhases": 9,
-      "activePhases": 3,
-      "note": "No new phase completions since last assessment (1hr ago). KE Sprint at 37%. Critical path: KE-2 → v3.0."
+      "completedPhases": 10,
+      "activePhases": 4,
+      "note": "Phase 6.75 completed (10 total). v2.8.0 released. Critical path: KE-2 -> v3.0."
     }
   },
   "recoveryActions": [
     {
       "type": "swarm-state-update",
       "timestamp": "2026-03-22T08:30:00Z",
-      "description": "Updated swarm-state.json: Issues #647 and #636 CLOSED, risk score 22→8, escalation ELEVATED→NORMAL.",
+      "description": "Updated swarm-state.json: Issues #647 and #636 CLOSED, risk score 22->8, escalation ELEVATED->NORMAL.",
       "agent": "risk-escalation-agent"
     },
     {
       "type": "risk-assessment",
       "timestamp": "2026-03-24T16:05:00Z",
-      "description": "Risk score 13→23 (NORMAL→ELEVATED). PR queue grew 3→8. #822 CONFLICTING.",
+      "description": "Risk score 13->23 (NORMAL->ELEVATED). PR queue grew 3->8. #822 CONFLICTING.",
       "agent": "risk-escalation-agent"
     },
     {
       "type": "progress-assessment",
       "timestamp": "2026-03-25T13:10:00Z",
-      "description": "Phase 6 COMPLETED (7/7). KE-3 COMPLETED (5/5). KE Sprint 20%→37%. PR queue 8→0. Risk 23→10 (ELEVATED→NORMAL). Mode recommendation: normal.",
+      "description": "Phase 6 COMPLETED (7/7). KE-3 COMPLETED (5/5). KE Sprint 20%->37%. PR queue 8->0. Risk 23->10 (ELEVATED->NORMAL).",
       "agent": "progress-controller-agent"
     },
     {
       "type": "recovery-check",
       "timestamp": "2026-03-25T14:10:00Z",
-      "description": "All 6 health dimensions green. Mode confirmed: normal. No remediation required. PR queue 0, CI green (10/10 success), agents active (9 branches today), 0 conflicts, swarm state fresh, roadmap on-track.",
+      "description": "All 6 health dimensions green. Mode confirmed: normal. No remediation required.",
       "agent": "recovery-controller-agent"
+    },
+    {
+      "type": "roadmap-triage",
+      "timestamp": "2026-03-27T02:45:00Z",
+      "description": "ROADMAP.md and swarm-state.json updated: v2.8.0 release (Codex+Gemini CLI), Phase 6.75 DONE (studio wizard, execution profiles, swarm template schema), install attribution checked off in v3.0 (1/8), Go kernel fast-path delegation operational, #648 resolved. Issue #1048 closed (shipped via PR #991).",
+      "agent": "backlog-hygiene--roadmap-triage-agent"
     }
   ],
   "blockers": [
     {
       "type": "critical-path",
       "severity": "high",
-      "description": "KE-2 (ActionContext, #856) is the critical path blocker for v3.0. Currently in-progress with 0/4 checkboxes. v3.0 cannot ship until KE-2 completes.",
-      "recommendation": "Prioritize KE-2 implementation. This is the single most important work item for the project."
+      "description": "KE-2 (ActionContext, #856) is the critical path blocker for v3.0. Currently in-progress with 0/4 checkboxes.",
+      "recommendation": "Prioritize KE-2 implementation. Single most important work item."
     },
     {
       "type": "security",
       "severity": "medium",
-      "issueNumbers": [618, 648, 640, 639],
-      "description": "4 security issues without assigned PRs: #618 (credential write bypass), #648 (read-only blocking), #640 (path manipulation), #639 (credential stripping).",
-      "recommendation": "Assign implementation agent to highest-severity item (#618)."
+      "issueNumbers": [
+        618,
+        640,
+        639
+      ],
+      "description": "3 security issues without assigned PRs: #618 (credential write bypass), #640 (path manipulation), #639 (credential stripping). #648 resolved via PR #982.",
+      "recommendation": "Assign implementation agent to #618 (highest severity)."
     },
     {
       "type": "governance-gap",
       "severity": "high",
-      "issueNumbers": [868],
-      "description": "Issue #868: Agent PRs merging with failing CI. Governance enforcement gap on main branch. Priority:critical.",
-      "recommendation": "Address #868 and #830 (required status checks) together — both relate to CI enforcement on main."
+      "issueNumbers": [
+        868
+      ],
+      "description": "Issue #868: Agent PRs merging with failing CI. Governance enforcement gap on main branch.",
+      "recommendation": "Address #868 and #830 (required status checks) together."
     }
   ],
   "systemSummary": {
     "overallHealth": "healthy",
     "escalationLevel": "NORMAL",
-    "riskScore": 10,
+    "riskScore": 8,
     "riskTrend": "improving",
     "mainBranchCI": "green",
     "openPRsCount": 0,
     "conflictedPRsCount": 0,
     "stuckPRsCount": 0,
     "ciFailingPRsCount": 0,
-    "highIssuesWithoutPR": 8,
+    "highIssuesWithoutPR": 6,
     "regressionDetected": false,
-    "completedPhaseCount": 9,
-    "activePhaseCount": 3,
-    "progressSinceLastRun": "Recovery controller confirms healthy state. No changes from prior assessment (1hr ago). All dimensions stable: 0 PRs, CI green, agents active, 0 conflicts. Mode: normal. Critical path remains KE-2 → v3.0.",
+    "completedPhaseCount": 10,
+    "activePhaseCount": 4,
+    "progressSinceLastRun": "v2.8.0 released (Codex+Gemini CLI adapters). Phase 6.75 (Studio Runtime) DONE 3/3. Install attribution v3.0 item checked (1/8). Go kernel fast-path delegation shipped. #648 resolved. Security bypass count 8->6. Risk 10->8.",
     "modeChangeConditions": {
-      "toNormal": "CURRENT STATE — risk score 10, 0 open PRs, no conflicts, main CI green.",
+      "toNormal": "CURRENT STATE \u2014 risk score 8, 0 open PRs, no conflicts, main CI green.",
       "toElevated": "Risk score exceeds 20, or PR queue grows above 5, or new critical security regression.",
       "toCritical": "Main CI failure rate >30%, 2+ unresolved critical issues, or merge conflict cascade (3+ PRs)."
     }
