@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 /** Supported storage backends */
-export type StorageBackend = 'sqlite';
+export type StorageBackend = 'sqlite' | 'none';
 
 /** Configuration for the storage layer */
 export interface StorageConfig {

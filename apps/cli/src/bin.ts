@@ -89,6 +89,11 @@ const COMMANDS: Record<string, CommandHelp> = {
         flag: '--db-path <path>',
         description: 'SQLite database path (default: ~/.agentguard/agentguard.db)',
       },
+      {
+        flag: '--no-sqlite',
+        description:
+          'Disable SQLite storage (in-memory/no-op). Use when SQLite bindings are unavailable (e.g. in worktrees). Also set via AGENTGUARD_NO_SQLITE=1.',
+      },
       { flag: '--no-open', description: 'Do not auto-open session viewer in browser after run' },
       {
         flag: '--manifest <file>',

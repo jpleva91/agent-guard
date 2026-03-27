@@ -510,10 +510,11 @@ export function tryGoFastPath(
   try {
     writeFileSync(tmpPolicyPath, JSON.stringify(mergedPolicy), 'utf8');
 
+    const goTimeoutMs = parseInt(process.env.AGENTGUARD_GO_TIMEOUT ?? '200', 10);
     const result = execFileSync(goBin, ['evaluate', '--policy', tmpPolicyPath], {
       input: actionPayload,
       encoding: 'utf8',
-      timeout: 200,
+      timeout: goTimeoutMs,
       maxBuffer: 64 * 1024,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
