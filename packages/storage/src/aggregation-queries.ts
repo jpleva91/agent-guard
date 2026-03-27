@@ -96,9 +96,7 @@ function buildTimeConditions(
     conditions.push(buildRunIdSubquery(filter.sessionLimit));
   }
   if (filter?.agentId !== undefined) {
-    conditions.push(
-      `${table}.run_id IN (SELECT id FROM sessions WHERE agent_id = ?)`
-    );
+    conditions.push(`${table}.run_id IN (SELECT id FROM sessions WHERE agent_id = ?)`);
     params.push(filter.agentId);
   }
 
