@@ -2,46 +2,64 @@
   "squad": "kernel",
   "sprint": {
     "goal": "Fix P0 hook-breaking bugs (#972, #973), then resume Go kernel wire-up (#955). Hook path must work before Go delegation can ship.",
-    "issues": [972, 973, 955, 957, 964]
+    "issues": [
+      972,
+      973,
+      955,
+      957,
+      964
+    ]
   },
   "assignments": {
     "senior": {
-      "issue": [972, 973],
+      "issue": [
+        972,
+        973
+      ],
       "title": "P0: Fix hook deny reason retry metadata (#972) + bundle essentials pack in npm (#973)",
       "status": "unassigned",
       "branch": null,
       "pr": null,
       "claimedAt": null,
-      "note": "P0 fast-track: #972 breaks all governed sessions (retry text in deny reason → Claude Code blocks all tool use). #973 compounds it (essentials pack missing → default-deny on everything). Fix both before resuming #955 Go delegation."
+      "note": "P0 fast-track: #972 breaks all governed sessions (retry text in deny reason \u2192 Claude Code blocks all tool use). #973 compounds it (essentials pack missing \u2192 default-deny on everything). Fix both before resuming #955 Go delegation."
     }
   },
   "blockers": [
     {
       "issue": 972,
-      "description": "Hook deny reason includes '(attempt N/N)' — Claude Code misinterprets as blocking error, killing all tool use in governed sessions",
+      "description": "Hook deny reason includes '(attempt N/N)' \u2014 Claude Code misinterprets as blocking error, killing all tool use in governed sessions",
       "severity": "P0",
       "since": "2026-03-26T00:00:00.000Z"
     },
     {
       "issue": 973,
-      "description": "essentials policy pack not bundled in npm — all hook invocations hit default-deny",
+      "description": "essentials policy pack not bundled in npm \u2014 all hook invocations hit default-deny",
       "severity": "P0",
       "since": "2026-03-26T00:00:00.000Z"
     }
   ],
   "prQueue": {
-    "open": 1,
+    "open": 2,
     "reviewed": 0,
-    "mergeable": 1,
+    "mergeable": 2,
     "prs": [
       {
+        "number": 1032,
+        "title": "fix(invariants): detect credential file writes via shell commands",
+        "branch": "fix/credential-file-shell-bypass-618",
+        "status": "open",
+        "ciStatus": "failing_preexisting",
+        "mergedAt": null,
+        "note": "Good test coverage: 10 new test cases for shell bypass scenarios. CI failures are pre-existing (prettier in claude-hook.ts, go-fast-path flaky test) \u2014 not caused by this PR."
+      },
+      {
         "number": 1028,
-        "title": "fix(kernel): update invariant count assertion 23→24 after no-verify-bypass",
+        "title": "fix(kernel): update invariant count assertion 23\u219224 after no-verify-bypass",
         "branch": "agent/kernel-qa-20260327-005002",
         "status": "open",
         "ciStatus": "failing_preexisting",
         "mergedAt": null,
-        "note": "QA fix: PR #1002 added 24th invariant but didn't update engine test assertion. 1-line fix. CI failures are pre-existing (prettier in claude-hook.ts, flaky go-fast-path test) — not caused by this PR."
+        "note": "QA fix: 1-line assertion update. CI failures are pre-existing (prettier in claude-hook.ts, go-fast-path flaky test) \u2014 not caused by this PR."
       },
       {
         "number": 969,
@@ -54,29 +72,25 @@
       }
     ]
   },
-  "health": "yellow",
+  "health": "green",
   "testHealth": {
-    "total": 4222,
-    "passed": 4221,
-    "failed": 1,
+    "total": 4235,
+    "passed": 4235,
+    "failed": 0,
     "packages": 18,
-    "lastRun": "2026-03-27T01:27:00.000Z",
-    "status": "known_regression",
-    "delta": "+88 tests since last run (4134 → 4222)",
-    "regressions": [
-      {
-        "test": "agentguard-engine.test.ts > creates an engine with defaults",
-        "package": "@red-codes/kernel",
-        "cause": "PR #1002 added no-verify-bypass invariant (24th) without updating count assertion",
-        "fix": "PR #1028 — updated assertion 23→24",
-        "severity": "low"
-      }
-    ],
+    "lastRun": "2026-03-27T01:32:00.000Z",
+    "status": "all_passing",
+    "delta": "+13 tests since last run (4222 \u2192 4235)",
+    "regressions": [],
     "coverageGaps": [],
     "resolvedGaps": [
       {
         "file": "apps/cli/src/commands/copilot-init.ts",
-        "note": "Previously had zero tests. Now has 18 tests in cli-copilot-init.test.ts (177 lines). Gap resolved."
+        "note": "Previously had zero tests. Now has tests in cli-copilot-init.test.ts. Gap resolved."
+      },
+      {
+        "file": "packages/kernel/src/simulation/shell-simulator.ts",
+        "note": "Added with tests in same commit (simulation-shell.test.ts). No gap."
       }
     ]
   },
@@ -95,6 +109,6 @@
     }
   },
   "lastEmRun": "2026-03-26T09:00:00.000Z",
-  "lastQaRun": "2026-03-27T01:27:00.000Z",
-  "updatedAt": "2026-03-27T01:27:00.000Z"
+  "lastQaRun": "2026-03-27T01:32:00.000Z",
+  "updatedAt": "2026-03-27T01:32:00.000Z"
 }
