@@ -2,7 +2,7 @@
   "name": "agentguard-vscode",
   "displayName": "AgentGuard",
   "description": "Governance run status and event visibility for AgentGuard",
-  "version": "2.9.2",
+  "version": "2.9.3",
   "publisher": "agentguard",
   "license": "MIT",
   "engines": {

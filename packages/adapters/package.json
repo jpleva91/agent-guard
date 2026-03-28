@@ -1,6 +1,6 @@
 {
   "name": "@red-codes/adapters",
-  "version": "2.9.2",
+  "version": "2.9.3",
   "description": "Execution adapters for AgentGuard",
   "type": "module",
   "license": "Apache-2.0",
