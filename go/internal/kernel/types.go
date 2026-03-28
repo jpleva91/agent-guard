@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/AgentGuardHQ/agentguard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/event"
 )
 
 // KernelConfig holds the configuration for a Kernel instance.
@@ -26,6 +27,10 @@ type KernelConfig struct {
 	// SessionID is an optional pre-assigned session identifier.
 	// If empty, the kernel generates one automatically.
 	SessionID string
+	// EventBus is an optional event bus for publishing KE-3 governance events.
+	// When set, the kernel emits ActionRequested, ActionAllowed, and ActionDenied
+	// events for every Propose call. Telemetry failures never block enforcement.
+	EventBus *event.Bus
 }
 
 // KernelResult is the output of a single Propose call. It captures the
