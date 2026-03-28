@@ -3,14 +3,14 @@
   "sprint": {
     "goal": "Ship agentguard init studio wizard + execution profiles + swarm template schema formalization (v3.1 prep)",
     "issues": [
-      "Formalize swarm template schema (JSON Schema validation)",
+      "Formalize swarm template schema (JSON Schema validation) — DONE (PR #199 + kernel #1251)",
+      "Define execution profiles (development, ci-safe, strict, enterprise) — DONE (PR #199 merged)",
       "Implement agentguard init studio interactive wizard",
-      "Define execution profiles (development, ci-safe, strict, enterprise)",
       "Runner / Cloud protocol integration",
-      "Sync studio worktree with master (33 commits behind - DONE 2026-03-25)"
+      "fix(swarm): real CLI quota metrics replacing subscription-cost tracking (#201) — April sprint"
     ],
     "blockedUntil": "2026-04-01",
-    "blockedReason": "Copilot budget exhaustion (4000/4000 cents)"
+    "blockedReason": "Copilot budget exhaustion (4000/4000 cents) — 2 days remaining"
   },
   "assignments": {
     "senior": {
@@ -33,28 +33,23 @@
       "severity": "P1",
       "description": "qa-regression-analyzer and qa-test-architect broken (#146). QA EM to retrigger April 1.",
       "autoResolves": "2026-04-01"
-    },
-    {
-      "id": "kernel-aab-normalization",
-      "severity": "P1",
-      "description": "AAB normalization failure (#1202) — ~700 unintended denials/day. rtk-prefixed commands misclassified as unknown. Directly impacts Studio agent dev workflow. Fix in progress on kernel squad.",
-      "autoResolves": "when kernel merges #1202 fix"
     }
   ],
   "prQueue": {
-    "open": 1,
+    "open": 0,
     "reviewed": 0,
     "mergeable": 0,
-    "note": "PR #193 (prev EM report) CONFLICTING — cannot merge, branch behind master. This cycle's EM report will be a new PR."
+    "note": "Cycle merged: #200 (README fix), #199 (schema+profiles), #195 (prev EM report). Closed #198 (superseded by #195). No open PRs remain."
   },
   "humanEscalations": [
     {
       "issue": 179,
-      "title": "Option A default-deny for demo — kernel not yet assigned (April 4 P0)",
+      "title": "Option A default-deny for demo — kernel not yet assigned (4TH CYCLE, April 4 P0)",
       "deadline": "2026-04-04",
       "priority": "P0",
-      "daysRemaining": 7,
-      "action": "Manually assign #179 to kernel senior. Conference demo depends on this."
+      "daysRemaining": 6,
+      "consecutiveCyclesUnassigned": 4,
+      "action": "CRITICAL: Manually assign #179 to kernel senior immediately. Conference demo depends on this. 6 days remain."
     },
     {
       "issue": 178,
@@ -69,5 +64,28 @@
       "priority": "P1"
     }
   ],
-  "updatedAt": "2026-03-28T23:45:00Z"
+  "newIssuesTriaged": [
+    {
+      "issue": 201,
+      "title": "fix(swarm): real CLI quota metrics replacing subscription-cost tracking",
+      "priority": "P1",
+      "squad": "studio",
+      "action": "Added to April sprint backlog. Assign to studio-senior post April 1."
+    },
+    {
+      "issue": 202,
+      "title": "research: evaluate velvet-tiger/automatic as ShellForge distribution channel",
+      "priority": "P2",
+      "squad": "studio/shellforge",
+      "action": "Defer until ShellForge ships. No action needed now."
+    },
+    {
+      "issue": 203,
+      "title": "feat(swarm): add market research scout agent",
+      "priority": "P2",
+      "squad": "studio",
+      "action": "Defer post-April 1. Assign to studio-junior for April sprint."
+    }
+  ],
+  "updatedAt": "2026-03-29T02:15:00Z"
 }
