@@ -147,7 +147,7 @@ describe('claudeInit', () => {
     // Persona check second
     expect(written.hooks.SessionStart[0].hooks[1].command).toContain('session-persona-check');
     // Status hook third, using local binary
-    expect(written.hooks.SessionStart[0].hooks[2].command).toContain('node apps/cli/dist/bin.js');
+    expect(written.hooks.SessionStart[0].hooks[2].command).toContain('AGENTGUARD_WORKSPACE');
     expect(written.hooks.SessionStart[0].hooks[2].command).toContain('status');
   });
 
@@ -536,8 +536,7 @@ describe('claudeInit', () => {
     expect(scriptNames).toContain('write-persona.sh');
     expect(scriptNames).toContain('session-persona-check.sh');
     expect(scriptNames).toContain('claude-hook-wrapper.sh');
-    expect(scriptNames).toContain('claude-hook-stop-wrapper.sh');
-    expect(scriptWrites).toHaveLength(5);
+    expect(scriptWrites).toHaveLength(4);
 
     // Every script path should end with .sh
     for (const call of scriptWrites) {
@@ -600,29 +599,17 @@ describe('claudeInit', () => {
     expect(written.hooks.PreToolUse[0].hooks[0].command).toContain('claude-hook-wrapper.sh');
   });
 
-  it('uses stop wrapper script for Stop hook (resolves binary from workspace root)', async () => {
+  it('uses workspace-resolved path for Stop hook', async () => {
     vi.mocked(existsSync).mockReturnValue(false);
 
     await claudeInit([]);
 
     const written = writtenSettings();
-    // Stop hook must use the wrapper script, not an inline binary path,
-    // so binary resolution happens at runtime relative to workspace root (not CWD)
-    expect(written.hooks.Stop[0].hooks[0].command).toBe('bash scripts/claude-hook-stop-wrapper.sh');
+    // Stop hook resolves binary from AGENTGUARD_WORKSPACE at runtime
+    expect(written.hooks.Stop[0].hooks[0].command).toContain('AGENTGUARD_WORKSPACE');
+    expect(written.hooks.Stop[0].hooks[0].command).toContain('claude-hook stop');
     expect(written.hooks.Stop[0].hooks[0].blocking).toBe(false);
     expect(written.hooks.Stop[0].hooks[0].timeout).toBe(15000);
-  });
-
-  it('passes store suffix to claudeHookStopWrapper', async () => {
-    vi.mocked(existsSync).mockReturnValue(false);
-
-    await claudeInit(['--store', 'sqlite']);
-
-    expect(claudeHookStopWrapper).toHaveBeenCalledWith(
-      expect.any(String),
-      ' --store sqlite',
-      ''
-    );
   });
 
   // --- Binary path resolution (#964) ---
@@ -639,17 +626,14 @@ describe('claudeInit', () => {
     await claudeInit([]);
 
     const written = writtenSettings();
-    // PostToolUse hook should use resolved binary path (Stop now uses a wrapper script)
-    expect(written.hooks.PostToolUse[0].hooks[0].command).toContain(
-      './node_modules/.bin/agentguard'
-    );
-    expect(written.hooks.PostToolUse[0].hooks[0].command).not.toMatch(/^agentguard /);
+    // All hooks now resolve from AGENTGUARD_WORKSPACE at runtime
+    expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('AGENTGUARD_WORKSPACE');
+    expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('claude-hook post');
 
-    // SessionStart status hook should also use resolved path
     const statusHook = written.hooks.SessionStart[0].hooks.find(
       (h: { command: string }) => h.command.includes('status')
     );
-    expect(statusHook.command).toContain('./node_modules/.bin/agentguard');
+    expect(statusHook.command).toContain('AGENTGUARD_WORKSPACE');
   });
 
   it('uses bare agentguard for --global even when node_modules/.bin exists', async () => {
@@ -662,9 +646,8 @@ describe('claudeInit', () => {
     await claudeInit(['--global']);
 
     const written = writtenSettings();
-    // Global hooks should use bare command (on PATH), not relative node_modules path
-    expect(written.hooks.PostToolUse[0].hooks[0].command).toMatch(/^agentguard /);
-    expect(written.hooks.PostToolUse[0].hooks[0].command).not.toContain('node_modules');
+    // All hooks resolve from AGENTGUARD_WORKSPACE at runtime
+    expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('AGENTGUARD_WORKSPACE');
   });
 
   it('falls back to bare agentguard when node_modules/.bin does not exist', async () => {
@@ -673,8 +656,8 @@ describe('claudeInit', () => {
     await claudeInit([]);
 
     const written = writtenSettings();
-    // No node_modules binary, no local dev — should fall back to bare command
-    expect(written.hooks.PostToolUse[0].hooks[0].command).toMatch(/^agentguard /);
+    // All hooks resolve from AGENTGUARD_WORKSPACE at runtime
+    expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('AGENTGUARD_WORKSPACE');
   });
 
   it('adds SessionStart persona check hook', async () => {

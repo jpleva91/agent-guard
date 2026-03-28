@@ -1,4 +1,4 @@
-// agentguard claude-init — set up Claude Code integration
+// aguard claude-init — set up Claude Code integration
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
 import { execSync, execFileSync } from 'node:child_process';
@@ -14,7 +14,6 @@ import {
   WRITE_PERSONA,
   SESSION_PERSONA_CHECK,
   claudeHookWrapper,
-  claudeHookStopWrapper,
 } from '../templates/scripts.js';
 import { STARTER_SKILLS } from '../templates/skills.js';
 
@@ -22,27 +21,13 @@ const HOOK_MARKER = 'claude-hook';
 const BUILD_MARKER = 'apps/cli/dist/bin.js';
 const LOCAL_BIN = 'node apps/cli/dist/bin.js';
 
-/** Detect if we're in the agentguard development repo (local dev) vs. globally installed.
- *  For project-level npm installs, resolves to ./node_modules/.bin/agentguard so hooks
- *  work even when the binary isn't on PATH (#964). */
-function resolveCliPrefix(isGlobal: boolean): { cli: string; isLocal: boolean } {
+/** Detect if we're in the agentguard development repo (local dev) vs. globally installed. */
+function resolveCliPrefix(): { cli: string; isLocal: boolean } {
   // If apps/cli/src/bin.ts exists, we're in the agentguard source repo (works in worktrees too)
   const mainRoot = resolveMainRepoRoot();
   const localMarker = join(mainRoot, 'apps', 'cli', 'src', 'bin.ts');
   if (existsSync(localMarker)) {
     return { cli: LOCAL_BIN, isLocal: true };
-  }
-  // For project-level settings, prefer the local node_modules binary.
-  // Global settings apply across projects, so they must use a bare command (on PATH).
-  if (!isGlobal) {
-    const nmBin = join(mainRoot, 'node_modules', '.bin', 'agentguard');
-    if (existsSync(nmBin)) {
-      return { cli: './node_modules/.bin/agentguard', isLocal: false };
-    }
-    const nmBinAguard = join(mainRoot, 'node_modules', '.bin', 'aguard');
-    if (existsSync(nmBinAguard)) {
-      return { cli: './node_modules/.bin/aguard', isLocal: false };
-    }
   }
   return { cli: 'agentguard', isLocal: false };
 }
@@ -236,7 +221,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
       'Enable a policy pack?',
       [
         `essentials ${DIM}— secrets, force push, protected branches, credentials${RESET}`,
-        `strict ${DIM}— all 22 invariants enforced${RESET}`,
+        `strict ${DIM}— all 21 invariants enforced${RESET}`,
         `none ${DIM}— monitor only, configure later${RESET}`,
       ],
       0
@@ -265,33 +250,43 @@ export async function claudeInit(args: string[] = []): Promise<void> {
 
   if (!settings.hooks) settings.hooks = {};
 
-  const { cli, isLocal } = resolveCliPrefix(isGlobal);
+  const { cli, isLocal } = resolveCliPrefix();
+
+  // All hooks resolve the AgentGuard binary from the workspace root, not CWD.
+  // This ensures hooks work correctly in worktrees where CWD differs from the project root.
+  // PreToolUse uses the full wrapper script; other hooks use an inline workspace resolver.
+  const wsResolve =
+    'W=${AGENTGUARD_WORKSPACE:-$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null | sed "s|/.git$||")}';
+  const bin = `\${AGENTGUARD_BIN:-$W/node_modules/.bin/agentguard}`;
+
+  // Overwrite (not push) — idempotent. Running init twice produces the same result.
 
   // PreToolUse — governance enforcement (routes all tool calls through the kernel)
-  if (!settings.hooks.PreToolUse) settings.hooks.PreToolUse = [];
-  settings.hooks.PreToolUse.push({
-    hooks: [
-      {
-        type: 'command',
-        command: `bash scripts/claude-hook-wrapper.sh`,
-      },
-    ],
-  });
+  settings.hooks.PreToolUse = [
+    {
+      hooks: [
+        {
+          type: 'command',
+          command: `bash scripts/claude-hook-wrapper.sh`,
+        },
+      ],
+    },
+  ];
 
   // PostToolUse — error monitoring (Bash stderr reporting)
-  if (!settings.hooks.PostToolUse) settings.hooks.PostToolUse = [];
-  settings.hooks.PostToolUse.push({
-    matcher: 'Bash',
-    hooks: [
-      {
-        type: 'command',
-        command: `${cli} claude-hook post${storeSuffix}${dbPathSuffix}`,
-      },
-    ],
-  });
+  settings.hooks.PostToolUse = [
+    {
+      matcher: 'Bash',
+      hooks: [
+        {
+          type: 'command',
+          command: `bash -c '${wsResolve}; ${bin} claude-hook post${storeSuffix}${dbPathSuffix}'`,
+        },
+      ],
+    },
+  ];
 
   // SessionStart — ensure CLI is built, then show governance status
-  if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
   const sessionStartHooks: Array<{
     type: string;
     command: string;
@@ -315,37 +310,39 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   });
   sessionStartHooks.push({
     type: 'command',
-    command: `${cli} status`,
+    command: `bash -c '${wsResolve}; ${bin} status'`,
     timeout: 10000,
     blocking: false,
   });
-  settings.hooks.SessionStart.push({ hooks: sessionStartHooks });
+  settings.hooks.SessionStart = [{ hooks: sessionStartHooks }];
 
   // Notification — auto-open session viewer when agent pauses for human input
-  if (!settings.hooks.Notification) (settings.hooks as Record<string, unknown>).Notification = [];
-  ((settings.hooks as Record<string, unknown>).Notification as SessionStartHookEntry[]).push({
-    hooks: [
-      {
-        type: 'command',
-        command: `${cli} claude-hook notify${storeSuffix}${dbPathSuffix}`,
-        timeout: 15000,
-        blocking: false,
-      },
-    ],
-  });
+  (settings.hooks as Record<string, unknown>).Notification = [
+    {
+      hooks: [
+        {
+          type: 'command',
+          command: `bash -c '${wsResolve}; ${bin} claude-hook notify${storeSuffix}${dbPathSuffix}'`,
+          timeout: 15000,
+          blocking: false,
+        },
+      ],
+    },
+  ];
 
   // Stop — generate session viewer HTML on session end (no browser open — Notification handles that)
-  if (!settings.hooks.Stop) (settings.hooks as Record<string, unknown>).Stop = [];
-  ((settings.hooks as Record<string, unknown>).Stop as SessionStartHookEntry[]).push({
-    hooks: [
-      {
-        type: 'command',
-        command: `bash scripts/claude-hook-stop-wrapper.sh`,
-        timeout: 15000,
-        blocking: false,
-      },
-    ],
-  });
+  (settings.hooks as Record<string, unknown>).Stop = [
+    {
+      hooks: [
+        {
+          type: 'command',
+          command: `bash -c '${wsResolve}; ${bin} claude-hook stop${storeSuffix}${dbPathSuffix}'`,
+          timeout: 15000,
+          blocking: false,
+        },
+      ],
+    },
+  ];
 
   // Resolve repo root early — needed for script installation and telemetry dirs
   const repoRoot = resolveMainRepoRoot();
@@ -363,10 +360,6 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     { name: 'write-persona.sh', content: WRITE_PERSONA },
     { name: 'session-persona-check.sh', content: SESSION_PERSONA_CHECK },
     { name: 'claude-hook-wrapper.sh', content: claudeHookWrapper(cli, storeSuffix, dbPathSuffix) },
-    {
-      name: 'claude-hook-stop-wrapper.sh',
-      content: claudeHookStopWrapper(cli, storeSuffix, dbPathSuffix),
-    },
   ];
 
   for (const { name, content } of scriptFiles) {
@@ -439,7 +432,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
 
 At session start, if you see \`[AgentGuard] No agent identity set\`, ask the user:
 1. **Role**: developer / reviewer / ops / security / planner
-2. **Driver**: human / claude-code / copilot / opencode / ci
+2. **Driver**: human / claude-code / copilot / ci
 
 Then run: \`scripts/write-persona.sh <driver> <role>\`
 `;
@@ -622,7 +615,6 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
     'write-persona.sh',
     'session-persona-check.sh',
     'claude-hook-wrapper.sh',
-    'claude-hook-stop-wrapper.sh',
   ];
   for (const name of identityScripts) {
     const scriptPath = join(repoRoot, 'scripts', name);
@@ -656,7 +648,7 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
 const STARTER_POLICY_TEMPLATE = (mode: EnforcementMode, pack?: string) => {
   const packLine = pack ? `pack: ${pack}` : '# pack: essentials';
   return `# AgentGuard policy — runtime protection for AI coding agents.
-# Docs: https://github.com/AgentGuardHQ/agentguard
+# Docs: https://github.com/AgentGuardHQ/agent-guard
 
 id: default-policy
 name: Default Safety Policy
@@ -946,7 +938,7 @@ function showProtectionSummary(
       `  ${DIM}1. Start a Claude Code session — warnings appear in your terminal${RESET}\n`
     );
     process.stderr.write(
-      `  ${DIM}2. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`
+      `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`
     );
     process.stderr.write(
       `  ${DIM}3. Edit ${FG.cyan}agentguard.yaml${RESET}${DIM} → set ${FG.cyan}mode: guide${RESET}${DIM} when ready to block with suggestions${RESET}\n`
@@ -956,7 +948,7 @@ function showProtectionSummary(
       `  ${DIM}1. Start a Claude Code session — teaching feedback appears in your terminal${RESET}\n`
     );
     process.stderr.write(
-      `  ${DIM}2. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`
+      `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`
     );
     process.stderr.write(
       `  ${DIM}3. Edit ${FG.cyan}agentguard.yaml${RESET}${DIM} → set ${FG.cyan}mode: guide${RESET}${DIM} when ready to block with suggestions${RESET}\n`
@@ -966,28 +958,15 @@ function showProtectionSummary(
       `  ${DIM}1. Start a Claude Code session — governance is automatic${RESET}\n`
     );
     process.stderr.write(
-      `  ${DIM}2. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`
+      `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`
     );
   }
   if (!isGlobal) {
     process.stderr.write(
-      `\n  ${FG.yellow}Tip:${RESET} Run ${FG.cyan}agentguard claude-init --global${RESET} to install hooks globally.\n`
+      `\n  ${FG.yellow}Tip:${RESET} Run ${FG.cyan}aguard claude-init --global${RESET} to install hooks globally.\n`
     );
   }
   process.stderr.write(`\n  ${DIM}ℹ Claude Desktop support coming soon.${RESET}\n`);
-  process.stderr.write('\n');
-
-  // User capture funnel: cloud signup + community links
-  process.stderr.write(`  ${BOLD}Join the community:${RESET}\n`);
-  process.stderr.write(
-    `  ${DIM}Cloud dashboard:${RESET} ${FG.cyan}https://agentguard-cloud-dashboard.vercel.app/signup${RESET}\n`
-  );
-  process.stderr.write(
-    `  ${DIM}Discussions:${RESET}     ${FG.cyan}https://github.com/AgentGuardHQ/agentguard/discussions${RESET}\n`
-  );
-  process.stderr.write(
-    `\n  ${DIM}Run ${FG.cyan}agentguard cloud signup${RESET}${DIM} for early access to team governance.${RESET}\n`
-  );
   process.stderr.write('\n');
 }
 
@@ -1007,7 +986,6 @@ function hasAgentGuardHook(settings: Settings): boolean {
 /** Wrapper scripts that hooks may reference. */
 const WRAPPER_SCRIPTS = [
   'scripts/claude-hook-wrapper.sh',
-  'scripts/claude-hook-stop-wrapper.sh',
   'scripts/session-persona-check.sh',
   'scripts/agent-identity-bridge.sh',
   'scripts/write-persona.sh',
