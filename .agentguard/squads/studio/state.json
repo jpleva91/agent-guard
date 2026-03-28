@@ -3,13 +3,16 @@
   "sprint": {
     "goal": "April 1 velocity push: Guitar Jam Partner kickoff (#153), portfolio scoring leaderboard, design partner dry run (#152). Pre-conditions: #155 merged (P0 review done), budgets reset April 1.",
     "status": "ACTIVE",
-    "issues": [153, 152]
+    "issues": [
+      153,
+      152
+    ]
   },
   "assignments": {
-    "studio-sr": "Post-budget-reset (April 1): Guitar Jam Partner architecture PR. Also: swarm-dashboard.sh portable path fix (follow-up to #158).",
+    "studio-sr": "PR #162 open: swarm-dashboard.sh portable path fix (follow-up to #158). Guitar Jam Partner architecture PR: post-budget-reset April 1.",
     "studio-qa": "Post-budget-reset (April 1): score remaining 9 portfolio candidates using SCORING_SYSTEM.md. Publish leaderboard.",
     "studio-designer": "Continue gh-pages hero CTA improvement.",
-    "workspace-config-validator": "Post-#155 merge: validate new schedule distribution. Confirm max claude-code per 30-min slot ≤5.",
+    "workspace-config-validator": "Post-#155 merge: validate new schedule distribution. Confirm max claude-code per 30-min slot \u22645.",
     "workspace-agent-reliability": "April 1: review studio-sr logs for March failure runs (#156). Confirm quota-driven; close as dupe of #151 if yes."
   },
   "blockers": [
@@ -21,7 +24,7 @@
     },
     {
       "id": "pr-155-human-merge",
-      "description": "PR #155 P0 review complete by studio-em. Needs human merge — worker pool change per escalation rules.",
+      "description": "PR #155 P0 review complete by studio-em. Needs human merge \u2014 worker pool change per escalation rules.",
       "severity": "P1",
       "action": "HUMAN: merge agentguard-workspace #155 before April 1."
     },
@@ -33,7 +36,7 @@
     }
   ],
   "prQueue": {
-    "open": 1,
+    "open": 2,
     "reviewed": 1,
     "mergeable": 1,
     "prs": [
@@ -44,6 +47,14 @@
         "status": "p0-review-complete",
         "checks": "1/1-passed",
         "p0ReviewedBy": "claude-code:opus:studio:em",
+        "action": "HUMAN MERGE REQUIRED"
+      },
+      {
+        "number": 162,
+        "repo": "agentguard-workspace",
+        "title": "fix: derive WORKSPACE from script location in swarm-dashboard.sh",
+        "status": "open",
+        "checks": "pending",
         "action": "HUMAN MERGE REQUIRED"
       }
     ],
@@ -57,11 +68,17 @@
       }
     ],
     "mergedThisCycle": [
-      { "number": 158, "title": "fix: derive WORKSPACE from script location in swarm utility scripts" },
-      { "number": 154, "title": "strategy: swarm health update, Phase 1 progress, Claude API crisis brief" }
+      {
+        "number": 158,
+        "title": "fix: derive WORKSPACE from script location in swarm utility scripts"
+      },
+      {
+        "number": 154,
+        "title": "strategy: swarm health update, Phase 1 progress, Claude API crisis brief"
+      }
     ]
   },
   "health": "yellow",
   "healthReason": "March budget exhausted (auto-resets April 1). 3 degraded agents. PR #155 pending human merge.",
-  "updatedAt": "2026-03-28T07:00:00.000Z"
+  "updatedAt": "2026-03-28T01:35:00.000Z"
 }
