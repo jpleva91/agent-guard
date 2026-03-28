@@ -1,0 +1,148 @@
+{
+  "runAt": "2026-03-28T21:00:00.000Z",
+  "runType": "evening",
+  "overallHealth": "yellow",
+  "healthReason": "No squads red. P0 CI regression resolved (PRs #1160, #1168). 3 PRs mergeable and awaiting review. QA agents still broken (P1, deferred to April 1). Budget exhaustion auto-resolves April 1. Stale state files across kernel and HQ need EM refresh.",
+  "squads": {
+    "kernel": {
+      "health": "yellow",
+      "summary": "P0 CI regression RESOLVED — PRs #1160 (test regressions) and #1168 (SQLite fallback, closes #1148) merged. PR #1153 (heredoc fix) rebased and merged. State.json blocker is stale — EM should clear it. PR #969 still awaiting review (CI green). Go kernel work (#955, #957) not yet started.",
+      "staleState": true,
+      "actionItems": [
+        "EM: clear stale P0 CI blocker from state.json",
+        "EM: review and merge PR #969 (claude-init binary path fix)",
+        "Senior: resume Go kernel hook path (#955, #957)"
+      ]
+    },
+    "studio": {
+      "health": "yellow",
+      "summary": "Guitar Jam Partner architecture merged (#153 closed). PR #176 open (DPP onboarding checklist). March budget exhausted — auto-resets April 1. Junior issues #165-169 queued for April 1.",
+      "staleState": false,
+      "actionItems": [
+        "EM: review and merge PR #176 (docs only)",
+        "April 1: retrigger broken QA agents (qa-regression-analyzer, qa-test-architect)"
+      ]
+    },
+    "cloud": {
+      "health": "yellow",
+      "summary": "PR #472 (outcome filter) listed as ready-to-merge in agentguard-cloud. Version pinned at 2.8.0, 4 versions behind current 2.8.4 (HQ blocker B2). Deployment-gate UI due Apr 15.",
+      "staleState": true,
+      "actionItems": [
+        "Merge PR #472 in agentguard-cloud",
+        "Upgrade @red-codes/agentguard from 2.8.0 → 2.8.4 (P2)"
+      ]
+    },
+    "hq": {
+      "health": "yellow",
+      "summary": "Both blockers resolved: B1 (#1153 merged), B2 still open (cloud version pin). 2 stale EM report PRs (#1150, #1151) should be closed. Cross-repo triage active.",
+      "staleState": true,
+      "actionItems": [
+        "EM: close stale PRs #1150 and #1151 (superseded by #1170)",
+        "EM: clear resolved blocker B1 from state.json",
+        "Assign cloud-squad to upgrade agentguard-cloud to 2.8.4"
+      ]
+    },
+    "analytics": {
+      "health": "yellow",
+      "summary": "ETL hardening and cost tracking in progress. Waiting on kernel Goose adapter for ShellForge event ingestion. PR #31 merged in agentguard-analytics (pipeline error isolation).",
+      "staleState": false,
+      "actionItems": [
+        "Continue ETL hardening — no blockers"
+      ]
+    },
+    "qa": {
+      "health": "yellow",
+      "summary": "qa-regression-analyzer and qa-test-architect both timing out at 1800s on bench-devs-platform (0% success). Budget-silenced until April 1.",
+      "staleState": false,
+      "actionItems": [
+        "April 1: retrigger agents with increased timeout or chunked processing",
+        "Escalate to human if still failing after retrigger"
+      ]
+    },
+    "design": {
+      "health": "yellow",
+      "summary": "Deployment-gate UX wireframes in progress (supports cloud squad, due Apr 15). No blockers.",
+      "staleState": false,
+      "actionItems": []
+    },
+    "marketing": {
+      "health": "yellow",
+      "summary": "ShellForge launch content pipeline active. Demo video (#893) blocked on built CLI + real governance demo. Content accuracy flag: site references '21 invariants' but actual count differs.",
+      "staleState": false,
+      "actionItems": [
+        "Verify invariant count on site (CLAUDE.md says 24, ROADMAP says 22, site may say 21)",
+        "Provide marketing with built CLI for demo video recording"
+      ]
+    },
+    "site": {
+      "health": "green",
+      "summary": "Sprint delivered. ShellForge product page merged (#1157). v3.0 messaging live. Monitoring deploy-pages CI.",
+      "staleState": false,
+      "actionItems": []
+    }
+  },
+  "crossSquadBlockers": [
+    {
+      "id": "XB1",
+      "severity": "P2",
+      "description": "agentguard-cloud pinned at @red-codes/agentguard 2.8.0 — 4 versions behind 2.8.4. Risks E2E telemetry pipeline accuracy.",
+      "squads": ["cloud", "hq"],
+      "owner": "cloud-squad",
+      "deadline": "2026-04-03",
+      "status": "open"
+    },
+    {
+      "id": "XB2",
+      "severity": "P1",
+      "description": "ShellForge critical path blocked on kernel Goose adapter — cascades to MCP server, QA bench, cloud telemetry, analytics ETL.",
+      "squads": ["kernel", "cloud", "analytics", "qa"],
+      "owner": "kernel-senior",
+      "deadline": "2026-04-10",
+      "status": "open",
+      "note": "Kernel must finish Go kernel hook path (#955, #957) first, then Goose adapter."
+    },
+    {
+      "id": "XB3",
+      "severity": "P1",
+      "description": "QA agents (qa-regression-analyzer, qa-test-architect) 0% on bench — blocks QA reliability target of 80%+.",
+      "squads": ["qa", "studio"],
+      "owner": "qa-em",
+      "deadline": "2026-04-03",
+      "status": "deferred_to_april_1"
+    }
+  ],
+  "prQueue": {
+    "mergeableNow": [
+      {"repo": "agent-guard", "pr": 1178, "title": "fix(adapters): map Copilot CLI meta-tools to known action types", "ci": "5/5 green"},
+      {"repo": "agent-guard", "pr": 1179, "title": "chore(roadmap): triage backlog + sync roadmap to v2.8.4", "ci": "5/5 green"},
+      {"repo": "agent-guard", "pr": 1183, "title": "test: add tests for cli/commands/trust", "ci": "5/5 green"}
+    ],
+    "staleToClose": [
+      {"repo": "agent-guard", "pr": 1150, "title": "chore(studio): EM report (stale)", "reason": "superseded by newer EM runs"},
+      {"repo": "agent-guard", "pr": 1151, "title": "chore(hq): EM report (CI failing)", "reason": "superseded by #1170"}
+    ]
+  },
+  "strategicAlignment": {
+    "status": "aligned",
+    "notes": "All squads aligned with ROADMAP Phase 6 (Reference Monitor Hardening) and ShellForge critical path. No drift detected. Kernel Go kernel work is the primary strategic dependency — needs to unblock before ShellForge E2E pipeline completes."
+  },
+  "resolvedSinceLastRun": [
+    "P0 CI regression — fixed by PRs #1160 (test regressions) and #1168 (SQLite fallback)",
+    "P1 PR #1153 heredoc false-positive — rebased and merged (2026-03-28T03:38)",
+    "Site ShellForge page delivered — PR #1157 merged",
+    "Analytics pipeline error isolation — PR #31 merged in agentguard-analytics"
+  ],
+  "escalations": [],
+  "dogfood": {
+    "issues": [],
+    "notes": "No governance issues encountered during this director run. Dogfood reporting guide not found at claude/shared/dogfood-reporting.md — file may have been moved or not yet created in this repo."
+  },
+  "nextActions": [
+    "Kernel EM: clear stale P0 blocker, review PR #969, resume Go kernel work",
+    "HQ EM: close stale PRs #1150/#1151, update state.json blockers",
+    "Cloud squad: merge PR #472 in agentguard-cloud, upgrade to 2.8.4",
+    "All EMs: review and merge PRs #1178, #1179, #1183 (all CI green)",
+    "QA EM: April 1 — retrigger broken agents with increased timeout",
+    "Marketing: verify invariant count accuracy on site"
+  ]
+}
