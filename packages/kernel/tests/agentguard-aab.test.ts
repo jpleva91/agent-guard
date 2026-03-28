@@ -876,6 +876,59 @@ describe('agentguard/core/aab', () => {
       expect(intent.action).toBe('mcp.call');
       expect(intent.target).toBe('explicit-target');
     });
+
+    it('classifies Copilot CLI MCP tools (dash-underscore format) as mcp.call', () => {
+      const intent = normalizeIntent({
+        tool: 'github-mcp-server-actions_list',
+      });
+      expect(intent.action).toBe('mcp.call');
+      expect(intent.target).toBe('github-mcp-server');
+    });
+
+    it('extracts server name from various Copilot CLI MCP tool names', () => {
+      const cases: Array<{ tool: string; server: string; method: string }> = [
+        { tool: 'github-mcp-server-get_commit', server: 'github-mcp-server', method: 'get_commit' },
+        {
+          tool: 'github-mcp-server-list_commits',
+          server: 'github-mcp-server',
+          method: 'list_commits',
+        },
+        { tool: 'my-service-create_item', server: 'my-service', method: 'create_item' },
+      ];
+      for (const { tool, server } of cases) {
+        const intent = normalizeIntent({ tool });
+        expect(intent.action).toBe('mcp.call');
+        expect(intent.target).toBe(server);
+      }
+    });
+
+    it('allows mcp.call allow rule to match Copilot CLI MCP tools via target prefix', () => {
+      const policies = [
+        {
+          id: 'allow-github-mcp',
+          name: 'Allow GitHub MCP',
+          rules: [
+            {
+              action: 'mcp.call' as const,
+              effect: 'allow' as const,
+              conditions: { scope: ['github-mcp-server'] },
+              reason: 'Allow GitHub MCP server',
+            },
+          ],
+          severity: 3,
+        },
+      ];
+      const result = authorize({ tool: 'github-mcp-server-actions_list' }, policies);
+      expect(result.result.allowed).toBe(true);
+      expect(result.intent.action).toBe('mcp.call');
+      expect(result.intent.target).toBe('github-mcp-server');
+    });
+
+    it('does not misclassify regular tools without underscore in last segment', () => {
+      // "some-tool" has no underscore → not a Copilot CLI MCP tool
+      const intent = normalizeIntent({ tool: 'some-tool' });
+      expect(intent.action).toBe('unknown');
+    });
   });
 
   describe('authorize', () => {

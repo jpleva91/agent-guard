@@ -222,6 +222,21 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
     }
   }
 
+  // Detect Copilot CLI MCP tool naming convention: <server-name>-<method_with_underscores>
+  // e.g. "github-mcp-server-actions_list" → action='mcp.call', target='github-mcp-server'
+  // Claude Code uses "mcp__<server>__<method>" (handled above); Copilot CLI uses this dash format.
+  if (action === 'unknown' && tool.includes('-') && tool.includes('_')) {
+    const hyphenParts = tool.split('-');
+    const lastPart = hyphenParts[hyphenParts.length - 1];
+    if (lastPart && lastPart.includes('_') && hyphenParts.length >= 2) {
+      const serverName = hyphenParts.slice(0, -1).join('-');
+      if (serverName) {
+        action = 'mcp.call';
+        if (!target) target = serverName;
+      }
+    }
+  }
+
   if (action === 'shell.exec' && rawAction.command) {
     const scannable = stripQuotedContent(rawAction.command);
     // GitHub detection must run before git detection — a `gh pr create`
