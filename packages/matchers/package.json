@@ -1,7 +1,7 @@
 {
   "name": "@red-codes/matchers",
-  "version": "1.0.0",
-  "description": "Structured matchers for AgentGuard enforcement — Aho-Corasick, globs, sets",
+  "version": "2.9.2",
+  "description": "Structured matchers for AgentGuard enforcement \u2014 Aho-Corasick, globs, sets",
   "type": "module",
   "license": "Apache-2.0",
   "private": false,
@@ -13,7 +13,11 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist/", "LICENSE", "README.md"],
+  "files": [
+    "dist/",
+    "LICENSE",
+    "README.md"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/AgentGuardHQ/agentguard",

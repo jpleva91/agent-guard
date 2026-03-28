@@ -1,80 +1,70 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Reduce false-positive governance denials blocking swarm agents: #1202 (KE-2 AAB normalization — strip rtk/time/timeout prefixes) → #1208 (heredoc false positive — PR #1238 needs rebase) → #1139 ($(date) command scanner allowlist). [#1209 closed via #1243.]",
-    "issues": [1202, 1208, 1139]
+    "goal": "Reduce false-positive governance denials blocking swarm agents: #1202 (KE-2 AAB normalization — strip rtk/time/timeout prefixes) → #1208 (heredoc false positive) → #1139 ($(date) command scanner allowlist). [#1209 closed via #1243. #1202 closed via #1252. #1208 closed via #1238.]",
+    "issues": [1139]
   },
   "assignments": {
     "senior": {
-      "issue": [1202, 1139],
-      "title": "KE-2 AAB normalization (#1202 flagship) + $(date) scanner allowlist (#1139)",
+      "issue": [1139],
+      "title": "$(date) scanner allowlist — PR #1274 open, CI green",
+      "status": "pr-open",
+      "branch": "unknown",
+      "pr": 1274,
+      "claimedAt": null,
+      "note": "#1202 DONE (PR #1252 merged — stripCommandWrappers in aab.ts, 13 tests). #1139 fix is PR #1274: stripSafeSubshells() in command-scanner.ts, 20 new tests, CI 4/4 green. Awaiting merge."
+    },
+    "copilot-cli": {
+      "issue": [],
+      "title": "Sprint items complete — available for next sprint",
       "status": "ready",
       "branch": null,
       "pr": null,
       "claimedAt": null,
-      "note": "Priority order: #1202 first (flagship 3-5d — strip rtk/time/timeout prefixes in aab.ts, emit UnknownActionType WARNING, audit tool-action-map.json). Then #1139 ($(date +format) safe subshell allowlist in command-scanner.ts). #1209 is DONE (PR #1243 merged). URGENT: 3 cycles unstarted on #1202 — start immediately. Evidence: dogfood issues #1205, #1203, #1197, #1196, #1195 are all #1202 manifestations."
-    },
-    "copilot-cli": {
-      "issue": [1208],
-      "title": "Rebase PR #1238 — strip heredoc body before governance path scan",
-      "status": "needs-rebase",
-      "branch": "unknown",
-      "pr": 1238,
-      "claimedAt": "2026-03-28T15:00:00.000Z",
-      "note": "PR #1238 CI 6/6 green. Core fix correct. BLOCKER (run 2): branch BEHIND main after #1243, #1241, #1245 merged. No merge conflicts expected. Must rebase on current main HEAD. ESCALATED to director at 23:30Z cycle per 2-run rule."
+      "note": "#1208 DONE (PR #1238 merged — stripHeredocBody in definitions.ts, 9 tests, +12 invariants total). Available for new work."
     }
   },
-  "blockers": [
-    {
-      "id": "pr-1238-rebase",
-      "description": "PR #1238 branch BEHIND main for 2 consecutive EM runs. copilot-cli not actioned.",
-      "blockedSince": "2026-03-28T20:30:00.000Z",
-      "runs": 2,
-      "escalated": true,
-      "escalatedTo": "director",
-      "escalatedAt": "2026-03-28T23:30:00.000Z"
-    }
-  ],
+  "blockers": [],
   "prQueue": {
     "open": 1,
-    "reviewed": 0,
-    "mergeable": 0,
+    "reviewed": 1,
+    "mergeable": 1,
     "prs": [
       {
-        "number": 1238,
-        "title": "fix(invariants): strip heredoc body before governance path scan",
-        "ci": "6/6 green",
-        "mergeStateStatus": "BEHIND",
-        "closesIssue": 1208,
-        "status": "needs-rebase",
-        "note": "Core fix: stripHeredocBody() isolates command header before invariant scan. 9 tests (5 unit + 4 integration). BLOCKER (run 2): branch BEHIND main. Escalated to director. Rebase clean — no conflicts with #1243/#1241/#1245.",
-        "readyToMerge": false,
-        "blockerRuns": 2
+        "number": 1274,
+        "title": "fix(matchers): safe-subshell allowlist — prevent $(date) false positives",
+        "ci": "4/4 green",
+        "mergeStateStatus": "CURRENT",
+        "closesIssue": 1139,
+        "status": "review-ready",
+        "note": "Core fix: stripSafeSubshells() strips 9 read-only subshell families before destructive scan. 20 tests: unit per family, integration (destructive still fires through safe subshells), security (nested subshells NOT stripped), scanner-level integration. ReDoS-safe: [^)(]* argument pattern. Supersedes #1255.",
+        "readyToMerge": true,
+        "blockerRuns": 0
       }
     ]
   },
-  "health": "yellow",
+  "health": "green",
   "testHealth": {
-    "total": 4394,
-    "passed": 4394,
+    "total": 4442,
+    "passed": 4442,
     "failed": 0,
-    "packages": 18,
-    "lastRun": "2026-03-28T06:50:00.000Z",
+    "packages": 19,
+    "lastRun": "2026-03-29T02:51:00.000Z",
     "status": "all_passing",
-    "delta": "+30 vs prior QA run (4364→4394)",
+    "delta": "+48 vs prior QA run (4394→4442)",
     "breakdown": {
-      "kernel": 889,
-      "agentguard": 837,
-      "policy": 480,
-      "invariants": 586,
+      "kernel": 912,
+      "agentguard": 841,
+      "policy": 483,
+      "invariants": 598,
       "adapters": 281,
-      "storage": 243,
+      "storage": 247,
       "renderers": 105,
       "plugins": 125,
       "matchers": 122,
       "telemetry": 161,
       "core": 194,
-      "swarm": 70,
+      "swarm": 72,
       "invariant-data-protection": 122,
       "events": 76,
       "sdk": 18,
@@ -85,16 +75,13 @@
     "regressions": [],
     "coverageGaps": [
       {
-        "issue": 1202,
-        "description": "No test for rtk-prefixed command normalization in aab.ts — unknown action type fallthrough untested",
-        "location": "packages/kernel/tests/aab.test.ts"
-      },
-      {
         "issue": 1139,
-        "description": "$(date +format) blocking source not confirmed — may be AI safety layer or command-scanner.ts. Senior to locate in #1139 investigation.",
-        "location": "packages/matchers/src/command-scanner.ts"
+        "description": "20 tests in PR #1274 (not yet merged) cover stripSafeSubshells unit + integration + security. Gap closes on merge.",
+        "location": "packages/matchers/tests/command-scanner.test.ts",
+        "status": "addressed-in-pr-1274"
       }
-    ]
+    ],
+    "dogfoodNotes": "pnpm node_modules/turbo symlink was dangling (pointed to deleted worktree agentguard-autonomous-sdlc--coder-agent-2117057). Fixed via pnpm install --force from agent-guard root. Turbo cache restored. No governance blocks encountered during this QA run."
   },
   "completedIssues": [
     { "issue": 1118, "pr": 1147, "mergedAt": "2026-03-27T23:09:36Z" },
@@ -106,9 +93,11 @@
     { "issue": 1144, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
     { "issue": 1119, "pr": 1153, "mergedAt": "2026-03-28T05:00:00.000Z", "note": "Merged after rebase on main" },
     { "issue": 1182, "pr": 1212, "mergedAt": "2026-03-28T08:00:00.000Z", "note": "persona.env operational exemption in no-governance-self-modification invariant" },
-    { "issue": 1209, "pr": 1243, "mergedAt": "between 2026-03-28T20:30Z and 23:30Z", "note": "MCP prefix match: AAB normalizeIntent now uses startsWith() for mcp.call target. All github-mcp-server-* tools correctly resolved." }
+    { "issue": 1209, "pr": 1243, "mergedAt": "2026-03-28T19:00:00.000Z", "note": "MCP prefix match: AAB normalizeIntent now uses startsWith() for mcp.call target." },
+    { "issue": 1208, "pr": 1238, "mergedAt": "before 2026-03-28T21:30Z", "note": "stripHeredocBody() isolates command header before invariant scan. 9 tests (+12 invariants total with surrounding work)." },
+    { "issue": 1202, "pr": 1252, "mergedAt": "before 2026-03-28T21:30Z", "note": "stripCommandWrappers() strips rtk/time/timeout prefixes before git/github detection in aab.ts. 13 tests (+23 kernel total with surrounding work). Addresses Gap A of #1202." }
   ],
   "lastEmRun": "2026-03-28T23:30:00.000Z",
-  "lastQaRun": "2026-03-28T06:50:00.000Z",
-  "updatedAt": "2026-03-28T23:30:00.000Z"
+  "lastQaRun": "2026-03-29T02:51:00.000Z",
+  "updatedAt": "2026-03-29T02:51:00.000Z"
 }

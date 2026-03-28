@@ -1,15 +1,40 @@
 {
   "squad": "site",
   "sprint": {
-    "goal": "Keep site numeric claims in sync with codebase",
-    "issues": []
+    "goal": "Unblock site PR pipeline + comprehensive stats sync (invariants/patterns/events/CLI/actions)",
+    "issues": [1258, 1259, 1260, 1265, 1266, 1267]
   },
-  "assignments": {},
-  "blockers": [],
+  "assignments": {
+    "site-builder": {
+      "task": "Batch stats fix: CLI commands (#1265) + action types (#1266) + #1258 scope into single comprehensive PR once CI is unblocked",
+      "blockedBy": "#1267 CI mismatch"
+    },
+    "site-docs-sync": {
+      "task": "Swarm section audit (#1259) — count actual agents per squad, update framing from 5-tier topology to 7-squad topology",
+      "blockedBy": null
+    }
+  },
+  "blockers": [
+    {
+      "id": "ci-mismatch",
+      "issue": 1267,
+      "description": "site/** paths excluded from CI workflow but lint+test-and-build are required checks — all site PRs blocked from merging",
+      "severity": "P0",
+      "escalated": true
+    }
+  ],
   "prQueue": {
     "open": 1,
     "reviewed": 0,
-    "mergeable": 0
+    "mergeable": 0,
+    "prs": [
+      {
+        "number": 1258,
+        "title": "fix(site): sync stats to v2.9.0 — invariants 24, patterns 93, event kinds 47",
+        "checksStatus": "2/2 pass",
+        "mergeStatus": "blocked — #1267"
+      }
+    ]
   },
-  "updatedAt": "2026-03-26T20:40:00.000Z"
+  "updatedAt": "2026-03-28T20:40:00.000Z"
 }

@@ -281,6 +281,11 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
     }
   }
 
+  // Tag unknown shell commands: shell.exec that didn't match any git/github pattern
+  // and isn't explicitly destructive. These get warn+audit (Option A default-deny).
+  const isUnknownCommand =
+    action === 'shell.exec' && rawAction.command && !isDestructiveCommand(rawAction.command);
+
   return {
     action,
     target,
@@ -293,7 +298,10 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
         : undefined),
     command: rawAction.command || undefined,
     filesAffected: rawAction.filesAffected || undefined,
-    metadata: rawAction.metadata || undefined,
+    metadata: {
+      ...rawAction.metadata,
+      ...(isUnknownCommand ? { unknownCommand: true } : {}),
+    },
     persona: rawAction.persona || undefined,
     // Destructive detection scans the FULL command (including quotes) because
     // destructive SQL inside quotes (e.g. psql -c 'DROP TABLE') is still dangerous.

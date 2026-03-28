@@ -1464,6 +1464,38 @@ describe('no-governance-self-modification', () => {
     expect(result.holds).toBe(false);
   });
 
+  // Acceptance tests for #1254: gh --body flag false-positive
+  // gh issue create / gh pr create make GitHub API calls and cannot modify local governance
+  // files. Governance terminology in --body argument values must not trigger this invariant.
+  it('holds when gh issue create --body contains agentguard.yaml as documentation', () => {
+    const cmd =
+      'gh issue create --repo AgentGuardHQ/agent-guard --title "Invariant Report" ' +
+      '--body "## Summary\\n\\nThe agentguard.yaml policy loaded correctly."';
+    const result = inv.check({ currentCommand: cmd });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when gh issue create --body contains .agentguard/ path as documentation', () => {
+    const cmd =
+      'gh issue create --repo AgentGuardHQ/agent-guard --title "Session Report" ' +
+      '--body "Events stored in .agentguard/events/run-123.jsonl"';
+    const result = inv.check({ currentCommand: cmd });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when rtk gh pr create --body contains governance terminology', () => {
+    const cmd =
+      'rtk gh pr create --title "Fix" ' +
+      '--body "Updated agentguard.yaml to add deny rule for policies/ path"';
+    const result = inv.check({ currentCommand: cmd });
+    expect(result.holds).toBe(true);
+  });
+
+  it('still fails when a non-gh command references .agentguard/ in the command', () => {
+    const result = inv.check({ currentCommand: 'rm -rf .agentguard/events/' });
+    expect(result.holds).toBe(false);
+  });
+
   it('still fails when heredoc redirect target is in .agentguard/', () => {
     const heredocCmd = [
       "cat > .agentguard/custom-policy.yaml << 'EOF'",

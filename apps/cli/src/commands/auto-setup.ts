@@ -6,6 +6,7 @@ import { homedir } from 'node:os';
 import { RESET, BOLD, DIM, FG } from '../colors.js';
 import { claudeInit } from './claude-init.js';
 import { copilotInit } from './copilot-init.js';
+import gooseInit from './goose-init.js';
 import { resolveMainRepoRoot } from '@red-codes/core';
 
 const HOOK_MARKER = 'claude-hook';
@@ -218,6 +219,12 @@ export async function autoSetup(args: string[] = []): Promise<AutoSetupResult> {
   await claudeInit(forwardArgs);
   // Also configure Copilot CLI hooks
   await copilotInit(forwardArgs);
+  // Also configure Goose hooks (if Goose config dir exists or goose is installed)
+  try {
+    await gooseInit(forwardArgs);
+  } catch {
+    // Goose not installed — skip silently
+  }
   result.installed = true;
 
   return result;
