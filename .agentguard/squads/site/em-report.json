@@ -1,51 +1,87 @@
 {
   "squad": "site",
-  "timestamp": "2026-03-26T20:40:00.000Z",
+  "timestamp": "2026-03-28T20:40:00.000Z",
   "health": "green",
-  "summary": "Site healthy. Fixed invariant count drift (23→24) and CLI commands count (29→32) after recent codebase changes. No open issues or PRs. OG image and meta tags intact after recent PR #1011 fix.",
+  "summary": "Fixed numeric claim regression introduced by PR #1157 (ShellForge v3.0). Text claims (meta tags, section headings, prose) had stale values while stat counter data-targets were already correct. Fixed invariants (22→24), destructive patterns (87→93), event kinds (49→47), action types (27→41, 9→10 classes), invariant heading (21→24), CLI heading (29→34), CLI counter (36→34). No open issues or PRs.",
   "siteBuild": {
     "status": "pass",
-    "notes": "Static site structure valid: index.html, posts.html, posts.json, sitemap.xml, robots.txt, og-image.png all present and well-formed."
+    "notes": "Static site structure valid: index.html, posts.html, posts.json, sitemap.xml, robots.txt, og-image.png all present. ShellForge page added by #1157."
   },
   "contentFreshness": {
     "status": "fixed",
     "drift": [
       {
-        "claim": "invariants count",
-        "was": 23,
+        "claim": "invariants — meta/OG/JSON-LD/hero text",
+        "was": 22,
         "now": 24,
-        "cause": "PR #1002 added no-verify-bypass invariant",
+        "cause": "PR #1157 re-introduced stale 22 count in text claims while stat counter was already correct at 24",
         "fixed": true
       },
       {
-        "claim": "CLI commands count",
+        "claim": "invariants — section heading",
+        "was": 21,
+        "now": 24,
+        "cause": "PR #1157 set heading to 21 (old pre-fix value)",
+        "fixed": true
+      },
+      {
+        "claim": "destructive patterns — text and card heading",
+        "was": 87,
+        "now": 93,
+        "cause": "PR #1157 reset text to 87; stat counter was already 93",
+        "fixed": true
+      },
+      {
+        "claim": "event kinds — feature cards and architecture section",
+        "was": 49,
+        "now": 47,
+        "cause": "PR #1157 set event kind text to 49; actual count in events/schema.ts is 47",
+        "fixed": true
+      },
+      {
+        "claim": "action types — architecture AAB description",
+        "was": "27 types across 9 classes",
+        "now": "41 types across 10 classes",
+        "cause": "PR #1157 reset to incorrect values; actual count from actions.json is 41/10",
+        "fixed": true
+      },
+      {
+        "claim": "CLI commands — section heading",
         "was": 29,
-        "now": 32,
-        "cause": "New commands added since last site sync",
+        "now": 34,
+        "cause": "PR #1157 kept old 29 count; 34 command files in apps/cli/src/commands/",
+        "fixed": true
+      },
+      {
+        "claim": "CLI commands — stat counter",
+        "was": 36,
+        "now": 34,
+        "cause": "Stat counter inflated; brought in line with actual command file count",
         "fixed": true
       }
     ],
     "verified": [
-      "93 destructive patterns — matches codebase",
-      "47 event kinds — matches codebase",
-      "41 action types — matches codebase"
+      "24 invariants — matches packages/invariants/src/definitions.ts",
+      "93 destructive patterns — matches packages/core/src/data/destructive-patterns.json",
+      "47 event kinds — matches packages/events/src/schema.ts exported EventKind constants",
+      "41 action types across 10 classes — matches packages/core/src/data/actions.json",
+      "34 CLI commands — matches apps/cli/src/commands/ file count",
+      "4394 tests — already correct in stat counter",
+      "8 built-in policy packs — policies/ directory unchanged"
     ]
   },
   "prQueue": {
     "open": 0,
     "reviewed": 0,
     "merged": [
-      "#1015 — marketing EM report",
-      "#1011 — OG image PNG + social meta tags",
-      "#1009 — site stats sync",
-      "#1005 — stale numeric claims fix"
+      "#1157 — ShellForge page + v3.0 messaging (introduced regressions, now fixed)"
     ]
   },
   "blockers": [],
   "escalations": [],
   "governanceDenials": 0,
   "nextActions": [
-    "Open PR for invariant + CLI command count fix",
-    "Monitor for further invariant additions that cause site drift"
+    "Monitor for further site drift when invariants or commands are added",
+    "Consider a build-time check to keep stat counters in sync with source"
   ]
 }

@@ -4,12 +4,28 @@
     "goal": "Keep site numeric claims in sync with codebase",
     "issues": []
   },
-  "assignments": {},
+  "assignments": {
+    "site-builder": "Monitor site/index.html for numeric drift after PRs touching site/",
+    "site-docs-sync": "Verify CLAUDE.md counts match codebase on each run"
+  },
   "blockers": [],
   "prQueue": {
-    "open": 1,
+    "open": 0,
     "reviewed": 0,
     "mergeable": 0
   },
-  "updatedAt": "2026-03-26T20:40:00.000Z"
+  "lastRun": {
+    "timestamp": "2026-03-28T20:40:00.000Z",
+    "fixed": [
+      "invariants text 22→24 (4 locations)",
+      "invariants heading 21→24",
+      "destructive patterns text 87→93 (3 locations)",
+      "event kinds text 49→47 (2 locations)",
+      "action types text 27/9→41/10 (1 location)",
+      "CLI heading 29→34",
+      "CLI counter 36→34"
+    ],
+    "source": "Regression from PR #1157 (v3.0 messaging)"
+  },
+  "updatedAt": "2026-03-28T20:40:00.000Z"
 }
