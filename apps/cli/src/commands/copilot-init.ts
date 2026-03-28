@@ -8,32 +8,17 @@ import { RESET, BOLD, DIM, FG } from '../colors.js';
 import { resolveMainRepoRoot } from '@red-codes/core';
 import type { EnforcementMode } from '@red-codes/core';
 
-const HOOK_MARKER = 'copilot-hook';
-const LOCAL_BIN = 'node apps/cli/dist/bin.js';
+import { resolveBinary } from '../resolve-binary.js';
 
-/** Detect if we're in the agentguard development repo (local dev) vs. globally installed.
- *  For project-level npm installs, resolves to ./node_modules/.bin/agentguard so hooks
- *  work even when the binary isn't on PATH (#964). */
+const HOOK_MARKER = 'copilot-hook';
+
+/** Detect if we're in the agentguard development repo (local dev) vs. globally installed. */
 function resolveCliPrefix(isGlobal: boolean): {
   cli: string;
   isLocal: boolean;
 } {
-  const mainRoot = resolveMainRepoRoot();
-  const localMarker = join(mainRoot, 'apps', 'cli', 'src', 'bin.ts');
-  if (existsSync(localMarker)) {
-    return { cli: LOCAL_BIN, isLocal: true };
-  }
-  if (!isGlobal) {
-    const nmBin = join(mainRoot, 'node_modules', '.bin', 'agentguard');
-    if (existsSync(nmBin)) {
-      return { cli: './node_modules/.bin/agentguard', isLocal: false };
-    }
-    const nmBinAguard = join(mainRoot, 'node_modules', '.bin', 'aguard');
-    if (existsSync(nmBinAguard)) {
-      return { cli: './node_modules/.bin/aguard', isLocal: false };
-    }
-  }
-  return { cli: 'agentguard', isLocal: false };
+  const resolved = resolveBinary(isGlobal);
+  return { cli: resolved.cli, isLocal: resolved.isLocal };
 }
 
 interface HookEntry {

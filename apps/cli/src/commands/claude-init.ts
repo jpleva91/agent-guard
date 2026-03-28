@@ -17,19 +17,15 @@ import {
 } from '../templates/scripts.js';
 import { STARTER_SKILLS } from '../templates/skills.js';
 
+import { resolveBinary } from '../resolve-binary.js';
+
 const HOOK_MARKER = 'claude-hook';
 const BUILD_MARKER = 'apps/cli/dist/bin.js';
-const LOCAL_BIN = 'node apps/cli/dist/bin.js';
 
 /** Detect if we're in the agentguard development repo (local dev) vs. globally installed. */
 function resolveCliPrefix(): { cli: string; isLocal: boolean } {
-  // If apps/cli/src/bin.ts exists, we're in the agentguard source repo (works in worktrees too)
-  const mainRoot = resolveMainRepoRoot();
-  const localMarker = join(mainRoot, 'apps', 'cli', 'src', 'bin.ts');
-  if (existsSync(localMarker)) {
-    return { cli: LOCAL_BIN, isLocal: true };
-  }
-  return { cli: 'agentguard', isLocal: false };
+  const resolved = resolveBinary(false);
+  return { cli: resolved.cli, isLocal: resolved.isLocal };
 }
 
 interface HookEntry {
@@ -257,12 +253,16 @@ export async function claudeInit(args: string[] = []): Promise<void> {
 
   const { cli, isLocal } = resolveCliPrefix();
 
-  // All hooks resolve the AgentGuard binary from the workspace root, not CWD.
-  // This ensures hooks work correctly in worktrees where CWD differs from the project root.
-  // PreToolUse uses the full wrapper script; other hooks use an inline workspace resolver.
-  const wsResolve =
-    'W=${AGENTGUARD_WORKSPACE:-$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null | sed "s|/.git$||")}';
-  const bin = `\${AGENTGUARD_BIN:-$W/node_modules/.bin/agentguard}`;
+  // Build hook command strings. For dev repos, invoke the local binary directly.
+  // For npm installs, wrap in bash to resolve the binary from the workspace root.
+  const hookCmd = (args: string): string => {
+    if (isLocal) {
+      return `${cli} ${args}`;
+    }
+    const wsResolve = 'W=${AGENTGUARD_WORKSPACE:-$HOME/agentguard-workspace}';
+    const bin = '${AGENTGUARD_BIN:-$W/node_modules/.bin/agentguard}';
+    return `bash -c '${wsResolve}; ${bin} ${args}'`;
+  };
 
   // Overwrite (not push) — idempotent. Running init twice produces the same result.
 
@@ -285,7 +285,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
       hooks: [
         {
           type: 'command',
-          command: `bash -c '${wsResolve}; ${bin} claude-hook post${storeSuffix}${dbPathSuffix}'`,
+          command: hookCmd(`claude-hook post${storeSuffix}${dbPathSuffix}`),
         },
       ],
     },
@@ -315,7 +315,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   });
   sessionStartHooks.push({
     type: 'command',
-    command: `bash -c '${wsResolve}; ${bin} status'`,
+    command: hookCmd('status'),
     timeout: 10000,
     blocking: false,
   });
@@ -327,7 +327,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
       hooks: [
         {
           type: 'command',
-          command: `bash -c '${wsResolve}; ${bin} claude-hook notify${storeSuffix}${dbPathSuffix}'`,
+          command: hookCmd(`claude-hook notify${storeSuffix}${dbPathSuffix}`),
           timeout: 15000,
           blocking: false,
         },
@@ -341,7 +341,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
       hooks: [
         {
           type: 'command',
-          command: `bash -c '${wsResolve}; ${bin} claude-hook stop${storeSuffix}${dbPathSuffix}'`,
+          command: hookCmd(`claude-hook stop${storeSuffix}${dbPathSuffix}`),
           timeout: 15000,
           blocking: false,
         },

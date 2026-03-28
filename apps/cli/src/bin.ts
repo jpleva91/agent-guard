@@ -895,6 +895,12 @@ async function main() {
       break;
     }
 
+    case 'goose-init': {
+      const gooseInit = (await import('./commands/goose-init.js')).default;
+      await gooseInit(args.slice(1));
+      break;
+    }
+
     case 'deepagents-init': {
       const { deepAgentsInit } = await import('./commands/deepagents-init.js');
       await deepAgentsInit(args.slice(1));
@@ -1060,6 +1066,8 @@ function printHelp(): void {
     agentguard claude-init                    Set up Claude Code hook integration
     agentguard copilot-init                   Set up Copilot CLI hook integration
     agentguard copilot-init --global          Install hooks globally (~/.copilot/hooks/)
+    agentguard goose-init                     Set up Goose (Block) CLI integration
+    agentguard goose-init --global            Install extension globally (~/.config/goose/)
     agentguard deepagents-init                Set up DeepAgents (LangChain) hook integration
     agentguard deepagents-init --global       Install middleware globally (~/.deepagents/)
     agentguard auto-setup                     Auto-detect and configure hooks
