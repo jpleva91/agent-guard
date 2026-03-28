@@ -1,52 +1,75 @@
 {
-  "cycle": "2026-03-28T17:00Z",
+  "cycle": "2026-03-29T02:15Z",
   "agent": "claude-code:opus:studio:em",
   "health": "yellow",
-  "healthReason": "Budget exhaustion P1 (auto-resolves April 1); QA agents broken (#146)",
-  "summary": "Merged PR #177 (prev EM report) and PR #180 (cron collision fix, closes #173). Swarm telemetry healthy. SKILL.md discrepancy from #181 is a false positive — squad SKILL.md files live in claude/scheduled-tasks/, not claude/skills/. Two human escalations require immediate attention: Nix onboarding (#178, April 10) and DPP dry run owner (#152, April 10). Kernel squad flagged on #179 (Option A default-deny, April 4).",
+  "healthReason": "Budget exhaustion P1 (auto-resolves April 1 — 2 days); QA agents broken (#146, auto-resolves April 1). #179 P0 unassigned for 4th consecutive cycle.",
+  "summary": "Merged PRs #200 (README fix), #199 (swarm template schema + execution profiles — 2 sprint goals delivered), #195 (prev EM report). Closed #198 (superseded by #195). Removed kernel-aab-normalization blocker — kernel #1202 CLOSED. Senior agent delivered kernel #1251 (cross-validation tests, caught real bug in squad-manifest.default.yaml). Issue #179 (Option A default-deny, April 4 P0) remains unassigned for the 4th consecutive EM cycle. 6 days remain to deadline.",
   "actionsThisCycle": [
-    { "action": "Merged #177", "detail": "Previous EM report" },
-    { "action": "Merged #180", "detail": "Cron collision fix — closes #173" }
+    { "action": "Merged #200", "detail": "docs: fix origin/main → origin/master in README" },
+    { "action": "Merged #199", "detail": "feat(studio): swarm template schema + execution profiles — closes 2 sprint goals" },
+    { "action": "Merged #195", "detail": "chore(studio): EM report 2026-03-28T23:15Z" },
+    { "action": "Closed #198", "detail": "Superseded by #195 — both touched state.json, #195 was more recent" },
+    { "action": "Removed blocker: kernel-aab-normalization", "detail": "Kernel #1202 CLOSED — AAB normalization fix landed, rtk-prefix misclassification resolved" },
+    { "action": "Triaged #201", "detail": "P1: real CLI quota metrics — added to April sprint backlog" },
+    { "action": "Triaged #202", "detail": "P2: velvet-tiger/automatic research — deferred until ShellForge ships" },
+    { "action": "Triaged #203", "detail": "P2: market research scout agent — deferred to April sprint" }
   ],
   "sprintStatus": {
     "goal": "Ship agentguard init studio wizard + execution profiles + swarm template schema formalization (v3.1 prep)",
     "blockedUntil": "2026-04-01",
-    "blockedReason": "Copilot budget exhaustion at cap (4000/4000 cents)",
+    "blockedReason": "Copilot budget exhaustion at cap (4000/4000 cents) — 2 days remaining",
+    "completedThisSprint": [
+      "Formalize swarm template schema (JSON Schema validation) — PR #199 + kernel #1251",
+      "Define execution profiles (development, ci-safe, strict, enterprise) — PR #199"
+    ],
+    "remaining": [
+      "Implement agentguard init studio interactive wizard",
+      "Runner / Cloud protocol integration"
+    ],
     "issues": {
       "165-169": "Guitar Jam — deferred to April 1 budget reset",
-      "152": "DPP dry run — checklist merged, owner needed (deadline April 10)",
-      "146": "QA regression/test-architect broken — retrigger April 1"
+      "152": "DPP dry run — owner needed (deadline April 10)",
+      "146": "QA regression/test-architect broken — retrigger April 1",
+      "201": "Real CLI quota metrics — April sprint"
     }
   },
   "swarmHealth": {
     "script": "healthy",
-    "telemetry": "healthy",
+    "telemetry": "healthy (latest event 0.1h ago)",
     "cronCollisions": 0,
     "queueDepth": 0,
-    "workerPIDs": "32 alive",
-    "skillMdCheck": "false-positive — squad SKILLs in claude/scheduled-tasks/, workspace skills in claude/skills/ (roadmap/rollout/sitrep/brainstorm) — correct"
+    "workerPIDs": "131 skipped (log dir not on this host)"
   },
   "crossSquadAlerts": [
     {
       "squad": "kernel",
       "issue": 179,
-      "title": "Option A default-deny for demo — unknown shell.exec → warn+audit",
+      "title": "Option A default-deny for demo — 4TH CYCLE UNASSIGNED",
       "deadline": "2026-04-04",
-      "urgency": "P1",
-      "action": "Kernel EM: assign and start — 7 days to deadline"
+      "urgency": "P0",
+      "daysRemaining": 6,
+      "action": "HUMAN MUST ASSIGN TODAY — 4 consecutive EM cycles without assignment. Conference demo blocker."
     },
     {
-      "squad": "cloud",
-      "note": "DPP invite code for Nix (#178) available in agentguard-cloud #458 — cloud squad to provide"
+      "squad": "kernel",
+      "note": "v2.9.0 released. Safe-subshell allowlist (#1255) merged. #1202 (AAB normalization) CLOSED — unblocks Studio dogfood."
     }
   ],
   "escalations": [
     {
       "to": "HUMAN",
+      "issue": 179,
+      "title": "Option A default-deny — STILL UNASSIGNED (4th cycle)",
+      "deadline": "2026-04-04",
+      "daysRemaining": 6,
+      "action": "Manually assign to kernel senior TODAY. This is the 4th consecutive EM cycle this has been raised."
+    },
+    {
+      "to": "HUMAN",
       "issue": 178,
       "title": "Nix design partner activation — schedule onboarding session",
       "deadline": "2026-04-10",
-      "daysRemaining": 13,
+      "daysRemaining": 12,
       "action": "Schedule onboarding session with Nix team before April 10"
     },
     {
@@ -54,15 +77,8 @@
       "issue": 152,
       "title": "DPP dry run needs owner",
       "deadline": "2026-04-10",
-      "daysRemaining": 13,
+      "daysRemaining": 12,
       "action": "Assign owner to drive #152 DPP dry run through April 10 gate"
-    },
-    {
-      "to": "kernel-em",
-      "issue": 179,
-      "title": "Option A default-deny — assign to kernel senior",
-      "deadline": "2026-04-04",
-      "daysRemaining": 7
     },
     {
       "to": "qa-em",
@@ -70,10 +86,10 @@
     }
   ],
   "analyticsCoordination": {
-    "openRequests": [21, 22, 23, 25, 26, 32],
+    "openRequests": [22, 23, 25, 26, 32, 34, 35],
     "blockers": "None from studio this cycle",
-    "note": "feat/#26 (agent_name/driver_type) and #25 (per-agent compliance reports) are open — coordinate with analytics EM for sprint 2"
+    "note": "#32 (conference conversion baseline) is time-sensitive for May 6 talk — monitor analytics EM for ETA"
   },
-  "dogfood": "No AgentGuard governance issues observed this run.",
-  "updatedAt": "2026-03-28T17:00:00.000Z"
+  "dogfood": "No AgentGuard governance issues observed this run. AAB normalization (#1202) resolved — rtk-prefix false denials should clear.",
+  "updatedAt": "2026-03-29T02:15:00.000Z"
 }

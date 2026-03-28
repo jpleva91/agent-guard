@@ -1,51 +1,118 @@
 {
   "squad": "site",
-  "timestamp": "2026-03-26T20:40:00.000Z",
-  "health": "green",
-  "summary": "Site healthy. Fixed invariant count drift (23→24) and CLI commands count (29→32) after recent codebase changes. No open issues or PRs. OG image and meta tags intact after recent PR #1011 fix.",
+  "timestamp": "2026-03-28T20:40:00.000Z",
+  "health": "yellow",
+  "summary": "Site has 6 active stat drifts. PR #1258 fixes 3 (invariants/patterns/event kinds) but is blocked by CI/branch-protection mismatch — site-only PRs cannot merge without admin action (#1267). Two new drifts found this cycle: CLI commands (29→32, #1265) and action types (27/9→41/10, #1266). Swarm section (#1259) and v2.9.x announcement (#1260) remain open from prior cycle. P0 escalation: CI mismatch blocking all site squad merges.",
   "siteBuild": {
     "status": "pass",
-    "notes": "Static site structure valid: index.html, posts.html, posts.json, sitemap.xml, robots.txt, og-image.png all present and well-formed."
+    "notes": "Static site structure intact: index.html, posts.html, shellforge.html, posts.json, sitemap.xml, robots.txt, og-image.png all present."
   },
   "contentFreshness": {
-    "status": "fixed",
+    "status": "stale",
     "drift": [
       {
         "claim": "invariants count",
-        "was": 23,
-        "now": 24,
-        "cause": "PR #1002 added no-verify-bypass invariant",
-        "fixed": true
+        "site": 22,
+        "codebase": 24,
+        "location": "og:description, JSON-LD, hero, kernel card, policy bullet, safety card h3, invariants section h2",
+        "fixPR": 1258,
+        "fixStatus": "blocked — CI mismatch (#1267)"
       },
       {
-        "claim": "CLI commands count",
-        "was": 29,
-        "now": 32,
-        "cause": "New commands added since last site sync",
-        "fixed": true
+        "claim": "destructive patterns",
+        "site": 87,
+        "codebase": 93,
+        "location": "kernel card, policy bullet, destructive patterns card h3",
+        "fixPR": 1258,
+        "fixStatus": "blocked — CI mismatch (#1267)"
+      },
+      {
+        "claim": "event kinds",
+        "site": 49,
+        "codebase": 47,
+        "location": "Full Audit Trail card, Pipeline Emit stage",
+        "fixPR": 1258,
+        "fixStatus": "blocked — CI mismatch (#1267)"
+      },
+      {
+        "claim": "CLI commands",
+        "site": 29,
+        "codebase": 32,
+        "location": "site/index.html:1584 section heading",
+        "issue": 1265,
+        "fixStatus": "open — regressed from a998ba2 by c05b1bd (#1224)"
+      },
+      {
+        "claim": "canonical action types",
+        "site": "27 across 9 classes",
+        "codebase": "41 across 10 classes",
+        "location": "site/index.html:974 AAB description",
+        "issue": 1266,
+        "fixStatus": "open"
+      },
+      {
+        "claim": "swarm topology",
+        "site": "26 agents across 5 tiers",
+        "codebase": "7 squads (design, hq, kernel, marketing, qa, site, studio)",
+        "location": "site/index.html:1683 swarm section",
+        "issue": 1259,
+        "fixStatus": "open — needs squad manifest audit"
       }
     ],
     "verified": [
-      "93 destructive patterns — matches codebase",
-      "47 event kinds — matches codebase",
-      "41 action types — matches codebase"
+      "invariants: 24 — confirmed via grep packages/invariants/src/definitions.ts",
+      "destructive patterns: 93 — confirmed via packages/core/src/data/destructive-patterns.json",
+      "event kinds: 47 — confirmed via packages/events/src/schema.ts",
+      "action types: 41 across 10 classes — confirmed via packages/core/src/data/actions.json",
+      "CLI commands: 32 top-level — confirmed via apps/cli/src/commands/"
     ]
   },
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
-    "merged": [
-      "#1015 — marketing EM report",
-      "#1011 — OG image PNG + social meta tags",
-      "#1009 — site stats sync",
-      "#1005 — stale numeric claims fix"
+    "merged": [],
+    "blockers": [
+      {
+        "pr": 1258,
+        "title": "fix(site): sync stats to v2.9.0 — invariants 24, patterns 93, event kinds 47",
+        "checks": "2/2 passed (CodeQL, analyze)",
+        "blockReason": "lint + test-and-build required checks never trigger for site/** changes (paths-ignore in size-check.yml). Filed as #1267."
+      }
     ]
   },
-  "blockers": [],
-  "escalations": [],
+  "issuesTracked": [
+    { "number": 1259, "title": "Swarm section audit — 26 agents/5 tiers stale", "status": "open", "priority": "P2" },
+    { "number": 1260, "title": "v2.9.x announcement content", "status": "open", "priority": "P2" },
+    { "number": 1265, "title": "CLI commands count drift (29→32)", "status": "open", "priority": "P1", "filedThisCycle": true },
+    { "number": 1266, "title": "Action types drift (27/9→41/10 classes)", "status": "open", "priority": "P1", "filedThisCycle": true },
+    { "number": 1267, "title": "CI mismatch — site-only PRs unmergeable", "status": "open", "priority": "P0-infra", "filedThisCycle": true }
+  ],
+  "structuralRisk": {
+    "regressionPattern": "Partial site syncs (e.g. #1224) overwrite previously-fixed claims. No automated stat validation gate exists. Every new sync PR risks regressing prior fixes.",
+    "recommendation": "Add a site-stats-check script that greps site/index.html for all numeric claims and validates them against codebase sources. Run as a required check in a new site-check.yml workflow."
+  },
+  "blockers": [
+    {
+      "id": "ci-mismatch",
+      "severity": "P0-infra",
+      "issue": 1267,
+      "description": "All site PRs are unmergeable via normal workflow. Requires admin merge or CI fix. Affects entire site squad's ability to ship content.",
+      "escalate": true
+    }
+  ],
+  "escalations": [
+    {
+      "issue": "#1267 — site PR CI mismatch",
+      "severity": "P0",
+      "action": "Human/infra intervention required. Options: (A) add skip-ci bypass job to size-check.yml for site/** changes, (B) create dedicated site-check.yml workflow registered as required check, (C) admin-merge pending site PRs as one-time bypass. Blocking all site squad merges."
+    }
+  ],
   "governanceDenials": 0,
   "nextActions": [
-    "Open PR for invariant + CLI command count fix",
-    "Monitor for further invariant additions that cause site drift"
+    "ESCALATE to HQ: #1267 CI mismatch must be resolved to unblock all site PRs",
+    "site-builder: batch #1265 + #1266 + #1258 scope into a single comprehensive stats-sync PR once CI is fixed",
+    "site-docs-sync: audit swarm section (#1259) — tally actual agents per squad, update framing from 'tiers' to 'squads'",
+    "site-builder: draft v2.9.x announcement content (#1260) — wildcard policy fix, Go evaluator parity, deepagents adapter",
+    "Long-term: site-stats-check automation script to prevent regression"
   ]
 }

@@ -1,6 +1,6 @@
 {
   "name": "@red-codes/plugins",
-  "version": "0.1.0",
+  "version": "2.9.2",
   "description": "Plugin ecosystem for AgentGuard",
   "type": "module",
   "license": "Apache-2.0",

@@ -1,6 +1,6 @@
 {
   "name": "@red-codes/events",
-  "version": "1.0.0",
+  "version": "2.9.2",
   "description": "Canonical event model for AgentGuard",
   "type": "module",
   "license": "Apache-2.0",

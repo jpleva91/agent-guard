@@ -10,13 +10,19 @@ vi.mock('node:fs', () => ({
   readFileSync: vi.fn(),
 }));
 
+vi.mock('@red-codes/swarm', () => ({
+  scaffold: vi.fn(),
+}));
+
 import { init } from '../src/commands/init.js';
+import { scaffold } from '@red-codes/swarm';
 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.mocked(existsSync).mockReturnValue(false);
+  vi.mocked(scaffold).mockReturnValue({ agents: [{}, {}, {}], skillsWritten: 3, skillsSkipped: 0 });
 });
 
 afterEach(() => {
@@ -483,6 +489,169 @@ describe('init command', () => {
       expect(allOutput).toContain('ci-safe');
       expect(allOutput).toContain('development');
       expect(allOutput).toContain('enterprise');
+    });
+  });
+
+  describe('studio wizard', () => {
+    const MOCK_TEMPLATE = '# Studio template\nid: mock-studio\nrules: []\n';
+
+    function setupStudioMocks({
+      hasClaudeCode = false,
+      hasCICD = false,
+      isMonorepo = false,
+      hasExistingYaml = false,
+    } = {}) {
+      vi.mocked(existsSync).mockImplementation((p: unknown) => {
+        const path = String(p);
+        // resolveTemplatesDir() — walks up looking for a 'templates' directory
+        if (path.endsWith('templates')) return true;
+        // template yaml files (e.g. templates/development.yaml)
+        if (path.endsWith('.yaml') && path.includes('templates')) return true;
+        // output agentguard.yaml
+        if (path.endsWith('agentguard.yaml')) return hasExistingYaml;
+        // Claude Code agent runtime detection
+        if (path.endsWith('.claude') || path.endsWith('CLAUDE.md')) return hasClaudeCode;
+        // CI/CD detection
+        if (path.includes('.github/workflows')) return hasCICD;
+        // Monorepo detection via pnpm workspace
+        if (path.endsWith('pnpm-workspace.yaml')) return isMonorepo;
+        return false;
+      });
+      vi.mocked(readFileSync).mockReturnValue(MOCK_TEMPLATE);
+    }
+
+    it('should return 0 in non-interactive mode with default project', async () => {
+      setupStudioMocks();
+      const code = await init(['studio', '--non-interactive']);
+      expect(code).toBe(0);
+    });
+
+    it('should write agentguard.yaml with development profile for plain project', async () => {
+      setupStudioMocks();
+      await init(['studio', '--non-interactive']);
+
+      const writeCalls = vi.mocked(writeFileSync).mock.calls;
+      const yamlCall = writeCalls.find(
+        (call) => typeof call[0] === 'string' && String(call[0]).endsWith('agentguard.yaml')
+      );
+      expect(yamlCall).toBeDefined();
+      expect(yamlCall?.[1]).toBe(MOCK_TEMPLATE);
+    });
+
+    it('should print detected project info in output', async () => {
+      setupStudioMocks();
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init(['studio', '--non-interactive']);
+
+      const output = consoleSpy.mock.calls.flat().join('\n');
+      expect(output).toContain('Project detected');
+    });
+
+    it('should log development profile in summary when no CI detected', async () => {
+      setupStudioMocks();
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init(['studio', '--non-interactive']);
+
+      const output = consoleSpy.mock.calls.flat().join('\n');
+      expect(output).toContain('development');
+    });
+
+    it('should select ci-safe profile when GitHub Actions CI is detected', async () => {
+      setupStudioMocks({ hasCICD: true });
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init(['studio', '--non-interactive']);
+
+      const output = consoleSpy.mock.calls.flat().join('\n');
+      expect(output).toContain('ci-safe');
+    });
+
+    it('should scaffold swarm by default in non-interactive mode', async () => {
+      setupStudioMocks();
+      await init(['studio', '--non-interactive']);
+      expect(vi.mocked(scaffold)).toHaveBeenCalled();
+    });
+
+    it('should use minimal swarm preset for a non-monorepo project', async () => {
+      setupStudioMocks();
+      await init(['studio', '--non-interactive']);
+      const call = vi.mocked(scaffold).mock.calls[0];
+      expect(call?.[0]?.tiers).toEqual(['core']);
+    });
+
+    it('should use full swarm preset for a monorepo', async () => {
+      setupStudioMocks({ isMonorepo: true });
+      await init(['studio', '--non-interactive']);
+      const call = vi.mocked(scaffold).mock.calls[0];
+      expect(call?.[0]?.tiers).toEqual(
+        expect.arrayContaining(['core', 'governance', 'ops', 'quality', 'marketing'])
+      );
+    });
+
+    it('should handle swarm scaffold failure gracefully and still return 0', async () => {
+      setupStudioMocks();
+      vi.mocked(scaffold).mockImplementation(() => {
+        throw new Error('disk full');
+      });
+      const code = await init(['studio', '--non-interactive']);
+      expect(code).toBe(0);
+      expect(console.error).toHaveBeenCalledWith(expect.stringContaining('disk full'));
+    });
+
+    it('should overwrite existing agentguard.yaml in non-interactive mode', async () => {
+      setupStudioMocks({ hasExistingYaml: true });
+      await init(['studio', '--non-interactive']);
+
+      const writeCalls = vi.mocked(writeFileSync).mock.calls;
+      const yamlCall = writeCalls.find(
+        (call) => typeof call[0] === 'string' && String(call[0]).endsWith('agentguard.yaml')
+      );
+      expect(yamlCall).toBeDefined();
+    });
+
+    it('should not log Claude Code hooks step when Claude Code not detected', async () => {
+      setupStudioMocks({ hasClaudeCode: false });
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init(['studio', '--non-interactive']);
+
+      const output = consoleSpy.mock.calls.flat().join('\n');
+      expect(output).not.toContain('Claude Code hooks');
+    });
+
+    it('should show "Studio initialized" in the final summary', async () => {
+      setupStudioMocks();
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init(['studio', '--non-interactive']);
+
+      const output = consoleSpy.mock.calls.flat().join('\n');
+      expect(output).toContain('Studio initialized');
+    });
+
+    it('should include swarm tier in summary when swarm was scaffolded', async () => {
+      setupStudioMocks();
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init(['studio', '--non-interactive']);
+
+      const output = consoleSpy.mock.calls.flat().join('\n');
+      expect(output).toContain('minimal');
+    });
+
+    it('should write files to custom --dir when provided', async () => {
+      setupStudioMocks();
+      await init(['studio', '--non-interactive', '--dir', '/tmp/studio-test-dir']);
+
+      const mkdirCalls = vi.mocked(mkdirSync).mock.calls;
+      const usesCustomDir = mkdirCalls.some(
+        (call) => typeof call[0] === 'string' && String(call[0]).includes('studio-test-dir')
+      );
+      expect(usesCustomDir).toBe(true);
+    });
+
+    it('should include "studio" entry in help output', async () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init([]);
+
+      const output = consoleSpy.mock.calls.flat().join('\n');
+      expect(output).toContain('studio');
     });
   });
 });

@@ -218,6 +218,8 @@ export type EventKind =
   | 'IntentDriftDetected'
   // Capability Validation
   | 'CapabilityValidated'
+  // Unknown Command Warning (Option A default-deny)
+  | 'UnknownCommandWarn'
   // Environmental Enforcement
   // TODO(issue-225): Reserved for future direct emission; currently InvariantViolation is emitted instead.
   | 'IdeSocketAccessBlocked';
