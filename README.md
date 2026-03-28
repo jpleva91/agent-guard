@@ -10,7 +10,7 @@ Install in 30 seconds. Your agents can't break what matters.</p>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License: Apache 2.0"></a>
   <img src="https://github.com/AgentGuardHQ/agentguard/actions/workflows/size-check.yml/badge.svg" alt="CI">
   <a href="https://agentguardhq.github.io/agentguard/"><img src="https://img.shields.io/badge/Website-AgentGuardHQ.github.io-22C55E?style=flat&logo=github" alt="Website"></a>
-  <a href="https://agentguard-cloud.vercel.app/signup"><img src="https://img.shields.io/badge/Cloud-Join%20Early%20Access-FF6B35?style=flat" alt="Join Early Access"></a>
+  <a href="https://agentguard-cloud-dashboard.vercel.app/onboarding"><img src="https://img.shields.io/badge/Cloud-Join%20Early%20Access-FF6B35?style=flat" alt="Join Early Access"></a>
   <a href="https://github.com/AgentGuardHQ/agentguard/discussions"><img src="https://img.shields.io/badge/Discussions-Ask%20%26%20Share-8A2BE2?style=flat&logo=github" alt="GitHub Discussions"></a>
 </p>
 
@@ -77,7 +77,7 @@ agentguard claude-init --mode guide --pack essentials
 ```
 
 > **Join the waitlist** — get cloud governance, team dashboards, and real-time telemetry:
-> **[agentguard-cloud.vercel.app/signup](https://agentguard-cloud.vercel.app/signup)**
+> **[agentguard-cloud-dashboard.vercel.app/onboarding](https://agentguard-cloud-dashboard.vercel.app/onboarding)**
 > · [GitHub Discussions](https://github.com/AgentGuardHQ/agentguard/discussions) — ask questions, share setups
 
 ## Cloud Dashboard
@@ -91,7 +91,7 @@ agentguard cloud login
 
 | Link | Description |
 |------|-------------|
-| [agentguard-cloud.vercel.app](https://agentguard-cloud.vercel.app) | Team dashboard — runs, violations, analytics |
+| [agentguard-cloud-dashboard.vercel.app](https://agentguard-cloud-dashboard.vercel.app) | Team dashboard — runs, violations, analytics |
 | [agentguard-cloud-office-sim.vercel.app](https://agentguard-cloud-office-sim.vercel.app) | Live Office — 2D visualization of agent activity |
 
 ## Agent Identity
@@ -487,7 +487,7 @@ extends:
 
 Stay in the loop and connect with other AgentGuard users:
 
-- **[Sign up for early access](https://agentguard-cloud.vercel.app/signup)** — cloud dashboard, team governance, real-time telemetry
+- **[Sign up for early access](https://agentguard-cloud-dashboard.vercel.app/onboarding)** — cloud dashboard, team governance, real-time telemetry
 - **[GitHub Discussions](https://github.com/AgentGuardHQ/agentguard/discussions)** — ask questions, share setups, give feedback
 - **[Issues](https://github.com/AgentGuardHQ/agentguard/issues)** — bug reports and feature requests
 
@@ -502,7 +502,7 @@ agentguard cloud login     # Connect after you have an API key
 
 | Resource | URL |
 |----------|-----|
-| Dashboard | [agentguard-cloud.vercel.app](https://agentguard-cloud.vercel.app) |
+| Dashboard | [agentguard-cloud-dashboard.vercel.app](https://agentguard-cloud-dashboard.vercel.app) |
 | Live Office | [agentguard-cloud-office-sim.vercel.app](https://agentguard-cloud-office-sim.vercel.app) |
 | Website | [agentguardhq.github.io/agentguard](https://agentguardhq.github.io/agentguard/) |
 | Docs | [docs/](docs/) |
