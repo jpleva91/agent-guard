@@ -2,13 +2,15 @@
   "name": "agentguard-vscode",
   "displayName": "AgentGuard",
   "description": "Governance run status and event visibility for AgentGuard",
-  "version": "0.1.0",
+  "version": "2.9.2",
   "publisher": "agentguard",
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Other"],
+  "categories": [
+    "Other"
+  ],
   "activationEvents": [
     "workspaceContains:.agentguard",
     "workspaceContains:agentguard.yaml"
@@ -82,22 +84,38 @@
           "properties": {
             "PolicyDenied": {
               "type": "string",
-              "enum": ["information", "warning", "error"],
+              "enum": [
+                "information",
+                "warning",
+                "error"
+              ],
               "description": "Severity for policy denial notifications (default: warning)"
             },
             "InvariantViolation": {
               "type": "string",
-              "enum": ["information", "warning", "error"],
+              "enum": [
+                "information",
+                "warning",
+                "error"
+              ],
               "description": "Severity for invariant violation notifications (default: error)"
             },
             "BlastRadiusExceeded": {
               "type": "string",
-              "enum": ["information", "warning", "error"],
+              "enum": [
+                "information",
+                "warning",
+                "error"
+              ],
               "description": "Severity for blast radius exceeded notifications (default: error)"
             },
             "ActionEscalated": {
               "type": "string",
-              "enum": ["information", "warning", "error"],
+              "enum": [
+                "information",
+                "warning",
+                "error"
+              ],
               "description": "Severity for action escalation notifications (default: information)"
             }
           },
