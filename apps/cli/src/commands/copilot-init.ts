@@ -1,15 +1,15 @@
 // agentguard copilot-init — set up GitHub Copilot CLI integration
 // Writes hooks.json to .github/hooks/ (repo-level) or ~/.copilot/hooks/ (global).
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
-import { homedir } from "node:os";
-import { RESET, BOLD, DIM, FG } from "../colors.js";
-import { resolveMainRepoRoot } from "@red-codes/core";
-import type { EnforcementMode } from "@red-codes/core";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { RESET, BOLD, DIM, FG } from '../colors.js';
+import { resolveMainRepoRoot } from '@red-codes/core';
+import type { EnforcementMode } from '@red-codes/core';
 
-const HOOK_MARKER = "copilot-hook";
-const LOCAL_BIN = "node apps/cli/dist/bin.js";
+const HOOK_MARKER = 'copilot-hook';
+const LOCAL_BIN = 'node apps/cli/dist/bin.js';
 
 /** Detect if we're in the agentguard development repo (local dev) vs. globally installed.
  *  For project-level npm installs, resolves to ./node_modules/.bin/agentguard so hooks
@@ -19,21 +19,21 @@ function resolveCliPrefix(isGlobal: boolean): {
   isLocal: boolean;
 } {
   const mainRoot = resolveMainRepoRoot();
-  const localMarker = join(mainRoot, "apps", "cli", "src", "bin.ts");
+  const localMarker = join(mainRoot, 'apps', 'cli', 'src', 'bin.ts');
   if (existsSync(localMarker)) {
     return { cli: LOCAL_BIN, isLocal: true };
   }
   if (!isGlobal) {
-    const nmBin = join(mainRoot, "node_modules", ".bin", "agentguard");
+    const nmBin = join(mainRoot, 'node_modules', '.bin', 'agentguard');
     if (existsSync(nmBin)) {
-      return { cli: "./node_modules/.bin/agentguard", isLocal: false };
+      return { cli: './node_modules/.bin/agentguard', isLocal: false };
     }
-    const nmBinAguard = join(mainRoot, "node_modules", ".bin", "aguard");
+    const nmBinAguard = join(mainRoot, 'node_modules', '.bin', 'aguard');
     if (existsSync(nmBinAguard)) {
-      return { cli: "./node_modules/.bin/aguard", isLocal: false };
+      return { cli: './node_modules/.bin/aguard', isLocal: false };
     }
   }
-  return { cli: "agentguard", isLocal: false };
+  return { cli: 'agentguard', isLocal: false };
 }
 
 interface HookEntry {
@@ -58,48 +58,39 @@ interface HooksConfig {
 }
 
 export async function copilotInit(args: string[] = []): Promise<void> {
-  const isGlobal = args.includes("--global") || args.includes("-g");
-  const isRemove = args.includes("--remove") || args.includes("--uninstall");
+  const isGlobal = args.includes('--global') || args.includes('-g');
+  const isRemove = args.includes('--remove') || args.includes('--uninstall');
 
   // Parse --store flag for storage backend (embedded into hook commands)
-  const storeIdx = args.findIndex((a) => a === "--store");
+  const storeIdx = args.findIndex((a) => a === '--store');
   const storeBackend = storeIdx !== -1 ? args[storeIdx + 1] : undefined;
-  const storeSuffix = storeBackend ? ` --store ${storeBackend}` : "";
+  const storeSuffix = storeBackend ? ` --store ${storeBackend}` : '';
 
   // Parse --db-path flag for SQLite database path
-  const dbPathIdx = args.findIndex((a) => a === "--db-path");
+  const dbPathIdx = args.findIndex((a) => a === '--db-path');
   const dbPathValue = dbPathIdx !== -1 ? args[dbPathIdx + 1] : undefined;
-  const dbPathSuffix = dbPathValue ? ` --db-path "${dbPathValue}"` : "";
+  const dbPathSuffix = dbPathValue ? ` --db-path "${dbPathValue}"` : '';
 
   // Parse --mode flag for enforcement mode
-  const modeArgIdx = args.findIndex((a) => a === "--mode");
+  const modeArgIdx = args.findIndex((a) => a === '--mode');
   const modeArg = modeArgIdx !== -1 ? args[modeArgIdx + 1] : undefined;
-  const VALID_MODES: EnforcementMode[] = [
-    "guide",
-    "educate",
-    "monitor",
-    "enforce",
-  ];
+  const VALID_MODES: EnforcementMode[] = ['guide', 'educate', 'monitor', 'enforce'];
   const selectedMode: EnforcementMode =
     modeArg && VALID_MODES.includes(modeArg as EnforcementMode)
       ? (modeArg as EnforcementMode)
-      : "guide";
+      : 'guide';
 
   // Copilot CLI hooks location:
   // Repo-level: .github/hooks/hooks.json
   // Global: ~/.copilot/hooks/hooks.json
   const hooksDir = isGlobal
-    ? join(homedir(), ".copilot", "hooks")
-    : join(process.cwd(), ".github", "hooks");
-  const hooksPath = join(hooksDir, "hooks.json");
-  const hooksLabel = isGlobal
-    ? "~/.copilot/hooks/hooks.json"
-    : ".github/hooks/hooks.json";
+    ? join(homedir(), '.copilot', 'hooks')
+    : join(process.cwd(), '.github', 'hooks');
+  const hooksPath = join(hooksDir, 'hooks.json');
+  const hooksLabel = isGlobal ? '~/.copilot/hooks/hooks.json' : '.github/hooks/hooks.json';
 
-  process.stderr.write("\n");
-  process.stderr.write(
-    `  ${BOLD}AgentGuard Copilot CLI Integration${RESET}\n\n`,
-  );
+  process.stderr.write('\n');
+  process.stderr.write(`  ${BOLD}AgentGuard Copilot CLI Integration${RESET}\n\n`);
 
   if (isRemove) {
     removeHooks(hooksPath, hooksLabel);
@@ -113,10 +104,10 @@ export async function copilotInit(args: string[] = []): Promise<void> {
   let config: HooksConfig = { version: 1, hooks: {} };
   if (existsSync(hooksPath)) {
     try {
-      config = JSON.parse(readFileSync(hooksPath, "utf8")) as HooksConfig;
+      config = JSON.parse(readFileSync(hooksPath, 'utf8')) as HooksConfig;
     } catch {
       process.stderr.write(
-        `  ${FG.yellow}Warning:${RESET} Could not parse ${hooksLabel}, creating fresh config.\n`,
+        `  ${FG.yellow}Warning:${RESET} Could not parse ${hooksLabel}, creating fresh config.\n`
       );
       config = { version: 1, hooks: {} };
     }
@@ -124,7 +115,7 @@ export async function copilotInit(args: string[] = []): Promise<void> {
 
   if (hasAgentGuardHook(config)) {
     process.stderr.write(
-      `  ${FG.yellow}Already configured.${RESET} AgentGuard hook found in ${hooksLabel}.\n`,
+      `  ${FG.yellow}Already configured.${RESET} AgentGuard hook found in ${hooksLabel}.\n`
     );
     process.stderr.write(`  ${DIM}Use --remove to uninstall.${RESET}\n\n`);
     return;
@@ -137,7 +128,7 @@ export async function copilotInit(args: string[] = []): Promise<void> {
   // preToolUse — governance enforcement (routes all tool calls through the kernel)
   if (!config.hooks.preToolUse) config.hooks.preToolUse = [];
   config.hooks.preToolUse.push({
-    type: "command",
+    type: 'command',
     bash: `${cli} copilot-hook pre${storeSuffix}${dbPathSuffix}`,
     timeoutSec: 30,
   });
@@ -145,30 +136,26 @@ export async function copilotInit(args: string[] = []): Promise<void> {
   // postToolUse — error monitoring (bash/powershell stderr reporting)
   if (!config.hooks.postToolUse) config.hooks.postToolUse = [];
   config.hooks.postToolUse.push({
-    type: "command",
+    type: 'command',
     bash: `${cli} copilot-hook post${storeSuffix}${dbPathSuffix}`,
     timeoutSec: 10,
   });
 
-  writeFileSync(hooksPath, JSON.stringify(config, null, 2), "utf8");
+  writeFileSync(hooksPath, JSON.stringify(config, null, 2), 'utf8');
 
   process.stderr.write(
-    `  ${FG.green}\u2713${RESET}  Hooks installed in ${FG.cyan}${hooksLabel}${RESET}\n`,
+    `  ${FG.green}\u2713${RESET}  Hooks installed in ${FG.cyan}${hooksLabel}${RESET}\n`
   );
-  process.stderr.write(
-    `  ${DIM}preToolUse:    governance enforcement (all tools)${RESET}\n`,
-  );
-  process.stderr.write(
-    `  ${DIM}postToolUse:   error monitoring (bash/powershell)${RESET}\n`,
-  );
+  process.stderr.write(`  ${DIM}preToolUse:    governance enforcement (all tools)${RESET}\n`);
+  process.stderr.write(`  ${DIM}postToolUse:   error monitoring (bash/powershell)${RESET}\n`);
   if (storeBackend) {
     process.stderr.write(`  ${DIM}Storage:       ${storeBackend}${RESET}\n`);
   }
-  process.stderr.write("\n");
+  process.stderr.write('\n');
 
   // Ensure telemetry directories exist
   const repoRoot = resolveMainRepoRoot();
-  const dirs = [".agentguard/events", ".agentguard/decisions"];
+  const dirs = ['.agentguard/events', '.agentguard/decisions'];
   for (const dir of dirs) {
     const dirPath = join(repoRoot, dir);
     if (!existsSync(dirPath)) {
@@ -185,31 +172,29 @@ export async function copilotInit(args: string[] = []): Promise<void> {
 function removeHooks(hooksPath: string, hooksLabel: string): void {
   if (!existsSync(hooksPath)) {
     process.stderr.write(
-      `  ${DIM}No hooks file found at ${hooksLabel}. Nothing to remove.${RESET}\n\n`,
+      `  ${DIM}No hooks file found at ${hooksLabel}. Nothing to remove.${RESET}\n\n`
     );
     return;
   }
 
   let config: HooksConfig;
   try {
-    config = JSON.parse(readFileSync(hooksPath, "utf8")) as HooksConfig;
+    config = JSON.parse(readFileSync(hooksPath, 'utf8')) as HooksConfig;
   } catch {
-    process.stderr.write(
-      `  ${FG.red}Error:${RESET} Could not parse ${hooksLabel}.\n\n`,
-    );
+    process.stderr.write(`  ${FG.red}Error:${RESET} Could not parse ${hooksLabel}.\n\n`);
     return;
   }
 
   if (!hasAgentGuardHook(config)) {
     process.stderr.write(
-      `  ${DIM}No AgentGuard hook found in ${hooksLabel}. Nothing to remove.${RESET}\n\n`,
+      `  ${DIM}No AgentGuard hook found in ${hooksLabel}. Nothing to remove.${RESET}\n\n`
     );
     return;
   }
 
   const filterByCommand = (entries: HookEntry[]) =>
     entries.filter((entry) => {
-      const cmd = entry.bash || "";
+      const cmd = entry.bash || '';
       return !cmd.includes(HOOK_MARKER);
     });
 
@@ -222,18 +207,18 @@ function removeHooks(hooksPath: string, hooksLabel: string): void {
     if (config.hooks.postToolUse.length === 0) delete config.hooks.postToolUse;
   }
 
-  writeFileSync(hooksPath, JSON.stringify(config, null, 2), "utf8");
+  writeFileSync(hooksPath, JSON.stringify(config, null, 2), 'utf8');
 
   process.stderr.write(
-    `  ${FG.green}\u2713${RESET}  Hooks removed from ${FG.cyan}${hooksLabel}${RESET}\n`,
+    `  ${FG.green}\u2713${RESET}  Hooks removed from ${FG.cyan}${hooksLabel}${RESET}\n`
   );
   process.stderr.write(
-    `  ${DIM}AgentGuard governance will no longer monitor in Copilot CLI.${RESET}\n\n`,
+    `  ${DIM}AgentGuard governance will no longer monitor in Copilot CLI.${RESET}\n\n`
   );
 }
 
 const STARTER_POLICY_TEMPLATE = (
-  mode: EnforcementMode,
+  mode: EnforcementMode
 ) => `# AgentGuard policy — safety rules for AI coding agents.
 # Customize this file to match your project's security requirements.
 # Docs: https://github.com/AgentGuardHQ/agent-guard
@@ -311,14 +296,14 @@ rules:
 `;
 
 const POLICY_CANDIDATES = [
-  "agentguard.yaml",
-  "agentguard.yml",
-  "agentguard.json",
-  ".agentguard.yaml",
-  ".agentguard.yml",
+  'agentguard.yaml',
+  'agentguard.yml',
+  'agentguard.json',
+  '.agentguard.yaml',
+  '.agentguard.yml',
 ];
 
-function generateStarterPolicy(mode: EnforcementMode = "guide"): boolean {
+function generateStarterPolicy(mode: EnforcementMode = 'guide'): boolean {
   const repoRoot = resolveMainRepoRoot();
   for (const candidate of POLICY_CANDIDATES) {
     if (existsSync(join(repoRoot, candidate))) {
@@ -326,139 +311,113 @@ function generateStarterPolicy(mode: EnforcementMode = "guide"): boolean {
     }
   }
 
-  const policyPath = join(repoRoot, "agentguard.yaml");
-  writeFileSync(policyPath, STARTER_POLICY_TEMPLATE(mode), "utf8");
+  const policyPath = join(repoRoot, 'agentguard.yaml');
+  writeFileSync(policyPath, STARTER_POLICY_TEMPLATE(mode), 'utf8');
   process.stderr.write(
-    `  ${FG.green}\u2713${RESET}  Policy created: ${FG.cyan}agentguard.yaml${RESET} (${mode} mode)\n`,
+    `  ${FG.green}\u2713${RESET}  Policy created: ${FG.cyan}agentguard.yaml${RESET} (${mode} mode)\n`
   );
   return true;
 }
 
-function showProtectionSummary(
-  policyGenerated: boolean,
-  mode: EnforcementMode = "guide",
-): void {
-  process.stderr.write("\n");
-  process.stderr.write(
-    `  ${FG.green}${BOLD}AgentGuard is active for Copilot CLI.${RESET}\n\n`,
-  );
+function showProtectionSummary(policyGenerated: boolean, mode: EnforcementMode = 'guide'): void {
+  process.stderr.write('\n');
+  process.stderr.write(`  ${FG.green}${BOLD}AgentGuard is active for Copilot CLI.${RESET}\n\n`);
 
-  if (mode === "guide") {
+  if (mode === 'guide') {
     process.stderr.write(
-      `  ${BOLD}Mode: ${FG.cyan}guide${RESET}${BOLD} — dangerous actions blocked with corrective suggestions${RESET}\n\n`,
+      `  ${BOLD}Mode: ${FG.cyan}guide${RESET}${BOLD} — dangerous actions blocked with corrective suggestions${RESET}\n\n`
     );
     process.stderr.write(`  ${BOLD}Guiding:${RESET}\n`);
     process.stderr.write(
-      `  ${FG.cyan}\u25A0${RESET} ${DIM}Block + suggest${RESET} push to main/master\n`,
+      `  ${FG.cyan}\u25A0${RESET} ${DIM}Block + suggest${RESET} push to main/master\n`
+    );
+    process.stderr.write(`  ${FG.cyan}\u25A0${RESET} ${DIM}Block + suggest${RESET} force push\n`);
+    process.stderr.write(
+      `  ${FG.cyan}\u25A0${RESET} ${DIM}Block + suggest${RESET} writes to .env, .npmrc, SSH keys\n`
     );
     process.stderr.write(
-      `  ${FG.cyan}\u25A0${RESET} ${DIM}Block + suggest${RESET} force push\n`,
+      `  ${FG.cyan}\u25A0${RESET} ${DIM}Block + suggest${RESET} rm -rf, deploy, infra destroy\n`
     );
+  } else if (mode === 'educate') {
     process.stderr.write(
-      `  ${FG.cyan}\u25A0${RESET} ${DIM}Block + suggest${RESET} writes to .env, .npmrc, SSH keys\n`,
-    );
-    process.stderr.write(
-      `  ${FG.cyan}\u25A0${RESET} ${DIM}Block + suggest${RESET} rm -rf, deploy, infra destroy\n`,
-    );
-  } else if (mode === "educate") {
-    process.stderr.write(
-      `  ${BOLD}Mode: ${FG.blue}educate${RESET}${BOLD} — actions allowed with corrective teaching${RESET}\n\n`,
+      `  ${BOLD}Mode: ${FG.blue}educate${RESET}${BOLD} — actions allowed with corrective teaching${RESET}\n\n`
     );
     process.stderr.write(`  ${BOLD}Teaching:${RESET}\n`);
     process.stderr.write(
-      `  ${FG.blue}\u25A0${RESET} ${DIM}Allow + teach${RESET} push to main/master\n`,
+      `  ${FG.blue}\u25A0${RESET} ${DIM}Allow + teach${RESET} push to main/master\n`
+    );
+    process.stderr.write(`  ${FG.blue}\u25A0${RESET} ${DIM}Allow + teach${RESET} force push\n`);
+    process.stderr.write(
+      `  ${FG.blue}\u25A0${RESET} ${DIM}Allow + teach${RESET} writes to .env, .npmrc, SSH keys\n`
     );
     process.stderr.write(
-      `  ${FG.blue}\u25A0${RESET} ${DIM}Allow + teach${RESET} force push\n`,
+      `  ${FG.red}\u25A0${RESET} ${DIM}Block${RESET} secret exposure (always enforced)\n`
     );
+  } else if (mode === 'monitor') {
     process.stderr.write(
-      `  ${FG.blue}\u25A0${RESET} ${DIM}Allow + teach${RESET} writes to .env, .npmrc, SSH keys\n`,
-    );
-    process.stderr.write(
-      `  ${FG.red}\u25A0${RESET} ${DIM}Block${RESET} secret exposure (always enforced)\n`,
-    );
-  } else if (mode === "monitor") {
-    process.stderr.write(
-      `  ${BOLD}Mode: ${FG.yellow}monitor${RESET}${BOLD} — threats are logged, not blocked${RESET}\n\n`,
+      `  ${BOLD}Mode: ${FG.yellow}monitor${RESET}${BOLD} — threats are logged, not blocked${RESET}\n\n`
     );
     process.stderr.write(`  ${BOLD}Monitoring for:${RESET}\n`);
+    process.stderr.write(`  ${FG.yellow}\u25A0${RESET} ${DIM}Warn${RESET} push to main/master\n`);
+    process.stderr.write(`  ${FG.yellow}\u25A0${RESET} ${DIM}Warn${RESET} force push\n`);
     process.stderr.write(
-      `  ${FG.yellow}\u25A0${RESET} ${DIM}Warn${RESET} push to main/master\n`,
+      `  ${FG.yellow}\u25A0${RESET} ${DIM}Warn${RESET} writes to .env, .npmrc, SSH keys\n`
     );
     process.stderr.write(
-      `  ${FG.yellow}\u25A0${RESET} ${DIM}Warn${RESET} force push\n`,
-    );
-    process.stderr.write(
-      `  ${FG.yellow}\u25A0${RESET} ${DIM}Warn${RESET} writes to .env, .npmrc, SSH keys\n`,
-    );
-    process.stderr.write(
-      `  ${FG.red}\u25A0${RESET} ${DIM}Block${RESET} secret exposure (always enforced)\n`,
+      `  ${FG.red}\u25A0${RESET} ${DIM}Block${RESET} secret exposure (always enforced)\n`
     );
   } else {
     process.stderr.write(
-      `  ${BOLD}Mode: ${FG.red}enforce${RESET}${BOLD} — dangerous actions are blocked${RESET}\n\n`,
+      `  ${BOLD}Mode: ${FG.red}enforce${RESET}${BOLD} — dangerous actions are blocked${RESET}\n\n`
     );
     process.stderr.write(`  ${BOLD}Enforcing:${RESET}\n`);
+    process.stderr.write(`  ${FG.red}\u25A0${RESET} ${DIM}Block${RESET} push to main/master\n`);
+    process.stderr.write(`  ${FG.red}\u25A0${RESET} ${DIM}Block${RESET} force push\n`);
     process.stderr.write(
-      `  ${FG.red}\u25A0${RESET} ${DIM}Block${RESET} push to main/master\n`,
+      `  ${FG.red}\u25A0${RESET} ${DIM}Block${RESET} writes to .env, .npmrc, SSH keys\n`
     );
     process.stderr.write(
-      `  ${FG.red}\u25A0${RESET} ${DIM}Block${RESET} force push\n`,
-    );
-    process.stderr.write(
-      `  ${FG.red}\u25A0${RESET} ${DIM}Block${RESET} writes to .env, .npmrc, SSH keys\n`,
-    );
-    process.stderr.write(
-      `  ${FG.red}\u25A0${RESET} ${DIM}Block${RESET} rm -rf, deploy, infra destroy\n`,
+      `  ${FG.red}\u25A0${RESET} ${DIM}Block${RESET} rm -rf, deploy, infra destroy\n`
     );
   }
   process.stderr.write(
-    `  ${FG.green}\u25A0${RESET} ${DIM}Allow${RESET} file reads, file writes (non-sensitive)\n`,
+    `  ${FG.green}\u25A0${RESET} ${DIM}Allow${RESET} file reads, file writes (non-sensitive)\n`
   );
   process.stderr.write(
-    `  ${FG.blue}\u25A0${RESET} ${DIM}Track${RESET} all actions with audit trail\n`,
+    `  ${FG.blue}\u25A0${RESET} ${DIM}Track${RESET} all actions with audit trail\n`
   );
-  process.stderr.write("\n");
+  process.stderr.write('\n');
 
   process.stderr.write(`  ${BOLD}Next steps:${RESET}\n`);
   if (policyGenerated) {
     process.stderr.write(
-      `  ${DIM}1. Edit ${FG.cyan}agentguard.yaml${RESET}${DIM} to customize rules for your project${RESET}\n`,
+      `  ${DIM}1. Edit ${FG.cyan}agentguard.yaml${RESET}${DIM} to customize rules for your project${RESET}\n`
     );
     process.stderr.write(
-      `  ${DIM}2. Start a Copilot CLI session — governance is automatic${RESET}\n`,
+      `  ${DIM}2. Start a Copilot CLI session — governance is automatic${RESET}\n`
     );
     process.stderr.write(
-      `  ${DIM}3. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`,
+      `  ${DIM}3. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`
     );
   } else {
     process.stderr.write(
-      `  ${DIM}1. Start a Copilot CLI session — governance is automatic${RESET}\n`,
+      `  ${DIM}1. Start a Copilot CLI session — governance is automatic${RESET}\n`
     );
     process.stderr.write(
-      `  ${DIM}2. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`,
+      `  ${DIM}2. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`
     );
   }
-  process.stderr.write(
-    `\n  ${DIM}Remove: ${FG.cyan}agentguard copilot-init --remove${RESET}\n\n`,
-  );
-  process.stderr.write(
-    `  ${BOLD}☁  Get team governance & telemetry:${RESET}\n`,
-  );
-  process.stderr.write(
-    `  ${FG.cyan}https://agentguard-cloud.vercel.app/signup${RESET}\n`,
-  );
+  process.stderr.write(`\n  ${DIM}Remove: ${FG.cyan}agentguard copilot-init --remove${RESET}\n\n`);
+  process.stderr.write(`  ${BOLD}☁  Get team governance & telemetry:${RESET}\n`);
+  process.stderr.write(`  ${FG.cyan}https://agentguard-cloud.vercel.app/signup${RESET}\n`);
   process.stderr.write(`  ${DIM}  or run: agentguard cloud signup${RESET}\n`);
-  process.stderr.write("\n");
+  process.stderr.write('\n');
 }
 
 function hasAgentGuardHook(config: HooksConfig): boolean {
-  const allEntries = [
-    ...(config.hooks?.preToolUse || []),
-    ...(config.hooks?.postToolUse || []),
-  ];
+  const allEntries = [...(config.hooks?.preToolUse || []), ...(config.hooks?.postToolUse || [])];
   return allEntries.some((entry) => {
-    const cmd = entry.bash || "";
+    const cmd = entry.bash || '';
     return cmd.includes(HOOK_MARKER);
   });
 }
