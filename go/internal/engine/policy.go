@@ -132,9 +132,10 @@ func matchesRule(ctx action.ActionContext, rule *action.PolicyRule) bool {
 }
 
 // matchesAction checks if an action type matches any of the rule's action patterns.
+// Supports exact match and "*" wildcard (matches any action type).
 func matchesAction(actionType string, patterns action.StringOrSlice) bool {
 	for _, p := range patterns {
-		if p == actionType {
+		if p == "*" || p == actionType {
 			return true
 		}
 	}
