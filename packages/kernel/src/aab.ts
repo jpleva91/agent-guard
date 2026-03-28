@@ -314,6 +314,29 @@ function authorizeIntent(
   const events: DomainEvent[] = [];
 
   if (intent.destructive) {
+    // Evaluate policies to check if a wildcard allow rule explicitly permits this
+    // destructive action. A wildcard ("*") represents the operator's intent to allow
+    // ALL actions, including destructive ones. Without this check, wildcard allow
+    // rules are silently ignored for destructive commands. (#1253)
+    const policyResult = evaluate(intent, policies, evaluateOptions);
+
+    if (policyResult.allowed && policyResult.matchedRule) {
+      // Check if the matching allow rule uses a wildcard action pattern.
+      // Only wildcard patterns override destructive detection — specific action
+      // allow rules (e.g., action: "shell.exec") do NOT override the safety gate.
+      const matchedActions = Array.isArray(policyResult.matchedRule.action)
+        ? policyResult.matchedRule.action
+        : [policyResult.matchedRule.action];
+      const isWildcardAllow = matchedActions.includes('*');
+
+      if (isWildcardAllow) {
+        // Wildcard allow rule matched — respect the operator's explicit intent
+        // to allow everything. The action is still tagged destructive for audit.
+        return { intent, result: policyResult, events };
+      }
+    }
+
+    // No wildcard allow rule matched — deny as destructive.
     const result: EvalResult = {
       allowed: false,
       decision: 'deny',

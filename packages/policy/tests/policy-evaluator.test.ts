@@ -156,6 +156,31 @@ describe('evaluate', () => {
     expect(result.allowed).toBe(false);
   });
 
+  it('wildcard action "*" allow rule matches shell.exec with defaultDeny (#1253)', () => {
+    const policy = makePolicy({
+      rules: [{ action: '*', effect: 'allow', reason: 'Allow all' }],
+    });
+    const result = evaluate(makeIntent({ action: 'shell.exec' }), [policy], { defaultDeny: true });
+    expect(result.allowed).toBe(true);
+    expect(result.reason).toBe('Allow all');
+  });
+
+  it('wildcard action "*" allow rule matches mcp.call with defaultDeny (#1253)', () => {
+    const policy = makePolicy({
+      rules: [{ action: '*', effect: 'allow', reason: 'Allow all' }],
+    });
+    const result = evaluate(makeIntent({ action: 'mcp.call' }), [policy], { defaultDeny: true });
+    expect(result.allowed).toBe(true);
+  });
+
+  it('wildcard action "*" allow rule matches git.push with defaultDeny (#1253)', () => {
+    const policy = makePolicy({
+      rules: [{ action: '*', effect: 'allow', reason: 'Allow all' }],
+    });
+    const result = evaluate(makeIntent({ action: 'git.push' }), [policy], { defaultDeny: true });
+    expect(result.allowed).toBe(true);
+  });
+
   it('matches array of actions in rule', () => {
     const policy = makePolicy({
       rules: [{ action: ['git.push', 'git.merge'], effect: 'deny', reason: 'No git ops' }],

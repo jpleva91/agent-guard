@@ -204,3 +204,101 @@ func TestSeverityFromPolicy(t *testing.T) {
 		t.Errorf("expected severity 4 from policy, got %d", result.Severity)
 	}
 }
+
+func TestWildcardAllowMatchesShellExec(t *testing.T) {
+	// Bug #1253: action: "*" allow rule must match shell.exec with defaultDeny
+	policy := &action.LoadedPolicy{
+		ID: "wildcard", Name: "Wildcard", Severity: 3,
+		Rules: []action.PolicyRule{
+			{Action: action.StringOrSlice{"*"}, Effect: "allow", Reason: "Allow all"},
+		},
+	}
+	ctx := action.ActionContext{Action: "shell.exec", Command: "ls -la"}
+	result := engine.Evaluate(ctx, []*action.LoadedPolicy{policy}, &engine.EvalOptions{DefaultDeny: true})
+	if !result.Allowed {
+		t.Errorf("expected allowed for shell.exec with wildcard allow, got denied: %s", result.Reason)
+	}
+}
+
+func TestWildcardAllowMatchesMcpCall(t *testing.T) {
+	// Bug #1253: action: "*" must match mcp.call
+	policy := &action.LoadedPolicy{
+		ID: "wildcard", Name: "Wildcard", Severity: 3,
+		Rules: []action.PolicyRule{
+			{Action: action.StringOrSlice{"*"}, Effect: "allow", Reason: "Allow all"},
+		},
+	}
+	ctx := action.ActionContext{Action: "mcp.call"}
+	result := engine.Evaluate(ctx, []*action.LoadedPolicy{policy}, &engine.EvalOptions{DefaultDeny: true})
+	if !result.Allowed {
+		t.Errorf("expected allowed for mcp.call with wildcard allow, got denied: %s", result.Reason)
+	}
+}
+
+func TestWildcardDenyBlocksEverything(t *testing.T) {
+	// Wildcard deny should block all actions
+	policy := &action.LoadedPolicy{
+		ID: "deny-all", Name: "Deny All", Severity: 5,
+		Rules: []action.PolicyRule{
+			{Action: action.StringOrSlice{"*"}, Effect: "deny", Reason: "Block all"},
+		},
+	}
+	for _, actionType := range []string{"shell.exec", "file.write", "git.push", "mcp.call"} {
+		ctx := action.ActionContext{Action: actionType}
+		result := engine.Evaluate(ctx, []*action.LoadedPolicy{policy}, &engine.EvalOptions{DefaultDeny: true})
+		if result.Allowed {
+			t.Errorf("expected denied for %s with wildcard deny", actionType)
+		}
+	}
+}
+
+func TestNamespaceWildcardMatch(t *testing.T) {
+	// Namespace wildcard: git.* should match git.push but not file.write
+	policy := &action.LoadedPolicy{
+		ID: "ns-wildcard", Name: "NS Wildcard", Severity: 3,
+		Rules: []action.PolicyRule{
+			{Action: action.StringOrSlice{"git.*"}, Effect: "deny", Reason: "No git ops"},
+		},
+	}
+	// git.push should be denied
+	ctx1 := action.ActionContext{Action: "git.push"}
+	result1 := engine.Evaluate(ctx1, []*action.LoadedPolicy{policy}, &engine.EvalOptions{DefaultDeny: false})
+	if result1.Allowed {
+		t.Error("expected denied for git.push with git.* deny rule")
+	}
+	// git.commit should be denied
+	ctx2 := action.ActionContext{Action: "git.commit"}
+	result2 := engine.Evaluate(ctx2, []*action.LoadedPolicy{policy}, &engine.EvalOptions{DefaultDeny: false})
+	if result2.Allowed {
+		t.Error("expected denied for git.commit with git.* deny rule")
+	}
+	// file.write should NOT be denied (different namespace)
+	ctx3 := action.ActionContext{Action: "file.write"}
+	result3 := engine.Evaluate(ctx3, []*action.LoadedPolicy{policy}, &engine.EvalOptions{DefaultDeny: false})
+	if !result3.Allowed {
+		t.Error("expected allowed for file.write with git.* deny rule")
+	}
+}
+
+func TestDenyThenWildcardAllow(t *testing.T) {
+	// Deny specific action, then allow everything else with wildcard
+	policy := &action.LoadedPolicy{
+		ID: "mixed", Name: "Mixed", Severity: 3,
+		Rules: []action.PolicyRule{
+			{Action: action.StringOrSlice{"git.push"}, Effect: "deny", Branches: []string{"main"}, Reason: "No push to main"},
+			{Action: action.StringOrSlice{"*"}, Effect: "allow", Reason: "Allow everything else"},
+		},
+	}
+	// git.push to main should be denied
+	ctx1 := action.ActionContext{Action: "git.push", Branch: "main"}
+	result1 := engine.Evaluate(ctx1, []*action.LoadedPolicy{policy}, &engine.EvalOptions{DefaultDeny: true})
+	if result1.Allowed {
+		t.Error("expected denied for git.push to main")
+	}
+	// shell.exec should be allowed via wildcard
+	ctx2 := action.ActionContext{Action: "shell.exec", Command: "ls -la"}
+	result2 := engine.Evaluate(ctx2, []*action.LoadedPolicy{policy}, &engine.EvalOptions{DefaultDeny: true})
+	if !result2.Allowed {
+		t.Errorf("expected allowed for shell.exec via wildcard, got denied: %s", result2.Reason)
+	}
+}

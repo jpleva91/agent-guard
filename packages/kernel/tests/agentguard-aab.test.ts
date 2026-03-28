@@ -951,6 +951,76 @@ describe('agentguard/core/aab', () => {
       expect(result.events.length).toBeGreaterThan(0);
     });
 
+    // --- Issue #1253: wildcard action "*" must match all action types ---
+    it('wildcard allow rule overrides destructive detection for shell.exec (#1253)', () => {
+      const policies = [
+        {
+          id: 'wildcard-allow',
+          name: 'Allow All',
+          rules: [{ action: '*', effect: 'allow' as const, reason: 'Allow everything' }],
+          severity: 3,
+        },
+      ];
+      const result = authorize(
+        { tool: 'Bash', command: 'rm -rf /tmp/test' },
+        policies,
+        { defaultDeny: true }
+      );
+      expect(result.result.allowed).toBe(true);
+      expect(result.result.reason).toBe('Allow everything');
+    });
+
+    it('specific shell.exec allow does NOT override destructive detection (#1253)', () => {
+      const policies = [
+        {
+          id: 'shell-allow',
+          name: 'Shell Allow',
+          rules: [{ action: 'shell.exec', effect: 'allow' as const, reason: 'Shell allowed' }],
+          severity: 3,
+        },
+      ];
+      const result = authorize(
+        { tool: 'Bash', command: 'rm -rf /tmp/test' },
+        policies,
+        { defaultDeny: true }
+      );
+      expect(result.result.allowed).toBe(false);
+      expect(result.result.reason).toContain('Destructive command detected');
+    });
+
+    it('destructive commands denied when no policies loaded (#1253)', () => {
+      const result = authorize(
+        { tool: 'Bash', command: 'dd if=/dev/zero of=/dev/sda' },
+        [],
+        { defaultDeny: false }
+      );
+      expect(result.result.allowed).toBe(false);
+      expect(result.result.reason).toContain('Destructive command detected');
+    });
+
+    it('wildcard allow with deny rule — deny takes precedence for destructive (#1253)', () => {
+      const policies = [
+        {
+          id: 'mixed',
+          name: 'Mixed',
+          rules: [
+            { action: 'shell.exec', effect: 'deny' as const, reason: 'Shell blocked' },
+            { action: '*', effect: 'allow' as const, reason: 'Allow rest' },
+          ],
+          severity: 3,
+        },
+      ];
+      const result = authorize(
+        { tool: 'Bash', command: 'rm -rf /tmp/test' },
+        policies,
+        { defaultDeny: true }
+      );
+      // Deny rule fires first (shell.exec matches), so even though destructive
+      // check would also deny, the policy deny takes effect in the evaluator.
+      // But the destructive gate still returns deny because the evaluator denied.
+      expect(result.result.allowed).toBe(false);
+    });
+
     it('generates POLICY_DENIED events for policy violations', () => {
       const policies = [
         {
