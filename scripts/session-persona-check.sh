@@ -17,6 +17,6 @@ echo "[AgentGuard] No agent identity set for this session."
 echo "Project: $PROJECT | Model: $MODEL"
 echo "Please ask the user:"
 echo "  1. What role are you working in? (developer / reviewer / ops / security / planner)"
-echo "  2. Who is driving this session? (human / claude-code / copilot / ci)"
+echo "  2. Who is driving this session? (human / claude-code / copilot / opencode / ci)"
 echo "Then run: scripts/write-persona.sh <driver> <role>"
 exit 0

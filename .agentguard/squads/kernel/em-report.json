@@ -1,72 +1,33 @@
 {
-  "generatedAt": "2026-03-28T06:10:00.000Z",
+  "generatedAt": "2026-03-28T17:30:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
-  "health": "green",
-  "summary": "Strong cycle. Prior sprint 100% complete — all 8 issues closed (#955, #957, #964, #1119, #1118, #1142, #1148, #1144). PR #1153 merged (rebased + CI green — closes #1119). Merged 3 additional PRs this cycle: #1183 (trust command tests, 15 cases), #1179 (roadmap triage), #1185 (director evening report) — all 5 CI checks green. Commented on #1151 (HQ EM midnight report, test-and-build failing pre-regression-fix) requesting rebase. New sprint: reduce false-positive governance denials (#1182 agent-identity chicken-and-egg, #1139 $(date) command scanner). 0 open kernel PRs. 0 P0/P1 code issues.",
+  "health": "yellow",
+  "summary": "Yellow cycle — #1202 AAB normalization gap persists (~700 unintended denials/day), senior coder has not yet opened a branch for sprint issues. PR housekeeping: closed #1225 (superseded by #1230), flagged #1230 needs rebase. Sprint pivot confirmed: #1182 closed, new sprint #1209 (MCP prefix, sequence 1) → #1202 (KE-2 AAB, sequence 2) → #1208 (heredoc verify, sequence 3) → #1139 (date scanner, sequence 4). CI 4394/4394. #1186 swarm P0 still open — 4th consecutive cycle.",
   "prQueue": {
-    "open": 0,
-    "prs": []
+    "open": 1,
+    "prs": [
+      {
+        "number": 1230,
+        "title": "chore(kernel-em): EM report 2026-03-28T14:30Z — yellow, sprint to #1202 KE-2 + escalate #1186",
+        "ci": "5/5 green",
+        "status": "needs-rebase",
+        "note": "CI all green. Branch behind main after #1227/#1228 merged post-open. Needs rebase before merge. Branch: agent/kernel-em-20260328-143000"
+      }
+    ]
   },
-  "mergedThisCycle": [
+  "closedThisCycle": [
     {
-      "number": 1153,
-      "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
-      "mergedAt": "2026-03-28T05:00:00.000Z",
-      "closesIssues": [1119],
-      "checks": { "total": 5, "passed": 5, "names": ["lint", "test-and-build", "rust-kernel", "analyze", "CodeQL"] },
-      "note": "Rebased by kernel-sr on main. Merged after CI green post-rebase."
-    },
-    {
-      "number": 1183,
-      "title": "test: add tests for cli/commands/trust",
-      "mergedAt": "2026-03-28T06:10:00.000Z",
-      "closesIssues": [],
-      "checks": { "total": 5, "passed": 5 },
-      "note": "15 test cases covering trust.ts command — previously untested. CI all green."
-    },
-    {
-      "number": 1179,
-      "title": "chore(roadmap): triage backlog + sync roadmap to v2.8.4",
-      "mergedAt": "2026-03-28T06:10:00.000Z",
-      "closesIssues": [],
-      "checks": { "total": 5, "passed": 5 },
-      "note": "Backlog hygiene + roadmap sync. CI all green."
-    },
-    {
-      "number": 1185,
-      "title": "chore(director): evening report 2026-03-28T21:00Z — swarm yellow, 3 PRs mergeable",
-      "mergedAt": "2026-03-28T06:10:00.000Z",
-      "closesIssues": [],
-      "checks": { "total": 5, "passed": 5 },
-      "note": "Director operational report. CI all green."
+      "number": 1225,
+      "title": "chore(kernel-em): EM report 2026-03-28T11:30Z — sprint pivot to #1202 KE-2 AAB normalization",
+      "closedAs": "superseded",
+      "note": "Superseded by #1230 (14:30Z). Closed to keep PR queue clean and within budget."
     }
   ],
-  "heldPRs": [
-    {
-      "number": 1184,
-      "title": "docs: sync documentation with codebase",
-      "reason": "Partial CI — only analyze and CodeQL in statusCheckRollup; lint and test-and-build absent. Holding until all 5 checks green.",
-      "action": "Monitor — merge when CI complete"
-    },
-    {
-      "number": 1151,
-      "title": "chore(hq): EM report 2026-03-28T06:00 — cross-repo triage, P1 dogfood escalation",
-      "reason": "test-and-build FAILED — PR opened before CI regression fix (#1153). Commented requesting rebase.",
-      "action": "Waiting for HQ EM rebase onto main"
-    },
-    {
-      "number": 1150,
-      "title": "chore(studio): EM report 2026-03-28T03:00 — sprint delivered, #472 ready to merge",
-      "reason": "Null statusCheckRollup (no CI runs). HQ EM flagged merge conflicts.",
-      "action": "Waiting for Studio EM rebase"
-    }
-  ],
-  "closedThisCycle": [],
-  "newIssues": [],
+  "mergedThisCycle": [],
   "loopGuards": {
     "prBudget": {
-      "open": 0,
+      "open": 1,
       "max": 3,
       "pass": true
     },
@@ -80,22 +41,48 @@
     }
   },
   "triage": {
-    "p0Issues": 0,
-    "p1Issues": 0,
-    "newAssignments": [
+    "p0Issues": 1,
+    "p1Issues": 2,
+    "openSprintIssues": [
       {
-        "number": 1182,
-        "title": "[dogfood] agent-identity-bridge blocked by No Governance Self-Modification invariant — chicken-and-egg identity setup failure",
+        "number": 1209,
+        "title": "[dogfood] github-mcp-server-actions_list blocked despite allow rule — MCP prefix match",
         "priority": "P1",
+        "effort": "~1h",
+        "sequence": 1,
         "assignedTo": "senior",
-        "note": "All scheduled agents cannot set persona identity. Invariant fires on .agentguard/persona.env writes — needs path exemption for agent-identity bootstrap files."
+        "technicalNote": "aab.ts uses exact-match on MCP server name. Fix: change to startsWith() for mcp.call target matching. All github-mcp-server-* tools affected (actions_list, get_commit, list_commits, etc.).",
+        "status": "unstarted"
+      },
+      {
+        "number": 1202,
+        "title": "AAB normalization failure — 3,825+ unintended default-deny decisions (KE-2 ActionContext)",
+        "priority": "P1",
+        "effort": "3-5d",
+        "sequence": 2,
+        "assignedTo": "senior",
+        "technicalNote": "Strip rtk/time/timeout prefixes in aab.ts before pattern matching. Classify embedded sub-operations in compound commands. Emit UnknownActionType WARNING event when action_type = unknown. Audit tool-action-map.json for missing entries. Key files: packages/kernel/src/aab.ts, packages/core/src/data/tool-action-map.json.",
+        "status": "unstarted"
+      },
+      {
+        "number": 1208,
+        "title": "Heredoc with governance-protected path strings triggers false-positive No Governance Self-Modification",
+        "priority": "P1",
+        "effort": "2h",
+        "sequence": 3,
+        "assignedTo": "senior",
+        "technicalNote": "PR #1212 fixed quoted-arg case. Verify if commandViolation full-string includes check at definitions.ts:1229-1232 still fires on heredoc body text containing .agentguard/ paths. May be partially resolved.",
+        "status": "unstarted"
       },
       {
         "number": 1139,
-        "title": "[dogfood] Safe date command substitution inside gh pr comment body blocked as dangerous shell expansion",
+        "title": "[dogfood] $(date +format) blocked as dangerous shell expansion",
         "priority": "P2",
+        "effort": "2-3h",
+        "sequence": 4,
         "assignedTo": "senior",
-        "note": "packages/matchers/src/command-scanner.ts over-matches $(date +format). Needs safe-subshell allowlist for known read-only patterns."
+        "technicalNote": "Locate blocking source in packages/matchers/src/command-scanner.ts. Add safe read-only subshell allowlist: $(date ...), $(pwd), $(whoami), $(uname ...). May be AI safety layer — investigate first.",
+        "status": "unstarted"
       }
     ],
     "notableIssues": [
@@ -103,14 +90,9 @@
         "number": 1186,
         "title": "Swarm Health Alert — 2026-03-28",
         "label": "priority:P0",
-        "status": "ops-level",
-        "note": "85.7% stuck worker rate — 12 stuck agents, 18 dead PID files, 2 cron collisions. Not kernel code. Escalated to director/ops. Actions: git worktree prune, clean /tmp PIDs, fix schedule.json cron collisions."
-      },
-      {
-        "number": 1177,
-        "title": "[dogfood] github.pr.* actions missing from policy allow-list",
-        "status": "not-applicable-to-kernel-repo",
-        "note": "agentguard.yaml in THIS repo already has github.* allow rules (added in earlier sprint). Issue was filed against cloud repo policy — cloud squad to fix."
+        "status": "OPEN — 4th consecutive EM cycle",
+        "owner": "ops/director",
+        "note": "Not kernel-code-owned. 85.7% stuck worker rate (12/14 agents). Required ops actions: git worktree prune, clean 18 dead PID files in /tmp/, fix cron collisions in server/schedule.json, verify cron daemon active, address 4x oversubscription (133 agents vs 32 max_workers)."
       }
     ]
   },
@@ -120,81 +102,74 @@
       "type": "ops",
       "priority": "P0",
       "issue": 1186,
-      "description": "Swarm health P0: 85.7% workers stuck (12/14). Root batch failure ~01:17-01:44 UTC March 27 — kernel-sr, pr-merger, workspace-pr-review agents stopped simultaneously. Likely shared cron/scheduler failure.",
+      "description": "Swarm health P0: 4th consecutive EM cycle unresolved. 85.7% workers stuck (12/14). Root batch failure ~01:17-01:44 UTC March 27. Human intervention required.",
       "recommendedActions": [
         "git worktree prune (remove stale worktrees — no live processes)",
-        "rm /tmp/copilot-detached-*.pid and other dead PID files (18 total)",
-        "Resolve cron collisions in server/schedule.json: 0 6 * * * and 45 */6 * * *",
-        "Verify cron daemon running — /tmp/agentguard-runs/ absent suggests harness may be inactive",
+        "Clean 18 dead PID files in /tmp/ (copilot-detached-*.pid etc.)",
+        "Fix cron collisions in server/schedule.json: 0 6 * * * and 45 */6 * * *",
+        "Verify cron daemon is active — /tmp/agentguard-runs/ absent suggests harness inactive",
         "Address 4x oversubscription: 133 enabled agents vs 32 max_workers"
       ],
-      "owner": "ops/director"
+      "owner": "ops/director",
+      "cycles": 4
     }
   ],
   "metrics": {
     "prsOpened": 0,
-    "prsMerged": 4,
-    "prsClosed": 0,
+    "prsMerged": 0,
+    "prsClosed": 1,
     "issuesClosed": 0,
+    "sprintIssuesOpen": 4,
     "governanceDenials": 0,
     "retries": 0
   },
   "testHealth": {
-    "total": 4364,
-    "passed": 4364,
+    "total": 4394,
+    "passed": 4394,
     "failed": 0,
     "packages": 18,
     "status": "all_passing",
-    "note": "Baseline from QA run 2026-03-28T00:52Z. No new test runs this cycle."
+    "note": "Baseline from QA run 2026-03-28T06:50Z. No regressions. No new QA run this cycle."
   },
   "sprintStatus": {
-    "previousGoal": "Close #1119 (heredoc false-positive) + Go kernel deeper delegation (#955 follow-on)",
-    "previousCompletion": "100%",
-    "previousIssues": {
-      "1119": "CLOSED (PR #1153 merged post-rebase)",
-      "955": "CLOSED (upstream)",
-      "957": "CLOSED (upstream)",
-      "964": "CLOSED (PR #969 merged 2026-03-26)",
-      "1118": "CLOSED (PR #1147)",
-      "1142": "CLOSED (PR #1147)",
-      "1148": "CLOSED (PR #1168)",
-      "1144": "CLOSED (PR #1168 + manual)"
+    "goal": "#1202 KE-2 (AAB normalization) + #1209 (MCP prefix) + #1208 (heredoc verify) + #1139 ($(date) scanner)",
+    "closedIssues": {
+      "1182": "CLOSED — PR #1212 merged (persona.env operational exemption in no-governance-self-modification)"
     },
-    "newGoal": "Reduce false-positive governance denials: #1182 (agent-identity chicken-and-egg) + #1139 ($(date) command scanner false positive)",
-    "newIssues": [1182, 1139],
-    "completionPercent": 0,
-    "remainingWork": "Both issues unstarted — senior coder to claim #1182 first"
+    "openIssues": {
+      "1209": "OPEN — unstarted, sequence 1 (warm-up ~1h)",
+      "1202": "OPEN — unstarted, sequence 2 (flagship 3-5d)",
+      "1208": "OPEN — unstarted, sequence 3 (verify 2h)",
+      "1139": "OPEN — unstarted, sequence 4 (parallel 2-3h)"
+    },
+    "seniorStatus": "ready — no branch opened yet",
+    "completionPercent": 20,
+    "remainingWork": "4 of 5 sprint issues open. Senior to claim #1209 first."
   },
   "escalationRules": {
     "triggered": {
       "twoPlusFailingCI": false,
       "persistentBlocker": false,
-      "governanceDenialsExceeded": false
+      "governanceDenialsExceeded": false,
+      "p0PersistsAcrossRuns": true
     },
-    "notes": "No code escalations. Ops escalation (#1186 swarm P0) not kernel-squad-owned — flagged for director."
+    "notes": "#1186 P0 swarm health persists 4+ cycles — ops escalation repeated. No kernel code escalations. Senior unstarted on sprint — yellow health continues."
   },
   "dogfoodObservations": [
     {
-      "type": "observation",
-      "issue": null,
-      "description": "scripts/write-persona.sh lacked execute permission — required manual chmod +x before startup hook could run. Causes confusing 'Permission denied' error at session start for every new worktree.",
-      "severity": "low",
-      "actionable": true,
-      "suggestedFix": "Commit chmod +x for scripts/write-persona.sh (git update-index --chmod=+x), or add to postinstall."
-    },
-    {
-      "type": "confirmed-dogfood",
-      "issue": 1182,
-      "description": "Agent-identity-bridge blocked by self-modification invariant confirmed active. All scheduled agents in cloud/analytics unable to set persona identity for telemetry enrichment — new sprint P1.",
+      "type": "live-impact",
+      "issue": 1202,
+      "description": "Every rtk git * and rtk gh * command in this EM run would be classified as unknown action type before the #1202 fix. The AAB normalization gap is live and affects the EM workflow itself — confirms ~700 unintended denials/day figure is accurate.",
       "severity": "medium",
       "actionable": true
     },
     {
-      "type": "confirmed-dogfood",
-      "issue": 1139,
-      "description": "$(date +format) in gh pr comment bodies blocked as dangerous shell expansion. Low severity but high frequency — every agent that embeds timestamps in comments hits this.",
+      "type": "observation",
+      "issue": null,
+      "description": "PR #1230 blocked by branch protection (HEAD behind main, no auto-merge). EM report PRs accumulate faster than they can be rebased. Consider whether EM report PRs need full CI gating — they only update state JSON files, not production code.",
       "severity": "low",
-      "actionable": true
+      "actionable": true,
+      "suggestedFix": "Option A: exempt .agentguard/squads/** from CI gating. Option B: add rebase step to EM workflow before pushing. Option C: accept manual rebase by next EM cycle."
     }
   ]
 }

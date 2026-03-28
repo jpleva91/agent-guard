@@ -2,7 +2,7 @@
 # write-persona.sh — Writes .agentguard/persona.env for session identity
 # Usage: scripts/write-persona.sh <driver> <role> [trust-tier] [autonomy]
 #
-# driver: human | claude-code | copilot | ci
+# driver: human | claude-code | copilot | opencode | ci
 # role:   developer | reviewer | ops | security | planner
 
 set -euo pipefail
