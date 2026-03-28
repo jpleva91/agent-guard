@@ -1,81 +1,99 @@
 {
   "squad": "marketing",
-  "timestamp": "2026-03-28T20:00:00.000Z",
+  "timestamp": "2026-03-28T20:15:00.000Z",
   "health": "yellow",
-  "summary": "Productive cycle: 5 site stat fixes shipped (PR #1224), demo section de-placeholdered, OWASP blog post drafted (issue #925, 4th cycle escalated to EM direct). Governance catch-22 (#995) still blocking content agents for 4th consecutive cycle. v2.8.x announcement (#934) and user capture funnel (#1084) remain open. v2.8.5 is current release — site needs version-aware messaging.",
+  "summary": "Site accuracy pass complete — 10 stale stat references fixed across site/index.html (PR #1258). Sprint issues #925 and #1084 confirmed closed; #934 superseded by new v2.9.x announcement issue (#1260). Governance catch-22 (#995) still blocking content agents for 5th consecutive cycle. v2.9.1 shipped without announcement content.",
   "contentPipeline": {
     "drafts": 1,
     "published": 0,
-    "scheduled": 3,
-    "weeklyContentPack": "#1004 closed — content generated but unpublished (agent blocked 4 cycles)"
+    "scheduled": 2,
+    "notes": "OWASP blog post at docs/blog/owasp-agentic-top10-agentguard.md — ready to publish. v2.9.x announcement needs drafting (#1260)."
   },
   "siteAlignment": {
     "status": "improved",
     "fixedThisCycle": [
-      "PR #1224: tests 2,637→4,394 (QA report 2026-03-28)",
-      "PR #1224: destructive patterns 87→93",
-      "PR #1224: event kinds 46→47",
-      "PR #1224: action types 40→41",
-      "PR #1224: invariants 22→24 (added no-env-var-modification)",
-      "PR #1224: terminal animation synced to 4,394",
-      "PR #1224: demo 'coming soon' replaced with live terminal walkthrough"
+      "PR #1258: og:description 22 → 24 invariants",
+      "PR #1258: JSON-LD description 22 → 24 invariants",
+      "PR #1258: Hero paragraph 22 → 24 built-in safety checks",
+      "PR #1258: Production-Grade Kernel card: 22 invariants/87 patterns → 24/93",
+      "PR #1258: Policy section bullet: 22 invariants + 87 patterns → 24 + 93",
+      "PR #1258: Safety Invariants card heading: 21 → 24",
+      "PR #1258: Destructive Patterns card heading: 87 → 93",
+      "PR #1258: Full Audit Trail card: 49 → 47 event kinds",
+      "PR #1258: Pipeline Emit stage: 49 → 47 event kinds",
+      "PR #1258: Invariants section h2: 21 → 24 Built-in Invariants"
     ],
     "staleContent": [
-      "Swarm section: '26 agents across 5 tiers' — actual is 9 squads (count unverified, needs squad manifest audit)",
-      "No version badge on landing page — current release is v2.8.5",
-      "User capture funnel still missing (#1084 open, v3.0 blocker)"
-    ]
+      "Swarm section: '26 agents across 5 tiers' — actual is 9 squads (agent count unverified, audit filed as #1259)",
+      "No version badge — current release is v2.9.1, site has no release badge"
+    ],
+    "dataVerification": {
+      "invariants": "24 — verified: grep 'name:' packages/invariants/src/definitions.ts | wc -l",
+      "destructivePatterns": "93 — verified: wc on packages/core/src/data/destructive-patterns.json",
+      "eventKinds": "47 — verified: grep '^export const.*EventKind' packages/events/src/schema.ts | wc -l",
+      "tests": "4394 — from QA report 2026-03-28",
+      "actionTypes": "41 — from PR #1224"
+    }
   },
   "sprintIssues": {
-    "closedThisCycle": [
-      { "issue": "#938", "title": "User capture funnel v1", "note": "Superseded by #1084 (ROADMAP scope)" },
-      { "issue": "#1007", "title": "Demo video placeholder", "note": "Replaced with terminal walkthrough" },
-      { "issue": "#1004", "title": "Weekly content pack", "note": "Closed — content exists at docs/blog but unpublished" }
+    "closedPreviousCycles": [
+      { "issue": "#925", "title": "OWASP Agentic Top 10 blog post", "note": "Confirmed closed. Draft at docs/blog/owasp-agentic-top10-agentguard.md — ready for LinkedIn publication." },
+      { "issue": "#1084", "title": "User capture funnel (v3.0 ROADMAP)", "note": "Confirmed closed." },
+      { "issue": "#938", "title": "User capture funnel v1", "note": "Previously closed." },
+      { "issue": "#1007", "title": "Demo video placeholder", "note": "Previously closed." },
+      { "issue": "#1004", "title": "Weekly content pack", "note": "Previously closed." }
     ],
     "active": [
-      { "issue": "#925", "title": "OWASP blog post", "status": "draft-ready", "note": "Draft at docs/blog/owasp-agentic-top10-agentguard.md — ready for LinkedIn publication" },
-      { "issue": "#934", "title": "v2.7.x-v2.8.x announcement", "status": "open", "note": "Content pack #1004 has excellent material. Needs human to post or agent unblock." },
-      { "issue": "#1084", "title": "User capture funnel (v3.0 ROADMAP)", "status": "open", "note": "README CTA, GitHub Discussions, CLI first-run prompt. v3.0 release blocker." }
+      { "issue": "#934", "title": "v2.7.x announcement", "status": "open — superseded", "note": "Scope too old; v2.9.1 shipped. Close after #1260 drafts v2.9.x announcement." },
+      { "issue": "#1259", "title": "Swarm section audit — 26 agents stale", "status": "new", "note": "Needs squad manifest audit before fix." },
+      { "issue": "#1260", "title": "v2.9.x announcement content", "status": "new", "note": "v2.9.0 wildcard fix is newsworthy — security angle available." }
     ]
   },
   "prQueue": {
-    "open": 1,
-    "reviewed": 0,
-    "mergeable": 1,
-    "prNumbers": ["#1224"],
-    "recentlyMerged": ["#1011", "#1009", "#1005"]
+    "open": 2,
+    "reviewable": 1,
+    "mergeable": 0,
+    "prNumbers": ["#1255", "#1258"],
+    "notes": "#1255 is kernel/matchers (not marketing); #1258 is site stats fix (marketing, awaiting CI)"
+  },
+  "contentAccuracyAudit": {
+    "pattern": "3rd consecutive cycle with stale stats discovered — PR #1224 fixed stats bar but missed inline text references. Root cause: hardcoded numbers in 10+ locations with no build-time sync. Recommend: add a script that reads invariant/pattern counts from source and patches index.html at deploy time.",
+    "risk": "medium — stale numbers are embarrassing but not product safety issues"
   },
   "blockers": [
     {
       "severity": "high",
-      "description": "marketing-content-agent blocked by governance catch-22 (#995): hook blocks pnpm install before kernel is installed",
-      "impact": "Content agents silent for 4 consecutive cycles — OWASP post, v2.8.x announcement, weekly content pack all in draft limbo",
-      "requiredAction": "Human to run pnpm install in worktree, or ops to patch hook to allow bootstrapping. Sprint plan #1223 does not address this — needs separate ops ticket."
+      "issue": "#995",
+      "description": "Content agents blocked by governance catch-22: hook blocks pnpm install before kernel exists",
+      "cyclesBlocked": 5,
+      "impact": "OWASP post, v2.8.x/v2.9.x announcements all in draft limbo. Content pipeline silent.",
+      "requiredAction": "Human to run pnpm install in content-agent worktree, or ops to patch hook to allow bootstrapping. 5 consecutive cycles — escalating to red next cycle."
     },
     {
       "severity": "medium",
-      "description": "Swarm section shows '26 agents across 5 tiers' — actual squad count is 9",
-      "impact": "Understates project maturity",
-      "requiredAction": "Audit squad manifests to get actual agent count, then update swarm section text"
+      "issue": "#1259",
+      "description": "Swarm section shows '26 agents across 5 tiers' — actual is 9 squads",
+      "impact": "Content accuracy risk on a key marketing section",
+      "requiredAction": "Audit squad manifests for actual agent count, then update site"
     }
   ],
   "escalations": [
-    "HIGH: Content agents silent for 4 consecutive cycles. Human intervention required for #995.",
-    "MEDIUM: OWASP blog post draft is complete at docs/blog/ — needs human to publish to LinkedIn.",
-    "MEDIUM: Weekly content pack (#1004) has 5 ready-to-post pieces (Go kernel, aguard rebrand, studio wizard, dogfooding, week-in-review). Needs publication.",
-    "LOW: v2.8.x releases shipped since last content cycle — no public announcement yet."
+    "HIGH: Content agents silent for 5 consecutive cycles. #995 unresolved. Human intervention required.",
+    "MEDIUM: OWASP blog post draft complete at docs/blog/ — needs human to publish to LinkedIn.",
+    "MEDIUM: v2.9.1 shipped with a significant policy fix (wildcard → shell.exec enforcement). Security-angle announcement in #1260 should be prioritized.",
+    "LOW: Close #934 (v2.7.x) — superseded by #1260 (v2.9.x)."
   ],
   "productInsights": [
-    "v2.8.5 is current release — adds Codex CLI/Gemini CLI support, agent identity telemetry, idempotent hooks. Strong v2.8.x announcement story.",
-    "PR #1213 (no-governance-self-modification scoping) merged — resolves cluster of false-positive blocks. Good dogfood narrative.",
-    "3,825+ unintended governance denials from AAB normalization gap (#1202) — when fixed, compelling story: 'we found and fixed a systemic governance flaw in our own tool'.",
-    "9 active squads means 'autonomous agent swarm' narrative is highly credible — but site still says 26 agents/5 tiers"
+    "v2.9.1 is current release. Wildcard policy fix is the biggest marketing story: 'if you use action: \"*\" in your policy, you were not blocking shell commands until v2.9.0. Upgrade now.' Strong security-angle CTA.",
+    "24 invariants (up from 22 last announced). No-env-var-modification and credential-file-creation are new additions — enterprise compliance angle.",
+    "9 active squads = credible 'autonomous swarm' story, but site still overclaims 26/5. Fix before any swarm-focused content.",
+    "OWASP Agentic Top 10 blog post is complete and ready — highest-leverage publish action available right now."
   ],
   "dogfoodReport": {
     "governanceDenialsThisRun": 0,
     "unexpectedBlocks": [],
     "unexpectedAllows": [],
-    "status": "clean — no governance issues encountered this run"
+    "status": "clean — no governance issues encountered this run. All operations (git, gh pr, gh issue) executed without denial."
   },
   "agentIdentity": "claude-code:sonnet:marketing:em"
 }

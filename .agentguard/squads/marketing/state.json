@@ -1,31 +1,34 @@
 {
   "squad": "marketing",
   "sprint": {
-    "goal": "Sync site with codebase, OWASP blog post, v2.8.x announcement, user capture funnel",
-    "issues": ["#925", "#934", "#1084", "#1224"]
+    "goal": "v2.9.x announcement, swarm section audit, OWASP post publication, unblock content agents",
+    "issues": ["#934", "#1259", "#1260"]
   },
   "assignments": {
-    "marketing-launch-agent": ["#934", "#1084"],
-    "marketing-content-agent": ["#934"],
-    "em-direct": ["#925", "#1224"]
+    "marketing-launch-agent": ["#1260", "#934"],
+    "em-direct": ["#1259"]
   },
   "blockers": [
     {
       "issue": "#995",
       "description": "Governance catch-22 blocks content agents — pnpm install blocked by hook before kernel exists",
       "owner": "ops/hq-em",
-      "severity": "high"
+      "severity": "high",
+      "cyclesBlocked": 5,
+      "escalation": "Will set health=red if unresolved next cycle"
     }
   ],
   "prQueue": {
-    "open": 1,
-    "reviewed": 1,
-    "mergeable": 1
+    "open": 2,
+    "reviewed": 0,
+    "mergeable": 0,
+    "prNumbers": ["#1255", "#1258"],
+    "notes": "#1255 matchers fix (kernel squad), #1258 site stats fix (marketing, awaiting CI)"
   },
   "recentlyCompleted": [
-    { "issue": "#938", "title": "User capture funnel v1", "closedDate": "2026-03-28", "note": "Superseded by #1084 (ROADMAP scope)" },
-    { "issue": "#1007", "title": "Demo video placeholder", "closedDate": "2026-03-28", "note": "Replaced with terminal walkthrough in PR #1224" },
-    { "issue": "#1004", "title": "Weekly content pack", "closedDate": "2026-03-28", "note": "Content generated, pending agent unblock to publish" }
+    { "issue": "#925", "title": "OWASP blog post", "closedDate": "2026-03-28", "note": "Draft at docs/blog/owasp-agentic-top10-agentguard.md — ready for LinkedIn" },
+    { "issue": "#1084", "title": "User capture funnel v3.0", "closedDate": "2026-03-28", "note": "Confirmed closed" },
+    { "pr": "#1258", "title": "fix(site): sync stats to v2.9.0", "mergedDate": null, "note": "10 stale references fixed — invariants 24, patterns 93, event kinds 47" }
   ],
-  "updatedAt": "2026-03-28T20:00:00.000Z"
+  "updatedAt": "2026-03-28T20:15:00.000Z"
 }
