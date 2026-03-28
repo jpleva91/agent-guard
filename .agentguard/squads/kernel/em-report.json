@@ -1,36 +1,37 @@
 {
-  "generatedAt": "2026-03-26T00:00:00.000Z",
+  "generatedAt": "2026-03-28T14:30:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
-  "health": "green",
-  "summary": "Steady-state cycle. PR #969 (fix claude-init binary path, closes #964 priority:critical) is CI-green (5/5 checks) — flagged for architect review. Closed stale EM report PR #966 (superseded). Sprint issues #955 (Go kernel hook delegation) and #957 (Go pack resolution) remain open with no PR; senior coder still assigned. PR budget: 1 open / 3 max. 4129 tests passing.",
+  "health": "yellow",
+  "summary": "Sprint pivot confirmed. #1182 (agent-identity bridge) closed via PR #1212. New sprint: #1202 (AAB normalization, ~700 false denials/day), #1209 (MCP prefix match, ~1h fix), #1208 (heredoc FP verify), #1139 (date scanner). Senior to start with #1209 then #1202 (KE-2 flagship). PR #1225 (prior EM report) CI green, awaiting approval. P0 #1186 (swarm health) third consecutive cycle — escalated to director, human intervention required.",
   "prQueue": {
     "open": 1,
     "prs": [
       {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "branch": "agent/kernel-sr-20260325-230535",
-        "status": "awaiting_review",
-        "ciStatus": "passed",
-        "checks": {
-          "total": 5,
-          "passed": 5,
-          "failed": 0,
-          "names": ["CodeQL", "test-and-build", "lint", "rust-kernel", "analyze"]
-        },
-        "closesIssue": 964,
-        "openedAt": "2026-03-25T23:11:08Z",
-        "note": "CI all green. No reviews yet. Flagging for architect attention."
+        "number": 1225,
+        "title": "chore(kernel-em): EM report 2026-03-28T11:30Z — sprint pivot to #1202 KE-2 AAB normalization",
+        "ci": "green",
+        "checks": { "total": 5, "passed": 5, "names": ["lint", "test-and-build", "rust-kernel", "analyze", "CodeQL"] },
+        "approved": false,
+        "action": "Awaiting approval — no code changes, safe to merge when approved"
       }
     ]
   },
   "mergedThisCycle": [],
+  "heldPRs": [
+    {
+      "number": 1225,
+      "title": "chore(kernel-em): EM report 2026-03-28T11:30Z",
+      "reason": "CI green but no approval yet.",
+      "action": "Merge when approved"
+    }
+  ],
   "closedThisCycle": [
     {
-      "number": 966,
-      "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
-      "note": "Stale EM report from prior cycle — superseded by current run"
+      "issue": 1182,
+      "title": "[dogfood] agent-identity-bridge blocked by No Governance Self-Modification invariant",
+      "pr": 1212,
+      "note": "Fixed: persona.env operational exemption added. Confirmed closed."
     }
   ],
   "newIssues": [],
@@ -50,59 +51,145 @@
     }
   },
   "triage": {
-    "p0Issues": 0,
+    "p0Issues": 1,
     "p1Issues": 0,
-    "newAssignments": [],
+    "newAssignments": [
+      {
+        "number": 1209,
+        "title": "[dogfood] github-mcp-server-actions_list blocked despite mcp.call github-mcp-server allow rule",
+        "priority": "P1",
+        "assignedTo": "senior",
+        "effort": "~1h",
+        "note": "Quick win warm-up. Root cause: aab.ts does exact match on MCP server name. Fix: change to startsWith() so github-mcp-server-actions_list matches github-mcp-server allow rule."
+      },
+      {
+        "number": 1202,
+        "title": "Governance gap: AAB action-type normalization failure causing 3,825+ unintended default-deny decisions",
+        "priority": "P1",
+        "assignedTo": "senior",
+        "effort": "3-5d",
+        "note": "KE-2 flagship. 3,825 unknown-type denials in 5.5 days = ~700/day. Fix: prefix stripping (rtk/time/timeout), compound command classification, UnknownActionType WARNING event."
+      },
+      {
+        "number": 1208,
+        "title": "[dogfood] Heredoc with governance-protected path strings triggers false-positive block",
+        "priority": "P1",
+        "assignedTo": "senior",
+        "effort": "2h",
+        "note": "Verify if #1212 already fixed. If commandViolation in definitions.ts:1229-1232 still does full-string includes on command body, patch to check actual write target path."
+      },
+      {
+        "number": 1139,
+        "title": "[dogfood] Safe date command substitution blocked as dangerous shell expansion",
+        "priority": "P2",
+        "assignedTo": "senior",
+        "effort": "2-3h",
+        "note": "Add read-only subshell allowlist in packages/matchers/src/command-scanner.ts for $(date +format) pattern."
+      }
+    ],
     "notableIssues": [
       {
-        "number": 964,
-        "title": "fix(claude-init): write hooks with full binary path",
-        "label": "priority:critical",
-        "status": "pr_open",
-        "pr": 969,
-        "note": "PR #969 CI green, awaiting architect review"
-      },
-      {
-        "number": 955,
-        "title": "Go kernel not invoked by claude-hook",
-        "label": "priority:high",
-        "status": "in_progress",
-        "pr": null,
-        "note": "Senior assigned, no PR yet — main sprint work"
-      },
-      {
-        "number": 957,
-        "title": "Go kernel evaluate does not resolve pack: or YAML",
-        "label": "priority:high",
-        "status": "in_progress",
-        "pr": null,
-        "note": "Senior assigned as sub-task of #955"
+        "number": 1186,
+        "title": "Swarm Health Alert — 2026-03-28",
+        "label": "priority:P0",
+        "status": "escalated-ops",
+        "cycles": 3,
+        "note": "85.7% stuck rate, 18 dead PIDs, 2 cron collisions, 4x oversubscription. Third cycle. Human required."
       }
     ]
   },
-  "blockers": [],
-  "escalations": [],
+  "blockers": [
+    {
+      "issue": 1186,
+      "description": "Swarm P0 unresolved for 3 cycles — ops/director owner, human required",
+      "kernelBlocked": false
+    }
+  ],
+  "escalations": [
+    {
+      "type": "ops",
+      "priority": "P0",
+      "issue": 1186,
+      "description": "Swarm health P0 persists for third consecutive cycle. 12 agents stuck >4h, 18 dead PIDs, 2 cron collisions, 133 agents vs 32 max_workers. Human must intervene.",
+      "recommendedActions": [
+        "git worktree prune to clear 12 stale stuck worktrees",
+        "Clean up 18 dead PID files in /tmp/",
+        "Fix cron collisions in server/schedule.json (0 6 * * * and 45 */6 * * * slots)",
+        "Verify cron daemon running — /tmp/agentguard-runs/ absent",
+        "Address 4x oversubscription: 133 enabled agents vs 32 max_workers"
+      ],
+      "owner": "ops/director",
+      "escalationCycle": 3
+    }
+  ],
   "metrics": {
     "prsOpened": 1,
     "prsMerged": 0,
-    "prsClosed": 1,
-    "issuesClosed": 0,
+    "prsClosed": 0,
+    "issuesClosed": 1,
     "governanceDenials": 0,
     "retries": 0
   },
   "testHealth": {
-    "total": 4129,
-    "passed": 4129,
+    "total": 4394,
+    "passed": 4394,
     "failed": 0,
-    "packages": 19,
-    "status": "all_passing"
+    "packages": 18,
+    "status": "all_passing",
+    "note": "Last QA run 2026-03-28T06:50Z. +30 tests vs prior baseline (4364->4394). No regressions."
+  },
+  "sprintStatus": {
+    "previousGoal": "Reduce false-positive governance denials: #1182 + #1139",
+    "previousCompletion": "50%",
+    "previousIssues": {
+      "1182": "CLOSED — PR #1212 merged",
+      "1139": "OPEN — carrying forward"
+    },
+    "newGoal": "Fix AAB normalization gap (#1202 KE-2) + MCP prefix match (#1209) + heredoc FP (#1208) + date scanner (#1139)",
+    "newIssues": [1202, 1209, 1208, 1139],
+    "completionPercent": 0,
+    "remainingWork": "Senior to start #1209 (warm-up ~1h) then #1202 (KE-2 design + impl 3-5d). #1208 and #1139 in parallel."
   },
   "escalationRules": {
     "triggered": {
       "twoPlusFailingCI": false,
-      "persistentBlocker": false,
+      "persistentBlocker": true,
       "governanceDenialsExceeded": false
     },
-    "notes": "No escalation triggers. PR #969 needs architect review — not a blocker yet."
-  }
+    "notes": "persistentBlocker triggered for #1186 (3rd cycle). Escalated to director. No code escalations."
+  },
+  "dogfoodObservations": [
+    {
+      "type": "confirmed-dogfood",
+      "issue": 1202,
+      "description": "rtk git * commands classified as unknown action type — every EM workflow using rtk wrapper false-denies. Confirmed live.",
+      "severity": "high",
+      "actionable": true,
+      "suggestedFix": "Strip rtk/time/timeout prefixes in aab.ts before action classification"
+    },
+    {
+      "type": "confirmed-dogfood",
+      "issue": 1209,
+      "description": "All github-mcp-server-* MCP tools blocked despite allow rule. Exact-match vs startsWith issue.",
+      "severity": "high",
+      "actionable": true,
+      "suggestedFix": "Change exact match to startsWith() for MCP server name matching in aab.ts"
+    },
+    {
+      "type": "confirmed-dogfood",
+      "issue": 1208,
+      "description": "Writing heredoc containing governance path strings to /tmp blocked — actual target is /tmp, commandViolation check too broad.",
+      "severity": "medium",
+      "actionable": true,
+      "suggestedFix": "Scope commandViolation to actual write target path, not full command body text"
+    },
+    {
+      "type": "confirmed-dogfood",
+      "issue": 1139,
+      "description": "$(date +format) blocked as dangerous shell expansion. Low severity but high frequency.",
+      "severity": "low",
+      "actionable": true,
+      "suggestedFix": "Add read-only subshell allowlist for $(date +format) in command-scanner.ts"
+    }
+  ]
 }

@@ -1,57 +1,109 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Wire Go kernel into npm hook path (#955). TS claude-hook must delegate to Go binary for 100x latency win.",
-    "issues": [955, 957, 964]
+    "goal": "Fix AAB action-type normalization gap causing ~700 false denials/day (#1202 KE-2) + MCP prefix match (#1209) + heredoc false-positive verification (#1208) + $(date) scanner (#1139).",
+    "issues": [1202, 1209, 1208, 1139]
   },
   "assignments": {
     "senior": {
-      "issue": [955, 957],
-      "title": "Wire Go kernel into claude-hook.ts — delegate evaluation to Go binary + resolve pack/YAML",
-      "status": "in_progress",
+      "issue": [1209, 1202, 1208, 1139],
+      "title": "Sprint: AAB normalization + MCP prefix + heredoc FP + date scanner",
+      "status": "in-progress",
       "branch": null,
       "pr": null,
       "claimedAt": null,
-      "note": "#964 has PR #969 up (CI green, awaiting review). Senior should focus on #955 (claude-hook.ts delegates to Go binary) and #957 (TS pre-resolves pack/YAML to flat JSON before handing to Go evaluate)."
+      "note": "Sequence: (1) #1209 first — quick win ~1h, aab.ts exact-match → startsWith() for MCP server names. (2) #1202 KE-2 — flagship 3-5d, strip rtk/time/timeout prefixes in aab.ts, classify embedded sub-ops, emit UnknownActionType WARNING event. (3) #1208 — verify if heredoc body-text false-positive still live after #1212; patch commandViolation full-string includes in definitions.ts:1229-1232 if so. (4) #1139 — add read-only subshell allowlist in command-scanner.ts for $(date +format) pattern."
     }
   },
-  "blockers": [],
+  "blockers": [
+    {
+      "issue": 1186,
+      "title": "Swarm Health P0 — 85.7% workers stuck",
+      "owner": "ops/director",
+      "cycles": 3,
+      "escalated": true,
+      "note": "3rd consecutive cycle unresolved. Human intervention required. Not kernel-code-owned."
+    }
+  ],
   "prQueue": {
     "open": 1,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
       {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "branch": "agent/kernel-sr-20260325-230535",
-        "status": "awaiting_review",
-        "ciStatus": "passed",
-        "openedAt": "2026-03-25T23:11:08Z",
-        "note": "CI all green (5/5). Needs architect review before merge."
-      },
-      {
-        "number": 966,
-        "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
-        "branch": "agent/kernel-em-20260325-230535",
-        "status": "closed",
-        "ciStatus": null,
-        "openedAt": "2026-03-25T23:08:39Z",
-        "closedAt": "2026-03-26T00:00:00.000Z",
-        "note": "Stale EM report, closed this cycle as superseded"
+        "number": 1225,
+        "title": "chore(kernel-em): EM report 2026-03-28T11:30Z — sprint pivot to #1202 KE-2 AAB normalization",
+        "ci": "green",
+        "approved": false,
+        "action": "Waiting for approval before merge — EM report, no code changes"
       }
     ]
   },
-  "health": "green",
+  "health": "yellow",
   "testHealth": {
-    "total": 4129,
-    "passed": 4129,
+    "total": 4394,
+    "passed": 4394,
     "failed": 0,
-    "packages": 19,
-    "lastRun": "2026-03-25T23:05:00.000Z",
-    "status": "all_passing"
+    "packages": 18,
+    "lastRun": "2026-03-28T06:50:00.000Z",
+    "status": "all_passing",
+    "delta": "+30 vs master baseline (4364→4394)",
+    "breakdown": {
+      "kernel": 889,
+      "agentguard": 837,
+      "policy": 480,
+      "invariants": 586,
+      "adapters": 281,
+      "storage": 243,
+      "renderers": 105,
+      "plugins": 125,
+      "matchers": 122,
+      "telemetry": 161,
+      "core": 194,
+      "swarm": 70,
+      "invariant-data-protection": 122,
+      "events": 76,
+      "sdk": 18,
+      "mcp": 24,
+      "telemetry-client": 27,
+      "scheduler": 34
+    },
+    "regressions": [],
+    "coverageGaps": [
+      {
+        "issue": 1202,
+        "description": "No acceptance test for AAB prefix-stripping and UnknownActionType WARNING event",
+        "location": "packages/kernel/tests/"
+      },
+      {
+        "issue": 1209,
+        "description": "No test for MCP server prefix/startsWith match in policy evaluator",
+        "location": "packages/policy/tests/"
+      },
+      {
+        "issue": 1208,
+        "description": "No test for commandViolation ignoring body-only governance path strings",
+        "location": "packages/invariants/tests/invariant-definitions.test.ts"
+      },
+      {
+        "issue": 1139,
+        "description": "No test for $(date +format) read-only subshell allowlist in command-scanner.ts",
+        "location": "packages/matchers/tests/"
+      }
+    ]
   },
-  "lastEmRun": "2026-03-26T00:00:00.000Z",
-  "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-26T00:00:00.000Z"
+  "completedIssues": [
+    { "issue": 955, "note": "Closed upstream" },
+    { "issue": 957, "note": "Closed upstream" },
+    { "issue": 964, "pr": 969, "mergedAt": "2026-03-26T00:31:01Z" },
+    { "issue": 1118, "pr": 1147, "mergedAt": "2026-03-27T23:09:36Z" },
+    { "issue": 1142, "pr": 1147, "mergedAt": "2026-03-27T23:09:36Z" },
+    { "issue": 1144, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
+    { "issue": 1148, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
+    { "issue": 1119, "pr": 1153, "mergedAt": "2026-03-28T05:00:00.000Z" },
+    { "issue": 1182, "pr": 1212, "mergedAt": "2026-03-28T11:00:00.000Z", "note": "agent-identity-bridge fix — persona.env operational exemption" }
+  ],
+  "lastEmRun": "2026-03-28T14:30:00.000Z",
+  "lastQaRun": "2026-03-28T06:50:00.000Z",
+  "updatedAt": "2026-03-28T14:30:00.000Z"
 }
