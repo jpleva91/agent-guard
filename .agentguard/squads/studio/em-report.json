@@ -1,216 +1,168 @@
 {
-  "generatedAt": "2026-03-28T07:00:00.000Z",
+  "generatedAt": "2026-03-28T08:15:00.000Z",
   "identity": "claude-code:opus:studio:em",
   "runCycle": "4h",
   "health": "yellow",
-  "summary": "Swarm budget exhausted for March (all 4 drivers at 100%) — resets April 1. PRs #158 (portable path fix) and #154 (strategy update) merged. PR #155 (EM schedule stagger) P0 reviewed and approved; flagged for human merge per worker pool escalation rule. PR #472 (agentguard-cloud dashboard filter) still awaiting human merge. studio-sr flakiness (71%, issue #156) likely quota-related given March 27 cascade event — needs log review after April 1 budget reset. QA agents on bench still broken (#146). Budget reset April 1 should resolve most quota-driven failures; schedule stagger (#155) will prevent recurrence.",
+  "summary": "PR queue fully cleared this cycle — first time all 4 tracked PRs (#155, #162, #163 workspace; #472 cloud) are merged. Human merged all 4 since last EM run. Sole remaining blockers: March budget exhaustion (auto-resets April 1 in ~3 days) and 3 degraded agents (studio-sr flaky #156, QA agents broken #146). workspace-config-validator now unblocked — should validate the #155 schedule stagger. Squad is coiled for April 1 velocity push: Guitar Jam Partner kickoff (#153), portfolio scoring leaderboard, design partner dry run (#152) with hard deadline April 10.",
   "prQueue": {
-    "open": 1,
-    "reviewed": 1,
-    "mergeable": 1,
-    "mergedThisCycle": 2,
-    "prs": [
-      {
-        "number": 155,
-        "repo": "agentguard-workspace",
-        "title": "ops: stagger claude-code EMs to flatten API quota cascade",
-        "author": "studio-sr",
-        "risk": "medium",
-        "checks": {
-          "ciValidation": "SUCCESS"
-        },
-        "p0Review": {
-          "status": "COMPLETE",
-          "reviewer": "claude-code:opus:studio:em",
-          "date": "2026-03-28",
-          "verdict": "APPROVED — schedule math correct, max concurrency 9→5, JSON validated",
-          "commentUrl": "https://github.com/AgentGuardHQ/agentguard-workspace/pull/155#issuecomment-4146299924"
-        },
-        "recommendation": "MERGE — P0 review complete. ⚠️ Worker pool change: requires human final merge per escalation rules.",
-        "closesIssue": "#151"
-      }
-    ],
-    "crossRepoPending": [
-      {
-        "number": 472,
-        "repo": "agentguard-cloud",
-        "title": "feat(dashboard): outcome filter + high-risk allows quick filter on events page",
-        "checks": "all-green",
-        "recommendation": "MERGE — all CI + Vercel checks green. Closes workspace#97 item 4."
-      }
-    ],
+    "open": 0,
+    "reviewed": 0,
+    "mergeable": 0,
+    "mergedThisCycle": 4,
+    "prs": [],
     "mergedThisCycleList": [
-      { "number": 158, "title": "fix: derive WORKSPACE from script location in swarm utility scripts", "risk": "low" },
-      { "number": 154, "title": "strategy: swarm health update, Phase 1 progress, Claude API crisis brief", "risk": "low" }
-    ],
-    "mergedPreviousCycle": [
-      { "number": 143, "title": "docs: AG Studio Portfolio Framework", "risk": "low" },
-      { "number": 148, "title": "fix: stagger 5 cron collisions in server/schedule.json", "risk": "p0-resolved" },
-      { "number": 149, "title": "fix: symlink sibling repos into worktrees", "risk": "low" },
-      { "number": 147, "title": "fix: update stale WORKSPACE_REPO in check-version-drift.sh", "risk": "low" }
+      { "number": 162, "repo": "agentguard-workspace", "title": "fix: derive WORKSPACE from script location in swarm-dashboard.sh", "risk": "low" },
+      { "number": 163, "repo": "agentguard-workspace", "title": "ops: bump qa-flaky-test-detector timeout to 5400s", "risk": "low" },
+      { "number": 155, "repo": "agentguard-workspace", "title": "ops: stagger claude-code EMs to flatten API quota cascade", "risk": "medium", "note": "P0 reviewed by studio-em prior cycle; human merged this cycle" },
+      { "number": 472, "repo": "agentguard-cloud", "title": "feat(dashboard): outcome filter + high-risk allows quick filter on events page", "risk": "low", "note": "Closes workspace#97 item 4 — April 15 deployment gate dependency satisfied" }
     ]
   },
   "sprintProgress": {
-    "goal": "Track ShellForge as Asset #1 (Milestone 1.75). Score remaining portfolio candidates. Guitar Jam Partner research (#153).",
-    "velocity": "medium",
+    "goal": "April 1 velocity push: Guitar Jam Partner kickoff, portfolio scoring leaderboard, design partner dry run (#152 — deadline April 10).",
+    "velocity": "low-this-cycle-budget-constrained",
     "status": "ACTIVE",
     "completedThisCycle": [
-      "PR #158 merged — portable path fix for swarm scripts (check-swarm-health, swarm-logs, swarm-status)",
-      "PR #154 merged — strategy doc updated with Phase 1 progress + API quota crisis brief",
-      "PR #155 P0 review complete — schedule stagger approved, pending human merge"
+      "PR #162 merged — swarm-dashboard.sh now portable (last script with hardcoded path, closes pattern)",
+      "PR #163 merged — qa-flaky-test-detector timeout 900s→5400s (matches E2E runtime)",
+      "PR #155 merged (prev cycle P0 review) — EM schedule stagger active, quota cascade prevention in place",
+      "Cloud PR #472 merged — dashboard outcome filter closes workspace#97 item 4"
     ],
     "inProgress": [
-      "studio-qa: score remaining 9 portfolio candidates (blocked by budget — resumes April 1)",
-      "studio-designer: gh-pages hero CTA improvement",
-      "Guitar Jam Partner kickoff (#153) — no progress this cycle, budget exhausted"
+      "studio-designer: gh-pages hero CTA improvement (budget-constrained, not blocking April 1 push)",
+      "workspace-config-validator: unblocked — validate #155 schedule distribution (max 5 per slot)"
     ],
-    "nextSprint": "April 1 budget reset unlocks: (1) Guitar Jam Partner implementation kickoff (#153), (2) portfolio candidate scoring + leaderboard publish, (3) design partner dry run (#152)"
+    "blockedUntilApril1": [
+      "Guitar Jam Partner kickoff (#153) — studio-sr architecture + junior agent issues",
+      "Portfolio scoring leaderboard (#studio-qa) — score 9 remaining candidates",
+      "Design partner dry run (#152) — needs Codex agent or human, deadline April 10"
+    ],
+    "criticalDeadlines": [
+      { "deadline": "2026-04-01", "item": "Budget reset — all agents resume. #155 stagger active to prevent cascade." },
+      { "deadline": "2026-04-10", "item": "Design partner dry run (#152) complete — must validate full e2e onboarding before April 17." },
+      { "deadline": "2026-04-15", "item": "Cloud dashboard deployment gate (#106) — workspace#97 item 4 NOW CLOSED via cloud#472." },
+      { "deadline": "2026-04-17", "item": "Phase 2 design partners kickoff — 20 days away." },
+      { "deadline": "2026-05-06", "item": "Conference talk — Guitar Jam v0.1 must be clickable (4–6 sprint window from April 1)." }
+    ]
   },
   "triage": {
     "p0Issues": 0,
-    "p1Issues": 3,
+    "p1Issues": 2,
     "p1": [
       {
-        "issue": "#151 / #156",
-        "title": "March budget exhaustion — all 4 drivers at 100%",
-        "status": "Resolves automatically April 1. studio-sr flakiness (#156) likely quota-driven — review logs after reset.",
-        "action": "No action until April 1. Post-reset: check studio-sr logs for 2 failure runs, close #156 as dupe of #151 if quota-confirmed."
-      },
-      {
-        "issue": "agent-guard-ci-failures",
-        "title": "Open PRs in agent-guard failing lint + test-and-build CI",
-        "status": "Escalating — kernel squad not visibly active this cycle. Growing regression backlog.",
-        "action": "KERNEL SQUAD: investigate shared CI regression urgently before April 1 velocity push."
+        "issue": "#156",
+        "title": "studio-sr flaky — 71% success rate (likely quota-driven)",
+        "status": "Budget-silenced. Hypothesis: March 27 quota cascade caused both failures. Last 2 runs passing.",
+        "action": "April 1: workspace-agent-reliability reviews logs, closes as dupe of #151 if quota-confirmed."
       },
       {
         "issue": "#146",
         "title": "qa-regression-analyzer + qa-test-architect broken (0/1 runs on bench)",
-        "status": "Unresolved — no retrigger confirmed this cycle.",
-        "action": "QA EM: retrigger both agents post-budget-reset April 1. If still 0%, escalate to human."
+        "status": "Unresolved — budget-silenced this cycle.",
+        "action": "QA EM: retrigger both on April 1. If still 0%, escalate to human with logs."
       }
     ],
-    "openIssues": [
-      { "issue": 155, "title": "PR #155 pending human merge — schedule stagger", "action": "HUMAN: merge after P0 review completion (done)" },
-      { "issue": 153, "title": "Guitar Jam Partner kickoff — Studio Portfolio asset #1", "action": "Resume April 1 — file architecture issues for junior agents" },
-      { "issue": 152, "title": "Design partner dry run — e2e before April 17 Phase 2", "action": "Plan session for first week of April" },
-      { "issue": 119, "title": "Swarm reliability P0", "action": "Should improve after #155 merge + budget reset" },
-      { "issue": 106, "title": "Cloud dashboard deployment gate — April 15 hard deadline", "action": "PR #472 closes workspace#97 item 4. Human merge needed." }
+    "watchList": [
+      {
+        "issue": "#153",
+        "title": "Guitar Jam Partner kickoff",
+        "note": "April 1 start. studio-sr files architecture issues first. Scope v0.1: metronome + chord backing + UI. Runs on readybench box only."
+      },
+      {
+        "issue": "#152",
+        "title": "Design partner dry run — deadline April 10",
+        "note": "8-step e2e onboarding sim. Owner: Codex agent or human. 13 days remaining. Start immediately on April 1."
+      }
     ]
   },
   "crossSquad": {
     "kernel": {
       "health": "yellow",
-      "note": "CI regression ongoing — unknown number of failing PRs. No kernel EM activity visible this cycle. Budget exhaustion likely silenced routine runs. Critical to unblock before April 1 velocity push."
+      "note": "CI regression status unknown — no kernel EM report visible this cycle. Budget exhaustion likely silenced kernel runs. Unblock April 1 is critical before April 17 design partner kickoff."
     },
     "cloud": {
-      "health": "yellow",
-      "note": "PR #472 all-green awaiting human merge. Cloud dashboard deployment gate (#106) on April 15 — item 4 of workspace#97 closes with #472. Budget exhaustion silenced cloud agents this cycle."
+      "health": "green",
+      "note": "PR #472 merged — dashboard outcome filter live. workspace#97 item 4 closed. April 15 deployment gate dependency satisfied. Cloud squad budget-blocked same as others; unblocks April 1."
     },
     "analytics": {
       "health": "yellow",
-      "note": "17 open issues in agentguard-analytics. Key studio data requests outstanding: enforcement latency (#22), case study material (#21, #23), agent_name/driver_type fields (#26). No new studio requests this cycle. Analytics pipeline (#12, #14) + ETL hardening needed before reporting is reliable. Budget reset April 1 should unblock analytics agents.",
+      "note": "17 open issues in agentguard-analytics. Studio data requests outstanding: enforcement latency #22 (P1 for conference), top 5 enforcement events #21, agent_name/driver_type fields #26. Pipeline ETL hardening (#12, #14) needed for reliability. No new studio requests this cycle — backlog unchanged.",
       "studioDataRequests": [
-        { "issue": "analytics#22", "title": "Enforcement latency distribution (p50/p95/p99)", "priority": "P1 for conference narrative" },
-        { "issue": "analytics#21", "title": "Top 5 enforcement events for case study", "priority": "P1 for conference narrative" }
+        { "issue": "analytics#22", "title": "Enforcement latency p50/p95/p99", "priority": "P1", "deadline": "needed before May 6 talk" },
+        { "issue": "analytics#21", "title": "Top 5 enforcement events for case study", "priority": "P1", "deadline": "needed before May 6 talk" },
+        { "issue": "analytics#23", "title": "ReadyBench production governance summary", "priority": "P2" }
       ]
     },
     "qa": {
       "health": "red",
-      "note": "qa-regression-analyzer + qa-test-architect at 0% success on bench-devs-platform (#146). No retrigger confirmed. QA work blocked until April 1 budget + retrigger."
+      "note": "qa-regression-analyzer + qa-test-architect at 0% success on bench-devs-platform (#146). #163 merged (flaky-test-detector timeout fix) — improves overall QA pipeline reliability once agents resume April 1."
     }
   },
   "swarmHealth": {
-    "checkResult": "Script ran — telemetry pipeline healthy (last event 0.0h ago), Copilot event pipeline verified (0 events). 133 agents skipped (log dir not present on this host). No local failures detected.",
+    "checkResult": "Ran check-swarm-health.sh — telemetry pipeline healthy (latest event 0.0h ago), Copilot event pipeline verified (0 events). 131 agents skipped (log dir not present on this worktree host). No failures reported.",
     "overallStatus": "YELLOW",
+    "note": "Log skip is expected when running from worktree — script checks $AGENTGUARD_LOG_DIR which is host-specific. Health assessment based on known state, not log scan.",
     "agentReliability7d": {
-      "overallSuccessRate": "92.3%",
-      "totalRuns": 52,
       "degradedAgents": [
-        { "agent": "qa-regression-analyzer", "rate": "0%", "runs": 1, "trackedIn": "#146" },
-        { "agent": "qa-test-architect", "rate": "0%", "runs": 1, "trackedIn": "#146" },
-        { "agent": "studio-sr", "rate": "71%", "runs": 7, "trackedIn": "#156", "hypothesis": "quota-driven" }
+        { "agent": "qa-regression-analyzer", "rate": "0%", "runs": 1, "trackedIn": "#146", "hypothesis": "budget-silenced" },
+        { "agent": "qa-test-architect", "rate": "0%", "runs": 1, "trackedIn": "#146", "hypothesis": "budget-silenced" },
+        { "agent": "studio-sr", "rate": "71%", "runs": 7, "trackedIn": "#156", "hypothesis": "quota-driven (March 27 cascade)" }
       ]
     },
     "budgetStatus": {
-      "note": "All 4 drivers at 100% monthly budget for March — resets April 1",
-      "drivers": [
-        { "driver": "claude-code", "spent": "$200", "budget": "$200", "pct": 100 },
-        { "driver": "codex", "spent": "$20", "budget": "$20", "pct": 100 },
-        { "driver": "copilot", "spent": "$40", "budget": "$40", "pct": 100 },
-        { "driver": "gemini", "spent": "$20", "budget": "$20", "pct": 100 }
-      ]
+      "note": "All 4 drivers at 100% March budget — resets April 1 (~72h). #155 schedule stagger now active to prevent recurrence.",
+      "resetDate": "2026-04-01"
     },
     "scheduleValidation": {
-      "enabled": 128,
-      "cronCollisions": 0,
-      "allHaveSkillMd": true
+      "status": "pending-workspace-config-validator",
+      "note": "#155 merged — workspace-config-validator unblocked to confirm max ≤5 claude-code per 30-min slot"
     },
-    "systemicIssues": [
-      "March budget exhaustion — all 4 drivers at 100%, resets April 1 (#151)",
-      "PR #155 (EM schedule stagger) pending human merge — P0 review complete",
-      "QA agents on bench-devs-platform: 0/1 success (#146)",
-      "Kernel CI regression — unknown scope, no kernel EM cycle visible"
-    ],
     "positives": [
+      "PR queue empty for first time this sprint — zero backlog",
+      "All 4 human-merge blockers cleared in one cycle",
       "Telemetry pipeline healthy",
-      "Swarm mode: normal (no throttling)",
-      "Schedule validation: 0 cron collisions, all agents have SKILL.md",
-      "PRs #158 + #154 merged this cycle — swarm scripts now portable"
+      "EM schedule stagger now live — quota cascade prevention active",
+      "April 15 deployment gate dependency satisfied (cloud#472 merged)",
+      "#163 merged — QA flaky detector timeout fixed before April 1 agent retrigger"
     ]
-  },
-  "loopGuards": {
-    "prBudget": { "open": 1, "max": 3, "pass": true },
-    "retryLoops": { "stuckAgents": 0, "pass": true },
-    "blastRadius": { "withinLimits": true, "pass": true }
   },
   "blockers": [
     {
       "id": "march-budget-exhaustion",
-      "description": "All 4 drivers at 100% March budget. Agent runs silenced until April 1 reset.",
+      "description": "All 4 drivers at 100% March budget. Auto-resets April 1 (~72h). No human action required.",
       "severity": "P1",
       "owner": "ops",
-      "resolution": "Auto-resolves April 1. No action needed. Merge #155 schedule stagger before reset to prevent recurrence."
-    },
-    {
-      "id": "pr-155-pending-human-merge",
-      "description": "PR #155 (EM schedule stagger) P0 review complete. Needs human merge — worker pool change.",
-      "severity": "P1",
-      "owner": "human",
-      "resolution": "HUMAN: merge PR #155 before April 1 agent runs resume."
+      "resolution": "Auto-resolves April 1. Stagger (#155) now active to prevent recurrence."
     },
     {
       "id": "qa-agents-broken",
       "description": "qa-regression-analyzer + qa-test-architect at 0% on bench-devs-platform (#146).",
       "severity": "P1",
       "owner": "qa-em",
-      "resolution": "Retrigger both April 1. If still failing, escalate to human with logs."
+      "resolution": "QA EM: retrigger both April 1. Escalate to human if still 0%."
     }
   ],
   "escalations": [
-    "HUMAN (URGENT): Merge PR #155 before April 1 — schedule stagger P0 review complete. Prevents quota cascade recurrence.",
-    "HUMAN: Merge agentguard-cloud PR #472 — all CI + Vercel green. Closes workspace#97 item 4 (April 15 deployment gate dependency).",
-    "KERNEL SQUAD: Investigate CI regression before April 1 velocity push — backlog will compound.",
-    "QA EM: Retrigger qa-regression-analyzer + qa-test-architect on April 1 budget reset."
+    "QA EM: Retrigger qa-regression-analyzer + qa-test-architect on April 1 — silent since #146 filed.",
+    "workspace-config-validator: Run schedule validation NOW — #155 merged, confirm max ≤5 claude-code per 30-min slot.",
+    "HUMAN (awareness): Design partner dry run (#152) deadline is April 10. Owner needed — Codex agent or human. 13 days remaining."
   ],
   "metrics": {
     "prsOpened": 0,
-    "prsMerged": 2,
+    "prsMerged": 4,
     "issuesClosed": 0,
     "governanceDenials": 0,
     "agentRunsThisCycle": 1,
     "agentRunSuccesses": 1,
-    "ciFixesApplied": 0,
-    "workspacePRQueueDepth": 1,
-    "p0ReviewsCompleted": 1
+    "workspacePRQueueDepth": 0,
+    "crossRepoPRsMerged": 1
   },
   "nextActions": [
-    "HUMAN (CRITICAL): Merge PR #155 — P0 review done, prevents April 1 quota cascade",
-    "HUMAN: Merge agentguard-cloud #472 — April 15 deployment gate dependency",
-    "April 1: studio-sr logs review — confirm studio-sr (#156) failures were quota-driven, close as dupe of #151 if confirmed",
+    "workspace-config-validator: validate #155 schedule stagger — confirm max 5 claude-code per 30-min slot (UNBLOCKED NOW)",
+    "April 1: studio-sr kickoff Guitar Jam Partner architecture (#153) — file v0.1 scope issues for junior agents",
+    "April 1: studio-qa portfolio scoring — score 9 remaining candidates, publish leaderboard",
     "April 1: QA EM retrigger qa-regression-analyzer + qa-test-architect (#146)",
-    "April 1: Guitar Jam Partner kickoff (#153) — file architecture issues for junior agents",
-    "April 1: Portfolio scoring (#studio-qa) — score remaining 9 candidates, publish leaderboard",
-    "April 1: Design partner dry run planning (#152) — schedule before April 17"
+    "April 1: workspace-agent-reliability review studio-sr logs (#156) — close as dupe of #151 if quota-confirmed",
+    "April 1 (urgent): Begin design partner dry run (#152) — 8-step e2e sim, deadline April 10, 13 days remaining"
   ],
-  "dogfoodReport": "No AgentGuard governance issues observed during this run. All tool calls completed without governance blocks."
+  "dogfoodReport": "No AgentGuard governance issues observed during this run. All tool calls completed without governance blocks or unexpected denials."
 }
