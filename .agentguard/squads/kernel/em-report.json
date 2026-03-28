@@ -1,61 +1,72 @@
 {
-  "generatedAt": "2026-03-28T03:15:00.000Z",
+  "generatedAt": "2026-03-28T06:10:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
   "health": "green",
-  "summary": "Strong cycle. Merged PR #1168 (graceful SQLite fallback — all 5 CI checks green). Closed issues #1144 (better-sqlite3 NODE_MODULE_VERSION mismatch on Node 22) and #1148 (worktree SQLite fatal crash) — both addressed by #1168's graceful fallback. Closed superseded PR #1158 (HQ EM fix; storage portion already merged via #1152; go-fast-path chmodSync no longer blocking since #1142 closed). Requested rebase on PR #1153 (heredoc false-positive fix for #1119). Sprint issues #1118, #1142, #955, #1144, #1148 all CLOSED. Only #1119 remains (PR #1153 one rebase away). 4364 tests passing.",
+  "summary": "Strong cycle. Prior sprint 100% complete — all 8 issues closed (#955, #957, #964, #1119, #1118, #1142, #1148, #1144). PR #1153 merged (rebased + CI green — closes #1119). Merged 3 additional PRs this cycle: #1183 (trust command tests, 15 cases), #1179 (roadmap triage), #1185 (director evening report) — all 5 CI checks green. Commented on #1151 (HQ EM midnight report, test-and-build failing pre-regression-fix) requesting rebase. New sprint: reduce false-positive governance denials (#1182 agent-identity chicken-and-egg, #1139 $(date) command scanner). 0 open kernel PRs. 0 P0/P1 code issues.",
   "prQueue": {
-    "open": 1,
-    "prs": [
-      {
-        "number": 1153,
-        "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
-        "branch": "fix/heredoc-false-positive-1119",
-        "ciStatus": "failed-pre-rebase",
-        "mergeState": "needs-rebase",
-        "closesIssue": 1119,
-        "note": "CI failure was storage migration regression (fixed by #1152 merged 02:34Z). Commented on PR requesting rebase. Expected to pass CI after rebase."
-      }
-    ]
+    "open": 0,
+    "prs": []
   },
   "mergedThisCycle": [
     {
-      "number": 1168,
-      "title": "fix(guard): graceful SQLite fallback when native bindings unavailable",
-      "mergedAt": "2026-03-28T03:12:20Z",
-      "closesIssues": [1148],
-      "checks": {
-        "total": 5,
-        "passed": 5,
-        "names": ["lint", "test-and-build", "rust-kernel", "analyze", "CodeQL"]
-      },
-      "note": "Aligns guard.ts with hook commands (claude-hook, copilot-hook) that already had graceful SQLite fallback."
-    }
-  ],
-  "closedThisCycle": [
-    {
-      "type": "pr",
-      "number": 1158,
-      "title": "fix(ci): patch sqlite-migrations v5 assertion + go-fast-path chmodSync",
-      "note": "Superseded: storage fix already in #1152 (merged 02:34Z); CONFLICTING + CI failing; go-fast-path issue closed upstream."
+      "number": 1153,
+      "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
+      "mergedAt": "2026-03-28T05:00:00.000Z",
+      "closesIssues": [1119],
+      "checks": { "total": 5, "passed": 5, "names": ["lint", "test-and-build", "rust-kernel", "analyze", "CodeQL"] },
+      "note": "Rebased by kernel-sr on main. Merged after CI green post-rebase."
     },
     {
-      "type": "issue",
-      "number": 1144,
-      "title": "Governance runtime crashes with better-sqlite3 NODE_MODULE_VERSION mismatch on Node 22",
-      "note": "Addressed by PR #1168 graceful fallback — crash path eliminated. Root cause (stale npx cache binaries) is distribution-level."
+      "number": 1183,
+      "title": "test: add tests for cli/commands/trust",
+      "mergedAt": "2026-03-28T06:10:00.000Z",
+      "closesIssues": [],
+      "checks": { "total": 5, "passed": 5 },
+      "note": "15 test cases covering trust.ts command — previously untested. CI all green."
     },
     {
-      "type": "issue",
-      "number": 1148,
-      "title": "Governance runtime fails to start in worktrees — better-sqlite3 native bindings missing",
-      "note": "Closed by PR #1168 merge (auto-closed via 'Closes #1148' in PR body)."
+      "number": 1179,
+      "title": "chore(roadmap): triage backlog + sync roadmap to v2.8.4",
+      "mergedAt": "2026-03-28T06:10:00.000Z",
+      "closesIssues": [],
+      "checks": { "total": 5, "passed": 5 },
+      "note": "Backlog hygiene + roadmap sync. CI all green."
+    },
+    {
+      "number": 1185,
+      "title": "chore(director): evening report 2026-03-28T21:00Z — swarm yellow, 3 PRs mergeable",
+      "mergedAt": "2026-03-28T06:10:00.000Z",
+      "closesIssues": [],
+      "checks": { "total": 5, "passed": 5 },
+      "note": "Director operational report. CI all green."
     }
   ],
+  "heldPRs": [
+    {
+      "number": 1184,
+      "title": "docs: sync documentation with codebase",
+      "reason": "Partial CI — only analyze and CodeQL in statusCheckRollup; lint and test-and-build absent. Holding until all 5 checks green.",
+      "action": "Monitor — merge when CI complete"
+    },
+    {
+      "number": 1151,
+      "title": "chore(hq): EM report 2026-03-28T06:00 — cross-repo triage, P1 dogfood escalation",
+      "reason": "test-and-build FAILED — PR opened before CI regression fix (#1153). Commented requesting rebase.",
+      "action": "Waiting for HQ EM rebase onto main"
+    },
+    {
+      "number": 1150,
+      "title": "chore(studio): EM report 2026-03-28T03:00 — sprint delivered, #472 ready to merge",
+      "reason": "Null statusCheckRollup (no CI runs). HQ EM flagged merge conflicts.",
+      "action": "Waiting for Studio EM rebase"
+    }
+  ],
+  "closedThisCycle": [],
   "newIssues": [],
   "loopGuards": {
     "prBudget": {
-      "open": 1,
+      "open": 0,
       "max": 3,
       "pass": true
     },
@@ -71,25 +82,60 @@
   "triage": {
     "p0Issues": 0,
     "p1Issues": 0,
-    "newAssignments": [],
+    "newAssignments": [
+      {
+        "number": 1182,
+        "title": "[dogfood] agent-identity-bridge blocked by No Governance Self-Modification invariant — chicken-and-egg identity setup failure",
+        "priority": "P1",
+        "assignedTo": "senior",
+        "note": "All scheduled agents cannot set persona identity. Invariant fires on .agentguard/persona.env writes — needs path exemption for agent-identity bootstrap files."
+      },
+      {
+        "number": 1139,
+        "title": "[dogfood] Safe date command substitution inside gh pr comment body blocked as dangerous shell expansion",
+        "priority": "P2",
+        "assignedTo": "senior",
+        "note": "packages/matchers/src/command-scanner.ts over-matches $(date +format). Needs safe-subshell allowlist for known read-only patterns."
+      }
+    ],
     "notableIssues": [
       {
-        "number": 1119,
-        "title": "False positive: destructive command detection fires on report content mentioning blocked command patterns",
-        "label": "priority:medium",
-        "status": "pr-needs-rebase",
-        "pr": 1153,
-        "note": "One rebase away from done. Commented on PR. Next senior run should rebase fix/heredoc-false-positive-1119 on main and push."
+        "number": 1186,
+        "title": "Swarm Health Alert — 2026-03-28",
+        "label": "priority:P0",
+        "status": "ops-level",
+        "note": "85.7% stuck worker rate — 12 stuck agents, 18 dead PID files, 2 cron collisions. Not kernel code. Escalated to director/ops. Actions: git worktree prune, clean /tmp PIDs, fix schedule.json cron collisions."
+      },
+      {
+        "number": 1177,
+        "title": "[dogfood] github.pr.* actions missing from policy allow-list",
+        "status": "not-applicable-to-kernel-repo",
+        "note": "agentguard.yaml in THIS repo already has github.* allow rules (added in earlier sprint). Issue was filed against cloud repo policy — cloud squad to fix."
       }
     ]
   },
   "blockers": [],
-  "escalations": [],
+  "escalations": [
+    {
+      "type": "ops",
+      "priority": "P0",
+      "issue": 1186,
+      "description": "Swarm health P0: 85.7% workers stuck (12/14). Root batch failure ~01:17-01:44 UTC March 27 — kernel-sr, pr-merger, workspace-pr-review agents stopped simultaneously. Likely shared cron/scheduler failure.",
+      "recommendedActions": [
+        "git worktree prune (remove stale worktrees — no live processes)",
+        "rm /tmp/copilot-detached-*.pid and other dead PID files (18 total)",
+        "Resolve cron collisions in server/schedule.json: 0 6 * * * and 45 */6 * * *",
+        "Verify cron daemon running — /tmp/agentguard-runs/ absent suggests harness may be inactive",
+        "Address 4x oversubscription: 133 enabled agents vs 32 max_workers"
+      ],
+      "owner": "ops/director"
+    }
+  ],
   "metrics": {
     "prsOpened": 0,
-    "prsMerged": 1,
-    "prsClosed": 1,
-    "issuesClosed": 2,
+    "prsMerged": 4,
+    "prsClosed": 0,
+    "issuesClosed": 0,
     "governanceDenials": 0,
     "retries": 0
   },
@@ -99,13 +145,25 @@
     "failed": 0,
     "packages": 18,
     "status": "all_passing",
-    "note": "From QA run 2026-03-28T00:52Z. +14 tests vs prior run."
+    "note": "Baseline from QA run 2026-03-28T00:52Z. No new test runs this cycle."
   },
   "sprintStatus": {
-    "issuesClosed": [1118, 1142, 955, 1148, 1144],
-    "issuesOpen": [1119],
-    "completionPercent": 83,
-    "remainingWork": "PR #1153 rebase (closes #1119, heredoc false-positive in matchers)"
+    "previousGoal": "Close #1119 (heredoc false-positive) + Go kernel deeper delegation (#955 follow-on)",
+    "previousCompletion": "100%",
+    "previousIssues": {
+      "1119": "CLOSED (PR #1153 merged post-rebase)",
+      "955": "CLOSED (upstream)",
+      "957": "CLOSED (upstream)",
+      "964": "CLOSED (PR #969 merged 2026-03-26)",
+      "1118": "CLOSED (PR #1147)",
+      "1142": "CLOSED (PR #1147)",
+      "1148": "CLOSED (PR #1168)",
+      "1144": "CLOSED (PR #1168 + manual)"
+    },
+    "newGoal": "Reduce false-positive governance denials: #1182 (agent-identity chicken-and-egg) + #1139 ($(date) command scanner false positive)",
+    "newIssues": [1182, 1139],
+    "completionPercent": 0,
+    "remainingWork": "Both issues unstarted — senior coder to claim #1182 first"
   },
   "escalationRules": {
     "triggered": {
@@ -113,14 +171,30 @@
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "No escalation triggers. PR #1153 is a soft blocker (needs rebase) — not a hard block on squad health."
+    "notes": "No code escalations. Ops escalation (#1186 swarm P0) not kernel-squad-owned — flagged for director."
   },
   "dogfoodObservations": [
     {
       "type": "observation",
-      "description": "Shell working directory resets to worktree root between Bash calls — had to use explicit bash -c 'cd ...' pattern for gh commands in agent-guard subdir.",
+      "issue": null,
+      "description": "scripts/write-persona.sh lacked execute permission — required manual chmod +x before startup hook could run. Causes confusing 'Permission denied' error at session start for every new worktree.",
       "severity": "low",
-      "actionable": false
+      "actionable": true,
+      "suggestedFix": "Commit chmod +x for scripts/write-persona.sh (git update-index --chmod=+x), or add to postinstall."
+    },
+    {
+      "type": "confirmed-dogfood",
+      "issue": 1182,
+      "description": "Agent-identity-bridge blocked by self-modification invariant confirmed active. All scheduled agents in cloud/analytics unable to set persona identity for telemetry enrichment — new sprint P1.",
+      "severity": "medium",
+      "actionable": true
+    },
+    {
+      "type": "confirmed-dogfood",
+      "issue": 1139,
+      "description": "$(date +format) in gh pr comment bodies blocked as dangerous shell expansion. Low severity but high frequency — every agent that embeds timestamps in comments hits this.",
+      "severity": "low",
+      "actionable": true
     }
   ]
 }

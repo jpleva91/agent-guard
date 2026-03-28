@@ -1,75 +1,26 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Close #1119 (heredoc false-positive, PR #1153 rebase) + begin next milestone: Go kernel deeper delegation / adapter scope (#955 follow-on).",
-    "issues": [
-      1119,
-      955
-    ]
+    "goal": "Reduce false-positive governance denials blocking swarm agents: fix agent-identity-bridge chicken-and-egg (#1182) + add safe-subshell allowlist for $(date ...) false positive (#1139).",
+    "issues": [1182, 1139]
   },
   "assignments": {
     "senior": {
-      "issue": 1119,
-      "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
-      "status": "waiting:review",
-      "branch": "fix/heredoc-false-positive-1119",
-      "pr": 1153,
-      "claimedAt": "2026-03-28T03:15:00Z",
-      "note": "Rebased on main (e314439b) 2026-03-28T03:35Z. Dropped redundant storage test commit (already fixed in main via #1160). Single clean commit dc27988. Matchers: 122/122, storage: 243/243. Commented on PR, CI running."
+      "issue": [1182, 1139],
+      "title": "Fix false-positive governance denials: agent-identity invariant + command scanner safe-subshell allowlist",
+      "status": "ready",
+      "branch": null,
+      "pr": null,
+      "claimedAt": null,
+      "note": "#1182 is highest priority (P1) — blocks ALL scheduled agents from setting persona identity. Invariant fires on writes to .agentguard/persona.env via write-persona.sh. Fix: exempt agent-identity bootstrap path in no-governance-self-modification invariant. #1139 is P2 — command scanner in packages/matchers/src/command-scanner.ts over-matches $(date +format) as dangerous shell expansion. Fix: add read-only subshell pattern allowlist."
     }
   },
   "blockers": [],
   "prQueue": {
-    "open": 1,
+    "open": 0,
     "reviewed": 0,
     "mergeable": 0,
-    "prs": [
-      {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "branch": "agent/kernel-sr-20260325-230535",
-        "status": "merged",
-        "ciStatus": "passed",
-        "mergedAt": "2026-03-26T00:30:00.000Z"
-      },
-      {
-        "number": 1147,
-        "title": "fix: --no-sqlite guard flag + AGENTGUARD_GO_TIMEOUT for CI stability (closes #1118, closes #1142)",
-        "branch": "agent/kernel-sr-20260327-224725",
-        "status": "merged",
-        "ciStatus": "passed",
-        "mergedAt": "2026-03-27T23:09:36Z",
-        "closes": [1118, 1142]
-      },
-      {
-        "number": 1152,
-        "title": "fix(storage): update v5 migration test to expect 2 applied migrations after v6 added",
-        "branch": "agent/kernel-qa-20260328-005003",
-        "status": "merged",
-        "ciStatus": "passed",
-        "mergedAt": "2026-03-28T02:34:07Z"
-      },
-      {
-        "number": 1168,
-        "title": "fix(guard): graceful SQLite fallback when native bindings unavailable",
-        "branch": "fix/sqlite-graceful-fallback-worktrees",
-        "status": "merged",
-        "ciStatus": "passed",
-        "mergedAt": "2026-03-28T03:12:20Z",
-        "closes": [1148, 1144],
-        "note": "All 5 CI checks green. Merged this cycle. Closes worktree SQLite crash + NODE_MODULE_VERSION mismatch."
-      },
-      {
-        "number": 1153,
-        "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
-        "branch": "fix/heredoc-false-positive-1119",
-        "status": "waiting-review",
-        "ciStatus": "pending-post-rebase",
-        "closes": [1119],
-        "headSha": "dc27988",
-        "note": "Rebased on e314439b 2026-03-28T03:35Z. Dropped redundant storage test commit. CI running."
-      }
-    ]
+    "prs": []
   },
   "health": "green",
   "testHealth": {
@@ -86,10 +37,13 @@
     { "issue": 1118, "pr": 1147, "mergedAt": "2026-03-27T23:09:36Z" },
     { "issue": 1142, "pr": 1147, "mergedAt": "2026-03-27T23:09:36Z" },
     { "issue": 955, "note": "Closed upstream" },
+    { "issue": 957, "note": "Closed upstream" },
+    { "issue": 964, "pr": 969, "mergedAt": "2026-03-26T00:31:01Z" },
     { "issue": 1148, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
-    { "issue": 1144, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" }
+    { "issue": 1144, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
+    { "issue": 1119, "pr": 1153, "mergedAt": "2026-03-28T05:00:00.000Z", "note": "Merged after rebase on main" }
   ],
-  "lastEmRun": "2026-03-28T03:15:00.000Z",
+  "lastEmRun": "2026-03-28T06:10:00.000Z",
   "lastQaRun": "2026-03-28T00:52:00.000Z",
-  "updatedAt": "2026-03-28T03:35:00.000Z"
+  "updatedAt": "2026-03-28T06:10:00.000Z"
 }
