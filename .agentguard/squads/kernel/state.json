@@ -1,26 +1,21 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Close #1119 (heredoc false-positive, PR #1153 rebase) + begin next milestone: Go kernel deeper delegation / adapter scope (#955 follow-on).",
+    "goal": "Sprint delivered. All issues closed. Next sprint candidate: #1139 (command-scanner false-positive on $(date ...) — dogfood P1).",
     "issues": [
-      1119,
-      955
+      1139
     ]
   },
   "assignments": {
     "senior": {
-      "issue": 1119,
-      "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
-      "status": "waiting:review",
-      "branch": "fix/heredoc-false-positive-1119",
-      "pr": 1153,
-      "claimedAt": "2026-03-28T03:15:00Z",
-      "note": "Rebased on main (e314439b) 2026-03-28T03:35Z. Dropped redundant storage test commit (already fixed in main via #1160). Single clean commit dc27988. Matchers: 122/122, storage: 243/243. Commented on PR, CI running."
+      "issue": null,
+      "status": "idle",
+      "note": "Sprint complete. Awaiting next assignment. Suggested: #1139 ($(date ...) command scanner false-positive)."
     }
   },
   "blockers": [],
   "prQueue": {
-    "open": 1,
+    "open": 0,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
@@ -56,18 +51,18 @@
         "status": "merged",
         "ciStatus": "passed",
         "mergedAt": "2026-03-28T03:12:20Z",
-        "closes": [1148, 1144],
-        "note": "All 5 CI checks green. Merged this cycle. Closes worktree SQLite crash + NODE_MODULE_VERSION mismatch."
+        "closes": [1148, 1144]
       },
       {
         "number": 1153,
         "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
         "branch": "fix/heredoc-false-positive-1119",
-        "status": "waiting-review",
-        "ciStatus": "pending-post-rebase",
+        "status": "merged",
+        "ciStatus": "passed",
+        "mergedAt": "2026-03-28T03:38:19Z",
         "closes": [1119],
         "headSha": "dc27988",
-        "note": "Rebased on e314439b 2026-03-28T03:35Z. Dropped redundant storage test commit. CI running."
+        "note": "Merged by jpleva91. Sprint complete."
       }
     ]
   },
@@ -87,9 +82,10 @@
     { "issue": 1142, "pr": 1147, "mergedAt": "2026-03-27T23:09:36Z" },
     { "issue": 955, "note": "Closed upstream" },
     { "issue": 1148, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
-    { "issue": 1144, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" }
+    { "issue": 1144, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
+    { "issue": 1119, "pr": 1153, "mergedAt": "2026-03-28T03:38:19Z" }
   ],
-  "lastEmRun": "2026-03-28T03:15:00.000Z",
+  "lastEmRun": "2026-03-28T06:30:00.000Z",
   "lastQaRun": "2026-03-28T00:52:00.000Z",
-  "updatedAt": "2026-03-28T03:35:00.000Z"
+  "updatedAt": "2026-03-28T06:30:00.000Z"
 }

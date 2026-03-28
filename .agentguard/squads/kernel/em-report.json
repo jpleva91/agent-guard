@@ -1,61 +1,35 @@
 {
-  "generatedAt": "2026-03-28T03:15:00.000Z",
+  "generatedAt": "2026-03-28T06:30:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
   "health": "green",
-  "summary": "Strong cycle. Merged PR #1168 (graceful SQLite fallback — all 5 CI checks green). Closed issues #1144 (better-sqlite3 NODE_MODULE_VERSION mismatch on Node 22) and #1148 (worktree SQLite fatal crash) — both addressed by #1168's graceful fallback. Closed superseded PR #1158 (HQ EM fix; storage portion already merged via #1152; go-fast-path chmodSync no longer blocking since #1142 closed). Requested rebase on PR #1153 (heredoc false-positive fix for #1119). Sprint issues #1118, #1142, #955, #1144, #1148 all CLOSED. Only #1119 remains (PR #1153 one rebase away). 4364 tests passing.",
+  "summary": "Sprint 100% delivered. PR #1153 (heredoc false-positive fix, closes #1119) merged at 03:38Z by jpleva91 — all 6 sprint issues now closed. 0 open kernel PRs. 4364 tests all passing. P0 swarm health alerts (#1128, #1186) are infrastructure-level (85.7% worktrees stuck) — outside kernel scope, escalated to director. Next sprint candidate: #1139 ($(date ...) command-scanner false-positive, P1 dogfood).",
   "prQueue": {
-    "open": 1,
-    "prs": [
-      {
-        "number": 1153,
-        "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
-        "branch": "fix/heredoc-false-positive-1119",
-        "ciStatus": "failed-pre-rebase",
-        "mergeState": "needs-rebase",
-        "closesIssue": 1119,
-        "note": "CI failure was storage migration regression (fixed by #1152 merged 02:34Z). Commented on PR requesting rebase. Expected to pass CI after rebase."
-      }
-    ]
+    "open": 0,
+    "prs": []
   },
   "mergedThisCycle": [
     {
-      "number": 1168,
-      "title": "fix(guard): graceful SQLite fallback when native bindings unavailable",
-      "mergedAt": "2026-03-28T03:12:20Z",
-      "closesIssues": [1148],
-      "checks": {
-        "total": 5,
-        "passed": 5,
-        "names": ["lint", "test-and-build", "rust-kernel", "analyze", "CodeQL"]
-      },
-      "note": "Aligns guard.ts with hook commands (claude-hook, copilot-hook) that already had graceful SQLite fallback."
+      "number": 1153,
+      "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
+      "mergedAt": "2026-03-28T03:38:19Z",
+      "mergedBy": "jpleva91",
+      "closesIssues": [1119],
+      "note": "Stripped heredoc body content before destructive pattern scanning in command-scanner.ts. All 122 matcher tests passing. 3 files changed, +120/-6 lines."
     }
   ],
   "closedThisCycle": [
     {
-      "type": "pr",
-      "number": 1158,
-      "title": "fix(ci): patch sqlite-migrations v5 assertion + go-fast-path chmodSync",
-      "note": "Superseded: storage fix already in #1152 (merged 02:34Z); CONFLICTING + CI failing; go-fast-path issue closed upstream."
-    },
-    {
       "type": "issue",
-      "number": 1144,
-      "title": "Governance runtime crashes with better-sqlite3 NODE_MODULE_VERSION mismatch on Node 22",
-      "note": "Addressed by PR #1168 graceful fallback — crash path eliminated. Root cause (stale npx cache binaries) is distribution-level."
-    },
-    {
-      "type": "issue",
-      "number": 1148,
-      "title": "Governance runtime fails to start in worktrees — better-sqlite3 native bindings missing",
-      "note": "Closed by PR #1168 merge (auto-closed via 'Closes #1148' in PR body)."
+      "number": 1119,
+      "title": "False positive: destructive command detection fires on report content mentioning blocked command patterns",
+      "note": "Closed by PR #1153 merge at 03:38Z."
     }
   ],
   "newIssues": [],
   "loopGuards": {
     "prBudget": {
-      "open": 1,
+      "open": 0,
       "max": 3,
       "pass": true
     },
@@ -69,27 +43,51 @@
     }
   },
   "triage": {
-    "p0Issues": 0,
+    "p0Issues": 2,
     "p1Issues": 0,
     "newAssignments": [],
     "notableIssues": [
       {
-        "number": 1119,
-        "title": "False positive: destructive command detection fires on report content mentioning blocked command patterns",
-        "label": "priority:medium",
-        "status": "pr-needs-rebase",
-        "pr": 1153,
-        "note": "One rebase away from done. Commented on PR. Next senior run should rebase fix/heredoc-false-positive-1119 on main and push."
+        "number": 1186,
+        "title": "Swarm Health Alert — 2026-03-28 (85.7% agents stuck)",
+        "label": "priority:P0",
+        "status": "open",
+        "kernelScope": false,
+        "note": "Infrastructure/swarm orchestration issue. 12 stuck worktrees, dead PIDs, cron collisions, 133 agents vs 32 max_workers. Not kernel-squad work — escalated to director."
+      },
+      {
+        "number": 1128,
+        "title": "Swarm Health Alert — 2026-03-27 (78% agents stuck)",
+        "label": "priority:P0",
+        "status": "open",
+        "kernelScope": false,
+        "note": "Prior swarm health alert still unresolved. Same infrastructure root cause. Escalated to director."
+      },
+      {
+        "number": 1139,
+        "title": "$(date ...) subshell blocked as dangerous shell expansion",
+        "label": "priority:P1 (dogfood)",
+        "status": "open",
+        "kernelScope": true,
+        "note": "Referenced in HQ EM PR #1151. Command scanner over-matches read-only date/subshell calls. Recommended as next kernel sprint target."
       }
     ]
   },
   "blockers": [],
-  "escalations": [],
+  "escalations": [
+    {
+      "type": "infrastructure",
+      "to": "director",
+      "issues": [1128, 1186],
+      "severity": "P0",
+      "summary": "Swarm health: 85.7% agent worktrees stuck (12/14). Prior alert #1128 unresolved since 2026-03-27T18:02Z. Issues: stale worktrees need pruning, dead PID files (/tmp), cron collisions (2 groups), 133 enabled agents vs 32 max_workers. Kernel squad cannot action — requires ops/director."
+    }
+  ],
   "metrics": {
     "prsOpened": 0,
     "prsMerged": 1,
-    "prsClosed": 1,
-    "issuesClosed": 2,
+    "prsClosed": 0,
+    "issuesClosed": 1,
     "governanceDenials": 0,
     "retries": 0
   },
@@ -99,13 +97,25 @@
     "failed": 0,
     "packages": 18,
     "status": "all_passing",
-    "note": "From QA run 2026-03-28T00:52Z. +14 tests vs prior run."
+    "note": "From QA run 2026-03-28T00:52Z. +14 tests vs prior run. No regressions."
   },
   "sprintStatus": {
-    "issuesClosed": [1118, 1142, 955, 1148, 1144],
-    "issuesOpen": [1119],
-    "completionPercent": 83,
-    "remainingWork": "PR #1153 rebase (closes #1119, heredoc false-positive in matchers)"
+    "issuesClosed": [1118, 1142, 955, 1148, 1144, 1119],
+    "issuesOpen": [],
+    "completionPercent": 100,
+    "remainingWork": "None. Sprint complete. Awaiting next sprint planning."
+  },
+  "nextSprintProposal": {
+    "candidates": [
+      {
+        "issue": 1139,
+        "title": "$(date ...) blocked as dangerous shell expansion — command-scanner over-match",
+        "priority": "P1",
+        "source": "dogfood — referenced in HQ EM PR #1151",
+        "package": "packages/matchers",
+        "rationale": "Same root-cause pattern as #1119 (command-scanner over-matching). Clean scope for senior coder."
+      }
+    ]
   },
   "escalationRules": {
     "triggered": {
@@ -113,12 +123,18 @@
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "No escalation triggers. PR #1153 is a soft blocker (needs rebase) — not a hard block on squad health."
+    "notes": "No escalation triggers for kernel squad. P0 swarm health is infrastructure-level — escalated to director as informational."
   },
   "dogfoodObservations": [
     {
       "type": "observation",
       "description": "Shell working directory resets to worktree root between Bash calls — had to use explicit bash -c 'cd ...' pattern for gh commands in agent-guard subdir.",
+      "severity": "low",
+      "actionable": false
+    },
+    {
+      "type": "observation",
+      "description": "PR #1153 was already merged (03:38Z) before this EM cycle ran (06:30Z) — state.json had stale ciStatus:'pending-post-rebase'. EM cycle detected merge via GitHub API and updated state correctly.",
       "severity": "low",
       "actionable": false
     }
