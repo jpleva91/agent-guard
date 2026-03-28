@@ -1,32 +1,31 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Fix governance startup in worktrees (#1118 via --no-sqlite flag) + CI stability (#1142 AGENTGUARD_GO_TIMEOUT). Next: resume Go kernel delegation (#955).",
-    "issues": [
-      1118,
-      1142,
-      955,
-      1119,
-      1144
-    ]
+    "goal": "Fix false-positive destructive matcher (#1119) + SQLite Node 22 binary compat (#1144).",
+    "issues": [1119, 1144]
   },
   "assignments": {
     "senior": {
-      "issue": [
-        1118,
-        1142
-      ],
-      "title": "fix: --no-sqlite guard flag + AGENTGUARD_GO_TIMEOUT for CI stability",
-      "status": "pr-created",
-      "branch": "agent/kernel-sr-20260327-224725",
-      "pr": 1147,
-      "claimedAt": "2026-03-27T22:47:31Z",
-      "note": "PR #1147 supersedes #1143 (closed). AGENTGUARD_GO_TIMEOUT env var is the correct fix for CI flakiness (500ms hard-coded was still insufficient under full test suite load). Previous sprint issues #972/#973/#955/#957/#964 all closed upstream."
+      "issue": [1119, 1144],
+      "title": "fix: destructive matcher false positives (#1119) + SQLite Node 22 compat (#1144)",
+      "status": "queued",
+      "branch": null,
+      "pr": null,
+      "claimedAt": null,
+      "note": "#1119: command-scanner fires on heredoc/inline-Python argument content containing destructive pattern strings — should only match the command being executed, not its arguments or stdin content. #1144: better-sqlite3 binaries compiled for Node 18 (MODULE_VERSION 115), Node 22 requires MODULE_VERSION 127. Fix: postinstall version check + auto-rebuild, or publish prebuilt Node 22 binaries. --no-sqlite workaround exists (PR #1147) but root cause still open."
     }
+  },
+  "previousSprint": {
+    "goal": "Fix governance startup in worktrees (#1118 via --no-sqlite flag) + CI stability (#1142 AGENTGUARD_GO_TIMEOUT).",
+    "issues": [1118, 1142, 955, 1119, 1144],
+    "outcome": "completed",
+    "pr": 1147,
+    "mergedAt": "2026-03-27T23:09:36Z",
+    "note": "PR #1147 merged — closes #1118 and #1142. Issue #955 closed upstream 2026-03-26."
   },
   "blockers": [],
   "prQueue": {
-    "open": 1,
+    "open": 0,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
@@ -37,15 +36,16 @@
         "status": "merged",
         "ciStatus": "passed",
         "mergedAt": "2026-03-26T00:30:00.000Z",
-        "note": "Merged successfully. All CI checks passed."
+        "note": "Merged successfully."
       },
       {
         "number": 1147,
         "title": "fix: --no-sqlite guard flag + AGENTGUARD_GO_TIMEOUT for CI stability (closes #1118, closes #1142)",
         "branch": "agent/kernel-sr-20260327-224725",
-        "status": "open",
-        "ciStatus": "pending",
-        "closes": [1118, 1142]
+        "status": "merged",
+        "ciStatus": "passed",
+        "mergedAt": "2026-03-27T23:09:36Z",
+        "note": "Merged. Closes #1118 and #1142."
       }
     ]
   },
@@ -57,15 +57,11 @@
     "packages": 18,
     "lastRun": "2026-03-27T22:55:00.000Z",
     "status": "all_passing",
-    "delta": "+4 storage tests (none backend) vs last QA run",
+    "delta": "+4 storage tests (none backend) vs previous QA run",
     "coverageGaps": [],
-    "fixes": [
-      "AGENTGUARD_GO_TIMEOUT env var prevents go-fast-path CI timeout",
-      "--no-sqlite flag enables worktree governance without SQLite bindings"
-    ],
-    "openPrNotes": ["PR #1147 CI pending"]
+    "openPrNotes": []
   },
-  "lastEmRun": "2026-03-27T21:10:00.000Z",
+  "lastEmRun": "2026-03-28T00:10:00.000Z",
   "lastQaRun": "2026-03-27T22:55:00.000Z",
-  "updatedAt": "2026-03-27T22:58:00.000Z"
+  "updatedAt": "2026-03-28T00:10:00.000Z"
 }
