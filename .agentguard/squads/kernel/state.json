@@ -1,18 +1,18 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Reduce false-positive governance denials blocking swarm agents: fix agent-identity-bridge chicken-and-egg (#1182) + add safe-subshell allowlist for $(date ...) false positive (#1139).",
-    "issues": [1182, 1139]
+    "goal": "Fix AAB action-type normalization failure (#1202, KE-2) — root cause of 3,825+ unintended denials/day. Quick-fix MCP prefix match (#1209). Verify heredoc false-positive closed (#1208). Complete date command scanner safe-subshell allowlist (#1139).",
+    "issues": [1202, 1209, 1208, 1139]
   },
   "assignments": {
     "senior": {
-      "issue": [1182, 1139],
-      "title": "Fix false-positive governance denials: agent-identity invariant + command scanner safe-subshell allowlist",
+      "issue": [1202, 1209],
+      "title": "AAB normalization failure (KE-2 ActionContext design + rtk-prefix stripping) + MCP prefix match quick fix",
       "status": "ready",
       "branch": null,
       "pr": null,
       "claimedAt": null,
-      "note": "#1182 is highest priority (P1) — blocks ALL scheduled agents from setting persona identity. Invariant fires on writes to .agentguard/persona.env via write-persona.sh. Fix: exempt agent-identity bootstrap path in no-governance-self-modification invariant. #1139 is P2 — command scanner in packages/matchers/src/command-scanner.ts over-matches $(date +format) as dangerous shell expansion. Fix: add read-only subshell pattern allowlist."
+      "note": "#1202 is the new P1 — AAB produces 'unknown' action type for rtk-prefixed commands and git worktree pipelines, causing 3,825 unintended default-deny decisions in 5.5 days (700/day). Fix requires: (1) strip known wrapper prefixes (rtk, time, timeout) in aab.ts before pattern matching; (2) classify embedded sub-operations in compound commands; (3) emit UnknownActionType WARNING event for monitoring. #1209 is a quick fix (1 hour): MCP server name matching in aab.ts needs prefix/substring match instead of exact-match for tools like 'github-mcp-server-actions_list'. Do #1209 first as warm-up for #1202. #1208 (heredoc path string false positive) needs verification — PR #1212 per-token fix may not cover heredoc body text; senior to test and patch if still live. #1139 (date command scanner) continues as P2."
     }
   },
   "blockers": [],
@@ -22,7 +22,7 @@
     "mergeable": 0,
     "prs": []
   },
-  "health": "green",
+  "health": "yellow",
   "testHealth": {
     "total": 4394,
     "passed": 4394,
@@ -54,14 +54,19 @@
     "regressions": [],
     "coverageGaps": [
       {
-        "issue": 1182,
-        "description": "no-governance-self-modification invariant blocks .agentguard/persona.env writes — no acceptance test for allowlist behavior yet",
-        "location": "packages/invariants/tests/invariant-definitions.test.ts"
+        "issue": 1202,
+        "description": "AAB normalization: no tests for rtk-prefixed commands or git worktree pipelines — both fall through to 'unknown' action type",
+        "location": "packages/kernel/tests/aab.test.ts"
       },
       {
-        "issue": 1139,
-        "description": "$(date +format) blocking source not found in TS/Go codebase — may be emitted by AI safety layer, not AgentGuard. Needs investigation by senior engineer.",
-        "location": "unknown"
+        "issue": 1209,
+        "description": "MCP server prefix match: no tests for github-mcp-server-* sub-tool names being blocked",
+        "location": "packages/kernel/tests/aab.test.ts"
+      },
+      {
+        "issue": 1208,
+        "description": "Heredoc body path strings: need test that cat > /tmp/file << EOF ... .agentguard/... EOF does NOT trigger no-governance-self-modification",
+        "location": "packages/invariants/tests/invariant-definitions.test.ts"
       }
     ]
   },
@@ -73,9 +78,12 @@
     { "issue": 964, "pr": 969, "mergedAt": "2026-03-26T00:31:01Z" },
     { "issue": 1148, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
     { "issue": 1144, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
-    { "issue": 1119, "pr": 1153, "mergedAt": "2026-03-28T05:00:00.000Z", "note": "Merged after rebase on main" }
+    { "issue": 1119, "pr": 1153, "mergedAt": "2026-03-28T05:00:00.000Z", "note": "Merged after rebase on main" },
+    { "issue": 1182, "pr": 1212, "mergedAt": "2026-03-28T07:00:00.000Z", "note": "Fixed by PR #1212 (persona.env operational exemption in no-governance-self-modification invariant). Issue closed by EM 2026-03-28T11:30Z." },
+    { "issue": 1201, "pr": 1212, "mergedAt": "2026-03-28T07:00:00.000Z", "note": "Closed by PR #1212. PR #1213 (duplicate fix, CI green) correctly closed as superseded." },
+    { "issue": 1050, "note": "Prettier format on claude-hook.ts already fixed — confirmed clean 2026-03-28T11:30Z. Closed by EM." }
   ],
-  "lastEmRun": "2026-03-28T06:10:00.000Z",
+  "lastEmRun": "2026-03-28T11:30:00.000Z",
   "lastQaRun": "2026-03-28T06:50:00.000Z",
-  "updatedAt": "2026-03-28T06:50:00.000Z"
+  "updatedAt": "2026-03-28T11:30:00.000Z"
 }
