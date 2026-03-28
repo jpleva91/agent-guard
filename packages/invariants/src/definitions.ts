@@ -1196,7 +1196,26 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       const GOVERNANCE_DIR_PATTERNS = ['.agentguard/', '.agentguard\\', 'policies/', 'policies\\'];
       const GOVERNANCE_FILE_BASENAMES = ['agentguard.yaml', 'agentguard.yml', '.agentguard.yaml'];
 
+      // Operational subdirectories under .agentguard/ that agents legitimately write to.
+      // These are runtime artifacts, not governance configuration files.
+      const AGENTGUARD_OPERATIONAL_PREFIXES = [
+        '.agentguard/persona.env',
+        '.agentguard\\persona.env',
+        '.agentguard/squads/',
+        '.agentguard\\squads\\',
+        '.agentguard/sessions/',
+        '.agentguard\\sessions\\',
+      ];
+
+      const isOperationalPath = (path: string) => {
+        const lower = path.toLowerCase();
+        return AGENTGUARD_OPERATIONAL_PREFIXES.some((p) => lower.startsWith(p.toLowerCase()));
+      };
+
       const matchesGovernancePath = (path: string) => {
+        if (isOperationalPath(path)) {
+          return false;
+        }
         const lower = path.toLowerCase();
         if (GOVERNANCE_DIR_PATTERNS.some((p) => lower.includes(p.toLowerCase()))) {
           return true;
@@ -1212,10 +1231,19 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       const targetViolation = target !== '' && matchesGovernancePath(target);
 
       const command = state.currentCommand || '';
+      // Strip quoted string arguments, then tokenize and check each path-like token individually.
+      // This correctly applies the operational path allowlist to redirect targets
+      // (e.g., `echo ... > .agentguard/persona.env`) and prevents false positives
+      // when governance paths appear only inside quoted flag values
+      // (e.g., `gh issue create --body "...mentions .agentguard/..."`).
+      const commandForPatternCheck = command.replace(/"[^"]*"|'[^']*'/g, '""');
+      const commandTokens = commandForPatternCheck.split(/\s+/);
       const commandViolation =
         command !== '' &&
-        (matchesGovernancePath(command) ||
-          GOVERNANCE_FILE_BASENAMES.some((f) => command.toLowerCase().includes(f)));
+        commandTokens.some((token) => {
+          const pathToken = token.replace(/^[><|&]+/, '');
+          return matchesGovernancePath(pathToken);
+        });
 
       const governanceFiles = (state.modifiedFiles || []).filter((f) => matchesGovernancePath(f));
 

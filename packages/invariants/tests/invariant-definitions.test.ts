@@ -1409,34 +1409,53 @@ describe('no-governance-self-modification', () => {
     expect(result.actual).toContain('modified');
   });
 
-  // Acceptance tests for #1182: agent-identity-bridge chicken-and-egg
+  // Acceptance tests for #1182 / #1201: operational .agentguard/ paths must not be blocked.
   // persona.env is the identity bootstrap file written by scripts/agent-identity-bridge.sh.
   // It lives under .agentguard/ but is NOT a governance config file — it's a runtime identity
-  // file required for governance telemetry enrichment. Blocking it creates a chicken-and-egg
-  // where governance requires identity, but governance blocks setting identity.
-  // TODO(#1182): remove .skip once no-governance-self-modification adds persona.env allowlist.
-  it.skip('holds when writing .agentguard/persona.env (identity bootstrap — not governance config)', () => {
+  // file required for governance telemetry enrichment.
+  it('holds when writing .agentguard/persona.env (identity bootstrap — not governance config)', () => {
     const result = inv.check({ currentTarget: '.agentguard/persona.env' });
     expect(result.holds).toBe(true);
   });
 
-  it.skip('holds when shell command writes .agentguard/persona.env via redirect', () => {
+  it('holds when shell command writes .agentguard/persona.env via redirect', () => {
     const result = inv.check({
       currentCommand: 'echo "AGENTGUARD_AGENT_ROLE=developer" > .agentguard/persona.env',
     });
     expect(result.holds).toBe(true);
   });
 
-  it.skip('holds when modifiedFiles contains only .agentguard/persona.env', () => {
+  it('holds when modifiedFiles contains only .agentguard/persona.env', () => {
     const result = inv.check({ modifiedFiles: ['.agentguard/persona.env'] });
     expect(result.holds).toBe(true);
   });
 
-  // Verify current (pre-fix) behavior so regressions in the fix are caught
-  it('currently blocks .agentguard/persona.env writes (pre-#1182-fix behavior)', () => {
-    const result = inv.check({ currentTarget: '.agentguard/persona.env' });
-    // This SHOULD become holds:true after #1182 is fixed — update alongside the fix
+  it('holds when writing squad coordination state (.agentguard/squads/)**', () => {
+    const result = inv.check({ currentTarget: '.agentguard/squads/cloud/state.json' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when modifiedFiles contains .agentguard/squads/ path', () => {
+    const result = inv.check({ modifiedFiles: ['.agentguard/squads/office-sim/state.json'] });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when writing session artifact (.agentguard/sessions/)**', () => {
+    const result = inv.check({ currentTarget: '.agentguard/sessions/run-123/summary.json' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('still blocks writes to other .agentguard/ subdirectories (e.g. events/)', () => {
+    const result = inv.check({ currentTarget: '.agentguard/events/run-123.jsonl' });
     expect(result.holds).toBe(false);
+  });
+
+  it('holds when gh issue create command body mentions .agentguard/ paths (false-positive fix)', () => {
+    const result = inv.check({
+      currentCommand:
+        'gh issue create --title "test" --body "Found issue in .agentguard/persona.env path"',
+    });
+    expect(result.holds).toBe(true);
   });
 });
 
