@@ -1,50 +1,49 @@
 {
   "squad": "hq",
   "sprint": {
-    "goal": "Validate Go kernel→Cloud telemetry E2E pipeline (workspace #60, due Apr 17). Cross-squad coordination for ShellForge critical path (kernel→Goose adapter→MCP→QA bench). DPP onboarding dry run (#152).",
-    "issues": [
-      { "ref": "workspace#60", "status": "in_progress", "due": "2026-04-17" },
-      { "ref": "#152", "status": "at_risk", "blocker": "policy suggest redirect bug #1166" }
-    ]
+    "goal": "Validate Go kernel→Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 unblock. Swarm health resolution.",
+    "issues": [917, 1182, 1186]
   },
   "assignments": {
-    "workspace-backlog-steward": "stale branch cleanup (#1127, 149 orphaned branches)",
-    "kernel-squad-developer": "rebase PR #1153 (heredoc false-positive fix) on main — P1",
-    "cloud-squad": "upgrade @red-codes/agentguard from 2.8.0 to 2.8.4 in agentguard-cloud — P2",
-    "director": "review swarm health P0 (#1128) — 78% stuck rate from 2026-03-27"
+    "kernel-squad-developer": {
+      "task": "Fix no-governance-self-modification invariant to exclude .agentguard/persona.env writes (issue #1182)",
+      "priority": "P1"
+    },
+    "kernel-sr": {
+      "task": "Assign and unblock KE-2 (ActionContext, issue #917) — 0/4 checkboxes, no PR",
+      "priority": "P1"
+    },
+    "studio-em": {
+      "task": "Close or rebase PR #1150 (Studio EM report 2026-03-28T03:00, conflicting)",
+      "priority": "P2"
+    },
+    "cloud-squad": {
+      "task": "Upgrade agentguard-cloud from 2.8.0 to 2.8.4",
+      "priority": "P2"
+    }
   },
   "blockers": [
     {
-      "id": "B1",
-      "severity": "P1",
-      "description": "PR #1153 (matchers heredoc false-positive fix) CONFLICTING + CI failing — needs rebase on main",
-      "impact": "$(date) command substitution false positive continues to block multiple agents daily (#1139)",
-      "assignee": "kernel-squad-developer"
+      "issue": 1186,
+      "description": "Swarm health P0 — 85.7% agents stuck, 133 agents vs 32 max_workers. Human intervention required: git worktree prune, PID cleanup, cron collision fix.",
+      "escalatedTo": "director"
     },
     {
-      "id": "B2",
-      "severity": "P2",
-      "description": "agentguard-cloud pinned at 2.8.0 (4 versions behind 2.8.4) — risk to E2E telemetry pipeline accuracy",
-      "assignee": "cloud-squad"
+      "issue": 1182,
+      "description": "Agent identity bridge blocked by no-governance-self-modification — chicken-and-egg. Blocks telemetry identity enrichment for all scheduled agents.",
+      "escalatedTo": "kernel-squad-developer"
+    },
+    {
+      "issue": 917,
+      "description": "KE-2 stalling — no assignee, 0/4 checkboxes. v3.0 critical path.",
+      "escalatedTo": "kernel-sr"
     }
   ],
   "prQueue": {
-    "open": 3,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
-    "merged_this_cycle": [
-      { "repo": "agent-guard", "pr": 1169, "title": "chore(kernel-em): EM report 2026-03-28T03:15Z" },
-      { "repo": "agentguard-analytics", "pr": 31, "title": "fix: wire development_artifacts pipeline and per-pipeline error isolation" }
-    ],
-    "closed_this_cycle": [
-      { "repo": "agentguard-analytics", "pr": 29, "reason": "superseded by #31" }
-    ],
-    "pending": [
-      { "repo": "agent-guard", "pr": 1153, "status": "CONFLICTING+CI_FAIL", "action": "needs_rebase" },
-      { "repo": "agent-guard", "pr": 1151, "status": "STALE_EM_REPORT+CI_FAIL", "action": "will_be_superseded_by_this_run" },
-      { "repo": "agent-guard", "pr": 1150, "status": "STALE_EM_REPORT+CONFLICTING", "action": "will_be_superseded_by_this_run" }
-    ]
+    "notes": "PR #1150 (Studio EM report) is open with conflicts — needs Studio EM action"
   },
-  "health": "yellow",
-  "updatedAt": "2026-03-28T09:21:00.000Z"
+  "updatedAt": "2026-03-28T21:00:00.000Z"
 }
