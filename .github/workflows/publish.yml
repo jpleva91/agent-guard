@@ -33,9 +33,27 @@ jobs:
           TAG="${GITHUB_REF_NAME#v}"
           PKG=$(node -p "require('./package.json').version")
           if [ "$TAG" != "$PKG" ]; then
-            echo "::error::Tag version ($TAG) does not match CLI package.json version ($PKG)"
+            echo "::error::Tag version ($TAG) does not match CLI package.json version ($PKG)."
+            echo "::error::The tag was likely created before the version bump commit."
+            echo "::error::Fix: delete the tag, ensure package.json has the correct version, then run: ./scripts/prepare-release.sh"
+            echo ""
+            echo "To fix manually:"
+            echo "  1. Delete the release and tag:  gh release delete ${GITHUB_REF_NAME} -y && git push origin :refs/tags/${GITHUB_REF_NAME}"
+            echo "  2. Ensure apps/cli/package.json has version ${TAG}"
+            echo "  3. Run: ./scripts/prepare-release.sh"
             exit 1
           fi
+          echo "✓ Tag ${GITHUB_REF_NAME} matches package.json version ${PKG}"
+
+      - name: Verify aguard wrapper version matches CLI
+        run: |
+          CLI_VERSION=$(node -p "require('./apps/cli/package.json').version")
+          WRAPPER_VERSION=$(node -p "require('./npm-wrapper/aguard/package.json').version")
+          if [ "$CLI_VERSION" != "$WRAPPER_VERSION" ]; then
+            echo "::error::Wrapper version ($WRAPPER_VERSION) does not match CLI version ($CLI_VERSION). Bump npm-wrapper/aguard/package.json to match."
+            exit 1
+          fi
+          echo "✓ aguard wrapper version matches CLI ($CLI_VERSION)"
 
       # Publish in dependency order: core → events → matchers → policy → invariants → kernel → cli
       # Library packages tolerate "already published" (E403) since their versions
@@ -144,4 +162,3 @@ jobs:
           }
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
