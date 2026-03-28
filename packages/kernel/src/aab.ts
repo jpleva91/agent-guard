@@ -187,6 +187,24 @@ function extractBranch(command: string | undefined): string | null {
 }
 
 /**
+ * Strip known command wrapper prefixes so git/github action patterns match correctly.
+ * Tool wrappers like `rtk`, `time`, and `timeout N` are transparent — they do not
+ * change the intent of the wrapped command. Removing them prevents false-negative
+ * classification where `rtk git push` would not be recognized as `git.push`.
+ *
+ * Only strips a single leading wrapper. Nested wrappers (e.g. `rtk time git push`)
+ * are not fully handled — only the outermost is stripped. Wrappers with complex
+ * multi-token arguments (e.g. `strace -e trace=file`) are left intact since the
+ * \b-anchored git/github patterns match correctly through them.
+ */
+export function stripCommandWrappers(command: string): string {
+  // Match: rtk | time | timeout [N] at the start of the command.
+  // strace is intentionally omitted — its flags (e.g. -e trace=file) are multi-token
+  // and the \b patterns in git/github detection already handle strace-prefixed commands.
+  return command.replace(/^(?:rtk|time|timeout(?:\s+\d+)?)\s+/, '');
+}
+
+/**
  * Strip quoted string content from a command, leaving only the executable and flags.
  * Replaces content inside single quotes, double quotes, heredocs, and backticks
  * with empty strings. This prevents false positive pattern matches on argument text.
@@ -238,7 +256,9 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
   }
 
   if (action === 'shell.exec' && rawAction.command) {
-    const scannable = stripQuotedContent(rawAction.command);
+    // Strip tool wrapper prefixes (rtk, time, timeout N, strace) so git/github
+    // patterns match correctly. e.g. "rtk git push origin main" → "git push origin main".
+    const scannable = stripCommandWrappers(stripQuotedContent(rawAction.command));
     // GitHub detection must run before git detection — a `gh pr create`
     // command should not be classified as shell.exec.
     const githubAction = detectGithubAction(scannable);

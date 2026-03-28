@@ -6,6 +6,7 @@ import {
   detectGithubAction,
   isDestructiveCommand,
   getDestructiveDetails,
+  stripCommandWrappers,
   DESTRUCTIVE_PATTERNS,
 } from '@red-codes/kernel';
 import type { RawAgentAction as _RawAgentAction } from '@red-codes/kernel';
@@ -1212,6 +1213,81 @@ describe('agentguard/core/aab', () => {
       });
       // Quoted content is stripped, so the remaining text has no gh command
       expect(intent.action).toBe('shell.exec');
+    });
+  });
+
+  describe('stripCommandWrappers', () => {
+    it('strips rtk prefix', () => {
+      expect(stripCommandWrappers('rtk git push origin main')).toBe('git push origin main');
+    });
+
+    it('strips time prefix', () => {
+      expect(stripCommandWrappers('time git merge feature')).toBe('git merge feature');
+    });
+
+    it('strips timeout with number', () => {
+      expect(stripCommandWrappers('timeout 30 git push origin main')).toBe('git push origin main');
+    });
+
+    it('strips timeout without number', () => {
+      expect(stripCommandWrappers('timeout git push origin main')).toBe('git push origin main');
+    });
+
+    it('leaves non-wrapper commands unchanged', () => {
+      expect(stripCommandWrappers('git push origin main')).toBe('git push origin main');
+      expect(stripCommandWrappers('npm install')).toBe('npm install');
+    });
+
+    it('only strips a single wrapper prefix', () => {
+      // Nested wrappers: only the outermost is stripped
+      expect(stripCommandWrappers('rtk time git push origin main')).toBe('time git push origin main');
+    });
+
+    it('does not strip strace (multi-token flags handled by \\b patterns)', () => {
+      // strace -e trace=file has multi-token flags; we leave it for \b-based detection
+      expect(stripCommandWrappers('strace -e trace=file git commit -m msg')).toBe(
+        'strace -e trace=file git commit -m msg'
+      );
+    });
+  });
+
+  describe('normalizeIntent — rtk-prefixed commands (Gap A, issue #1202)', () => {
+    it('normalizes rtk git push as git.push', () => {
+      const intent = normalizeIntent({ tool: 'Bash', command: 'rtk git push origin main' });
+      expect(intent.action).toBe('git.push');
+      expect(intent.branch).toBe('main');
+    });
+
+    it('normalizes rtk git push --force as git.force-push', () => {
+      const intent = normalizeIntent({ tool: 'Bash', command: 'rtk git push --force origin main' });
+      expect(intent.action).toBe('git.force-push');
+    });
+
+    it('normalizes rtk git merge as git.merge', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'rtk git merge origin/main --ff-only',
+      });
+      expect(intent.action).toBe('git.merge');
+    });
+
+    it('normalizes rtk git commit as git.commit', () => {
+      const intent = normalizeIntent({ tool: 'Bash', command: 'rtk git commit -m "fix: thing"' });
+      expect(intent.action).toBe('git.commit');
+    });
+
+    it('normalizes rtk gh pr create as github.pr.create', () => {
+      const intent = normalizeIntent({
+        tool: 'Bash',
+        command: 'rtk gh pr create --title "feat" --body "body"',
+      });
+      expect(intent.action).toBe('github.pr.create');
+    });
+
+    it('normalizes timeout git push as git.push', () => {
+      const intent = normalizeIntent({ tool: 'Bash', command: 'timeout 60 git push origin main' });
+      expect(intent.action).toBe('git.push');
+      expect(intent.branch).toBe('main');
     });
   });
 });
