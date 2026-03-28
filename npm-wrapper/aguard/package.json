@@ -1,7 +1,7 @@
 {
   "name": "aguard",
-  "version": "2.9.2",
-  "description": "Agent Guard — run AI agents without fear. Installs @red-codes/agentguard.",
+  "version": "2.9.3",
+  "description": "Agent Guard \u2014 run AI agents without fear. Installs @red-codes/agentguard.",
   "license": "Apache-2.0",
   "type": "module",
   "bin": {

@@ -1,6 +1,6 @@
 {
   "name": "@red-codes/telemetry-client",
-  "version": "2.9.2",
+  "version": "2.9.3",
   "description": "Privacy-first telemetry client SDK for AgentGuard",
   "type": "module",
   "license": "Apache-2.0",
