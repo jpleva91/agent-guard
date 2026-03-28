@@ -1,0 +1,48 @@
+name: Site CI
+
+# Provides instant-pass lint and test-and-build status checks for site-only PRs.
+# size-check.yml has paths-ignore: ['site/**'] so those jobs never run for site
+# changes; branch protection requires them — this workflow satisfies the gate.
+#
+# Runs only when ALL changed files are in site/**. Mixed PRs (code + site) are
+# handled by size-check.yml's full CI, which takes precedence.
+
+on:
+  pull_request:
+    paths:
+      - 'site/**'
+
+jobs:
+  detect-site-only:
+    runs-on: ubuntu-latest
+    outputs:
+      site_only: ${{ steps.check.outputs.site_only }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+      - id: check
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          NON_SITE=$(git diff --name-only "$BASE_SHA"..."$HEAD_SHA" | grep -v '^site/' | grep -c . || echo 0)
+          if [ "$NON_SITE" = "0" ]; then
+            echo "site_only=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "site_only=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  lint:
+    needs: detect-site-only
+    if: needs.detect-site-only.outputs.site_only == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Site-only PR — code linting not required"
+
+  test-and-build:
+    needs: detect-site-only
+    if: needs.detect-site-only.outputs.site_only == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Site-only PR — build/test not required"
