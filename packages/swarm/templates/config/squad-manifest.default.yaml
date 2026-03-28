@@ -11,6 +11,7 @@ org:
 
 squads:
   kernel:
+    name: Kernel
     repo: agent-guard
     em:
       id: kernel-em
@@ -57,6 +58,7 @@ squads:
         skills: [e2e-testing, compliance-test, test-health-review, learn, prune]
 
   cloud:
+    name: Cloud
     repo: agentguard-cloud
     em:
       id: cloud-em
@@ -103,6 +105,7 @@ squads:
         skills: [e2e-testing, compliance-test, test-health-review, learn, prune]
 
   qa:
+    name: QA
     repo: "*"
     em:
       id: qa-em
@@ -150,6 +153,7 @@ squads:
 
 
   studio:
+    name: Studio
     repo: agentguard-workspace
     em:
       id: studio-em

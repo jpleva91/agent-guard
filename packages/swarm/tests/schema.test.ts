@@ -1,4 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parse as parseYaml } from 'yaml';
 import {
   validateSwarmManifest,
   validateSquadManifest,
@@ -6,6 +10,9 @@ import {
   SWARM_MANIFEST_SCHEMA,
 } from '../src/schema.js';
 import { loadManifest } from '../src/manifest.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const TEMPLATES_DIR = join(__dirname, '..', 'templates', 'config');
 
 describe('SWARM_MANIFEST_SCHEMA', () => {
   it('has a JSON Schema $schema field', () => {
@@ -224,5 +231,27 @@ describe('validateSwarmConfig', () => {
   it('rejects empty object', () => {
     const result = validateSwarmConfig({});
     expect(result.valid).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cross-validation: shipped default templates must pass their schemas
+// ---------------------------------------------------------------------------
+
+describe('default template cross-validation', () => {
+  it('agentguard-swarm.default.yaml passes validateSwarmConfig', () => {
+    const yaml = readFileSync(join(TEMPLATES_DIR, 'agentguard-swarm.default.yaml'), 'utf8');
+    const parsed = parseYaml(yaml) as unknown;
+    const result = validateSwarmConfig(parsed);
+    expect(result.errors).toEqual([]);
+    expect(result.valid).toBe(true);
+  });
+
+  it('squad-manifest.default.yaml passes validateSquadManifest', () => {
+    const yaml = readFileSync(join(TEMPLATES_DIR, 'squad-manifest.default.yaml'), 'utf8');
+    const parsed = parseYaml(yaml) as unknown;
+    const result = validateSquadManifest(parsed);
+    expect(result.errors).toEqual([]);
+    expect(result.valid).toBe(true);
   });
 });

@@ -415,8 +415,8 @@ describe('init command', () => {
       expect(code).toBe(0);
     });
 
-    it('should accept all four template names', async () => {
-      const templates = ['strict', 'permissive', 'ci-only', 'development'];
+    it('should accept all six template names', async () => {
+      const templates = ['strict', 'permissive', 'ci-only', 'ci-safe', 'development', 'enterprise'];
       for (const tmpl of templates) {
         vi.clearAllMocks();
         vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -480,7 +480,9 @@ describe('init command', () => {
       expect(allOutput).toContain('strict');
       expect(allOutput).toContain('permissive');
       expect(allOutput).toContain('ci-only');
+      expect(allOutput).toContain('ci-safe');
       expect(allOutput).toContain('development');
+      expect(allOutput).toContain('enterprise');
     });
   });
 });
