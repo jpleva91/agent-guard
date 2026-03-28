@@ -6,13 +6,13 @@
   },
   "assignments": {
     "senior": {
-      "issue": [1202, 1139],
-      "title": "KE-2 AAB normalization (#1202 flagship) + $(date) scanner allowlist (#1139)",
-      "status": "ready",
-      "branch": null,
-      "pr": null,
-      "claimedAt": null,
-      "note": "Priority order: #1202 first (flagship 3-5d — strip rtk/time/timeout prefixes in aab.ts, emit UnknownActionType WARNING, audit tool-action-map.json). Then #1139 ($(date +format) safe subshell allowlist in command-scanner.ts). #1209 is DONE (PR #1243 merged). URGENT: 3 cycles unstarted on #1202 — start immediately. Evidence: dogfood issues #1205, #1203, #1197, #1196, #1195 are all #1202 manifestations."
+      "issue": [1139],
+      "title": "$(date) scanner safe-subshell allowlist (#1139)",
+      "status": "pr-created",
+      "branch": "agent/kernel-sr-20260328-213003",
+      "pr": 1274,
+      "claimedAt": "2026-03-29T02:30:00.000Z",
+      "note": "#1202 was already closed via PR #1252 (merged). #1139 implemented: stripSafeSubshells() added to command-scanner.ts with ReDoS-safe patterns ([^)(]* instead of (?:\\s+[^)(]*)?\\s*). PR #1274 supersedes #1255 which had CodeQL polynomial-ReDoS concern. 20 new tests. Awaiting CI."
     },
     "copilot-cli": {
       "issue": [1208],
@@ -36,7 +36,7 @@
     }
   ],
   "prQueue": {
-    "open": 1,
+    "open": 2,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
@@ -50,10 +50,21 @@
         "note": "Core fix: stripHeredocBody() isolates command header before invariant scan. 9 tests (5 unit + 4 integration). BLOCKER (run 2): branch BEHIND main. Escalated to director. Rebase clean — no conflicts with #1243/#1241/#1245.",
         "readyToMerge": false,
         "blockerRuns": 2
+      },
+      {
+        "number": 1274,
+        "title": "fix(matchers): safe-subshell allowlist — prevent $(date) false positives",
+        "ci": "pending",
+        "mergeStateStatus": "AHEAD",
+        "closesIssue": 1139,
+        "status": "ci-pending",
+        "note": "Supersedes #1255 (same logic, ReDoS-safe patterns). 20 new tests. Awaiting CI. Closes #1139.",
+        "readyToMerge": false,
+        "blockerRuns": 0
       }
     ]
   },
-  "health": "yellow",
+  "health": "green",
   "testHealth": {
     "total": 4394,
     "passed": 4394,
@@ -110,5 +121,6 @@
   ],
   "lastEmRun": "2026-03-28T23:30:00.000Z",
   "lastQaRun": "2026-03-28T06:50:00.000Z",
-  "updatedAt": "2026-03-28T23:30:00.000Z"
+  "lastSeniorRun": "2026-03-29T02:30:00.000Z",
+  "updatedAt": "2026-03-29T02:30:00.000Z"
 }
