@@ -39,6 +39,7 @@ import {
   ACTION_ESCALATED,
   ACTION_EXECUTED,
   ACTION_FAILED,
+  UNKNOWN_COMMAND_WARN,
   DECISION_RECORDED,
   SIMULATION_COMPLETED,
   INTENT_DRIFT_DETECTED,
@@ -1429,6 +1430,28 @@ export function createKernel(config: KernelConfig = {}): Kernel {
           metadata: { runId },
         });
         allEvents.push(allowedEvent);
+
+        // 5b-ii. Unknown command warning (Option A default-deny: warn+audit, not hard-deny).
+        // Emits when a shell.exec command didn't match any known git/github/destructive pattern.
+        // The action is still allowed — this is telemetry for the cloud dashboard.
+        if (ctx.metadata?.unknownCommand) {
+          const unknownWarnEvent = createEvent(UNKNOWN_COMMAND_WARN, {
+            actionType: decision.intent.action,
+            target: decision.intent.target,
+            command: ctx.command || decision.intent.target,
+            agentId: ctx.agent,
+            agentRole,
+            riskLevel: 'medium',
+            metadata: {
+              runId,
+              tag: 'unknown-command',
+              decision: 'allow',
+              source: ctx.source,
+            },
+          });
+          allEvents.push(unknownWarnEvent);
+          sinkEvent(unknownWarnEvent);
+        }
 
         // 5c. Intent drift check (advisory — does not block execution)
         let intentDrift: IntentDriftResult | undefined;
