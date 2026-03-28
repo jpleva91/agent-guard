@@ -1,35 +1,47 @@
 // aguard claude-init — set up Claude Code integration
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
-import { execSync, execFileSync } from 'node:child_process';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
-import { createInterface } from 'node:readline';
-import { RESET, BOLD, DIM, FG } from '../colors.js';
-import { resolveMainRepoRoot } from '@red-codes/core';
-import type { EnforcementMode } from '@red-codes/core';
-import { detectDriver, detectModel, detectProject, VALID_ROLES, type Role } from '../identity.js';
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+  unlinkSync,
+} from "node:fs";
+import { execSync, execFileSync } from "node:child_process";
+import { join } from "node:path";
+import { homedir } from "node:os";
+import { createInterface } from "node:readline";
+import { RESET, BOLD, DIM, FG } from "../colors.js";
+import { resolveMainRepoRoot } from "@red-codes/core";
+import type { EnforcementMode } from "@red-codes/core";
+import {
+  detectDriver,
+  detectModel,
+  detectProject,
+  VALID_ROLES,
+  type Role,
+} from "../identity.js";
 import {
   AGENT_IDENTITY_BRIDGE,
   WRITE_PERSONA,
   SESSION_PERSONA_CHECK,
   claudeHookWrapper,
-} from '../templates/scripts.js';
-import { STARTER_SKILLS } from '../templates/skills.js';
+} from "../templates/scripts.js";
+import { STARTER_SKILLS } from "../templates/skills.js";
 
-const HOOK_MARKER = 'claude-hook';
-const BUILD_MARKER = 'apps/cli/dist/bin.js';
-const LOCAL_BIN = 'node apps/cli/dist/bin.js';
+const HOOK_MARKER = "claude-hook";
+const BUILD_MARKER = "apps/cli/dist/bin.js";
+const LOCAL_BIN = "node apps/cli/dist/bin.js";
 
 /** Detect if we're in the agentguard development repo (local dev) vs. globally installed. */
 function resolveCliPrefix(): { cli: string; isLocal: boolean } {
   // If apps/cli/src/bin.ts exists, we're in the agentguard source repo (works in worktrees too)
   const mainRoot = resolveMainRepoRoot();
-  const localMarker = join(mainRoot, 'apps', 'cli', 'src', 'bin.ts');
+  const localMarker = join(mainRoot, "apps", "cli", "src", "bin.ts");
   if (existsSync(localMarker)) {
     return { cli: LOCAL_BIN, isLocal: true };
   }
-  return { cli: 'agentguard', isLocal: false };
+  return { cli: "agentguard", isLocal: false };
 }
 
 interface HookEntry {
@@ -38,7 +50,12 @@ interface HookEntry {
 }
 
 interface SessionStartHookEntry {
-  hooks?: Array<{ type?: string; command?: string; timeout?: number; blocking?: boolean }>;
+  hooks?: Array<{
+    type?: string;
+    command?: string;
+    timeout?: number;
+    blocking?: boolean;
+  }>;
 }
 
 interface Settings {
@@ -51,63 +68,77 @@ interface Settings {
   [key: string]: unknown;
 }
 
-async function promptChoice(question: string, options: string[], defaultIdx = 0): Promise<number> {
+async function promptChoice(
+  question: string,
+  options: string[],
+  defaultIdx = 0,
+): Promise<number> {
   if (!process.stdin.isTTY) return defaultIdx;
 
   const rl = createInterface({ input: process.stdin, output: process.stderr });
 
   process.stderr.write(`  ${question}\n`);
   for (let i = 0; i < options.length; i++) {
-    const marker = i === defaultIdx ? `${FG.green}❯${RESET}` : ' ';
+    const marker = i === defaultIdx ? `${FG.green}❯${RESET}` : " ";
     process.stderr.write(`    ${marker} ${i + 1}) ${options[i]}\n`);
   }
 
   return new Promise<number>((resolve) => {
-    rl.question(`  ${DIM}Enter choice [${defaultIdx + 1}]:${RESET} `, (answer) => {
-      rl.close();
-      const num = parseInt(answer.trim(), 10);
-      if (num >= 1 && num <= options.length) {
-        resolve(num - 1);
-      } else {
-        resolve(defaultIdx);
-      }
-    });
+    rl.question(
+      `  ${DIM}Enter choice [${defaultIdx + 1}]:${RESET} `,
+      (answer) => {
+        rl.close();
+        const num = parseInt(answer.trim(), 10);
+        if (num >= 1 && num <= options.length) {
+          resolve(num - 1);
+        } else {
+          resolve(defaultIdx);
+        }
+      },
+    );
   });
 }
 
 export async function claudeInit(args: string[] = []): Promise<void> {
-  const isGlobal = args.includes('--global') || args.includes('-g');
-  const isRemove = args.includes('--remove') || args.includes('--uninstall');
-  const isRefresh = args.includes('--refresh');
-  const isReset = args.includes('--reset');
+  const isGlobal = args.includes("--global") || args.includes("-g");
+  const isRemove = args.includes("--remove") || args.includes("--uninstall");
+  const isRefresh = args.includes("--refresh");
+  const isReset = args.includes("--reset");
 
   // Parse --store flag for storage backend (embedded into hook commands)
-  const storeIdx = args.findIndex((a) => a === '--store');
+  const storeIdx = args.findIndex((a) => a === "--store");
   const storeBackend = storeIdx !== -1 ? args[storeIdx + 1] : undefined;
-  const storeSuffix = storeBackend ? ` --store ${storeBackend}` : '';
+  const storeSuffix = storeBackend ? ` --store ${storeBackend}` : "";
 
   // Parse --db-path flag for SQLite database path (embedded into hook commands)
-  const dbPathIdx = args.findIndex((a) => a === '--db-path');
+  const dbPathIdx = args.findIndex((a) => a === "--db-path");
   const dbPathValue = dbPathIdx !== -1 ? args[dbPathIdx + 1] : undefined;
-  const dbPathSuffix = dbPathValue ? ` --db-path "${dbPathValue}"` : '';
+  const dbPathSuffix = dbPathValue ? ` --db-path "${dbPathValue}"` : "";
 
   // Parse --role flag
-  const roleArgIdx = args.findIndex((a) => a === '--role');
-  const roleArg = roleArgIdx !== -1 ? (args[roleArgIdx + 1] as Role) : undefined;
+  const roleArgIdx = args.findIndex((a) => a === "--role");
+  const roleArg =
+    roleArgIdx !== -1 ? (args[roleArgIdx + 1] as Role) : undefined;
 
   // Parse --driver flag (override auto-detection)
-  const driverArgIdx = args.findIndex((a) => a === '--driver');
+  const driverArgIdx = args.findIndex((a) => a === "--driver");
   const driverArg = driverArgIdx !== -1 ? args[driverArgIdx + 1] : undefined;
 
   // Parse --no-skills flag
-  const noSkills = args.includes('--no-skills');
+  const noSkills = args.includes("--no-skills");
 
-  const settingsDir = isGlobal ? join(homedir(), '.claude') : join(process.cwd(), '.claude');
-  const settingsPath = join(settingsDir, 'settings.json');
-  const settingsLabel = isGlobal ? '~/.claude/settings.json' : '.claude/settings.json';
+  const settingsDir = isGlobal
+    ? join(homedir(), ".claude")
+    : join(process.cwd(), ".claude");
+  const settingsPath = join(settingsDir, "settings.json");
+  const settingsLabel = isGlobal
+    ? "~/.claude/settings.json"
+    : ".claude/settings.json";
 
-  process.stderr.write('\n');
-  process.stderr.write(`  ${BOLD}AgentGuard Claude Code Integration${RESET}\n\n`);
+  process.stderr.write("\n");
+  process.stderr.write(
+    `  ${BOLD}AgentGuard Claude Code Integration${RESET}\n\n`,
+  );
 
   if (isRemove) {
     removeHook(settingsPath, settingsLabel);
@@ -121,32 +152,35 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   let settings: Settings = {};
   if (existsSync(settingsPath)) {
     try {
-      settings = JSON.parse(readFileSync(settingsPath, 'utf8')) as Settings;
+      settings = JSON.parse(readFileSync(settingsPath, "utf8")) as Settings;
     } catch {
       process.stderr.write(
-        `  ${FG.yellow}Warning:${RESET} Could not parse ${settingsLabel}, creating fresh config.\n`
+        `  ${FG.yellow}Warning:${RESET} Could not parse ${settingsLabel}, creating fresh config.\n`,
       );
       settings = {};
     }
   }
 
   if (isRefresh && hasAgentGuardHook(settings)) {
-    const { storeHookBaseline } = await import('@red-codes/adapters');
+    const { storeHookBaseline } = await import("@red-codes/adapters");
     storeHookBaseline(settingsPath);
     process.stderr.write(
-      `  ${FG.green}✓${RESET}  Hook baseline refreshed for ${settingsLabel}\n\n`
+      `  ${FG.green}✓${RESET}  Hook baseline refreshed for ${settingsLabel}\n\n`,
     );
 
     // Ensure .agentguard-identity exists even on --refresh (fresh worktrees/clones won't have it)
     const refreshRepoRoot = resolveMainRepoRoot();
-    const refreshIdentityPath = join(refreshRepoRoot, '.agentguard-identity');
+    const refreshIdentityPath = join(refreshRepoRoot, ".agentguard-identity");
     if (!existsSync(refreshIdentityPath)) {
       const refreshDriver = driverArg ?? detectDriver();
       const refreshModel = detectModel();
-      const refreshRole = roleArg ?? 'developer';
-      writeFileSync(refreshIdentityPath, `${refreshDriver}:${refreshModel}:${refreshRole}`);
+      const refreshRole = roleArg ?? "developer";
+      writeFileSync(
+        refreshIdentityPath,
+        `${refreshDriver}:${refreshModel}:${refreshRole}`,
+      );
       process.stderr.write(
-        `  ${FG.green}✓${RESET}  Identity file created: ${FG.cyan}.agentguard-identity${RESET}\n\n`
+        `  ${FG.green}✓${RESET}  Identity file created: ${FG.cyan}.agentguard-identity${RESET}\n\n`,
       );
     }
 
@@ -159,25 +193,27 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     if (!integrity.ok || !integrity.binaryResolved) {
       const issues: string[] = [];
       if (integrity.missingScripts.length > 0) {
-        issues.push(`missing scripts: ${integrity.missingScripts.join(', ')}`);
+        issues.push(`missing scripts: ${integrity.missingScripts.join(", ")}`);
       }
       if (!integrity.binaryResolved) {
-        issues.push('agentguard binary not found');
+        issues.push("agentguard binary not found");
       }
       process.stderr.write(
-        `  ${FG.yellow}Hooks are configured but some referenced scripts are missing:${RESET}\n`
+        `  ${FG.yellow}Hooks are configured but some referenced scripts are missing:${RESET}\n`,
       );
       for (const issue of issues) {
         process.stderr.write(`    ${FG.red}✗${RESET} ${issue}\n`);
       }
-      process.stderr.write(`  ${DIM}Continuing with init to repair...${RESET}\n\n`);
+      process.stderr.write(
+        `  ${DIM}Continuing with init to repair...${RESET}\n\n`,
+      );
       // Fall through to re-run init and repair the broken state
     } else if (!isReset) {
       process.stderr.write(
-        `  ${FG.yellow}Already configured.${RESET} AgentGuard hook found in ${settingsLabel}.\n`
+        `  ${FG.yellow}Already configured.${RESET} AgentGuard hook found in ${settingsLabel}.\n`,
       );
       process.stderr.write(
-        `  ${DIM}Use --remove to uninstall, or --reset to regenerate policy.${RESET}\n\n`
+        `  ${DIM}Use --remove to uninstall, or --reset to regenerate policy.${RESET}\n\n`,
       );
       return;
     }
@@ -185,57 +221,68 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   }
 
   // Parse --mode and --pack flags for non-interactive mode
-  const modeArgIdx = args.findIndex((a) => a === '--mode');
+  const modeArgIdx = args.findIndex((a) => a === "--mode");
   const modeArg = modeArgIdx !== -1 ? args[modeArgIdx + 1] : undefined;
-  const packArgIdx = args.findIndex((a) => a === '--pack');
+  const packArgIdx = args.findIndex((a) => a === "--pack");
   const packArg = packArgIdx !== -1 ? args[packArgIdx + 1] : undefined;
 
-  let selectedMode: EnforcementMode = 'guide';
-  let selectedPack: string | undefined = 'essentials';
+  let selectedMode: EnforcementMode = "guide";
+  let selectedPack: string | undefined = "essentials";
 
-  const VALID_MODES: EnforcementMode[] = ['guide', 'educate', 'monitor', 'enforce'];
+  const VALID_MODES: EnforcementMode[] = [
+    "guide",
+    "educate",
+    "monitor",
+    "enforce",
+  ];
 
   if (modeArg) {
     selectedMode = VALID_MODES.includes(modeArg as EnforcementMode)
       ? (modeArg as EnforcementMode)
-      : 'guide';
+      : "guide";
   } else if (process.stdin.isTTY && !isRefresh) {
     const modeChoice = await promptChoice(
-      'Start in which mode?',
+      "Start in which mode?",
       [
         `Guide ${DIM}— block dangerous actions with corrective suggestions (recommended)${RESET}`,
         `Educate ${DIM}— allow actions but teach correct patterns${RESET}`,
         `Monitor ${DIM}— log threats, don't block${RESET}`,
         `Enforce ${DIM}— block dangerous actions, no suggestions${RESET}`,
       ],
-      0
+      0,
     );
-    const modeMap: EnforcementMode[] = ['guide', 'educate', 'monitor', 'enforce'];
+    const modeMap: EnforcementMode[] = [
+      "guide",
+      "educate",
+      "monitor",
+      "enforce",
+    ];
     selectedMode = modeMap[modeChoice];
   }
 
   if (packArg !== undefined) {
-    selectedPack = packArg === 'none' ? undefined : packArg;
+    selectedPack = packArg === "none" ? undefined : packArg;
   } else if (process.stdin.isTTY && !isRefresh) {
     const packChoice = await promptChoice(
-      'Enable a policy pack?',
+      "Enable a policy pack?",
       [
         `essentials ${DIM}— secrets, force push, protected branches, credentials${RESET}`,
         `strict ${DIM}— all 21 invariants enforced${RESET}`,
         `none ${DIM}— monitor only, configure later${RESET}`,
       ],
-      0
+      0,
     );
-    selectedPack = packChoice === 2 ? undefined : packChoice === 1 ? 'strict' : 'essentials';
+    selectedPack =
+      packChoice === 2 ? undefined : packChoice === 1 ? "strict" : "essentials";
   }
 
-  let selectedRole: Role = 'developer';
+  let selectedRole: Role = "developer";
 
   if (roleArg && VALID_ROLES.includes(roleArg)) {
     selectedRole = roleArg;
   } else if (process.stdin.isTTY && !isRefresh) {
     const roleChoice = await promptChoice(
-      'Your role (for governance telemetry)',
+      "Your role (for governance telemetry)",
       [
         `developer ${DIM}— writing and shipping code${RESET}`,
         `reviewer ${DIM}— reviewing PRs and auditing${RESET}`,
@@ -243,9 +290,9 @@ export async function claudeInit(args: string[] = []): Promise<void> {
         `security ${DIM}— security scanning and hardening${RESET}`,
         `planner ${DIM}— sprint planning and roadmap${RESET}`,
       ],
-      0
+      0,
     );
-    selectedRole = VALID_ROLES[roleChoice] ?? 'developer';
+    selectedRole = VALID_ROLES[roleChoice] ?? "developer";
   }
 
   if (!settings.hooks) settings.hooks = {};
@@ -266,7 +313,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     {
       hooks: [
         {
-          type: 'command',
+          type: "command",
           command: `bash scripts/claude-hook-wrapper.sh`,
         },
       ],
@@ -276,10 +323,10 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   // PostToolUse — error monitoring (Bash stderr reporting)
   settings.hooks.PostToolUse = [
     {
-      matcher: 'Bash',
+      matcher: "Bash",
       hooks: [
         {
-          type: 'command',
+          type: "command",
           command: `bash -c '${wsResolve}; ${bin} claude-hook post${storeSuffix}${dbPathSuffix}'`,
         },
       ],
@@ -296,20 +343,20 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   if (isLocal) {
     // In the agentguard dev repo, auto-build if dist is missing
     sessionStartHooks.push({
-      type: 'command',
+      type: "command",
       command: `test -f apps/cli/dist/bin.js || pnpm build`,
       timeout: 120000,
       blocking: true,
     });
   }
   sessionStartHooks.push({
-    type: 'command',
-    command: 'bash scripts/session-persona-check.sh',
+    type: "command",
+    command: "bash scripts/session-persona-check.sh",
     timeout: 5000,
     blocking: true,
   });
   sessionStartHooks.push({
-    type: 'command',
+    type: "command",
     command: `bash -c '${wsResolve}; ${bin} status'`,
     timeout: 10000,
     blocking: false,
@@ -321,7 +368,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     {
       hooks: [
         {
-          type: 'command',
+          type: "command",
           command: `bash -c '${wsResolve}; ${bin} claude-hook notify${storeSuffix}${dbPathSuffix}'`,
           timeout: 15000,
           blocking: false,
@@ -335,7 +382,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     {
       hooks: [
         {
-          type: 'command',
+          type: "command",
           command: `bash -c '${wsResolve}; ${bin} claude-hook stop${storeSuffix}${dbPathSuffix}'`,
           timeout: 15000,
           blocking: false,
@@ -347,19 +394,22 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   // Resolve repo root early — needed for script installation and telemetry dirs
   const repoRoot = resolveMainRepoRoot();
 
-  writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+  writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf8");
 
   // Install identity scripts
-  const scriptsDir = join(repoRoot, 'scripts');
+  const scriptsDir = join(repoRoot, "scripts");
   if (!existsSync(scriptsDir)) {
     mkdirSync(scriptsDir, { recursive: true });
   }
 
   const scriptFiles: Array<{ name: string; content: string }> = [
-    { name: 'agent-identity-bridge.sh', content: AGENT_IDENTITY_BRIDGE },
-    { name: 'write-persona.sh', content: WRITE_PERSONA },
-    { name: 'session-persona-check.sh', content: SESSION_PERSONA_CHECK },
-    { name: 'claude-hook-wrapper.sh', content: claudeHookWrapper(cli, storeSuffix, dbPathSuffix) },
+    { name: "agent-identity-bridge.sh", content: AGENT_IDENTITY_BRIDGE },
+    { name: "write-persona.sh", content: WRITE_PERSONA },
+    { name: "session-persona-check.sh", content: SESSION_PERSONA_CHECK },
+    {
+      name: "claude-hook-wrapper.sh",
+      content: claudeHookWrapper(cli, storeSuffix, dbPathSuffix),
+    },
   ];
 
   for (const { name, content } of scriptFiles) {
@@ -375,36 +425,36 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   const model = detectModel();
   const project = detectProject();
   try {
-    const { execFileSync } = await import('node:child_process');
-    execFileSync('bash', ['scripts/write-persona.sh', driver, selectedRole], {
+    const { execFileSync } = await import("node:child_process");
+    execFileSync("bash", ["scripts/write-persona.sh", driver, selectedRole], {
       cwd: repoRoot,
-      stdio: 'pipe',
+      stdio: "pipe",
     });
   } catch {
     // Non-fatal — persona can be set later via SessionStart hook
   }
 
   process.stderr.write(
-    `  ${FG.green}✓${RESET}  Identity set: ${FG.cyan}${driver}:${model}:${selectedRole}${RESET} (project: ${project})\n`
+    `  ${FG.green}✓${RESET}  Identity set: ${FG.cyan}${driver}:${model}:${selectedRole}${RESET} (project: ${project})\n`,
   );
 
   // Create .agentguard-identity file (gitignored — each clone/worktree creates its own).
   // This file is required by the PreToolUse hook; without it all tool calls are blocked (#850).
   // For CI/cron agents, AGENTGUARD_AGENT_NAME env var overrides this file at runtime.
-  const identityFilePath = join(repoRoot, '.agentguard-identity');
+  const identityFilePath = join(repoRoot, ".agentguard-identity");
   if (!existsSync(identityFilePath)) {
     writeFileSync(identityFilePath, `${driver}:${model}:${selectedRole}`);
     process.stderr.write(
-      `  ${FG.green}✓${RESET}  Identity file created: ${FG.cyan}.agentguard-identity${RESET}\n`
+      `  ${FG.green}✓${RESET}  Identity file created: ${FG.cyan}.agentguard-identity${RESET}\n`,
     );
     process.stderr.write(
-      `  ${DIM}   CI/cron agents: set AGENTGUARD_AGENT_NAME env var to override${RESET}\n`
+      `  ${DIM}   CI/cron agents: set AGENTGUARD_AGENT_NAME env var to override${RESET}\n`,
     );
   }
 
   // Scaffold starter skills
   if (!noSkills) {
-    const skillsDir = join(settingsDir, 'skills');
+    const skillsDir = join(settingsDir, "skills");
     if (!existsSync(skillsDir)) {
       mkdirSync(skillsDir, { recursive: true });
     }
@@ -420,13 +470,13 @@ export async function claudeInit(args: string[] = []): Promise<void> {
 
     if (skillCount > 0) {
       process.stderr.write(
-        `  ${FG.green}✓${RESET}  Starter skills: ${FG.cyan}.claude/skills/${RESET} (${skillCount} files)\n`
+        `  ${FG.green}✓${RESET}  Starter skills: ${FG.cyan}.claude/skills/${RESET} (${skillCount} files)\n`,
       );
     }
   }
 
   // Append identity instructions to CLAUDE.md
-  const claudeMdPath = join(repoRoot, 'CLAUDE.md');
+  const claudeMdPath = join(repoRoot, "CLAUDE.md");
   const identityBlock = `
 ## Agent Identity
 
@@ -438,9 +488,9 @@ Then run: \`scripts/write-persona.sh <driver> <role>\`
 `;
 
   if (existsSync(claudeMdPath)) {
-    const existing = readFileSync(claudeMdPath, 'utf8');
-    if (!existing.includes('Agent Identity')) {
-      writeFileSync(claudeMdPath, existing + '\n' + identityBlock);
+    const existing = readFileSync(claudeMdPath, "utf8");
+    if (!existing.includes("Agent Identity")) {
+      writeFileSync(claudeMdPath, existing + "\n" + identityBlock);
     }
   } else {
     writeFileSync(claudeMdPath, identityBlock.trimStart());
@@ -448,50 +498,62 @@ Then run: \`scripts/write-persona.sh <driver> <role>\`
 
   // Store hook integrity baseline
   try {
-    const { storeHookBaseline } = await import('@red-codes/adapters');
+    const { storeHookBaseline } = await import("@red-codes/adapters");
     storeHookBaseline(settingsPath);
   } catch {
     // Non-fatal — integrity will report no_baseline
   }
 
   process.stderr.write(
-    `  ${FG.green}✓${RESET}  Hooks installed in ${FG.cyan}${settingsLabel}${RESET}\n`
+    `  ${FG.green}✓${RESET}  Hooks installed in ${FG.cyan}${settingsLabel}${RESET}\n`,
   );
-  process.stderr.write(`  ${DIM}SessionStart:  auto-build + status check${RESET}\n`);
-  process.stderr.write(`  ${DIM}PreToolUse:    governance enforcement (all tools)${RESET}\n`);
-  process.stderr.write(`  ${DIM}PostToolUse:   error monitoring (Bash)${RESET}\n`);
-  process.stderr.write(`  ${DIM}Notification:  auto-open session viewer on agent pause${RESET}\n`);
-  process.stderr.write(`  ${DIM}Stop:          session viewer HTML archival${RESET}\n`);
+  process.stderr.write(
+    `  ${DIM}SessionStart:  auto-build + status check${RESET}\n`,
+  );
+  process.stderr.write(
+    `  ${DIM}PreToolUse:    governance enforcement (all tools)${RESET}\n`,
+  );
+  process.stderr.write(
+    `  ${DIM}PostToolUse:   error monitoring (Bash)${RESET}\n`,
+  );
+  process.stderr.write(
+    `  ${DIM}Notification:  auto-open session viewer on agent pause${RESET}\n`,
+  );
+  process.stderr.write(
+    `  ${DIM}Stop:          session viewer HTML archival${RESET}\n`,
+  );
   if (storeBackend) {
     process.stderr.write(`  ${DIM}Storage:     ${storeBackend}${RESET}\n`);
   }
-  process.stderr.write('\n');
+  process.stderr.write("\n");
   // Set core.hooksPath so git uses the repo's hooks/ directory
   // (pre-commit auto-stages telemetry, post-commit tracks dev activity)
   try {
-    const currentHooksPath = execSync('git config core.hooksPath', { encoding: 'utf8' }).trim();
-    if (currentHooksPath !== 'hooks') {
-      execSync('git config core.hooksPath hooks');
+    const currentHooksPath = execSync("git config core.hooksPath", {
+      encoding: "utf8",
+    }).trim();
+    if (currentHooksPath !== "hooks") {
+      execSync("git config core.hooksPath hooks");
       process.stderr.write(
-        `  ${FG.green}✓${RESET}  Git hooks path set to ${FG.cyan}hooks/${RESET}\n`
+        `  ${FG.green}✓${RESET}  Git hooks path set to ${FG.cyan}hooks/${RESET}\n`,
       );
     }
   } catch {
     // Not in a git repo, or no hooksPath set yet
     try {
-      execSync('git config core.hooksPath hooks');
+      execSync("git config core.hooksPath hooks");
       process.stderr.write(
-        `  ${FG.green}✓${RESET}  Git hooks path set to ${FG.cyan}hooks/${RESET}\n`
+        `  ${FG.green}✓${RESET}  Git hooks path set to ${FG.cyan}hooks/${RESET}\n`,
       );
     } catch {
       process.stderr.write(
-        `  ${FG.yellow}Warning:${RESET} Could not set git hooks path. Run: git config core.hooksPath hooks\n`
+        `  ${FG.yellow}Warning:${RESET} Could not set git hooks path. Run: git config core.hooksPath hooks\n`,
       );
     }
   }
 
   // Ensure telemetry directories exist (use main repo root so worktrees share them)
-  const dirs = ['.agentguard/events', '.agentguard/decisions', 'logs'];
+  const dirs = [".agentguard/events", ".agentguard/decisions", "logs"];
   for (const dir of dirs) {
     const dirPath = join(repoRoot, dir);
     if (!existsSync(dirPath)) {
@@ -500,12 +562,18 @@ Then run: \`scripts/write-persona.sh <driver> <role>\`
   }
 
   // Auto-generate starter policy if none exists (or overwrite if --reset)
-  const policyGenerated = generateStarterPolicy(selectedMode, selectedPack, isReset);
+  const policyGenerated = generateStarterPolicy(
+    selectedMode,
+    selectedPack,
+    isReset,
+  );
 
   // Detect rtk for token optimization status
-  let rtkStatus: { available: boolean; version?: string } = { available: false };
+  let rtkStatus: { available: boolean; version?: string } = {
+    available: false,
+  };
   try {
-    const { detectRtk } = await import('@red-codes/core');
+    const { detectRtk } = await import("@red-codes/core");
     rtkStatus = detectRtk();
   } catch {
     // rtk detection is non-fatal
@@ -513,10 +581,10 @@ Then run: \`scripts/write-persona.sh <driver> <role>\`
 
   if (rtkStatus.available) {
     process.stderr.write(
-      `  ${FG.green}✓${RESET}  rtk detected${rtkStatus.version ? ` (v${rtkStatus.version})` : ''} — token optimization active\n`
+      `  ${FG.green}✓${RESET}  rtk detected${rtkStatus.version ? ` (v${rtkStatus.version})` : ""} — token optimization active\n`,
     );
     process.stderr.write(
-      `  ${DIM}   Run "rtk init -g" if rtk hooks are not yet configured.${RESET}\n`
+      `  ${DIM}   Run "rtk init -g" if rtk hooks are not yet configured.${RESET}\n`,
     );
   }
 
@@ -527,22 +595,24 @@ Then run: \`scripts/write-persona.sh <driver> <role>\`
 function removeHook(settingsPath: string, settingsLabel: string): void {
   if (!existsSync(settingsPath)) {
     process.stderr.write(
-      `  ${DIM}No settings file found at ${settingsLabel}. Nothing to remove.${RESET}\n\n`
+      `  ${DIM}No settings file found at ${settingsLabel}. Nothing to remove.${RESET}\n\n`,
     );
     return;
   }
 
   let settings: Settings;
   try {
-    settings = JSON.parse(readFileSync(settingsPath, 'utf8')) as Settings;
+    settings = JSON.parse(readFileSync(settingsPath, "utf8")) as Settings;
   } catch {
-    process.stderr.write(`  ${FG.red}Error:${RESET} Could not parse ${settingsLabel}.\n\n`);
+    process.stderr.write(
+      `  ${FG.red}Error:${RESET} Could not parse ${settingsLabel}.\n\n`,
+    );
     return;
   }
 
   if (!hasAgentGuardHook(settings)) {
     process.stderr.write(
-      `  ${DIM}No AgentGuard hook found in ${settingsLabel}. Nothing to remove.${RESET}\n\n`
+      `  ${DIM}No AgentGuard hook found in ${settingsLabel}. Nothing to remove.${RESET}\n\n`,
     );
     return;
   }
@@ -553,11 +623,14 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
       return !hooks.some((h) => h.command && h.command.includes(marker));
     });
 
-  const WRAPPER_MARKER = 'claude-hook-wrapper';
+  const WRAPPER_MARKER = "claude-hook-wrapper";
   const preToolUse = settings.hooks?.PreToolUse || [];
   settings.hooks!.PreToolUse = filterByCommand(preToolUse, HOOK_MARKER);
   // Also remove wrapper-based hooks
-  settings.hooks!.PreToolUse = filterByCommand(settings.hooks!.PreToolUse, WRAPPER_MARKER);
+  settings.hooks!.PreToolUse = filterByCommand(
+    settings.hooks!.PreToolUse,
+    WRAPPER_MARKER,
+  );
   if (settings.hooks!.PreToolUse!.length === 0) {
     delete settings.hooks!.PreToolUse;
   }
@@ -572,33 +645,47 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
   const sessionStart = (settings.hooks?.SessionStart as HookEntry[]) || [];
   (settings.hooks as Record<string, unknown>).SessionStart = filterByCommand(
     sessionStart,
-    BUILD_MARKER
+    BUILD_MARKER,
   );
   // Also remove persona check hook
-  const PERSONA_MARKER = 'session-persona-check';
+  const PERSONA_MARKER = "session-persona-check";
   (settings.hooks as Record<string, unknown>).SessionStart = filterByCommand(
     (settings.hooks as Record<string, unknown>).SessionStart as HookEntry[],
-    PERSONA_MARKER
+    PERSONA_MARKER,
   );
-  if (((settings.hooks as Record<string, unknown>).SessionStart as HookEntry[]).length === 0) {
+  if (
+    ((settings.hooks as Record<string, unknown>).SessionStart as HookEntry[])
+      .length === 0
+  ) {
     delete (settings.hooks as Record<string, unknown>).SessionStart;
   }
 
   // Remove Notification hook
   const notifHooks =
-    ((settings.hooks as Record<string, unknown>)?.Notification as HookEntry[]) || [];
+    ((settings.hooks as Record<string, unknown>)
+      ?.Notification as HookEntry[]) || [];
   (settings.hooks as Record<string, unknown>).Notification = filterByCommand(
     notifHooks,
-    HOOK_MARKER
+    HOOK_MARKER,
   );
-  if (((settings.hooks as Record<string, unknown>).Notification as HookEntry[]).length === 0) {
+  if (
+    ((settings.hooks as Record<string, unknown>).Notification as HookEntry[])
+      .length === 0
+  ) {
     delete (settings.hooks as Record<string, unknown>).Notification;
   }
 
   // Remove Stop hook
-  const stopHooks = ((settings.hooks as Record<string, unknown>)?.Stop as HookEntry[]) || [];
-  (settings.hooks as Record<string, unknown>).Stop = filterByCommand(stopHooks, HOOK_MARKER);
-  if (((settings.hooks as Record<string, unknown>).Stop as HookEntry[]).length === 0) {
+  const stopHooks =
+    ((settings.hooks as Record<string, unknown>)?.Stop as HookEntry[]) || [];
+  (settings.hooks as Record<string, unknown>).Stop = filterByCommand(
+    stopHooks,
+    HOOK_MARKER,
+  );
+  if (
+    ((settings.hooks as Record<string, unknown>).Stop as HookEntry[]).length ===
+    0
+  ) {
     delete (settings.hooks as Record<string, unknown>).Stop;
   }
 
@@ -606,18 +693,18 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
     delete settings.hooks;
   }
 
-  writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+  writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf8");
 
   // Clean up identity scripts
   const repoRoot = resolveMainRepoRoot();
   const identityScripts = [
-    'agent-identity-bridge.sh',
-    'write-persona.sh',
-    'session-persona-check.sh',
-    'claude-hook-wrapper.sh',
+    "agent-identity-bridge.sh",
+    "write-persona.sh",
+    "session-persona-check.sh",
+    "claude-hook-wrapper.sh",
   ];
   for (const name of identityScripts) {
-    const scriptPath = join(repoRoot, 'scripts', name);
+    const scriptPath = join(repoRoot, "scripts", name);
     if (existsSync(scriptPath)) {
       try {
         unlinkSync(scriptPath);
@@ -628,7 +715,7 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
   }
 
   // Clean up persona file
-  const personaPath = join(repoRoot, '.agentguard', 'persona.env');
+  const personaPath = join(repoRoot, ".agentguard", "persona.env");
   if (existsSync(personaPath)) {
     try {
       unlinkSync(personaPath);
@@ -638,15 +725,15 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
   }
 
   process.stderr.write(
-    `  ${FG.green}✓${RESET}  Hook removed from ${FG.cyan}${settingsLabel}${RESET}\n`
+    `  ${FG.green}✓${RESET}  Hook removed from ${FG.cyan}${settingsLabel}${RESET}\n`,
   );
   process.stderr.write(
-    `  ${DIM}AgentGuard governance will no longer monitor in Claude Code.${RESET}\n\n`
+    `  ${DIM}AgentGuard governance will no longer monitor in Claude Code.${RESET}\n\n`,
   );
 }
 
 const STARTER_POLICY_TEMPLATE = (mode: EnforcementMode, pack?: string) => {
-  const packLine = pack ? `pack: ${pack}` : '# pack: essentials';
+  const packLine = pack ? `pack: ${pack}` : "# pack: essentials";
   return `# AgentGuard policy — runtime protection for AI coding agents.
 # Docs: https://github.com/AgentGuardHQ/agent-guard
 
@@ -827,17 +914,17 @@ rules:
 };
 
 const POLICY_CANDIDATES = [
-  'agentguard.yaml',
-  'agentguard.yml',
-  'agentguard.json',
-  '.agentguard.yaml',
-  '.agentguard.yml',
+  "agentguard.yaml",
+  "agentguard.yml",
+  "agentguard.json",
+  ".agentguard.yaml",
+  ".agentguard.yml",
 ];
 
 function generateStarterPolicy(
-  mode: EnforcementMode = 'guide',
+  mode: EnforcementMode = "guide",
   pack?: string,
-  forceOverwrite = false
+  forceOverwrite = false,
 ): boolean {
   const repoRoot = resolveMainRepoRoot();
   if (!forceOverwrite) {
@@ -848,11 +935,11 @@ function generateStarterPolicy(
     }
   }
 
-  const policyPath = join(repoRoot, 'agentguard.yaml');
-  writeFileSync(policyPath, STARTER_POLICY_TEMPLATE(mode, pack), 'utf8');
-  const verb = forceOverwrite ? 'Reset' : 'Created';
+  const policyPath = join(repoRoot, "agentguard.yaml");
+  writeFileSync(policyPath, STARTER_POLICY_TEMPLATE(mode, pack), "utf8");
+  const verb = forceOverwrite ? "Reset" : "Created";
   process.stderr.write(
-    `  ${FG.green}✓${RESET}  Policy ${verb.toLowerCase()}: ${FG.cyan}agentguard.yaml${RESET} (${mode} mode${pack ? `, ${pack} pack` : ''})\n`
+    `  ${FG.green}✓${RESET}  Policy ${verb.toLowerCase()}: ${FG.cyan}agentguard.yaml${RESET} (${mode} mode${pack ? `, ${pack} pack` : ""})\n`,
   );
   return true;
 }
@@ -861,127 +948,161 @@ function showProtectionSummary(
   _policyGenerated: boolean,
   rtkStatus?: { available: boolean; version?: string },
   isGlobal?: boolean,
-  mode: EnforcementMode = 'guide'
+  mode: EnforcementMode = "guide",
 ): void {
-  process.stderr.write('\n');
+  process.stderr.write("\n");
   process.stderr.write(`  ${FG.green}${BOLD}AgentGuard is active.${RESET}\n\n`);
 
-  if (mode === 'guide') {
+  if (mode === "guide") {
     process.stderr.write(
-      `  ${BOLD}Mode: ${FG.cyan}guide${RESET}${BOLD} — dangerous actions blocked with corrective suggestions${RESET}\n\n`
+      `  ${BOLD}Mode: ${FG.cyan}guide${RESET}${BOLD} — dangerous actions blocked with corrective suggestions${RESET}\n\n`,
     );
     process.stderr.write(`  ${BOLD}Guiding:${RESET}\n`);
     process.stderr.write(
-      `  ${FG.cyan}■${RESET} ${DIM}Block + suggest${RESET} push to main/master\n`
-    );
-    process.stderr.write(`  ${FG.cyan}■${RESET} ${DIM}Block + suggest${RESET} force push\n`);
-    process.stderr.write(
-      `  ${FG.cyan}■${RESET} ${DIM}Block + suggest${RESET} writes to .env, credentials\n`
+      `  ${FG.cyan}■${RESET} ${DIM}Block + suggest${RESET} push to main/master\n`,
     );
     process.stderr.write(
-      `  ${FG.cyan}■${RESET} ${DIM}Block + suggest${RESET} rm -rf, deploy, infra destroy\n`
+      `  ${FG.cyan}■${RESET} ${DIM}Block + suggest${RESET} force push\n`,
     );
-  } else if (mode === 'educate') {
     process.stderr.write(
-      `  ${BOLD}Mode: ${FG.blue}educate${RESET}${BOLD} — actions allowed with corrective teaching${RESET}\n\n`
+      `  ${FG.cyan}■${RESET} ${DIM}Block + suggest${RESET} writes to .env, credentials\n`,
+    );
+    process.stderr.write(
+      `  ${FG.cyan}■${RESET} ${DIM}Block + suggest${RESET} rm -rf, deploy, infra destroy\n`,
+    );
+  } else if (mode === "educate") {
+    process.stderr.write(
+      `  ${BOLD}Mode: ${FG.blue}educate${RESET}${BOLD} — actions allowed with corrective teaching${RESET}\n\n`,
     );
     process.stderr.write(`  ${BOLD}Teaching:${RESET}\n`);
-    process.stderr.write(`  ${FG.blue}■${RESET} ${DIM}Allow + teach${RESET} push to main/master\n`);
-    process.stderr.write(`  ${FG.blue}■${RESET} ${DIM}Allow + teach${RESET} force push\n`);
     process.stderr.write(
-      `  ${FG.blue}■${RESET} ${DIM}Allow + teach${RESET} credential file creation\n`
+      `  ${FG.blue}■${RESET} ${DIM}Allow + teach${RESET} push to main/master\n`,
     );
     process.stderr.write(
-      `  ${FG.blue}■${RESET} ${DIM}Allow + teach${RESET} permission escalation\n`
+      `  ${FG.blue}■${RESET} ${DIM}Allow + teach${RESET} force push\n`,
     );
     process.stderr.write(
-      `  ${FG.red}■${RESET} ${DIM}Block${RESET} secret exposure (always enforced)\n`
+      `  ${FG.blue}■${RESET} ${DIM}Allow + teach${RESET} credential file creation\n`,
     );
-  } else if (mode === 'monitor') {
     process.stderr.write(
-      `  ${BOLD}Mode: ${FG.yellow}monitor${RESET}${BOLD} — threats are logged, not blocked${RESET}\n\n`
+      `  ${FG.blue}■${RESET} ${DIM}Allow + teach${RESET} permission escalation\n`,
+    );
+    process.stderr.write(
+      `  ${FG.red}■${RESET} ${DIM}Block${RESET} secret exposure (always enforced)\n`,
+    );
+  } else if (mode === "monitor") {
+    process.stderr.write(
+      `  ${BOLD}Mode: ${FG.yellow}monitor${RESET}${BOLD} — threats are logged, not blocked${RESET}\n\n`,
     );
     process.stderr.write(`  ${BOLD}Monitoring for:${RESET}\n`);
-    process.stderr.write(`  ${FG.yellow}■${RESET} ${DIM}Warn${RESET} push to main/master\n`);
-    process.stderr.write(`  ${FG.yellow}■${RESET} ${DIM}Warn${RESET} force push\n`);
-    process.stderr.write(`  ${FG.yellow}■${RESET} ${DIM}Warn${RESET} credential file creation\n`);
-    process.stderr.write(`  ${FG.yellow}■${RESET} ${DIM}Warn${RESET} permission escalation\n`);
-    process.stderr.write(`  ${FG.yellow}■${RESET} ${DIM}Warn${RESET} blast radius exceeded\n`);
     process.stderr.write(
-      `  ${FG.red}■${RESET} ${DIM}Block${RESET} secret exposure (always enforced)\n`
+      `  ${FG.yellow}■${RESET} ${DIM}Warn${RESET} push to main/master\n`,
+    );
+    process.stderr.write(
+      `  ${FG.yellow}■${RESET} ${DIM}Warn${RESET} force push\n`,
+    );
+    process.stderr.write(
+      `  ${FG.yellow}■${RESET} ${DIM}Warn${RESET} credential file creation\n`,
+    );
+    process.stderr.write(
+      `  ${FG.yellow}■${RESET} ${DIM}Warn${RESET} permission escalation\n`,
+    );
+    process.stderr.write(
+      `  ${FG.yellow}■${RESET} ${DIM}Warn${RESET} blast radius exceeded\n`,
+    );
+    process.stderr.write(
+      `  ${FG.red}■${RESET} ${DIM}Block${RESET} secret exposure (always enforced)\n`,
     );
   } else {
     process.stderr.write(
-      `  ${BOLD}Mode: ${FG.red}enforce${RESET}${BOLD} — dangerous actions are blocked${RESET}\n\n`
+      `  ${BOLD}Mode: ${FG.red}enforce${RESET}${BOLD} — dangerous actions are blocked${RESET}\n\n`,
     );
     process.stderr.write(`  ${BOLD}Enforcing:${RESET}\n`);
-    process.stderr.write(`  ${FG.red}■${RESET} ${DIM}Block${RESET} push to main/master\n`);
-    process.stderr.write(`  ${FG.red}■${RESET} ${DIM}Block${RESET} force push\n`);
-    process.stderr.write(`  ${FG.red}■${RESET} ${DIM}Block${RESET} writes to .env, credentials\n`);
     process.stderr.write(
-      `  ${FG.red}■${RESET} ${DIM}Block${RESET} rm -rf, deploy, infra destroy\n`
+      `  ${FG.red}■${RESET} ${DIM}Block${RESET} push to main/master\n`,
+    );
+    process.stderr.write(
+      `  ${FG.red}■${RESET} ${DIM}Block${RESET} force push\n`,
+    );
+    process.stderr.write(
+      `  ${FG.red}■${RESET} ${DIM}Block${RESET} writes to .env, credentials\n`,
+    );
+    process.stderr.write(
+      `  ${FG.red}■${RESET} ${DIM}Block${RESET} rm -rf, deploy, infra destroy\n`,
     );
   }
-  process.stderr.write(`  ${FG.blue}■${RESET} ${DIM}Track${RESET} all actions with audit trail\n`);
+  process.stderr.write(
+    `  ${FG.blue}■${RESET} ${DIM}Track${RESET} all actions with audit trail\n`,
+  );
 
   if (rtkStatus?.available) {
-    const ver = rtkStatus.version ? ` v${rtkStatus.version}` : '';
+    const ver = rtkStatus.version ? ` v${rtkStatus.version}` : "";
     process.stderr.write(
-      `  ${FG.cyan}■${RESET} ${DIM}Optimize${RESET} token usage via rtk${ver}\n`
+      `  ${FG.cyan}■${RESET} ${DIM}Optimize${RESET} token usage via rtk${ver}\n`,
     );
   }
-  process.stderr.write('\n');
+  process.stderr.write("\n");
 
   process.stderr.write(`  ${BOLD}Next steps:${RESET}\n`);
-  if (mode === 'monitor') {
+  if (mode === "monitor") {
     process.stderr.write(
-      `  ${DIM}1. Start a Claude Code session — warnings appear in your terminal${RESET}\n`
+      `  ${DIM}1. Start a Claude Code session — warnings appear in your terminal${RESET}\n`,
     );
     process.stderr.write(
-      `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`
+      `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`,
     );
     process.stderr.write(
-      `  ${DIM}3. Edit ${FG.cyan}agentguard.yaml${RESET}${DIM} → set ${FG.cyan}mode: guide${RESET}${DIM} when ready to block with suggestions${RESET}\n`
+      `  ${DIM}3. Edit ${FG.cyan}agentguard.yaml${RESET}${DIM} → set ${FG.cyan}mode: guide${RESET}${DIM} when ready to block with suggestions${RESET}\n`,
     );
-  } else if (mode === 'educate') {
+  } else if (mode === "educate") {
     process.stderr.write(
-      `  ${DIM}1. Start a Claude Code session — teaching feedback appears in your terminal${RESET}\n`
-    );
-    process.stderr.write(
-      `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`
+      `  ${DIM}1. Start a Claude Code session — teaching feedback appears in your terminal${RESET}\n`,
     );
     process.stderr.write(
-      `  ${DIM}3. Edit ${FG.cyan}agentguard.yaml${RESET}${DIM} → set ${FG.cyan}mode: guide${RESET}${DIM} when ready to block with suggestions${RESET}\n`
+      `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`,
+    );
+    process.stderr.write(
+      `  ${DIM}3. Edit ${FG.cyan}agentguard.yaml${RESET}${DIM} → set ${FG.cyan}mode: guide${RESET}${DIM} when ready to block with suggestions${RESET}\n`,
     );
   } else {
     process.stderr.write(
-      `  ${DIM}1. Start a Claude Code session — governance is automatic${RESET}\n`
+      `  ${DIM}1. Start a Claude Code session — governance is automatic${RESET}\n`,
     );
     process.stderr.write(
-      `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`
+      `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`,
     );
   }
   if (!isGlobal) {
     process.stderr.write(
-      `\n  ${FG.yellow}Tip:${RESET} Run ${FG.cyan}aguard claude-init --global${RESET} to install hooks globally.\n`
+      `\n  ${FG.yellow}Tip:${RESET} Run ${FG.cyan}aguard claude-init --global${RESET} to install hooks globally.\n`,
     );
   }
-  process.stderr.write(`\n  ${DIM}ℹ Claude Desktop support coming soon.${RESET}\n`);
-  process.stderr.write(`\n  ${BOLD}☁  Get team governance & telemetry:${RESET}\n`);
   process.stderr.write(
-    `  ${FG.cyan}https://agentguard-cloud.vercel.app/signup${RESET}\n`
+    `\n  ${DIM}ℹ Claude Desktop support coming soon.${RESET}\n`,
+  );
+  process.stderr.write(
+    `\n  ${BOLD}☁  Get team governance & telemetry:${RESET}\n`,
+  );
+  process.stderr.write(
+    `  ${FG.cyan}https://agentguard-cloud.vercel.app/signup${RESET}\n`,
   );
   process.stderr.write(`  ${DIM}  or run: agentguard cloud signup${RESET}\n`);
-  process.stderr.write('\n');
+  process.stderr.write("\n");
 }
 
 function hasAgentGuardHook(settings: Settings): boolean {
   const preToolUse = settings?.hooks?.PreToolUse || [];
   const postToolUse = settings?.hooks?.PostToolUse || [];
-  const notifHooks = ((settings?.hooks as Record<string, unknown>)?.Notification ||
+  const notifHooks = ((settings?.hooks as Record<string, unknown>)
+    ?.Notification || []) as HookEntry[];
+  const stopHooks = ((settings?.hooks as Record<string, unknown>)?.Stop ||
     []) as HookEntry[];
-  const stopHooks = ((settings?.hooks as Record<string, unknown>)?.Stop || []) as HookEntry[];
-  const allEntries = [...preToolUse, ...postToolUse, ...notifHooks, ...stopHooks] as HookEntry[];
+  const allEntries = [
+    ...preToolUse,
+    ...postToolUse,
+    ...notifHooks,
+    ...stopHooks,
+  ] as HookEntry[];
   return allEntries.some((entry) => {
     const hooks = entry.hooks || [];
     return hooks.some((h) => h.command && h.command.includes(HOOK_MARKER));
@@ -990,10 +1111,10 @@ function hasAgentGuardHook(settings: Settings): boolean {
 
 /** Wrapper scripts that hooks may reference. */
 const WRAPPER_SCRIPTS = [
-  'scripts/claude-hook-wrapper.sh',
-  'scripts/session-persona-check.sh',
-  'scripts/agent-identity-bridge.sh',
-  'scripts/write-persona.sh',
+  "scripts/claude-hook-wrapper.sh",
+  "scripts/session-persona-check.sh",
+  "scripts/agent-identity-bridge.sh",
+  "scripts/write-persona.sh",
 ];
 
 interface HookIntegrityResult {
@@ -1016,17 +1137,17 @@ export function validateHookIntegrity(): HookIntegrityResult {
 
   // Check if the agentguard binary can be resolved
   let binaryResolved = false;
-  const localBinPath = join(repoRoot, 'node_modules', '.bin', 'agentguard');
+  const localBinPath = join(repoRoot, "node_modules", ".bin", "agentguard");
   if (existsSync(localBinPath)) {
     binaryResolved = true;
   } else {
     // Check PATH via execFileSync (safe — no shell injection)
     try {
-      execFileSync('which', ['agentguard'], { stdio: 'pipe', timeout: 3000 });
+      execFileSync("which", ["agentguard"], { stdio: "pipe", timeout: 3000 });
       binaryResolved = true;
     } catch {
       // Also check if we're in local dev mode (apps/cli/dist/bin.js exists)
-      const localDevBin = join(repoRoot, 'apps', 'cli', 'dist', 'bin.js');
+      const localDevBin = join(repoRoot, "apps", "cli", "dist", "bin.js");
       if (existsSync(localDevBin)) {
         binaryResolved = true;
       }
