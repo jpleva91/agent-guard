@@ -142,7 +142,12 @@ AgentGuard produces canonical events (see [Event Model](event-model.md)) that fl
 
 | Outcome | Event Type | Severity |
 |---------|------------|----------|
-| Action allowed | (no event) | - |
+| Action requested | `ActionRequested` | - |
+| Action allowed | `ActionAllowed` | - |
+| Action denied | `ActionDenied` | - |
+| Action escalated | `ActionEscalated` | - |
+| Action executed | `ActionExecuted` | - |
+| Action failed | `ActionFailed` | - |
 | Policy denied | `PolicyDenied` | Medium |
 | Unauthorized action | `UnauthorizedAction` | High |
 | Invariant violated | `InvariantViolation` | Critical |
@@ -210,7 +215,7 @@ AgentGuard is **implemented and operational**. The governed action kernel connec
 |-----------|------|--------|
 | Invariant checker | `packages/invariants/src/checker.ts` | Complete |
 | 24 built-in invariants | `packages/invariants/src/definitions.ts` | Complete |
-| Evidence pack generation | `agentguard/evidence/pack.ts` | Complete |
+| Evidence pack generation | `packages/kernel/src/evidence.ts` | Complete |
 
 ### Execution Adapters
 | Component | File | Status |
