@@ -1,34 +1,22 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Fix governance startup in worktrees (#1118 via --no-sqlite flag) + CI stability (#1142 AGENTGUARD_GO_TIMEOUT). Next: resume Go kernel delegation (#955).",
-    "issues": [
-      1118,
-      1142,
-      955,
-      1119,
-      1144
-    ]
+    "goal": "Clear P1 dogfood backlog: merge #1168 (graceful SQLite fallback, CI green), rebase+merge #1153 (heredoc false-positive), fix #1139 ($(date) command scanner false-positive). Resume #955 (Go kernel delegation) once P1s merged.",
+    "issues": [1168, 1153, 1139, 955, 1113]
   },
   "assignments": {
     "senior": {
-      "issue": [
-        1118,
-        1142
-      ],
-      "title": "fix: --no-sqlite guard flag + AGENTGUARD_GO_TIMEOUT for CI stability",
-      "status": "pr-created",
-      "branch": "agent/kernel-sr-20260327-224725",
-      "pr": 1147,
-      "claimedAt": "2026-03-27T22:47:31Z",
-      "note": "PR #1147 supersedes #1143 (closed). AGENTGUARD_GO_TIMEOUT env var is the correct fix for CI flakiness (500ms hard-coded was still insufficient under full test suite load). Previous sprint issues #972/#973/#955/#957/#964 all closed upstream."
+      "issue": [1153, 1139],
+      "title": "rebase PR #1153 onto main + fix #1139 ($(date) command scanner false-positive)",
+      "status": "queued",
+      "note": "PR #1153 filed against old base — needs rebase onto main (post-#1147/#1152). After merge, take #1139: command scanner incorrectly flags read-only shell expansions like $(date +%Y-%m-%d). Fix lives in packages/matchers/src/command-scanner.ts."
     }
   },
   "blockers": [],
   "prQueue": {
     "open": 2,
     "reviewed": 0,
-    "mergeable": 0,
+    "mergeable": 1,
     "prs": [
       {
         "number": 969,
@@ -43,17 +31,37 @@
         "number": 1147,
         "title": "fix: --no-sqlite guard flag + AGENTGUARD_GO_TIMEOUT for CI stability (closes #1118, closes #1142)",
         "branch": "agent/kernel-sr-20260327-224725",
-        "status": "open",
-        "ciStatus": "pending",
-        "closes": [1118, 1142]
+        "status": "merged",
+        "ciStatus": "passed",
+        "mergedAt": "2026-03-27T23:09:36Z",
+        "note": "Sprint deliverable. Closed P0 #1118 + P1 #1142. Root cause fix for swarm agent stuck rate."
       },
       {
         "number": 1152,
         "title": "fix(storage): update v5 migration test to expect 2 applied migrations after v6 added",
         "branch": "agent/kernel-qa-20260328-005003",
+        "status": "merged",
+        "ciStatus": "passed",
+        "mergedAt": "2026-03-28T02:34:07Z",
+        "note": "QA regression fix for #1098 migration v6. Storage suite: 243/243 passing."
+      },
+      {
+        "number": 1168,
+        "title": "fix(guard): graceful SQLite fallback when native bindings unavailable (closes #1148)",
+        "branch": "fix/sqlite-graceful-fallback-worktrees",
         "status": "open",
-        "ciStatus": "pending",
-        "note": "Regression fix: test expected applied=1 from v4 baseline but v6 was added in #1098 making it applied=2. QA-authored."
+        "ciStatus": "passed",
+        "closes": [1148],
+        "note": "All 5 CI checks green. No reviews. READY FOR ARCHITECT REVIEW + MERGE."
+      },
+      {
+        "number": 1153,
+        "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning (closes #1119)",
+        "branch": "fix/heredoc-false-positive-1119",
+        "status": "open",
+        "ciStatus": "failed",
+        "closes": [1119],
+        "note": "test-and-build failing — filed against old base pre-#1147/#1152. Senior must rebase onto main to fix."
       }
     ]
   },
@@ -65,24 +73,10 @@
     "packages": 18,
     "lastRun": "2026-03-28T00:52:00.000Z",
     "status": "all_passing",
-    "delta": "+14 vs last QA run (agentguard: 818→820, storage: 231→243, telemetry: 137→161)",
-    "coverageGaps": [],
-    "fixes": [
-      "PR #1152: fix storage migration v5 test regression introduced by #1098 (v6 migration)"
-    ],
-    "regressions": [
-      {
-        "detected": "2026-03-28T00:51:00.000Z",
-        "test": "SQLite migration v5 — agent_id backfill > backfills agent_id from RunStarted events with agentName",
-        "file": "packages/storage/tests/sqlite-migrations.test.ts:426",
-        "root_cause": "Migration v6 added in #1098 increased runMigrations() return from 1→2 for v4 baseline",
-        "status": "fixed",
-        "pr": 1152
-      }
-    ],
-    "openPrNotes": ["PR #1147 CI pending", "PR #1152 regression fix CI pending"]
+    "delta": "+235 since last EM report (4129 → 4364)",
+    "openPrNotes": ["PR #1153 test-and-build failing (needs rebase)", "PR #1168 CI green (needs review)"]
   },
-  "lastEmRun": "2026-03-27T21:10:00.000Z",
+  "lastEmRun": "2026-03-28T03:15:00.000Z",
   "lastQaRun": "2026-03-28T00:52:00.000Z",
-  "updatedAt": "2026-03-28T00:52:00.000Z"
+  "updatedAt": "2026-03-28T03:15:00.000Z"
 }

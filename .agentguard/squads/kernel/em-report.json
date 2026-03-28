@@ -1,52 +1,51 @@
 {
-  "generatedAt": "2026-03-26T09:00:00.000Z",
-  "identity": "claude-code:opus:kernel:em",
+  "generatedAt": "2026-03-28T03:15:00.000Z",
+  "identity": "claude-code:unknown:em",
   "runCycle": "3h",
-  "health": "yellow",
-  "summary": "Health downgraded to YELLOW. Three new dogfood bugs discovered (#971, #972, #973). #972 is P0 — hook deny reason includes retry metadata text that causes Claude Code to block ALL tool use in governed sessions. #973 compounds it — essentials pack not bundled in npm, so every hook invocation hits default-deny. Sprint reprioritized: fix #972 + #973 first, then resume #955 (Go kernel delegation). PR #969 (closes #964) has merge conflicts — needs rebase. Closed stale EM PR #966.",
+  "health": "green",
+  "summary": "Sprint goal delivered. PR #1147 (--no-sqlite + AGENTGUARD_GO_TIMEOUT) and PR #1152 (storage migration regression) both merged. P0 swarm blocker (#1128) root cause resolved. New PRs: #1168 (graceful SQLite fallback, closes #1148) is CI-green and ready for architect review; #1153 (strip heredoc bodies, closes #1119) has a test-and-build failure — needs rebase onto main (was filed against old base before #1147/#1152 landed). No escalation triggers met. Next sprint: merge #1168, rebase+merge #1153, assign #1139 (date false-positive) to senior, begin #955 (Go kernel delegation).",
   "prQueue": {
-    "open": 1,
+    "open": 2,
+    "reviewed": 0,
+    "mergeable": 1,
     "prs": [
       {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
+        "number": 1168,
+        "title": "fix(guard): graceful SQLite fallback when native bindings unavailable",
+        "branch": "fix/sqlite-graceful-fallback-worktrees",
         "ciStatus": "passed",
-        "mergeState": "CONFLICTING",
-        "note": "CI green but merge conflicts — needs rebase before merge"
+        "mergeState": "MERGEABLE",
+        "closes": [1148],
+        "note": "All 5 CI checks green (lint, test-and-build, CodeQL, rust-kernel, analyze). No reviews yet — flag for architect."
+      },
+      {
+        "number": 1153,
+        "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
+        "branch": "fix/heredoc-false-positive-1119",
+        "ciStatus": "failed",
+        "mergeState": "BLOCKED",
+        "closes": [1119],
+        "note": "test-and-build failed — filed against old base (pre-#1147/#1152). Needs rebase onto main. Lint, CodeQL, rust-kernel all pass."
       }
     ]
   },
-  "closedThisCycle": [
+  "mergedThisCycle": [
     {
-      "number": 966,
-      "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
-      "note": "Stale EM report — superseded by current cycle"
-    }
-  ],
-  "mergedThisCycle": [],
-  "newIssues": [
-    {
-      "number": 972,
-      "title": "Hook deny reason includes '(attempt N/N)' text that Claude Code misinterprets as blocking error",
-      "severity": "P0",
-      "note": "Breaks ALL governed sessions. Deny reason text causes Claude Code to block all tool use. Sprint-blocking."
+      "number": 1147,
+      "title": "fix: --no-sqlite guard flag + AGENTGUARD_GO_TIMEOUT for CI stability",
+      "closes": [1118, 1142],
+      "note": "Merged 2026-03-27T23:09Z. All CI green. Resolved P0 swarm SQLite startup blocker."
     },
     {
-      "number": 973,
-      "title": "claude-init --reset references essentials pack not bundled in npm package",
-      "severity": "P0",
-      "note": "Essentials pack only exists in repo source tree, not npm. Every hook invocation warns 'Pack not found' → default-deny."
-    },
-    {
-      "number": 971,
-      "title": "Hook crash after aguard rename + cross-user queue lock permission",
-      "severity": "P1",
-      "note": "Two dogfood bugs: (1) hook config references old 'agentguard' binary after rename to 'aguard', (2) cross-user queue.lock permission denied on jared box. Bug 1 is kernel, Bug 2 is ops."
+      "number": 1152,
+      "title": "fix(storage): update v5 migration test to expect 2 applied migrations after v6 added",
+      "note": "Merged 2026-03-28T02:34Z. Regression fix for test introduced by #1098 (migration v6). Storage: 243/243 passing."
     }
   ],
+  "closedThisCycle": [],
   "loopGuards": {
     "prBudget": {
-      "open": 1,
+      "open": 2,
       "max": 3,
       "pass": true
     },
@@ -60,67 +59,72 @@
     }
   },
   "triage": {
-    "p0Issues": 2,
-    "p1Issues": 1,
-    "sprintReprioritized": true,
-    "reprioritizationReason": "Can't ship Go kernel delegation (#955) if the TS hook path itself is broken. #972 + #973 must be fixed first — they affect every npm user running governed sessions.",
-    "newAssignments": [
+    "p0Issues": 0,
+    "p1Issues": 3,
+    "sprintReprioritized": false,
+    "openP1Issues": [
       {
-        "agent": "senior",
-        "issues": [972, 973],
-        "note": "P0 fast-track: fix deny reason retry text (#972) + bundle essentials pack (#973). Both break the hook integration path."
-      }
-    ],
-    "deferredWork": [
-      {
-        "issues": [955, 957, 964],
-        "note": "Go kernel wire-up — resume after #972/#973 are fixed. PR #969 (closes #964) needs rebase."
-      }
-    ],
-    "notableIssues": [
-      {
-        "number": 965,
-        "note": "Dogfood gap: direct push to master not blocked. Needs investigation but lower priority than #972/#973."
+        "number": 1119,
+        "title": "Destructive detection fires on heredoc/report content",
+        "status": "in-pr",
+        "pr": 1153,
+        "note": "PR #1153 implements fix. Needs rebase + CI green before merge."
       },
       {
-        "number": 971,
-        "note": "Two bugs: aguard rename compat (kernel) + queue lock perms (ops). Bug 2 should be escalated to ops."
+        "number": 1148,
+        "title": "SQLite native bindings fail in worktrees (graceful fallback)",
+        "status": "in-pr",
+        "pr": 1168,
+        "note": "PR #1168 CI green. Needs architect review. Complements #1147 (--no-sqlite explicit flag)."
+      },
+      {
+        "number": 1139,
+        "title": "$(date ...) blocked as dangerous shell expansion (command scanner over-matches)",
+        "status": "unassigned",
+        "note": "Command scanner incorrectly flags read-only shell expansions like $(date +%Y-%m-%d). Assign to senior coder next cycle."
+      }
+    ],
+    "nextSprintFocus": [
+      { "issue": 1139, "action": "assign-to-senior", "note": "Command scanner date false-positive — well-scoped fix in matchers package" },
+      { "issue": 955, "action": "resume", "note": "Go kernel delegation — unblocked now that P0s are resolved" }
+    ],
+    "outOfScope": [
+      {
+        "number": 1113,
+        "title": "security_reminder_hook blocks Write instead of warning",
+        "note": "Adapters/hooks scope, not kernel. Escalated to ops/adapters squad."
       }
     ]
   },
-  "blockers": [
-    {
-      "issue": 972,
-      "description": "P0: Hook deny reason retry text breaks Claude Code integration",
-      "since": "2026-03-26"
-    },
-    {
-      "issue": 973,
-      "description": "P0: Essentials pack not in npm → all hooks default-deny",
-      "since": "2026-03-26"
-    }
-  ],
+  "blockers": [],
   "escalations": [
     {
+      "target": "architect",
+      "pr": 1168,
+      "reason": "CI all-green, no reviews. Ready to merge — needs architect approval."
+    },
+    {
       "target": "ops",
-      "issue": 971,
-      "reason": "Bug 2 (cross-user queue.lock permission denied) is an ops/deploy issue — jared workers can't dequeue"
+      "issue": 1128,
+      "reason": "Kernel root cause fix landed (#1147). Remaining cleanup (worktree prune, swarm-state.json refresh, dead PID files) is ops scope."
     }
   ],
   "metrics": {
-    "prsOpened": 0,
-    "prsMerged": 0,
-    "prsClosed": 1,
-    "issuesClosed": 0,
+    "prsOpened": 2,
+    "prsMerged": 2,
+    "prsClosed": 0,
+    "issuesClosed": 2,
     "governanceDenials": 0,
     "retries": 0
   },
   "testHealth": {
-    "total": 4129,
-    "passed": 4129,
+    "total": 4364,
+    "passed": 4364,
     "failed": 0,
-    "packages": 19,
-    "status": "all_passing"
+    "packages": 18,
+    "status": "all_passing",
+    "lastRun": "2026-03-28T00:52:00.000Z",
+    "delta": "+235 vs last EM report (4129 → 4364)"
   },
   "escalationRules": {
     "triggered": {
@@ -128,6 +132,6 @@
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "No CI escalation triggers, but #972 is a P0 production blocker discovered via dogfooding. Health set to YELLOW per severity."
+    "notes": "1 failing CI (PR #1153, needs rebase) — below the 2+ threshold. No blockers persisting across runs. Health GREEN."
   }
 }
