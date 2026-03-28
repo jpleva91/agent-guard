@@ -83,6 +83,56 @@ function makePatternId(category: string, index: number): string {
   return `destructive:${category}:${index}`;
 }
 
+// ─── Heredoc stripping ──────────────────────────────────────────────────────
+
+/**
+ * Strip heredoc bodies from a shell command string before destructive pattern scanning.
+ *
+ * Heredoc bodies contain file content (not executable shell commands), so scanning
+ * them causes false positives when agents write reports or documents that mention
+ * blocked command patterns as examples.
+ *
+ * Given: `cat > /tmp/file.md << 'EOF'\nrm -rf would be bad\nEOF`
+ * Returns: `cat > /tmp/file.md << 'EOF'`
+ *
+ * Handles all heredoc forms: `<<`, `<<-`, `<< 'WORD'`, `<< "WORD"`, `<< WORD`.
+ */
+export function stripHeredocBodies(command: string): string {
+  if (!command.includes('<<')) return command;
+
+  const lines = command.split('\n');
+  const resultLines: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i]!;
+    // Match heredoc opener: <<[-] followed by optional whitespace and an optional-quoted delimiter
+    const heredocMatch = line.match(/<<-?\s*(['"]?)(\w+)\1/);
+    if (heredocMatch) {
+      resultLines.push(line);
+      const delimiter = heredocMatch[2]!;
+      i++;
+      // Skip lines until we find the closing delimiter (alone on a line, possibly with leading tabs for <<-)
+      while (i < lines.length) {
+        const bodyLine = lines[i]!;
+        // Closing delimiter may have leading whitespace (for <<-) stripped
+        if (bodyLine.trim() === delimiter) {
+          // Include the closing delimiter to preserve heredoc structure for downstream parsing
+          resultLines.push(bodyLine);
+          i++;
+          break;
+        }
+        i++;
+      }
+    } else {
+      resultLines.push(line);
+      i++;
+    }
+  }
+
+  return resultLines.join('\n');
+}
+
 // ─── CommandScanner ─────────────────────────────────────────────────────────
 
 /**
@@ -201,12 +251,16 @@ export class CommandScanner {
   scanDestructive(command: string): MatchResult[] {
     if (!command) return [];
 
+    // Strip heredoc bodies — they contain file content (not shell commands) and
+    // would cause false positives when agents write reports mentioning blocked patterns.
+    const scanTarget = stripHeredocBodies(command);
+
     const results: MatchResult[] = [];
     const seenPatterns = new Set<string>();
 
     // ─── Tier 1: Aho-Corasick keyword scan ────────────────────────────────
     if (this.keywordTrie) {
-      const emits = this.keywordTrie.parseText(command);
+      const emits = this.keywordTrie.parseText(scanTarget);
       for (const emit of emits) {
         const keyword = emit.keyword.toLowerCase();
         const entries = this.keywordEntries.get(keyword);
@@ -216,7 +270,7 @@ export class CommandScanner {
           if (seenPatterns.has(entry.patternId)) continue;
 
           // Verify with the original regex for word-boundary accuracy
-          if (entry.verifyRegex.test(command)) {
+          if (entry.verifyRegex.test(scanTarget)) {
             seenPatterns.add(entry.patternId);
             results.push({
               matched: true,
@@ -239,7 +293,7 @@ export class CommandScanner {
       for (const entry of entries) {
         if (seenPatterns.has(entry.patternId)) continue;
 
-        if (entry.verifyRegex.test(command)) {
+        if (entry.verifyRegex.test(scanTarget)) {
           seenPatterns.add(entry.patternId);
           results.push({
             matched: true,
@@ -258,7 +312,7 @@ export class CommandScanner {
     for (const entry of this.regexEntries) {
       if (seenPatterns.has(entry.patternId)) continue;
 
-      if (entry.regex.test(command)) {
+      if (entry.regex.test(scanTarget)) {
         seenPatterns.add(entry.patternId);
         results.push({
           matched: true,

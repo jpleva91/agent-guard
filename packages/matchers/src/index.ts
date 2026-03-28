@@ -79,7 +79,7 @@ export {
 
 // ─── Matchers ────────────────────────────────────────────────────────────────
 
-export { CommandScanner } from './command-scanner.js';
+export { CommandScanner, stripHeredocBodies } from './command-scanner.js';
 export { PathMatcher } from './path-matcher.js';
 export type { PathPatternInput } from './path-matcher.js';
 export { PolicyMatcher } from './policy-matcher.js';

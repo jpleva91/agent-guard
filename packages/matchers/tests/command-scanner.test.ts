@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CommandScanner } from '../src/command-scanner.js';
+import { CommandScanner, stripHeredocBodies } from '../src/command-scanner.js';
 import type {
   DestructivePatternInput,
   GitActionPatternInput,
@@ -335,5 +335,65 @@ describe('CommandScanner', () => {
       expect(noGithub.scanGitAction('git push')).not.toBeNull();
       expect(noGithub.scanGithubAction('gh pr list')).toBeNull();
     });
+  });
+});
+
+// ─── stripHeredocBodies ───────────────────────────────────────────────────────
+
+describe('stripHeredocBodies', () => {
+  it('returns command unchanged when no heredoc present', () => {
+    expect(stripHeredocBodies('rm -rf /tmp/foo')).toBe('rm -rf /tmp/foo');
+    expect(stripHeredocBodies('cat file.txt')).toBe('cat file.txt');
+  });
+
+  it('strips heredoc body with single-quoted delimiter', () => {
+    const cmd = "cat > /tmp/file.md << 'EOF'\nrm -rf would be bad here\nEOF";
+    const result = stripHeredocBodies(cmd);
+    expect(result).toContain("cat > /tmp/file.md << 'EOF'");
+    expect(result).not.toContain('rm -rf would be bad here');
+    expect(result).toContain('EOF');
+  });
+
+  it('strips heredoc body with double-quoted delimiter', () => {
+    const cmd = 'cat > /tmp/file.md << "EOF"\nrm -rf would be bad\nEOF';
+    const result = stripHeredocBodies(cmd);
+    expect(result).not.toContain('rm -rf would be bad');
+  });
+
+  it('strips heredoc body with unquoted delimiter', () => {
+    const cmd = 'cat > /tmp/file.md << EOF\nrm -rf would be bad\nEOF';
+    const result = stripHeredocBodies(cmd);
+    expect(result).not.toContain('rm -rf would be bad');
+  });
+
+  it('strips heredoc body with <<- (tab-stripping) form', () => {
+    const cmd = 'cat > /tmp/file.md <<- EOF\n\trm -rf would be bad\n\tEOF';
+    const result = stripHeredocBodies(cmd);
+    expect(result).not.toContain('rm -rf would be bad');
+  });
+
+  it('allows destructive pattern detection on the command line itself', () => {
+    // The command portion before the heredoc is still scanned
+    const cmd = 'rm -rf /tmp/dir && cat > /tmp/file << EOF\nsafe content\nEOF';
+    const result = stripHeredocBodies(cmd);
+    expect(result).toContain('rm -rf /tmp/dir');
+  });
+
+  it('scanner does not fire on heredoc body content', () => {
+    const scanner = CommandScanner.create(
+      [{ pattern: '\\brm\\s+-rf\\b', description: 'Recursive force delete', riskLevel: 'critical', category: 'filesystem' }],
+      []
+    );
+    const cmd = "cat > /tmp/report.md << 'REPORT'\n## Analysis\nrm -rf is a dangerous command we block\nREPORT";
+    expect(scanner.isDestructive(cmd)).toBe(false);
+  });
+
+  it('scanner still detects destructive pattern in the command portion', () => {
+    const scanner = CommandScanner.create(
+      [{ pattern: '\\brm\\s+-rf\\b', description: 'Recursive force delete', riskLevel: 'critical', category: 'filesystem' }],
+      []
+    );
+    const cmd = 'rm -rf /tmp/dir';
+    expect(scanner.isDestructive(cmd)).toBe(true);
   });
 });
