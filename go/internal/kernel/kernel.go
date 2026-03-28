@@ -9,6 +9,7 @@ import (
 	"github.com/AgentGuardHQ/agentguard/go/internal/action"
 	"github.com/AgentGuardHQ/agentguard/go/internal/config"
 	"github.com/AgentGuardHQ/agentguard/go/internal/engine"
+	"github.com/AgentGuardHQ/agentguard/go/internal/event"
 )
 
 // Kernel is the governed action kernel — the central orchestrator.
@@ -20,6 +21,7 @@ type Kernel struct {
 	config     KernelConfig
 	sessionID  string
 	stats      KernelStats
+	bus        *event.Bus
 	mu         sync.Mutex
 }
 
@@ -55,6 +57,7 @@ func NewKernel(cfg KernelConfig) (*Kernel, error) {
 		policies:   policies,
 		config:     cfg,
 		sessionID:  sessionID,
+		bus:        cfg.EventBus,
 	}, nil
 }
 
@@ -76,13 +79,52 @@ func (k *Kernel) Propose(raw action.RawAction) (KernelResult, error) {
 	}
 	ctx := k.normalizer.Normalize(raw, source)
 
-	// 2. Evaluate: run policy engine
+	// 2. Emit ActionRequested — before evaluation, so denials are always auditable.
+	// Telemetry failures never block enforcement (publish is best-effort).
+	k.publishEvent(event.ActionRequested, map[string]any{
+		"actionType":    ctx.Action,
+		"target":        ctx.Target,
+		"justification": "agent action proposal",
+		"agentId":       ctx.Source,
+		"sessionId":     k.sessionID,
+	})
+
+	// 3. Evaluate: run policy engine
 	evalOpts := &engine.EvalOptions{
 		DefaultDeny: k.config.DefaultDeny,
 	}
 	evalResult := engine.Evaluate(ctx, k.policies, evalOpts)
 
-	// 3. Build result
+	// 4. Emit ActionAllowed or ActionDenied — KE-3 compatible envelope.
+	switch evalResult.Decision {
+	case "allow":
+		k.publishEvent(event.ActionAllowed, map[string]any{
+			"actionType": ctx.Action,
+			"target":     ctx.Target,
+			"capability": ctx.ActionClass,
+			"reason":     evalResult.Reason,
+			"agentId":    ctx.Source,
+			"sessionId":  k.sessionID,
+		})
+	case "deny":
+		k.publishEvent(event.ActionDenied, map[string]any{
+			"actionType": ctx.Action,
+			"target":     ctx.Target,
+			"reason":     evalResult.Reason,
+			"agentId":    ctx.Source,
+			"sessionId":  k.sessionID,
+		})
+	case "escalate":
+		k.publishEvent(event.ActionEscalated, map[string]any{
+			"actionType": ctx.Action,
+			"target":     ctx.Target,
+			"reason":     evalResult.Reason,
+			"agentId":    ctx.Source,
+			"sessionId":  k.sessionID,
+		})
+	}
+
+	// 5. Build result
 	result := KernelResult{
 		Decision:         evalResult.Decision,
 		Reason:           evalResult.Reason,
@@ -97,7 +139,7 @@ func (k *Kernel) Propose(raw action.RawAction) (KernelResult, error) {
 		SessionID:        k.sessionID,
 	}
 
-	// 4. Update stats (thread-safe)
+	// 6. Update stats (thread-safe)
 	k.mu.Lock()
 	k.stats.TotalActions++
 	switch evalResult.Decision {
@@ -113,6 +155,18 @@ func (k *Kernel) Propose(raw action.RawAction) (KernelResult, error) {
 	k.mu.Unlock()
 
 	return result, nil
+}
+
+// publishEvent emits a governance event to the bus if one is configured.
+// Errors are silently ignored — telemetry failures must never block enforcement.
+func (k *Kernel) publishEvent(kind event.Kind, data map[string]any) {
+	if k.bus == nil {
+		return
+	}
+	evt := event.NewEvent(kind, k.sessionID, data)
+	// Recover from any panic in bus handlers to guarantee enforcement is never blocked.
+	defer func() { recover() }() //nolint:errcheck
+	k.bus.Publish(evt)
 }
 
 // Stats returns a snapshot of the kernel's aggregate governance statistics.
@@ -132,8 +186,18 @@ func (k *Kernel) Policies() []*action.LoadedPolicy {
 	return k.policies
 }
 
-// Close performs cleanup. Currently a no-op but provides a stable
-// shutdown point for future resource management (event sinks, etc.).
+// Bus returns the kernel's event bus, or nil if none was configured.
+func (k *Kernel) Bus() *event.Bus {
+	return k.bus
+}
+
+// Close emits a RunEnded event and performs cleanup.
 func (k *Kernel) Close() error {
+	k.publishEvent(event.RunEnded, map[string]any{
+		"sessionId":    k.sessionID,
+		"totalActions": k.Stats().TotalActions,
+		"allowed":      k.Stats().Allowed,
+		"denied":       k.Stats().Denied,
+	})
 	return nil
 }
