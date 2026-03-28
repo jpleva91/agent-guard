@@ -239,6 +239,14 @@ export function createEngine(config: EngineConfig = {}): Engine {
       const allEvents: DomainEvent[] = [...authEvents, ...invariantEvents];
 
       const allowed = authResult.allowed && allHold;
+
+      // When invariants override a policy allow, update the decision reason so
+      // downstream consumers (adapters, hooks) show the actual denial cause
+      // instead of the misleading policy allow reason.
+      if (authResult.allowed && !allHold && violations.length > 0) {
+        authResult.reason = `Invariant violation: ${violations.map((v) => v.invariant.name).join(', ')}`;
+      }
+
       const needsEvidence = !allowed || allEvents.length > 0;
 
       let evidencePack: EvidencePack | null = null;

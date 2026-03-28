@@ -1691,12 +1691,15 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         };
       }
 
-      // Conservative: staged files exist but no session write log — cannot verify
+      // Fail-open: staged files exist but no session write log — session tracking is
+      // best-effort (depends on Write tool hooks persisting state across invocations).
+      // Blocking commits when tracking is unavailable causes false positives,
+      // especially in worktrees where session state may not propagate.
       if (!state.sessionWrittenFiles || state.sessionWrittenFiles.length === 0) {
         return {
-          holds: false,
+          holds: true,
           expected: 'All staged files must have been written in this session',
-          actual: `${state.stagedFiles.length} staged file(s) but no session write log — cannot verify commit scope`,
+          actual: `${state.stagedFiles.length} staged file(s) but no session write log — allowing (fail-open)`,
         };
       }
 

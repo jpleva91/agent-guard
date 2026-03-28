@@ -28,7 +28,7 @@ describe('resolveGoBinaryPath', () => {
 
   it('respects AGENTGUARD_GO_BIN env var when file exists', () => {
     const tmpBin = join(tmpdir(), `agentguard-go-test-${Date.now()}`);
-    writeFileSync(tmpBin, '#!/bin/sh\necho test', 'utf8');
+    writeFileSync(tmpBin, '#!/usr/bin/env node\nprocess.stdout.write("test\\n")', 'utf8');
     try {
       process.env.AGENTGUARD_GO_BIN = tmpBin;
       expect(resolveGoBinaryPath()).toBe(tmpBin);
@@ -96,7 +96,7 @@ describe('tryGoFastPath', () => {
     const tmpBin = join(tmpdir(), `agentguard-go-mock-allow-${Date.now()}`);
     writeFileSync(
       tmpBin,
-      '#!/bin/sh\necho \'{"allowed":true,"decision":"allow","reason":"No matching rule"}\'',
+      '#!/usr/bin/env node\nprocess.stdout.write(JSON.stringify({"allowed":true,"decision":"allow","reason":"No matching rule"})+"\\n")',
       'utf8'
     );
     chmodSync(tmpBin, 0o755);
@@ -119,7 +119,7 @@ describe('tryGoFastPath', () => {
     const tmpBin = join(tmpdir(), `agentguard-go-mock-deny-${Date.now()}`);
     writeFileSync(
       tmpBin,
-      '#!/bin/sh\necho \'{"allowed":false,"decision":"deny","reason":"Blocked by policy"}\'\nexit 2',
+      '#!/usr/bin/env node\nprocess.stdout.write(JSON.stringify({"allowed":false,"decision":"deny","reason":"Blocked by policy"})+"\\n");process.exit(2)',
       'utf8'
     );
     chmodSync(tmpBin, 0o755);
@@ -140,7 +140,7 @@ describe('tryGoFastPath', () => {
 
   it('falls back to TS on Go binary crash (non-zero, non-2 exit)', () => {
     const tmpBin = join(tmpdir(), `agentguard-go-mock-crash-${Date.now()}`);
-    writeFileSync(tmpBin, '#!/bin/sh\nexit 1', 'utf8');
+    writeFileSync(tmpBin, '#!/usr/bin/env node\nprocess.exit(1)', 'utf8');
     chmodSync(tmpBin, 0o755);
 
     try {
@@ -157,7 +157,7 @@ describe('tryGoFastPath', () => {
 
   it('falls back to TS on invalid JSON from Go binary', () => {
     const tmpBin = join(tmpdir(), `agentguard-go-mock-badjson-${Date.now()}`);
-    writeFileSync(tmpBin, '#!/bin/sh\necho "not json"', 'utf8');
+    writeFileSync(tmpBin, '#!/usr/bin/env node\nprocess.stdout.write("not json\\n")', 'utf8');
     chmodSync(tmpBin, 0o755);
 
     try {
@@ -177,7 +177,7 @@ describe('tryGoFastPath', () => {
     const tmpBin = join(tmpdir(), `agentguard-go-mock-multi-${Date.now()}`);
     writeFileSync(
       tmpBin,
-      '#!/bin/sh\necho \'{"allowed":true,"decision":"allow","reason":"merged"}\'',
+      '#!/usr/bin/env node\nprocess.stdout.write(JSON.stringify({"allowed":true,"decision":"allow","reason":"merged"})+"\\n")',
       'utf8'
     );
     chmodSync(tmpBin, 0o755);
@@ -200,7 +200,7 @@ describe('tryGoFastPath', () => {
 
   it('cleans up temp policy file even on error', () => {
     const tmpBin = join(tmpdir(), `agentguard-go-mock-cleanup-${Date.now()}`);
-    writeFileSync(tmpBin, '#!/bin/sh\nexit 1', 'utf8');
+    writeFileSync(tmpBin, '#!/usr/bin/env node\nprocess.exit(1)', 'utf8');
     chmodSync(tmpBin, 0o755);
 
     try {

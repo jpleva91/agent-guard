@@ -423,7 +423,7 @@ describe('SQLite migration v5 — agent_id backfill', () => {
     );
 
     const applied = runMigrations(db);
-    expect(applied).toBe(1);
+    expect(applied).toBe(2); // v5 (agent_id backfill) + v6 (driver_type) both pending from v4 baseline
 
     const row = db.prepare('SELECT agent_id FROM sessions WHERE id = ?').get('run_1') as {
       agent_id: string | null;
