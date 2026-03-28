@@ -115,9 +115,20 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
   // Generate run ID using seeded RNG so both sinks share it
   const runId = `run_${Date.now()}_${simpleHash(rng.random().toString())}`;
 
-  // Create sinks — use storage bundle
+  // Create sinks — use storage bundle with graceful fallback when SQLite is unavailable
+  // (e.g. native bindings missing in worktrees or on unsupported Node.js versions)
   const storeConfig = options.store ?? { backend: 'sqlite' as const };
-  const storage = await createStorageBundle(storeConfig);
+  let storage: Awaited<ReturnType<typeof createStorageBundle>>;
+  try {
+    storage = await createStorageBundle(storeConfig);
+  } catch (err) {
+    process.stderr.write(
+      `[agentguard] Warning: SQLite storage unavailable — falling back to no-op storage.\n` +
+        `  Cause: ${err instanceof Error ? err.message : String(err)}\n` +
+        `  Run with --no-sqlite to suppress this warning.\n`
+    );
+    storage = await createStorageBundle({ backend: 'none' });
+  }
   const eventSink = storage.createEventSink(runId);
   const decisionSink = storage.createDecisionSink(runId);
 

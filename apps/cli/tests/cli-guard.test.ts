@@ -122,3 +122,22 @@ describe('guard command kernel integration', () => {
     expect(result.allowed).toBe(false);
   });
 });
+
+describe('guard command storage fallback', () => {
+  it('no-op storage bundle is functional (fallback target)', async () => {
+    // Verify that the none-backend bundle (fallback target when SQLite fails)
+    // produces working sinks — this is what guard.ts falls back to on error.
+    const { createStorageBundle } = await import('@red-codes/storage');
+    const bundle = await createStorageBundle({ backend: 'none' });
+
+    const eventSink = bundle.createEventSink('run_test_123');
+    const decisionSink = bundle.createDecisionSink('run_test_123');
+
+    expect(bundle).toBeDefined();
+    expect(typeof eventSink.write).toBe('function');
+    expect(typeof decisionSink.write).toBe('function');
+    // No-op sinks should silently accept writes without throwing
+    expect(() => eventSink.write({ kind: 'ActionRequested' } as never)).not.toThrow();
+    expect(() => decisionSink.write({ kind: 'DecisionRecorded' } as never)).not.toThrow();
+  });
+});
