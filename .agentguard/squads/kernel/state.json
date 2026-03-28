@@ -11,11 +11,11 @@
     "senior": {
       "issue": 1119,
       "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
-      "status": "pr-needs-rebase",
+      "status": "waiting:review",
       "branch": "fix/heredoc-false-positive-1119",
       "pr": 1153,
       "claimedAt": "2026-03-28T03:15:00Z",
-      "note": "PR #1153 authored by copilot-cli. CI failed due to storage migration regression (fixed by #1152 merged 02:34Z). Rebase on main needed to unblock CI. Commented on PR 2026-03-28T03:14Z."
+      "note": "Rebased on main (e314439b) 2026-03-28T03:35Z. Dropped redundant storage test commit (already fixed in main via #1160). Single clean commit dc27988. Matchers: 122/122, storage: 243/243. Commented on PR, CI running."
     }
   },
   "blockers": [],
@@ -63,10 +63,11 @@
         "number": 1153,
         "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
         "branch": "fix/heredoc-false-positive-1119",
-        "status": "needs-rebase",
-        "ciStatus": "failed-pre-rebase",
+        "status": "waiting-review",
+        "ciStatus": "pending-post-rebase",
         "closes": [1119],
-        "note": "Commented 2026-03-28T03:14Z requesting rebase on main. CI failure was storage migration regression — resolved by #1152."
+        "headSha": "dc27988",
+        "note": "Rebased on e314439b 2026-03-28T03:35Z. Dropped redundant storage test commit. CI running."
       }
     ]
   },
@@ -90,5 +91,5 @@
   ],
   "lastEmRun": "2026-03-28T03:15:00.000Z",
   "lastQaRun": "2026-03-28T00:52:00.000Z",
-  "updatedAt": "2026-03-28T03:15:00.000Z"
+  "updatedAt": "2026-03-28T03:35:00.000Z"
 }
