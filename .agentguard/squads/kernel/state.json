@@ -26,7 +26,7 @@
   },
   "blockers": [],
   "prQueue": {
-    "open": 1,
+    "open": 2,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
@@ -46,26 +46,43 @@
         "status": "open",
         "ciStatus": "pending",
         "closes": [1118, 1142]
+      },
+      {
+        "number": 1152,
+        "title": "fix(storage): update v5 migration test to expect 2 applied migrations after v6 added",
+        "branch": "agent/kernel-qa-20260328-005003",
+        "status": "open",
+        "ciStatus": "pending",
+        "note": "Regression fix: test expected applied=1 from v4 baseline but v6 was added in #1098 making it applied=2. QA-authored."
       }
     ]
   },
   "health": "green",
   "testHealth": {
-    "total": 4350,
-    "passed": 4350,
+    "total": 4364,
+    "passed": 4364,
     "failed": 0,
     "packages": 18,
-    "lastRun": "2026-03-27T22:55:00.000Z",
+    "lastRun": "2026-03-28T00:52:00.000Z",
     "status": "all_passing",
-    "delta": "+4 storage tests (none backend) vs last QA run",
+    "delta": "+14 vs last QA run (agentguard: 818→820, storage: 231→243, telemetry: 137→161)",
     "coverageGaps": [],
     "fixes": [
-      "AGENTGUARD_GO_TIMEOUT env var prevents go-fast-path CI timeout",
-      "--no-sqlite flag enables worktree governance without SQLite bindings"
+      "PR #1152: fix storage migration v5 test regression introduced by #1098 (v6 migration)"
     ],
-    "openPrNotes": ["PR #1147 CI pending"]
+    "regressions": [
+      {
+        "detected": "2026-03-28T00:51:00.000Z",
+        "test": "SQLite migration v5 — agent_id backfill > backfills agent_id from RunStarted events with agentName",
+        "file": "packages/storage/tests/sqlite-migrations.test.ts:426",
+        "root_cause": "Migration v6 added in #1098 increased runMigrations() return from 1→2 for v4 baseline",
+        "status": "fixed",
+        "pr": 1152
+      }
+    ],
+    "openPrNotes": ["PR #1147 CI pending", "PR #1152 regression fix CI pending"]
   },
   "lastEmRun": "2026-03-27T21:10:00.000Z",
-  "lastQaRun": "2026-03-27T22:55:00.000Z",
-  "updatedAt": "2026-03-27T22:58:00.000Z"
+  "lastQaRun": "2026-03-28T00:52:00.000Z",
+  "updatedAt": "2026-03-28T00:52:00.000Z"
 }
