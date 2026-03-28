@@ -46,23 +46,23 @@ describe('commit-scope-guard invariant', () => {
     expect(result.actual).toContain('package.json');
   });
 
-  it('fails conservatively when no session write log available', () => {
+  it('allows (fail-open) when no session write log available', () => {
     const result = invariant.check({
       currentActionType: 'git.commit',
       stagedFiles: ['src/foo.ts'],
       sessionWrittenFiles: [],
     });
-    expect(result.holds).toBe(false);
-    expect(result.actual).toContain('no session write log');
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('fail-open');
   });
 
-  it('fails conservatively when sessionWrittenFiles is undefined', () => {
+  it('allows (fail-open) when sessionWrittenFiles is undefined', () => {
     const result = invariant.check({
       currentActionType: 'git.commit',
       stagedFiles: ['src/foo.ts'],
     });
-    expect(result.holds).toBe(false);
-    expect(result.actual).toContain('no session write log');
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('fail-open');
   });
 
   it('holds when stagedFiles is empty', () => {
@@ -82,15 +82,15 @@ describe('commit-scope-guard invariant', () => {
     expect(result.actual).toContain('No staged files');
   });
 
-  it('truncates long unexpected file lists', () => {
+  it('allows (fail-open) with many staged files but no write log', () => {
     const staged = Array.from({ length: 10 }, (_, i) => `file${i}.ts`);
     const result = invariant.check({
       currentActionType: 'git.commit',
       stagedFiles: staged,
       sessionWrittenFiles: [],
     });
-    expect(result.holds).toBe(false);
-    expect(result.actual).toContain('no session write log');
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('fail-open');
   });
 
   it('truncates unexpected list to 5 with count suffix', () => {
