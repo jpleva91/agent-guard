@@ -2,48 +2,57 @@
   "squad": "hq",
   "sprint": {
     "goal": "Validate Go kernel→Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 unblock. Swarm health resolution.",
-    "issues": [917, 1182, 1186]
+    "issues": [917, 1186]
   },
   "assignments": {
-    "kernel-squad-developer": {
-      "task": "Fix no-governance-self-modification invariant to exclude .agentguard/persona.env writes (issue #1182)",
-      "priority": "P1"
+    "kernel-squad": {
+      "task": "Fix AAB action-type normalization failure (issue #1202) — 3,825+ unintended default-deny decisions. Largest single source of governance denials. Impacts all agents.",
+      "priority": "HIGH"
     },
     "kernel-sr": {
-      "task": "Assign and unblock KE-2 (ActionContext, issue #917) — 0/4 checkboxes, no PR",
+      "task": "Assign and start KE-2 (ActionContext, issue #917) — 0/4 checkboxes, no PR, 3 EM cycles unstarted. Sprint goal at risk.",
       "priority": "P1"
+    }
+  },
+  "resolved": {
+    "kernel-squad-developer": {
+      "task": "Fix no-governance-self-modification invariant to exclude .agentguard/persona.env writes (issue #1182)",
+      "priority": "P1",
+      "resolvedAt": "2026-03-28T17:30:00.000Z",
+      "note": "Issue #1182 closed"
     },
     "studio-em": {
       "task": "Close or rebase PR #1150 (Studio EM report 2026-03-28T03:00, conflicting)",
-      "priority": "P2"
+      "priority": "P2",
+      "resolvedAt": "2026-03-28T17:30:00.000Z",
+      "note": "PR #1150 closed"
     },
     "cloud-squad": {
-      "task": "Upgrade agentguard-cloud from 2.8.0 to 2.8.4",
-      "priority": "P2"
+      "task": "Upgrade agentguard-cloud from 2.8.0 to 2.9.0",
+      "priority": "P2",
+      "resolvedAt": "2026-03-28T17:30:00.000Z",
+      "note": "agentguard-cloud now on 2.9.0 (also analytics)"
     }
   },
   "blockers": [
     {
       "issue": 1186,
-      "description": "Swarm health P0 — 85.7% agents stuck, 133 agents vs 32 max_workers. Human intervention required: git worktree prune, PID cleanup, cron collision fix.",
-      "escalatedTo": "director"
-    },
-    {
-      "issue": 1182,
-      "description": "Agent identity bridge blocked by no-governance-self-modification — chicken-and-egg. Blocks telemetry identity enrichment for all scheduled agents.",
-      "escalatedTo": "kernel-squad-developer"
+      "description": "Swarm health P0 — 85.7% agents stuck. Human intervention required: git worktree prune, PID cleanup, cron collision fix. 3rd consecutive cycle unresolved.",
+      "escalatedTo": "director",
+      "firstSeen": "2026-03-28T06:02:00.000Z"
     },
     {
       "issue": 917,
-      "description": "KE-2 stalling — no assignee, 0/4 checkboxes. v3.0 critical path.",
-      "escalatedTo": "kernel-sr"
+      "description": "KE-2 stalling — 3 EM cycles unstarted, no assignee. Sprint goal risk. Escalating to kernel-sr this cycle.",
+      "escalatedTo": "kernel-sr",
+      "firstSeen": "2026-03-28T21:00:00.000Z"
     }
   ],
   "prQueue": {
-    "open": 1,
+    "open": 2,
     "reviewed": 0,
-    "mergeable": 0,
-    "notes": "PR #1150 (Studio EM report) is open with conflicts — needs Studio EM action"
+    "mergeable": 2,
+    "notes": "PRs #1224 (site fix) and #1233 (v3.0 capture funnel) open 5-6h, all checks green, awaiting human review. PR #1226 closed as stale."
   },
-  "updatedAt": "2026-03-28T21:00:00.000Z"
+  "updatedAt": "2026-03-28T17:30:00.000Z"
 }

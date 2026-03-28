@@ -9,6 +9,7 @@ import {
   isContainerConfigPath,
   isShellProfilePath,
   hasFileRedirect,
+  stripHeredocBody,
 } from '@red-codes/invariants';
 import type { SystemState } from '@red-codes/invariants';
 import { checkAllInvariants, buildSystemState } from '@red-codes/invariants';
@@ -1436,6 +1437,42 @@ describe('no-governance-self-modification', () => {
     const result = inv.check({ currentTarget: '.agentguard/persona.env' });
     expect(result.holds).toBe(true);
   });
+
+  // Acceptance tests for #1208: heredoc body false-positive
+  // A heredoc writing to /tmp may contain governance-path strings as documentation.
+  // The invariant must not trigger on heredoc *body* content — only on the command header.
+  it('holds when heredoc body mentions agentguard.yaml as documentation (target is /tmp)', () => {
+    const heredocCmd = [
+      "cat > /tmp/sdlc-report.txt << 'EOF'",
+      '| Hook | Status |',
+      '|------|--------|',
+      '| agentguard.yaml | Loaded |',
+      '| .claude/settings.json | Active |',
+      'EOF',
+    ].join('\n');
+    const result = inv.check({ currentCommand: heredocCmd });
+    expect(result.holds).toBe(true);
+  });
+
+  it('still fails when heredoc redirect target itself is a governance file', () => {
+    const heredocCmd = [
+      "cat > agentguard.yaml << 'EOF'",
+      'mode: enforce',
+      'EOF',
+    ].join('\n');
+    const result = inv.check({ currentCommand: heredocCmd });
+    expect(result.holds).toBe(false);
+  });
+
+  it('still fails when heredoc redirect target is in .agentguard/', () => {
+    const heredocCmd = [
+      "cat > .agentguard/custom-policy.yaml << 'EOF'",
+      'some content',
+      'EOF',
+    ].join('\n');
+    const result = inv.check({ currentCommand: heredocCmd });
+    expect(result.holds).toBe(false);
+  });
 });
 
 describe('lockfile-integrity', () => {
@@ -2746,5 +2783,36 @@ describe('hasFileRedirect', () => {
   // This is intentional — safer to over-flag than under-flag in a security check.
   it('false-positive: quoted > in string is flagged (documented behavior)', () => {
     expect(hasFileRedirect('echo "hello > world"')).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// stripHeredocBody
+// ---------------------------------------------------------------------------
+
+describe('stripHeredocBody', () => {
+  it('returns the command unchanged when no heredoc is present', () => {
+    expect(stripHeredocBody('echo hello')).toBe('echo hello');
+  });
+
+  it('strips heredoc body with quoted delimiter', () => {
+    const cmd = ["cat > /tmp/report.txt << 'EOF'", 'some content', 'agentguard.yaml', 'EOF'].join(
+      '\n'
+    );
+    expect(stripHeredocBody(cmd)).toBe("cat > /tmp/report.txt << 'EOF'");
+  });
+
+  it('strips heredoc body with unquoted delimiter', () => {
+    const cmd = ['cat > /tmp/out.txt << EOF', 'body line', 'EOF'].join('\n');
+    expect(stripHeredocBody(cmd)).toBe('cat > /tmp/out.txt << EOF');
+  });
+
+  it('strips heredoc body with <<- (indented) delimiter', () => {
+    const cmd = ['cat > /tmp/out.txt <<- EOF', '  body line', 'EOF'].join('\n');
+    expect(stripHeredocBody(cmd)).toBe('cat > /tmp/out.txt <<- EOF');
+  });
+
+  it('returns the single line unchanged when heredoc has no newlines', () => {
+    expect(stripHeredocBody("cat > /tmp/x.txt << 'EOF'")).toBe("cat > /tmp/x.txt << 'EOF'");
   });
 });

@@ -274,6 +274,33 @@ const READ_ONLY_CMDS: string[] = [
   'diff',
 ];
 
+/**
+ * Strip heredoc body from a shell command, returning only the command header.
+ *
+ * Heredocs embed arbitrary content (documentation, reports, config) in the command
+ * string. Scanning that content for governance path strings produces false positives
+ * when the body merely *mentions* a protected filename as documentation text.
+ *
+ * Example: `cat > /tmp/report.txt << 'EOF'\n| agentguard.yaml | loaded |\nEOF`
+ * → returns `cat > /tmp/report.txt << 'EOF'`
+ *
+ * Only the command header (before the heredoc body) is relevant for governance path
+ * classification — the write target is already captured there.
+ */
+export function stripHeredocBody(command: string): string {
+  // Heredoc marker: << or <<- followed by optional quotes around the delimiter word.
+  // Using a simple indexOf('\n') approach: the body starts after the first newline.
+  if (!/<{2}-?\s*['"]?\w/.test(command)) {
+    return command;
+  }
+  const firstNewline = command.indexOf('\n');
+  if (firstNewline === -1) {
+    return command;
+  }
+  // Return only the command header line (contains redirect target, not body content).
+  return command.substring(0, firstNewline);
+}
+
 /** Strip known command wrappers (rtk, npx, env, sudo) to find the actual base command. */
 export function extractBaseCommand(command: string): string {
   const tokens = command.split(/\s+/);
@@ -1226,10 +1253,15 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       const targetViolation = target !== '' && matchesGovernancePath(target);
 
       const command = state.currentCommand || '';
+      // Strip heredoc body before scanning for governance path references.
+      // Heredoc content is arbitrary text (reports, documentation) that may legitimately
+      // mention governance filenames without targeting them. Only the command header
+      // (redirect target, flags, operator) is relevant for classification.
+      const commandHeader = stripHeredocBody(command);
       const commandViolation =
-        command !== '' &&
-        (matchesGovernancePath(command) ||
-          GOVERNANCE_FILE_BASENAMES.some((f) => command.toLowerCase().includes(f)));
+        commandHeader !== '' &&
+        (matchesGovernancePath(commandHeader) ||
+          GOVERNANCE_FILE_BASENAMES.some((f) => commandHeader.toLowerCase().includes(f)));
 
       const governanceFiles = (state.modifiedFiles || []).filter((f) => matchesGovernancePath(f));
 
