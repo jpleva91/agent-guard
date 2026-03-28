@@ -1,10 +1,10 @@
 {
   "schemaVersion": "1.0",
-  "updatedAt": "2026-03-28T05:15:00Z",
-  "updatedBy": "backlog-hygiene--roadmap-triage-agent",
+  "updatedAt": "2026-03-28T17:30:00Z",
+  "updatedBy": "progress-controller-agent",
   "mode": "normal",
   "recommendedMode": "normal",
-  "modeReason": "Roadmap triage agent confirms normal mode. v2.8.4 is the current release. DeepAgents adapter shipped (v2.8.1). Heredoc false-positive fixed (v2.8.4). Graceful SQLite fallback added (v2.8.3). KE-2 (#917) remains the critical path to v3.0. P1 policy gap: github.pr.* action types missing from default allow-list (#1177) \u2014 PR #1178 partially addresses (Copilot meta-tools); full github.* policy fix still needed. Security issue count stable at 2 (#640, #639). Risk profile slightly elevated due to #1177.",
+  "modeReason": "Progress controller confirms normal mode. v2.9.0 released (Go evaluator wildcard matching, --store none fix, report_intent allow rule). KE-2 (#917) remains the critical path to v3.0 — unstarted for 7 days (warning threshold: 14 days). New HIGH-priority issue #1202 (AAB action-type normalization failure causing 3,825+ unintended blocks) requires immediate attention. Backlog expansion 1.16x (healthy, below 2x threshold). ROADMAP maintenance gap: Phase 9 Codex/Gemini items shipped (v2.8.0) but ROADMAP checkboxes still unchecked.",
   "riskAssessment": {
     "compositeScore": 14,
     "escalationLevel": "NORMAL",
@@ -148,7 +148,7 @@
             "completion": 0.0,
             "checkboxes": "0/4",
             "trackingIssue": 856,
-            "note": "ActionContext design \u2014 in-progress, priority:high, last updated 2026-03-25"
+            "note": "ActionContext design — in-progress, priority:high, last updated 2026-03-25"
           },
           "KE-3": {
             "status": "DONE",
@@ -161,14 +161,14 @@
             "completion": 0.0,
             "checkboxes": "0/5",
             "trackingIssue": 687,
-            "note": "Plane Separation \u2014 status:review, last updated 2026-03-24"
+            "note": "Plane Separation — status:review, last updated 2026-03-24"
           },
           "KE-5": {
             "status": "IN PROGRESS",
             "completion": 0.0,
             "checkboxes": "0/6",
             "trackingIssue": 716,
-            "note": "Semantic CLI Expansion \u2014 in-progress"
+            "note": "Semantic CLI Expansion — in-progress"
           },
           "KE-6": {
             "status": "PLANNED",
@@ -276,7 +276,7 @@
         "name": "Go Kernel Rewrite (Phase 1)",
         "status": "IN PROGRESS",
         "completion": 0.2,
-        "checkboxes": "1/5",
+        "checkboxes": "1/6",
         "shippedItems": [
           {
             "item": "Go binary fast-path delegation in claude-hook",
@@ -287,7 +287,7 @@
             ]
           }
         ],
-        "note": "Fast-path delegation operational. Full architecture end-to-end validation still pending."
+        "note": "Fast-path delegation operational (PRs #1000, #1001, v2.7.x). Go evaluator wildcard matching added (v2.9.0, PR #1227). Full architecture validation still pending. v2.9.0 represents incremental progress toward KE sub-goals."
       }
     ],
     "plannedPhases": [
@@ -395,14 +395,29 @@
           1164,
           1168
         ]
+      },
+      {
+        "event": "VERSION_RELEASED",
+        "version": "v2.9.0",
+        "releasedAt": "2026-03-28T00:00:00Z",
+        "significance": "Go evaluator wildcard matching shipped (PR #1227, closes #955). Storage: --store none flag respected to prevent eager SQLite load (PR #1207, closes #1188). Policy: report_intent allow rule added + scope governance self-mod invariant scoped (PR #1212). Incremental Go kernel progress and critical dogfood fixes.",
+        "prs": [
+          1227,
+          1207,
+          1212
+        ]
       }
     ]
   },
   "backlogExpansionRate": {
-    "assessedAt": "2026-03-28T05:15:00Z",
-    "totalOpenIssues": 186,
-    "actionableWorkItems": 18,
-    "note": "186 open issues total. Key new issues since v2.8.0: #1177 (P1: github.pr.* policy gap \u2014 CRITICAL, blocks pr-merger skill), #1176/#1172/#1167/#1165/#1159 (dogfood denials \u2014 systemic policy config issue), #1173/#1174/#1175 (Phase 8 policy ecosystem items from backlog-steward). #1128 (swarm health: 149 orphaned branches, needs human prune). KE-2 (#917) remains the highest-priority unstarted engineering item."
+    "assessedAt": "2026-03-28T17:30:00Z",
+    "totalOpenIssues": 197,
+    "actionableWorkItems": 30,
+    "createdLast7d": 200,
+    "closedLast7d": 172,
+    "expansionRate": 1.16,
+    "status": "HEALTHY",
+    "note": "197 open issues total. Expansion rate 1.16x (below 2x warning threshold). 30 backlog-steward actionable items. Majority of open issues are dogfood/operational. New critical item: #1202 (AAB action-type normalization failure — 3,825+ unintended blocks). PR #1233 (user capture funnel) open — if merged, advances v3.0 to 2/8."
   },
   "stallDetection": {
     "stalledPhases": [],
@@ -410,21 +425,22 @@
       {
         "phase": "KE-2",
         "issue": 917,
-        "note": "KE-2 (ActionContext, #917) status:pending with 0/4 checkboxes. No assigned PR. Critical path for v3.0. Has been unstarted since 2026-03-25. Escalate to kernel-sr."
+        "daysSinceLastActivity": 7,
+        "note": "KE-2 (ActionContext, #917) unstarted since ~2026-03-21. 0/4 checkboxes. No assigned PR. Critical path for v3.0. At 7 days — warning tracking. Stall threshold is 14 days."
       }
     ],
-    "note": "No phases exceed the 14-day stall threshold. KE-2 is the primary risk \u2014 v3.0 cannot ship without it."
+    "note": "No phases exceed the 14-day stall threshold. KE-2 is the primary risk — v3.0 cannot ship without it. KE-2 has been unstarted for 7 days (half of stall threshold)."
   },
   "healthChecks": {
     "prQueue": {
       "status": "healthy",
       "openPRs": 3,
-      "conflictedPRs": 2,
-      "note": "PR #1178 (valid Copilot meta-tools fix, awaiting review). PRs #1150/#1151 are EM report PRs with merge conflicts \u2014 should be rebased or superseded."
+      "conflictedPRs": 0,
+      "note": "PR #1233 (v3.0 user capture funnel — active, in review). PR #1226 (EM report v2.8.5). PR #1224 (site fixes). CI green on all three."
     },
     "ciOnMain": {
       "status": "healthy",
-      "note": "Main branch CI green at HEAD fd820ac. 4364 tests passing."
+      "note": "Main branch CI green at HEAD (v2.9.0). All recent workflow runs passing."
     },
     "agentLiveness": {
       "status": "active",
@@ -438,13 +454,13 @@
     },
     "swarmStateFreshness": {
       "status": "healthy",
-      "note": "Updated by backlog-hygiene--roadmap-triage-agent 2026-03-28T05:15Z."
+      "note": "Updated by progress-controller-agent 2026-03-28T17:30Z."
     },
     "roadmapProgress": {
       "status": "on-track",
       "completedPhases": 10,
       "activePhases": 4,
-      "note": "v2.8.4 released (5 CLI agent adapters). Critical path: KE-2 (#917) \u2192 v3.0. DeepAgents adapter Phase 9 item checked."
+      "note": "v2.9.0 released. KE Sprint 11/31 = 35.5% (unchanged). v3.0 at 1/8 = 12.5% (PR #1233 user capture funnel open — advances to 2/8 when merged). ROADMAP maintenance gap: Phase 9 Codex/Gemini unchecked despite shipping."
     }
   },
   "recoveryActions": [
@@ -481,11 +497,26 @@
     {
       "type": "roadmap-triage",
       "timestamp": "2026-03-28T05:15:00Z",
-      "description": "ROADMAP.md and swarm-state.json updated: v2.8.4 current release. New entries: DeepAgents adapter (v2.8.1), driverType telemetry (v2.8.1), SQLite fallback (v2.8.3), heredoc fix (v2.8.4). Phase 9 DeepAgents checked. P1 policy gap #1177 (github.pr.* missing from allow-list) flagged as high-priority blocker. Security bypass count 6\u21925 (#618 resolved via PR #1032). Risk score 8\u219214 (NORMAL).",
+      "description": "ROADMAP.md and swarm-state.json updated: v2.8.4 current release. New entries: DeepAgents adapter (v2.8.1), driverType telemetry (v2.8.1), SQLite fallback (v2.8.3), heredoc fix (v2.8.4). Phase 9 DeepAgents checked. P1 policy gap #1177 (github.pr.* missing from allow-list) flagged as high-priority blocker. Security bypass count 6→5 (#618 resolved via PR #1032). Risk score 8→14 (NORMAL).",
       "agent": "backlog-hygiene--roadmap-triage-agent"
+    },
+    {
+      "type": "progress-assessment",
+      "timestamp": "2026-03-28T17:30:00Z",
+      "description": "KE Sprint 11/31 = 35.5% (unchanged). v3.0 at 1/8 = 12.5%. Backlog expansion 1.16x (healthy). v2.9.0 released. KE-2 unstarted 7 days (warning). New HIGH: #1202 AAB normalization failure. PR #1233 open for v3.0 user capture funnel.",
+      "agent": "progress-controller-agent"
     }
   ],
   "blockers": [
+    {
+      "type": "correctness-regression",
+      "severity": "high",
+      "issueNumbers": [
+        1202
+      ],
+      "description": "#1202: AAB action-type normalization failure causing 3,825+ unintended blocks. Agents hitting deny decisions due to a normalization bug in action-type mapping. Impacts all agent drivers.",
+      "recommendation": "Assign coder-agent to diagnose and fix the AAB normalization logic. This is actively causing governance false positives at scale."
+    },
     {
       "type": "critical-path",
       "severity": "high",
@@ -509,7 +540,7 @@
         639
       ],
       "description": "2 security issues without assigned PRs: #640 (path manipulation), #639 (credential stripping). #618 RESOLVED via PR #1032.",
-      "recommendation": "Assign implementation agent to #640 (path manipulation \u2014 most exploitable)."
+      "recommendation": "Assign implementation agent to #640 (path manipulation — most exploitable)."
     },
     {
       "type": "operational",
@@ -524,20 +555,20 @@
   "systemSummary": {
     "overallHealth": "healthy",
     "escalationLevel": "NORMAL",
-    "riskScore": 14,
+    "riskScore": 16,
     "riskTrend": "worsened-slightly",
     "mainBranchCI": "green",
     "openPRsCount": 3,
-    "conflictedPRsCount": 2,
+    "conflictedPRsCount": 0,
     "stuckPRsCount": 0,
     "ciFailingPRsCount": 0,
     "highIssuesWithoutPR": 5,
     "regressionDetected": false,
     "completedPhaseCount": 10,
     "activePhaseCount": 4,
-    "progressSinceLastRun": "v2.8.1-v2.8.4 patch series merged: DeepAgents adapter, driverType telemetry, graceful SQLite fallback, CI stability, heredoc false-positive fix, claude-init idempotent hooks. ROADMAP Phase 9 DeepAgents item checked. Security issue count 6\u21925 (#618 resolved). P1 policy gap discovered: github.pr.* missing from allow-list (#1177). Risk score 8\u219214.",
+    "progressSinceLastRun": "v2.9.0 released: Go evaluator wildcard matching, --store none storage fix, report_intent allow rule + scoped self-mod invariant. PR #1233 (v3.0 user capture funnel) opened. New HIGH issue #1202 (AAB normalization failure, 3,825+ unintended blocks). ROADMAP checkpoint count unchanged (11/31 = 35.5% KE Sprint). Backlog expansion 1.16x — healthy. CI green on main.",
     "modeChangeConditions": {
-      "toNormal": "CURRENT STATE \u2014 risk score 14, 3 open PRs (2 conflicted docs), main CI green.",
+      "toNormal": "CURRENT STATE — risk score 14, 3 open PRs (2 conflicted docs), main CI green.",
       "toElevated": "Risk score exceeds 20, or PR queue grows above 5, or new critical security regression, or #1177 policy gap causes major agent outage.",
       "toCritical": "Main CI failure rate >30%, 2+ unresolved critical issues, or merge conflict cascade (3+ PRs)."
     }
