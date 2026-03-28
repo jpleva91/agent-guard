@@ -1,58 +1,88 @@
 {
   "squad": "hq",
   "sprint": {
-    "goal": "Validate Go kernel→Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 unblock. Swarm health resolution.",
-    "issues": [917, 1186]
+    "goal": "Validate Go kernel\u2192Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 unblock. Swarm health resolution.",
+    "issues": [
+      917,
+      1186,
+      1254
+    ]
   },
   "assignments": {
     "kernel-squad": {
-      "task": "Fix AAB action-type normalization failure (issue #1202) — 3,825+ unintended default-deny decisions. Largest single source of governance denials. Impacts all agents.",
-      "priority": "HIGH"
+      "task": "Fix #1254: scope No-Governance-Self-Modification to .agentguard/ config paths (not squad state or gh --body args). Fix PR #1255 CodeQL failure.",
+      "priority": "P1"
     },
     "kernel-sr": {
-      "task": "Assign and start KE-2 (ActionContext, issue #917) — 0/4 checkboxes, no PR, 3 EM cycles unstarted. Sprint goal at risk.",
-      "priority": "P1"
+      "task": "Assign KE-2 (ActionContext, issue #917) \u2014 0/4 checkboxes, no PR, 4 EM cycles unstarted.",
+      "priority": "P0"
+    },
+    "cloud-squad": {
+      "task": "Upgrade @red-codes/agentguard from 2.9.0 to 2.9.1 in agentguard-cloud and agentguard-analytics",
+      "priority": "P2"
+    },
+    "human-reviewer": {
+      "task": "Review and merge PR #1258 (site stats sync \u2014 all checks green, MERGEABLE)",
+      "priority": "P2"
+    },
+    "marketing-squad": {
+      "task": "Audit squad manifests for accurate agent count, update site/index.html swarm section (issue #1259)",
+      "priority": "P2"
     }
   },
   "resolved": {
     "kernel-squad-developer": {
-      "task": "Fix no-governance-self-modification invariant to exclude .agentguard/persona.env writes (issue #1182)",
+      "task": "Fix no-governance-self-modification for .agentguard/persona.env (issue #1182)",
       "priority": "P1",
       "resolvedAt": "2026-03-28T17:30:00.000Z",
       "note": "Issue #1182 closed"
     },
     "studio-em": {
-      "task": "Close or rebase PR #1150 (Studio EM report 2026-03-28T03:00, conflicting)",
+      "task": "Close PR #1150",
       "priority": "P2",
-      "resolvedAt": "2026-03-28T17:30:00.000Z",
-      "note": "PR #1150 closed"
+      "resolvedAt": "2026-03-28T17:30:00.000Z"
     },
-    "cloud-squad": {
-      "task": "Upgrade agentguard-cloud from 2.8.0 to 2.9.0",
+    "cloud-squad-2.9.0": {
+      "task": "Upgrade cloud to 2.9.0",
       "priority": "P2",
-      "resolvedAt": "2026-03-28T17:30:00.000Z",
-      "note": "agentguard-cloud now on 2.9.0 (also analytics)"
+      "resolvedAt": "2026-03-28T17:30:00.000Z"
+    },
+    "ci-npm-publish": {
+      "task": "Resolve v2.9.0 npm publish failure (issue #1229)",
+      "priority": "HIGH",
+      "resolvedAt": "2026-03-28T21:30:00.000Z",
+      "note": "#1229 closed \u2014 v2.9.1 published successfully"
+    },
+    "aab-normalization": {
+      "task": "Fix AAB action-type normalization failure (issue #1202)",
+      "priority": "HIGH",
+      "resolvedAt": "2026-03-28T21:00:00.000Z",
+      "note": "Fixed in PR #1252"
     }
   },
   "blockers": [
     {
       "issue": 1186,
-      "description": "Swarm health P0 — 85.7% agents stuck. Human intervention required: git worktree prune, PID cleanup, cron collision fix. 3rd consecutive cycle unresolved.",
+      "description": "Swarm health P0 \u2014 85.7% agents stuck (4th+ cycle). Human intervention required.",
       "escalatedTo": "director",
       "firstSeen": "2026-03-28T06:02:00.000Z"
     },
     {
       "issue": 917,
-      "description": "KE-2 stalling — 3 EM cycles unstarted, no assignee. Sprint goal risk. Escalating to kernel-sr this cycle.",
-      "escalatedTo": "kernel-sr",
-      "firstSeen": "2026-03-28T21:00:00.000Z"
+      "description": "KE-2 unstarted \u2014 4 EM cycles, no assignee, 0/4 checkboxes. Sprint goal at serious risk.",
+      "escalatedTo": "director/kernel-sr"
+    },
+    {
+      "issue": 1254,
+      "description": "New P1 dogfood: No-Governance-Self-Modification false positive blocks analytics agents and EM state writes.",
+      "escalatedTo": "kernel-squad"
     }
   ],
   "prQueue": {
-    "open": 2,
+    "open": 3,
     "reviewed": 0,
-    "mergeable": 2,
-    "notes": "PRs #1224 (site fix) and #1233 (v3.0 capture funnel) open 5-6h, all checks green, awaiting human review. PR #1226 closed as stale."
+    "mergeable": 1,
+    "notes": "PR #1258 all green needs review. PR #1255 CodeQL fail. PR #1261 CI in progress."
   },
-  "updatedAt": "2026-03-28T17:30:00.000Z"
+  "updatedAt": "2026-03-28T21:30:00.000Z"
 }
