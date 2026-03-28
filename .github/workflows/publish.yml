@@ -45,6 +45,16 @@ jobs:
           fi
           echo "✓ Tag ${GITHUB_REF_NAME} matches package.json version ${PKG}"
 
+      - name: Verify aguard wrapper version matches CLI
+        run: |
+          CLI_VERSION=$(node -p "require('./apps/cli/package.json').version")
+          WRAPPER_VERSION=$(node -p "require('./npm-wrapper/aguard/package.json').version")
+          if [ "$CLI_VERSION" != "$WRAPPER_VERSION" ]; then
+            echo "::error::Wrapper version ($WRAPPER_VERSION) does not match CLI version ($CLI_VERSION). Bump npm-wrapper/aguard/package.json to match."
+            exit 1
+          fi
+          echo "✓ aguard wrapper version matches CLI ($CLI_VERSION)"
+
       # Publish in dependency order: core → events → matchers → policy → invariants → kernel → cli
       # Library packages tolerate "already published" (E403) since their versions
       # only bump when they actually change.
