@@ -1194,10 +1194,24 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       }
 
       const GOVERNANCE_DIR_PATTERNS = ['.agentguard/', '.agentguard\\', 'policies/', 'policies\\'];
+      // Operational state files are NOT governance config — allow writes to squads, director brief, etc.
+      const OPERATIONAL_STATE_PATTERNS = [
+        '.agentguard/squads/',
+        '.agentguard/director-brief',
+        '.agentguard/persona.env',
+        '.agentguard/agent-reliability',
+        '.agentguard/swarm-state',
+        '.agentguard/budget-config',
+        'em-report.json',
+      ];
       const GOVERNANCE_FILE_BASENAMES = ['agentguard.yaml', 'agentguard.yml', '.agentguard.yaml'];
 
       const matchesGovernancePath = (path: string) => {
         const lower = path.toLowerCase();
+        // Operational state files are writable — only actual governance config is protected
+        if (OPERATIONAL_STATE_PATTERNS.some((p) => lower.includes(p.toLowerCase()))) {
+          return false;
+        }
         if (GOVERNANCE_DIR_PATTERNS.some((p) => lower.includes(p.toLowerCase()))) {
           return true;
         }

@@ -181,3 +181,12 @@ rules:
   - action: mcp.call
     effect: allow
     reason: MCP tool invocations allowed by default
+
+  # Agent driver internal tools (Copilot report_intent, Codex internal ops)
+  # These are driver-specific tool calls that don't map to standard action types.
+  # Without this rule, they hit default-deny and block all Copilot/Codex agents.
+  - action:
+      - agent.report_intent
+      - agent.internal
+    effect: allow
+    reason: Agent driver internal operations allowed by default
