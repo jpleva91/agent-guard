@@ -1,32 +1,26 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Fix governance startup in worktrees (#1118 via --no-sqlite flag) + CI stability (#1142 AGENTGUARD_GO_TIMEOUT). Next: resume Go kernel delegation (#955).",
+    "goal": "Close #1119 (heredoc false-positive, PR #1153 rebase) + begin next milestone: Go kernel deeper delegation / adapter scope (#955 follow-on).",
     "issues": [
-      1118,
-      1142,
-      955,
       1119,
-      1144
+      955
     ]
   },
   "assignments": {
     "senior": {
-      "issue": [
-        1118,
-        1142
-      ],
-      "title": "fix: --no-sqlite guard flag + AGENTGUARD_GO_TIMEOUT for CI stability",
-      "status": "pr-created",
-      "branch": "agent/kernel-sr-20260327-224725",
-      "pr": 1147,
-      "claimedAt": "2026-03-27T22:47:31Z",
-      "note": "PR #1147 supersedes #1143 (closed). AGENTGUARD_GO_TIMEOUT env var is the correct fix for CI flakiness (500ms hard-coded was still insufficient under full test suite load). Previous sprint issues #972/#973/#955/#957/#964 all closed upstream."
+      "issue": 1119,
+      "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
+      "status": "pr-needs-rebase",
+      "branch": "fix/heredoc-false-positive-1119",
+      "pr": 1153,
+      "claimedAt": "2026-03-28T03:15:00Z",
+      "note": "PR #1153 authored by copilot-cli. CI failed due to storage migration regression (fixed by #1152 merged 02:34Z). Rebase on main needed to unblock CI. Commented on PR 2026-03-28T03:14Z."
     }
   },
   "blockers": [],
   "prQueue": {
-    "open": 2,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
@@ -36,24 +30,43 @@
         "branch": "agent/kernel-sr-20260325-230535",
         "status": "merged",
         "ciStatus": "passed",
-        "mergedAt": "2026-03-26T00:30:00.000Z",
-        "note": "Merged successfully. All CI checks passed."
+        "mergedAt": "2026-03-26T00:30:00.000Z"
       },
       {
         "number": 1147,
         "title": "fix: --no-sqlite guard flag + AGENTGUARD_GO_TIMEOUT for CI stability (closes #1118, closes #1142)",
         "branch": "agent/kernel-sr-20260327-224725",
-        "status": "open",
-        "ciStatus": "pending",
+        "status": "merged",
+        "ciStatus": "passed",
+        "mergedAt": "2026-03-27T23:09:36Z",
         "closes": [1118, 1142]
       },
       {
         "number": 1152,
         "title": "fix(storage): update v5 migration test to expect 2 applied migrations after v6 added",
         "branch": "agent/kernel-qa-20260328-005003",
-        "status": "open",
-        "ciStatus": "pending",
-        "note": "Regression fix: test expected applied=1 from v4 baseline but v6 was added in #1098 making it applied=2. QA-authored."
+        "status": "merged",
+        "ciStatus": "passed",
+        "mergedAt": "2026-03-28T02:34:07Z"
+      },
+      {
+        "number": 1168,
+        "title": "fix(guard): graceful SQLite fallback when native bindings unavailable",
+        "branch": "fix/sqlite-graceful-fallback-worktrees",
+        "status": "merged",
+        "ciStatus": "passed",
+        "mergedAt": "2026-03-28T03:12:20Z",
+        "closes": [1148, 1144],
+        "note": "All 5 CI checks green. Merged this cycle. Closes worktree SQLite crash + NODE_MODULE_VERSION mismatch."
+      },
+      {
+        "number": 1153,
+        "title": "fix(matchers): strip heredoc bodies before destructive pattern scanning",
+        "branch": "fix/heredoc-false-positive-1119",
+        "status": "needs-rebase",
+        "ciStatus": "failed-pre-rebase",
+        "closes": [1119],
+        "note": "Commented 2026-03-28T03:14Z requesting rebase on main. CI failure was storage migration regression — resolved by #1152."
       }
     ]
   },
@@ -65,24 +78,17 @@
     "packages": 18,
     "lastRun": "2026-03-28T00:52:00.000Z",
     "status": "all_passing",
-    "delta": "+14 vs last QA run (agentguard: 818→820, storage: 231→243, telemetry: 137→161)",
-    "coverageGaps": [],
-    "fixes": [
-      "PR #1152: fix storage migration v5 test regression introduced by #1098 (v6 migration)"
-    ],
-    "regressions": [
-      {
-        "detected": "2026-03-28T00:51:00.000Z",
-        "test": "SQLite migration v5 — agent_id backfill > backfills agent_id from RunStarted events with agentName",
-        "file": "packages/storage/tests/sqlite-migrations.test.ts:426",
-        "root_cause": "Migration v6 added in #1098 increased runMigrations() return from 1→2 for v4 baseline",
-        "status": "fixed",
-        "pr": 1152
-      }
-    ],
-    "openPrNotes": ["PR #1147 CI pending", "PR #1152 regression fix CI pending"]
+    "delta": "+14 vs prior QA run",
+    "regressions": []
   },
-  "lastEmRun": "2026-03-27T21:10:00.000Z",
+  "completedIssues": [
+    { "issue": 1118, "pr": 1147, "mergedAt": "2026-03-27T23:09:36Z" },
+    { "issue": 1142, "pr": 1147, "mergedAt": "2026-03-27T23:09:36Z" },
+    { "issue": 955, "note": "Closed upstream" },
+    { "issue": 1148, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
+    { "issue": 1144, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" }
+  ],
+  "lastEmRun": "2026-03-28T03:15:00.000Z",
   "lastQaRun": "2026-03-28T00:52:00.000Z",
-  "updatedAt": "2026-03-28T00:52:00.000Z"
+  "updatedAt": "2026-03-28T03:15:00.000Z"
 }
