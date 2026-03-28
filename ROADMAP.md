@@ -251,8 +251,8 @@ Depends on: KE-2 (ActionContext provides vendor-neutral normalization).
 - [x] ~~Agent SDK for programmatic governance integration~~ — ✅ Done 2026-03-21 (v2.3.0)
 - [ ] Generic MCP adapter for any MCP-compatible tool
 - [x] ~~OpenCode driver support~~ — ✅ Done 2026-03-26 (v2.7.x) — `opencode` registered as supported agent driver (PR #1019)
-- [x] ~~Codex CLI adapter (PreToolUse/PostToolUse)~~ — ✅ Done 2026-03-27 (v2.8.0) — `agentguard codex-hook` + `agentguard codex-init` (PR #1024)
-- [x] ~~Gemini CLI adapter (BeforeTool/AfterTool)~~ — ✅ Done 2026-03-27 (v2.8.0) — `agentguard gemini-hook` + `agentguard gemini-init` (PR #1024)
+- [ ] Codex CLI adapter (PreToolUse/PostToolUse) — `agentguard codex-hook` + `agentguard codex-init`
+- [ ] Gemini CLI adapter (BeforeTool/AfterTool) — `agentguard gemini-hook` + `agentguard gemini-init`
 - [ ] **Runtime sandbox adapters** — Optional modules that enrich governance with sandbox metadata. Integrate, don't depend:
   - `@agentguard/runtime-nemoclaw` — NVIDIA NemoClaw adapter: detect sandbox environment, map sandbox permissions → governance rules, fuse behavioral telemetry (AgentGuard) with system constraints (NemoClaw) for full-stack audit trail. Enterprise credibility multiplier — "contained + governed" covers prevent/detect/contain/audit. **Not a dependency** — kernel remains runtime-independent.
   - Future: Docker/Podman, Firecracker, Bubblewrap adapters via same pattern

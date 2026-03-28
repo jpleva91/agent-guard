@@ -173,7 +173,7 @@ apps/
 │   ├── session-store.ts        # Session management
 │   ├── file-event-store.ts     # File-based event persistence
 │   ├── evidence-summary.ts     # Evidence summary generator for PR reports
-│   └── commands/               # guard, inspect, replay, export, import, simulate, ci-check, plugin, policy (validate, suggest, verify), claude-hook, claude-init, copilot-hook, copilot-init, cloud, init, diff, evidence-pr, traces, session-viewer, status, analytics, auto-setup, config, audit-verify, demo, adoption, learn, migrate, trust
+│   └── commands/               # guard, inspect, replay, export, import, simulate, ci-check, plugin, policy (validate, suggest, verify), claude-hook, claude-init, copilot-hook, copilot-init, deepagents-hook, deepagents-init, cloud, init, diff, evidence-pr, traces, session-viewer, status, analytics, auto-setup, config, audit-verify, demo, adoption, learn, migrate, trust, team-report
 ├── mcp-server/src/             # @red-codes/mcp-server — MCP governance server
 │   ├── index.ts                # Entry point
 │   ├── server.ts               # MCP server implementation
@@ -293,6 +293,8 @@ Each workspace package maps to a single architectural concept:
 - `agentguard cloud login|signup|connect|status|events|runs|summary|disconnect` — Cloud governance analytics
 - `agentguard copilot-hook` — Handle GitHub Copilot PreToolUse/PostToolUse hook events
 - `agentguard copilot-init` — Set up GitHub Copilot hook integration
+- `agentguard deepagents-hook` — Handle DeepAgents (LangChain) PreToolUse/PostToolUse hook events
+- `agentguard deepagents-init` — Set up DeepAgents hook integration (generates Python middleware)
 - `agentguard team-report` — Team-level governance observability across agents
 - `agentguard telemetry [on|off|status]` — Manage anonymous telemetry settings
 

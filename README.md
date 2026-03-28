@@ -97,7 +97,7 @@ agentguard guard --agent-name my-agent
 # Or omit --agent-name and an interactive prompt will ask for role + driver
 ```
 
-Identity consists of a **role** (`developer`, `reviewer`, `ops`, `security`, `ci`) and a **driver** (`human`, `claude-code`, `copilot`, `codex`, `gemini`, `opencode`, `deepagents`, `ci`). Identity flows to cloud telemetry for attribution, dashboard grouping, and persona-scoped policy rules.
+Identity consists of a **role** (`developer`, `reviewer`, `ops`, `security`, `ci`) and a **driver** (`human`, `claude-code`, `copilot`, `opencode`, `ci`). Identity flows to cloud telemetry for attribution, dashboard grouping, and persona-scoped policy rules.
 
 ## What It Does
 
@@ -397,9 +397,6 @@ agentguard claude-init                    # Interactive wizard: mode + pack → 
 agentguard claude-init --global           # Install hooks globally (~/.claude/settings.json)
 agentguard claude-init --mode guide --pack essentials  # Non-interactive setup
 agentguard copilot-init                   # Set up GitHub Copilot CLI hook integration
-agentguard codex-init                     # Set up OpenAI Codex CLI hook integration
-agentguard gemini-init                    # Set up Google Gemini CLI hook integration
-agentguard opencode-init                  # Set up OpenCode (.opencode/plugins/agentguard.ts) hook integration
 agentguard deepagents-init                # Set up DeepAgents (.deepagents/agentguard_middleware.py) middleware
 agentguard init --template strict         # Scaffold policy from a template
 agentguard status                         # Show governance status
