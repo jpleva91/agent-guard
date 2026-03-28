@@ -1,71 +1,81 @@
 {
   "squad": "marketing",
-  "timestamp": "2026-03-26T20:10:00.000Z",
+  "timestamp": "2026-03-28T20:00:00.000Z",
   "health": "yellow",
-  "summary": "3rd consecutive cycle with zero content agent output. Marketing-content-agent blocked by governance catch-22 (#995). Site stats partially fixed (PRs #1005, #1009) but test counter still stale (2,637 vs 4,134). Demo video placeholder and capture funnel remain unaddressed.",
+  "summary": "Productive cycle: 5 site stat fixes shipped (PR #1224), demo section de-placeholdered, OWASP blog post drafted (issue #925, 4th cycle escalated to EM direct). Governance catch-22 (#995) still blocking content agents for 4th consecutive cycle. v2.8.x announcement (#934) and user capture funnel (#1084) remain open. v2.8.5 is current release — site needs version-aware messaging.",
   "contentPipeline": {
-    "drafts": 0,
+    "drafts": 1,
     "published": 0,
-    "scheduled": 5,
-    "weeklyContentPack": "#1004 generated but agent blocked — no execution"
+    "scheduled": 3,
+    "weeklyContentPack": "#1004 closed — content generated but unpublished (agent blocked 4 cycles)"
   },
   "siteAlignment": {
-    "status": "partial",
-    "recentFixes": [
-      "PR #1005: destructive patterns 87→93, event kinds 49→47, ROADMAP numbers updated",
-      "PR #1009: CLI commands 29→30, patterns/events synced",
-      "PR #1011: OG image and social meta tags completed"
+    "status": "improved",
+    "fixedThisCycle": [
+      "PR #1224: tests 2,637→4,394 (QA report 2026-03-28)",
+      "PR #1224: destructive patterns 87→93",
+      "PR #1224: event kinds 46→47",
+      "PR #1224: action types 40→41",
+      "PR #1224: invariants 22→24 (added no-env-var-modification)",
+      "PR #1224: terminal animation synced to 4,394",
+      "PR #1224: demo 'coming soon' replaced with live terminal walkthrough"
     ],
     "staleContent": [
-      "Test counter shows 2,637 — actual is 4,134+ (PR #983 QA report)",
-      "Terminal animation shows 'vitest (2,637 passed)' — stale",
-      "Swarm section shows '26 agents across 5 tiers' — actual is 49 agents across 8 squads (PR #1009 flagged redesign needed)",
-      "Demo video section still shows 'coming soon' placeholder (#1007)"
-    ],
-    "missing": [
-      "User capture funnel — zero capture mechanisms on site (#938, v3.0 blocker)",
-      "Office-sim screenshot/embed (#941)"
+      "Swarm section: '26 agents across 5 tiers' — actual is 9 squads (count unverified, needs squad manifest audit)",
+      "No version badge on landing page — current release is v2.8.5",
+      "User capture funnel still missing (#1084 open, v3.0 blocker)"
     ]
   },
   "sprintIssues": {
+    "closedThisCycle": [
+      { "issue": "#938", "title": "User capture funnel v1", "note": "Superseded by #1084 (ROADMAP scope)" },
+      { "issue": "#1007", "title": "Demo video placeholder", "note": "Replaced with terminal walkthrough" },
+      { "issue": "#1004", "title": "Weekly content pack", "note": "Closed — content exists at docs/blog but unpublished" }
+    ],
     "active": [
-      { "issue": "#925", "title": "OWASP blog", "status": "blocked", "note": "ESCALATED from last cycle — EM to draft directly" },
-      { "issue": "#934", "title": "v2.7.x announcement", "status": "blocked", "note": "Content agent blocked by #995" },
-      { "issue": "#938", "title": "User capture funnel", "status": "open", "note": "v3.0 blocker, no progress" },
-      { "issue": "#1007", "title": "Demo video placeholder", "status": "open", "note": "Needs recording or section removal" },
-      { "issue": "#1004", "title": "Weekly content pack", "status": "generated", "note": "Content ready but agent can't execute" }
+      { "issue": "#925", "title": "OWASP blog post", "status": "draft-ready", "note": "Draft at docs/blog/owasp-agentic-top10-agentguard.md — ready for LinkedIn publication" },
+      { "issue": "#934", "title": "v2.7.x-v2.8.x announcement", "status": "open", "note": "Content pack #1004 has excellent material. Needs human to post or agent unblock." },
+      { "issue": "#1084", "title": "User capture funnel (v3.0 ROADMAP)", "status": "open", "note": "README CTA, GitHub Discussions, CLI first-run prompt. v3.0 release blocker." }
     ]
   },
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
-    "mergeable": 0,
+    "mergeable": 1,
+    "prNumbers": ["#1224"],
     "recentlyMerged": ["#1011", "#1009", "#1005"]
   },
   "blockers": [
     {
       "severity": "high",
-      "description": "marketing-content-agent-cloud blocked by governance catch-22 (#995): hook blocks pnpm install needed to install the governance kernel",
-      "impact": "All content agents unable to execute — zero output for 3 consecutive cycles",
-      "requiredAction": "Human intervention to bootstrap kernel in worktree, or hook adjustment to allow bootstrapping commands"
+      "description": "marketing-content-agent blocked by governance catch-22 (#995): hook blocks pnpm install before kernel is installed",
+      "impact": "Content agents silent for 4 consecutive cycles — OWASP post, v2.8.x announcement, weekly content pack all in draft limbo",
+      "requiredAction": "Human to run pnpm install in worktree, or ops to patch hook to allow bootstrapping. Sprint plan #1223 does not address this — needs separate ops ticket."
     },
     {
       "severity": "medium",
-      "description": "Test counter on site stale (2,637 vs 4,134)",
-      "impact": "Understates project maturity — 36% lower than actual",
-      "requiredAction": "Update data-target in site/index.html stats bar and terminal animation"
+      "description": "Swarm section shows '26 agents across 5 tiers' — actual squad count is 9",
+      "impact": "Understates project maturity",
+      "requiredAction": "Audit squad manifests to get actual agent count, then update swarm section text"
     }
   ],
   "escalations": [
-    "HIGH: Content agents silent for 3 consecutive cycles due to governance catch-22 (#995). Requires ops intervention to fix worktree bootstrapping.",
-    "MEDIUM: EM committed to drafting OWASP blog (#925) directly — will execute next cycle if agent unblock doesn't happen.",
-    "LOW: Weekly content pack #1004 has excellent material (Go kernel, aguard rebrand, studio wizard) but no agent to publish it."
+    "HIGH: Content agents silent for 4 consecutive cycles. Human intervention required for #995.",
+    "MEDIUM: OWASP blog post draft is complete at docs/blog/ — needs human to publish to LinkedIn.",
+    "MEDIUM: Weekly content pack (#1004) has 5 ready-to-post pieces (Go kernel, aguard rebrand, studio wizard, dogfooding, week-in-review). Needs publication.",
+    "LOW: v2.8.x releases shipped since last content cycle — no public announcement yet."
   ],
   "productInsights": [
-    "Go kernel (100x faster governance) is the strongest marketing story this quarter — needs blog post urgently",
-    "Weekly content pack #1004 contains 5 ready-to-post LinkedIn articles and Twitter threads — high-quality material going to waste",
-    "aguard CLI rebrand (v2.7.0) is a user-facing win worth announcing: shorter command, same governance",
-    "Governance catch-22 (#995) is itself a compelling dogfood story — 'we found a circular dependency in our own tool'"
+    "v2.8.5 is current release — adds Codex CLI/Gemini CLI support, agent identity telemetry, idempotent hooks. Strong v2.8.x announcement story.",
+    "PR #1213 (no-governance-self-modification scoping) merged — resolves cluster of false-positive blocks. Good dogfood narrative.",
+    "3,825+ unintended governance denials from AAB normalization gap (#1202) — when fixed, compelling story: 'we found and fixed a systemic governance flaw in our own tool'.",
+    "9 active squads means 'autonomous agent swarm' narrative is highly credible — but site still says 26 agents/5 tiers"
   ],
-  "agentIdentity": "claude-code:opus:marketing:em"
+  "dogfoodReport": {
+    "governanceDenialsThisRun": 0,
+    "unexpectedBlocks": [],
+    "unexpectedAllows": [],
+    "status": "clean — no governance issues encountered this run"
+  },
+  "agentIdentity": "claude-code:sonnet:marketing:em"
 }

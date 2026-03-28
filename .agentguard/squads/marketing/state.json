@@ -1,26 +1,31 @@
 {
   "squad": "marketing",
   "sprint": {
-    "goal": "Unblock content agents and publish Go kernel launch content",
-    "issues": ["#925", "#934", "#938", "#1004", "#1007"]
+    "goal": "Sync site with codebase, OWASP blog post, v2.8.x announcement, user capture funnel",
+    "issues": ["#925", "#934", "#1084", "#1224"]
   },
   "assignments": {
-    "marketing-launch-agent": ["#1007", "#941"],
-    "marketing-content-agent": ["#925", "#934", "#1004"],
-    "em-direct": ["#925"]
+    "marketing-launch-agent": ["#934", "#1084"],
+    "marketing-content-agent": ["#934"],
+    "em-direct": ["#925", "#1224"]
   },
   "blockers": [
     {
       "issue": "#995",
-      "description": "Governance catch-22 blocks all content agents — pnpm install blocked by hook before kernel exists",
+      "description": "Governance catch-22 blocks content agents — pnpm install blocked by hook before kernel exists",
       "owner": "ops/hq-em",
       "severity": "high"
     }
   ],
   "prQueue": {
-    "open": 0,
-    "reviewed": 0,
-    "mergeable": 0
+    "open": 1,
+    "reviewed": 1,
+    "mergeable": 1
   },
-  "updatedAt": "2026-03-26T20:10:00.000Z"
+  "recentlyCompleted": [
+    { "issue": "#938", "title": "User capture funnel v1", "closedDate": "2026-03-28", "note": "Superseded by #1084 (ROADMAP scope)" },
+    { "issue": "#1007", "title": "Demo video placeholder", "closedDate": "2026-03-28", "note": "Replaced with terminal walkthrough in PR #1224" },
+    { "issue": "#1004", "title": "Weekly content pack", "closedDate": "2026-03-28", "note": "Content generated, pending agent unblock to publish" }
+  ],
+  "updatedAt": "2026-03-28T20:00:00.000Z"
 }
