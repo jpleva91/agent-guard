@@ -405,6 +405,12 @@ function showProtectionSummary(policyGenerated: boolean, mode: EnforcementMode =
     );
   }
   process.stderr.write(`\n  ${DIM}Remove: ${FG.cyan}agentguard copilot-init --remove${RESET}\n\n`);
+  process.stderr.write(`  ${BOLD}☁  Get team governance & telemetry:${RESET}\n`);
+  process.stderr.write(
+    `  ${FG.cyan}https://agentguard-cloud-dashboard.vercel.app/signup${RESET}\n`
+  );
+  process.stderr.write(`  ${DIM}  or run: agentguard cloud signup${RESET}\n`);
+  process.stderr.write('\n');
 }
 
 function hasAgentGuardHook(config: HooksConfig): boolean {
