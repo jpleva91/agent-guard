@@ -10,6 +10,8 @@ Install in 30 seconds. Your agents can't break what matters.</p>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License: Apache 2.0"></a>
   <img src="https://github.com/AgentGuardHQ/agentguard/actions/workflows/size-check.yml/badge.svg" alt="CI">
   <a href="https://agentguardhq.github.io/agentguard/"><img src="https://img.shields.io/badge/Website-AgentGuardHQ.github.io-22C55E?style=flat&logo=github" alt="Website"></a>
+  <a href="https://agentguard-cloud-dashboard.vercel.app/signup"><img src="https://img.shields.io/badge/Cloud-Join%20Early%20Access-FF6B35?style=flat" alt="Join Early Access"></a>
+  <a href="https://github.com/AgentGuardHQ/agentguard/discussions"><img src="https://img.shields.io/badge/Discussions-Ask%20%26%20Share-8A2BE2?style=flat&logo=github" alt="GitHub Discussions"></a>
 </p>
 
 ---
@@ -73,6 +75,10 @@ Non-interactive setup (CI or scripted installs):
 ```bash
 agentguard claude-init --mode guide --pack essentials
 ```
+
+> **Join the waitlist** — get cloud governance, team dashboards, and real-time telemetry:
+> **[agentguard-cloud-dashboard.vercel.app/signup](https://agentguard-cloud-dashboard.vercel.app/signup)**
+> · [GitHub Discussions](https://github.com/AgentGuardHQ/agentguard/discussions) — ask questions, share setups
 
 ## Cloud Dashboard
 
