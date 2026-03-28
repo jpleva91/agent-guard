@@ -1,6 +1,6 @@
 {
   "name": "@red-codes/telemetry",
-  "version": "0.1.0",
+  "version": "2.9.2",
   "description": "Runtime telemetry, tracing, and cloud sink for AgentGuard",
   "type": "module",
   "main": "./dist/index.js",

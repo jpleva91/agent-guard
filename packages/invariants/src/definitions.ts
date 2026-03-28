@@ -1258,8 +1258,13 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       // mention governance filenames without targeting them. Only the command header
       // (redirect target, flags, operator) is relevant for classification.
       const commandHeader = stripHeredocBody(command);
+      // gh commands (gh issue create, gh pr create, etc.) make GitHub API calls and cannot
+      // modify local governance files. Skip command scanning to prevent false positives
+      // when --body flags contain governance terminology in issue/PR content (closes #1254).
+      const baseCmd = extractBaseCommand(commandHeader);
       const commandViolation =
         commandHeader !== '' &&
+        baseCmd !== 'gh' &&
         (matchesGovernancePath(commandHeader) ||
           GOVERNANCE_FILE_BASENAMES.some((f) => commandHeader.toLowerCase().includes(f)));
 

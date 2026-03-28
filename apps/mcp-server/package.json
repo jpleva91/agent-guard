@@ -1,7 +1,7 @@
 {
   "name": "@red-codes/agentguard-mcp",
-  "version": "0.1.0",
-  "description": "AgentGuard MCP server — governance tools for AI coding agents",
+  "version": "2.9.2",
+  "description": "AgentGuard MCP server \u2014 governance tools for AI coding agents",
   "type": "module",
   "license": "Apache-2.0",
   "private": true,

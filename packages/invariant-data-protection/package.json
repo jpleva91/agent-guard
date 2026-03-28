@@ -1,7 +1,7 @@
 {
   "name": "@red-codes/invariant-data-protection",
-  "version": "0.1.0",
-  "description": "Reference invariant plugin for data protection — PII detection, secret scanning, and batch limits",
+  "version": "2.9.2",
+  "description": "Reference invariant plugin for data protection \u2014 PII detection, secret scanning, and batch limits",
   "type": "module",
   "license": "Apache-2.0",
   "main": "./dist/index.js",

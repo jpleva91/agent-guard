@@ -83,6 +83,71 @@ function makePatternId(category: string, index: number): string {
   return `destructive:${category}:${index}`;
 }
 
+// ─── Safe subshell stripping ─────────────────────────────────────────────────
+
+/**
+ * Known read-only, side-effect-free subshell commands whose substitution forms
+ * are always safe to allow in governance scans.
+ *
+ * Security constraint: each pattern uses [^)(]* in the argument slot, which
+ * rejects nested subshells (e.g. `$(date $(rm -rf /))`), preventing bypass.
+ * The `(` and `)` characters in `[^)(]` are excluded so the pattern never
+ * crosses subshell boundaries.
+ *
+ * Note: patterns intentionally avoid `(?:\s+[^)(]*)?\s*` constructs — these
+ * create polynomial backtracking risk (ReDoS) by introducing ambiguous overlap
+ * between whitespace consumers. Using `[^)(]*` directly is both simpler and safe.
+ *
+ * Included commands:
+ *   date     — reads system clock; format strings (+%Y...) are safe
+ *   pwd      — reads current working directory
+ *   whoami   — reads effective username
+ *   hostname — reads system hostname
+ *   uname    — reads kernel/system info
+ *   id       — reads user/group info
+ *   arch     — reads CPU architecture
+ *   uptime   — reads system uptime
+ *   git rev-parse / git describe — reads git state (commit hash, tag, branch)
+ */
+const SAFE_SUBSHELL_PATTERNS: RegExp[] = [
+  /\$\(\s*date[^)(]*\)/g,
+  /\$\(\s*pwd\s*\)/g,
+  /\$\(\s*whoami\s*\)/g,
+  /\$\(\s*hostname[^)(]*\)/g,
+  /\$\(\s*uname[^)(]*\)/g,
+  /\$\(\s*id[^)(]*\)/g,
+  /\$\(\s*arch\s*\)/g,
+  /\$\(\s*uptime[^)(]*\)/g,
+  /\$\(\s*git\s+(?:rev-parse|describe)[^)(]*\)/g,
+];
+
+/**
+ * Strip known safe, read-only subshell expressions from a shell command before
+ * destructive pattern scanning.
+ *
+ * Subshells like `$(date -u +%Y-%m-%dT%H:%M:%SZ)` are pure clock reads with
+ * no side effects, but embedding them inside commands (e.g. inside `--body`
+ * arguments to `gh pr comment`) can trigger false-positive matches against
+ * destructive pattern keywords. This function removes them before scanning so
+ * only the structural command content remains.
+ *
+ * Example:
+ *   Input:  `gh pr comment 42 --body "reviewed on $(date -u +%Y-%m-%dT%H:%M:%SZ)"`
+ *   Output: `gh pr comment 42 --body "reviewed on "`
+ *
+ * Destructive commands that contain safe subshells are still detected:
+ *   Input:  `rm -rf /tmp/backup-$(date +%Y%m%d)`
+ *   Output: `rm -rf /tmp/backup-`   ← rm -rf is still caught
+ */
+export function stripSafeSubshells(command: string): string {
+  if (!command.includes('$(')) return command;
+  let result = command;
+  for (const pattern of SAFE_SUBSHELL_PATTERNS) {
+    result = result.replace(pattern, '');
+  }
+  return result;
+}
+
 // ─── Heredoc stripping ──────────────────────────────────────────────────────
 
 /**
@@ -251,9 +316,9 @@ export class CommandScanner {
   scanDestructive(command: string): MatchResult[] {
     if (!command) return [];
 
-    // Strip heredoc bodies — they contain file content (not shell commands) and
-    // would cause false positives when agents write reports mentioning blocked patterns.
-    const scanTarget = stripHeredocBodies(command);
+    // Strip heredoc bodies then safe subshells — both contain content that is
+    // not executable shell structure and would cause false positives.
+    const scanTarget = stripSafeSubshells(stripHeredocBodies(command));
 
     const results: MatchResult[] = [];
     const seenPatterns = new Set<string>();

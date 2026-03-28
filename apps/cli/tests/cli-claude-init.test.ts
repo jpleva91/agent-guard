@@ -146,9 +146,9 @@ describe('claudeInit', () => {
     expect(written.hooks.SessionStart[0].hooks[0].timeout).toBe(120000);
     // Persona check second
     expect(written.hooks.SessionStart[0].hooks[1].command).toContain('session-persona-check');
-    // Status hook third, using local binary
-    expect(written.hooks.SessionStart[0].hooks[2].command).toContain('AGENTGUARD_WORKSPACE');
+    // Status hook third — in dev repo, uses local binary directly (no bash wrapper)
     expect(written.hooks.SessionStart[0].hooks[2].command).toContain('status');
+    expect(written.hooks.SessionStart[0].hooks[2].command).toContain('apps/cli/dist/bin.js');
   });
 
   it('detects already-configured hook in PreToolUse and warns', async () => {

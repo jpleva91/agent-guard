@@ -92,6 +92,9 @@ export const INTENT_DRIFT_DETECTED: EventKind = 'IntentDriftDetected';
 // Capability Validation
 export const CAPABILITY_VALIDATED: EventKind = 'CapabilityValidated';
 
+// Unknown Command Warning (Option A default-deny: warn+audit, not hard-deny)
+export const UNKNOWN_COMMAND_WARN: EventKind = 'UnknownCommandWarn';
+
 // Environmental Enforcement
 // TODO(issue-225): Reserved for future direct emission from the shell adapter when IDE
 // context variables are stripped. Currently the kernel emits InvariantViolation when the
@@ -186,6 +189,10 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   [SIMULATION_COMPLETED]: {
     required: ['simulatorId', 'riskLevel', 'blastRadius'],
     optional: ['predictedChanges', 'durationMs', 'metadata'],
+  },
+  [UNKNOWN_COMMAND_WARN]: {
+    required: ['actionType', 'target', 'command'],
+    optional: ['agentId', 'agentRole', 'riskLevel', 'metadata'],
   },
   [PIPELINE_STARTED]: {
     required: ['runId', 'task'],

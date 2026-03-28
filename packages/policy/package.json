@@ -1,6 +1,6 @@
 {
   "name": "@red-codes/policy",
-  "version": "1.0.0",
+  "version": "2.9.2",
   "description": "Policy evaluation and loading for AgentGuard",
   "type": "module",
   "license": "Apache-2.0",
@@ -13,7 +13,11 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist/", "LICENSE", "README.md"],
+  "files": [
+    "dist/",
+    "LICENSE",
+    "README.md"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/AgentGuardHQ/agentguard",
