@@ -546,13 +546,16 @@ export function createShellAdapter(
       effectiveCredentialOptions
     );
 
+    // Capture as const so TypeScript can narrow the type inside the Promise closure.
+    // TypeScript doesn't narrow `let` variables captured in closures since they're mutable.
+    const execCommand: string = command;
     return new Promise((resolve, reject) => {
       exec(
-        command,
+        execCommand,
         { timeout, maxBuffer: MAX_BUFFER, cwd, env: sanitizedEnv },
         (error, stdout, stderr) => {
           if (error && error.killed) {
-            reject(new Error(`Command timed out after ${timeout}ms: ${command}`));
+            reject(new Error(`Command timed out after ${timeout}ms: ${execCommand}`));
             return;
           }
 
