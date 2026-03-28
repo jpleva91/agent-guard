@@ -1,56 +1,58 @@
 {
   "schemaVersion": "1.0",
-  "updatedAt": "2026-03-27T02:45:00Z",
+  "updatedAt": "2026-03-28T05:15:00Z",
   "updatedBy": "backlog-hygiene--roadmap-triage-agent",
   "mode": "normal",
   "recommendedMode": "normal",
-  "modeReason": "Roadmap triage agent confirms normal mode. v2.8.0 shipped (Codex CLI + Gemini CLI adapters). Phase 6.75 (Studio Runtime) completed ahead of schedule. Install attribution (v3.0 blocker) shipped in v2.7.x. Go kernel fast-path delegation operational. Security issue #648 (read-only ops) RESOLVED via PR #982. Risk profile steady.",
+  "modeReason": "Roadmap triage agent confirms normal mode. v2.8.4 is the current release. DeepAgents adapter shipped (v2.8.1). Heredoc false-positive fixed (v2.8.4). Graceful SQLite fallback added (v2.8.3). KE-2 (#917) remains the critical path to v3.0. P1 policy gap: github.pr.* action types missing from default allow-list (#1177) \u2014 PR #1178 partially addresses (Copilot meta-tools); full github.* policy fix still needed. Security issue count stable at 2 (#640, #639). Risk profile slightly elevated due to #1177.",
   "riskAssessment": {
-    "compositeScore": 8,
+    "compositeScore": 14,
     "escalationLevel": "NORMAL",
-    "assessedAt": "2026-03-27T02:45:00Z",
+    "assessedAt": "2026-03-28T05:15:00Z",
     "dimensions": {
       "prBlastRadius": {
-        "score": 0,
-        "max": 25,
-        "openPRs": 0,
-        "conflictedPRs": 0,
-        "note": "PR queue empty. v2.8.0 merged cleanly."
-      },
-      "testFailureRate": {
-        "score": 2,
-        "max": 25,
-        "note": "Main branch CI green. No persistent test failures."
-      },
-      "governanceDenialRate": {
         "score": 3,
         "max": 25,
-        "highPriorityIssuesOpen": 6,
+        "openPRs": 3,
+        "conflictedPRs": 2,
+        "note": "PR #1178 (valid fix: Copilot meta-tools), PR #1151/#1150 (EM reports, merge conflicts). Small blast radius."
+      },
+      "testFailureRate": {
+        "score": 0,
+        "max": 25,
+        "note": "4364 tests passing on main. All 18 packages green."
+      },
+      "governanceDenialRate": {
+        "score": 8,
+        "max": 25,
+        "highPriorityIssuesOpen": 5,
         "securityBypassVectors": [
-          "#618 (credential write bypass)",
           "#640 (path manipulation)",
           "#639 (credential stripping)"
         ],
-        "note": "6 HIGH-priority issues open (down from 8). #648 (read-only blocking) RESOLVED via PR #982. #618, #640, #639 remain without assigned PRs."
+        "policyGaps": [
+          "#1177 (github.pr.* + MCP github-mcp-server missing from allow-list)"
+        ],
+        "note": "5 HIGH-priority issues open. #618 RESOLVED. CRITICAL policy gap #1177: github.pr.* actions missing from default policy; blocks pr-merger agent entirely. PR #1178 partially addresses (Copilot meta-tools)."
       },
       "mergeConflictRate": {
-        "score": 0,
+        "score": 3,
         "max": 25,
-        "conflictedPRs": 0,
-        "openPRs": 0,
-        "note": "No open PRs, no conflicts."
+        "conflictedPRs": 2,
+        "openPRs": 3,
+        "note": "PRs #1150/#1151 have merge conflicts; they are EM report docs, low blast radius. PR #1178 is clean."
       }
     },
     "deltaFromPrior": {
-      "priorScore": 10,
-      "currentScore": 8,
-      "delta": -2,
-      "direction": "improved",
-      "cause": "v2.8.0 released (Codex+Gemini CLI). Phase 6.75 DONE. Install attribution shipped. #648 RESOLVED. Security issue count 8->6."
+      "priorScore": 8,
+      "currentScore": 14,
+      "delta": 6,
+      "direction": "worsened",
+      "cause": "New P1 policy gap discovered (#1177): github.pr.* actions missing from default allow-list, blocking pr-merger skill entirely. 2 EM reports with merge conflicts in PR queue. Overall health still NORMAL."
     }
   },
   "phaseTracking": {
-    "assessedAt": "2026-03-27T02:45:00Z",
+    "assessedAt": "2026-03-28T05:15:00Z",
     "completedPhases": [
       {
         "phase": "Phase 0",
@@ -376,53 +378,73 @@
           1024,
           1025
         ]
+      },
+      {
+        "event": "VERSION_RELEASED",
+        "version": "v2.8.4",
+        "releasedAt": "2026-03-28T02:34:00Z",
+        "significance": "v2.8.1-v2.8.4 patch series: DeepAgents framework adapter (v2.8.1), driverType telemetry field (v2.8.1), read-only fail-open fix (v2.8.2), CI stability fixes (v2.8.3), heredoc false-positive fix + claude-init idempotent hooks (v2.8.4). AgentGuard now governs 5 CLI agents: Claude Code, Copilot CLI, Codex CLI, Gemini CLI, DeepAgents.",
+        "prs": [
+          1087,
+          1098,
+          1114,
+          1126,
+          1147,
+          1153,
+          1160,
+          1164,
+          1168
+        ]
       }
     ]
   },
   "backlogExpansionRate": {
-    "assessedAt": "2026-03-27T02:45:00Z",
-    "totalOpenIssues": 50,
-    "note": "50 open issues at triage. ~15 actionable work items. Key triaged: #1048 (install attribution \u2014 closed, shipped via PR #991), #1049 (JetBrains plugin \u2014 Phase 9), #1055 (DeepAgents adapter \u2014 Phase 9 new), #1047 (KE-6 \u2014 already tracked), #1048 closed as duplicate of PR #991."
+    "assessedAt": "2026-03-28T05:15:00Z",
+    "totalOpenIssues": 186,
+    "actionableWorkItems": 18,
+    "note": "186 open issues total. Key new issues since v2.8.0: #1177 (P1: github.pr.* policy gap \u2014 CRITICAL, blocks pr-merger skill), #1176/#1172/#1167/#1165/#1159 (dogfood denials \u2014 systemic policy config issue), #1173/#1174/#1175 (Phase 8 policy ecosystem items from backlog-steward). #1128 (swarm health: 149 orphaned branches, needs human prune). KE-2 (#917) remains the highest-priority unstarted engineering item."
   },
   "stallDetection": {
     "stalledPhases": [],
     "warningPhases": [
       {
         "phase": "KE-2",
-        "note": "KE-2 (ActionContext, #856) in-progress since 2026-03-25 with 0/4 checkboxes. Critical path for v3.0. Monitor closely."
+        "issue": 917,
+        "note": "KE-2 (ActionContext, #917) status:pending with 0/4 checkboxes. No assigned PR. Critical path for v3.0. Has been unstarted since 2026-03-25. Escalate to kernel-sr."
       }
     ],
-    "note": "No phases have exceeded the 14-day stall threshold. KE-2 is the main risk."
+    "note": "No phases exceed the 14-day stall threshold. KE-2 is the primary risk \u2014 v3.0 cannot ship without it."
   },
   "healthChecks": {
     "prQueue": {
       "status": "healthy",
-      "openPRs": 0,
-      "conflictedPRs": 0,
-      "note": "PR queue empty. v2.8.0 merged cleanly."
+      "openPRs": 3,
+      "conflictedPRs": 2,
+      "note": "PR #1178 (valid Copilot meta-tools fix, awaiting review). PRs #1150/#1151 are EM report PRs with merge conflicts \u2014 should be rebased or superseded."
     },
     "ciOnMain": {
       "status": "healthy",
-      "note": "Main branch CI green at HEAD ae37b15."
+      "note": "Main branch CI green at HEAD fd820ac. 4364 tests passing."
     },
     "agentLiveness": {
       "status": "active",
-      "note": "Multiple agent branches active as of 2026-03-27. Swarm producing work."
+      "note": "Multiple agent branches active. Swarm producing work as of 2026-03-28."
     },
     "mergeConflicts": {
-      "status": "healthy",
-      "conflictedPRs": 0,
-      "note": "No open PRs, no conflicts."
+      "status": "warning",
+      "conflictedPRs": 2,
+      "openPRs": 3,
+      "note": "PRs #1150/#1151 have merge conflicts. Low urgency (EM reports); authors should rebase or close stale PRs."
     },
     "swarmStateFreshness": {
       "status": "healthy",
-      "note": "Updated by backlog-hygiene--roadmap-triage-agent 2026-03-27T02:45Z."
+      "note": "Updated by backlog-hygiene--roadmap-triage-agent 2026-03-28T05:15Z."
     },
     "roadmapProgress": {
       "status": "on-track",
       "completedPhases": 10,
       "activePhases": 4,
-      "note": "Phase 6.75 completed (10 total). v2.8.0 released. Critical path: KE-2 -> v3.0."
+      "note": "v2.8.4 released (5 CLI agent adapters). Critical path: KE-2 (#917) \u2192 v3.0. DeepAgents adapter Phase 9 item checked."
     }
   },
   "recoveryActions": [
@@ -455,54 +477,68 @@
       "timestamp": "2026-03-27T02:45:00Z",
       "description": "ROADMAP.md and swarm-state.json updated: v2.8.0 release (Codex+Gemini CLI), Phase 6.75 DONE (studio wizard, execution profiles, swarm template schema), install attribution checked off in v3.0 (1/8), Go kernel fast-path delegation operational, #648 resolved. Issue #1048 closed (shipped via PR #991).",
       "agent": "backlog-hygiene--roadmap-triage-agent"
+    },
+    {
+      "type": "roadmap-triage",
+      "timestamp": "2026-03-28T05:15:00Z",
+      "description": "ROADMAP.md and swarm-state.json updated: v2.8.4 current release. New entries: DeepAgents adapter (v2.8.1), driverType telemetry (v2.8.1), SQLite fallback (v2.8.3), heredoc fix (v2.8.4). Phase 9 DeepAgents checked. P1 policy gap #1177 (github.pr.* missing from allow-list) flagged as high-priority blocker. Security bypass count 6\u21925 (#618 resolved via PR #1032). Risk score 8\u219214 (NORMAL).",
+      "agent": "backlog-hygiene--roadmap-triage-agent"
     }
   ],
   "blockers": [
     {
       "type": "critical-path",
       "severity": "high",
-      "description": "KE-2 (ActionContext, #856) is the critical path blocker for v3.0. Currently in-progress with 0/4 checkboxes.",
-      "recommendation": "Prioritize KE-2 implementation. Single most important work item."
+      "description": "KE-2 (ActionContext, #917) is the critical path blocker for v3.0. Status: pending, unstarted. No assigned PR.",
+      "recommendation": "Assign to kernel-sr or architect-agent. Single most important engineering work item."
+    },
+    {
+      "type": "policy-gap",
+      "severity": "high",
+      "issueNumbers": [
+        1177
+      ],
+      "description": "P1: github.pr.* and github.issue.* action types missing from default agentguard.yaml allow-list. Blocks pr-merger and any skill using `gh` CLI entirely. Also github-mcp-server not in MCP allow-list. PR #1178 addresses Copilot meta-tools but not the github.* gap.",
+      "recommendation": "Assign coder-agent to add github.pr.*/github.issue.*/github.run.*/github.api allow rules to agentguard.yaml and all policy packs."
     },
     {
       "type": "security",
       "severity": "medium",
       "issueNumbers": [
-        618,
         640,
         639
       ],
-      "description": "3 security issues without assigned PRs: #618 (credential write bypass), #640 (path manipulation), #639 (credential stripping). #648 resolved via PR #982.",
-      "recommendation": "Assign implementation agent to #618 (highest severity)."
+      "description": "2 security issues without assigned PRs: #640 (path manipulation), #639 (credential stripping). #618 RESOLVED via PR #1032.",
+      "recommendation": "Assign implementation agent to #640 (path manipulation \u2014 most exploitable)."
     },
     {
-      "type": "governance-gap",
-      "severity": "high",
+      "type": "operational",
+      "severity": "low",
       "issueNumbers": [
-        868
+        1128
       ],
-      "description": "Issue #868: Agent PRs merging with failing CI. Governance enforcement gap on main branch.",
-      "recommendation": "Address #868 and #830 (required status checks) together."
+      "description": "149 orphaned branches reported by stale-branch-janitor (#1128). Swarm health alert open since 2026-03-27.",
+      "recommendation": "Human should run `git worktree prune` + bulk delete orphaned branches via stale-branch-janitor PR."
     }
   ],
   "systemSummary": {
     "overallHealth": "healthy",
     "escalationLevel": "NORMAL",
-    "riskScore": 8,
-    "riskTrend": "improving",
+    "riskScore": 14,
+    "riskTrend": "worsened-slightly",
     "mainBranchCI": "green",
-    "openPRsCount": 0,
-    "conflictedPRsCount": 0,
+    "openPRsCount": 3,
+    "conflictedPRsCount": 2,
     "stuckPRsCount": 0,
     "ciFailingPRsCount": 0,
-    "highIssuesWithoutPR": 6,
+    "highIssuesWithoutPR": 5,
     "regressionDetected": false,
     "completedPhaseCount": 10,
     "activePhaseCount": 4,
-    "progressSinceLastRun": "v2.8.0 released (Codex+Gemini CLI adapters). Phase 6.75 (Studio Runtime) DONE 3/3. Install attribution v3.0 item checked (1/8). Go kernel fast-path delegation shipped. #648 resolved. Security bypass count 8->6. Risk 10->8.",
+    "progressSinceLastRun": "v2.8.1-v2.8.4 patch series merged: DeepAgents adapter, driverType telemetry, graceful SQLite fallback, CI stability, heredoc false-positive fix, claude-init idempotent hooks. ROADMAP Phase 9 DeepAgents item checked. Security issue count 6\u21925 (#618 resolved). P1 policy gap discovered: github.pr.* missing from allow-list (#1177). Risk score 8\u219214.",
     "modeChangeConditions": {
-      "toNormal": "CURRENT STATE \u2014 risk score 8, 0 open PRs, no conflicts, main CI green.",
-      "toElevated": "Risk score exceeds 20, or PR queue grows above 5, or new critical security regression.",
+      "toNormal": "CURRENT STATE \u2014 risk score 14, 3 open PRs (2 conflicted docs), main CI green.",
+      "toElevated": "Risk score exceeds 20, or PR queue grows above 5, or new critical security regression, or #1177 policy gap causes major agent outage.",
       "toCritical": "Main CI failure rate >30%, 2+ unresolved critical issues, or merge conflict cascade (3+ PRs)."
     }
   }

@@ -2,7 +2,7 @@
 
 > Deterministic governance for AI coding agents.
 
-**Last updated**: 2026-03-27
+**Last updated**: 2026-03-28
 **License**: Apache 2.0
 **Repository**: [AgentGuardHQ/agent-guard](https://github.com/AgentGuardHQ/agent-guard)
 
@@ -65,6 +65,10 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | OpenCode driver support | **Shipped v2.7.0** | Agent driver registry (PR #1019) |
 | Codex CLI adapter (PreToolUse/PostToolUse hook commands) | **Shipped v2.8.0** | `packages/adapters/src/codex-cli.ts` (PR #1024) |
 | Gemini CLI adapter (BeforeTool/AfterTool hook commands) | **Shipped v2.8.0** | `packages/adapters/src/gemini-cli.ts` (PR #1024) |
+| DeepAgents framework adapter (LangChain DeepAgents — deepagents-hook + deepagents-init) | **Shipped v2.8.1** | `packages/adapters/src/deepagents.ts` (PR #1126, closes #1055) |
+| driverType field in AgentEvent telemetry + driver:agent identity format in storage sessions | **Shipped v2.8.1** | `packages/telemetry/src/event-mapper.ts`, `packages/storage/src/sqlite-session.ts` (PRs #1087, #1098) |
+| Graceful SQLite fallback when native bindings unavailable | **Shipped v2.8.3** | `apps/cli/src/commands/guard.ts` (PR #1168, closes #1148) |
+| Heredoc false-positive fix — strip heredoc bodies before destructive pattern scan | **Shipped v2.8.4** | `packages/matchers/src/command-scanner.ts` (PR #1153, closes #1119) |
 | Go kernel rewrite (Phase 1 — velocity-first) | **In Progress** | Fast-path delegation operational in `apps/cli` (PRs #1000, #1001) |
 | Rust kernel research (types, AAB, policy) | Paused | Experimental — informs Go design |
 
@@ -192,7 +196,7 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 
 **Traction note (2026-03-24)**: npm reports ~1,761 weekly downloads, but investigation shows the majority are internal Vercel CI builds of `agentguard-cloud` which pins `@red-codes/agentguard@2.0.0`. Each Vercel build (ephemeral containers, preview deploys, branch builds) triggers a fresh `npm install`. Real external adoption is likely in the low hundreds. This makes install attribution tracking and the user capture funnel critical — without them, we cannot distinguish real adoption from CI noise. The version drift (cloud at 2.0.0 vs OSS at 2.4.0) should also be resolved.
 
-**Release cadence**: v3.0 (KE-2 ActionContext + stranger test + capture funnel), v3.1 (Runner + `apps/runner`), v3.2+ (advanced integrations). Note: `agentguard init studio` wizard, execution profiles, swarm template schema, and install attribution all shipped early in v2.7.x ahead of schedule; Codex CLI + Gemini CLI adapters shipped in v2.8.0.
+**Release cadence**: v3.0 (KE-2 ActionContext + stranger test + capture funnel), v3.1 (Runner + `apps/runner`), v3.2+ (advanced integrations). Note: `agentguard init studio` wizard, execution profiles, swarm template schema, and install attribution all shipped early in v2.7.x ahead of schedule; Codex CLI + Gemini CLI + DeepAgents adapters shipped in v2.8.x (latest: v2.8.4).
 
 ### Next — Pull-Based Runner (Phase 6.5 — `apps/runner`)
 
@@ -247,7 +251,8 @@ Depends on: KE-2 (ActionContext provides vendor-neutral normalization).
 - [x] ~~Monitor mode for claude-hook~~ — ✅ Done 2026-03-21 (v2.3.0)
 - [ ] JetBrains plugin (IntelliJ/WebStorm)
 - [ ] Cursor integration
-- [ ] Framework-specific adapters (LangGraph, CrewAI, AutoGen, OpenAI Agents SDK, DeepAgents)
+- [ ] Framework-specific adapters (LangGraph, CrewAI, AutoGen, OpenAI Agents SDK)
+- [x] ~~DeepAgents framework adapter (LangChain DeepAgents)~~ — ✅ Done 2026-03-28 (v2.8.1) — `agentguard deepagents-hook` + `agentguard deepagents-init` (PR #1126, closes #1055)
 - [x] ~~Agent SDK for programmatic governance integration~~ — ✅ Done 2026-03-21 (v2.3.0)
 - [ ] Generic MCP adapter for any MCP-compatible tool
 - [x] ~~OpenCode driver support~~ — ✅ Done 2026-03-26 (v2.7.x) — `opencode` registered as supported agent driver (PR #1019)
