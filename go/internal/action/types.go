@@ -2,6 +2,7 @@
 package action
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"gopkg.in/yaml.v3"
@@ -28,6 +29,25 @@ func (s *StringOrSlice) UnmarshalYAML(value *yaml.Node) error {
 	default:
 		return fmt.Errorf("StringOrSlice: expected string or sequence, got %v", value.Kind)
 	}
+}
+
+// UnmarshalJSON implements json.Unmarshaler for StringOrSlice.
+// Handles both JSON string ("*") and JSON array (["git.push","git.commit"]).
+// This is needed when the TS hook serializes policies as JSON for the Go fast-path.
+func (s *StringOrSlice) UnmarshalJSON(data []byte) error {
+	// Try string first
+	var str string
+	if err := json.Unmarshal(data, &str); err == nil {
+		*s = StringOrSlice{str}
+		return nil
+	}
+	// Try array
+	var slice []string
+	if err := json.Unmarshal(data, &slice); err != nil {
+		return fmt.Errorf("StringOrSlice: expected string or array, got %s", string(data))
+	}
+	*s = StringOrSlice(slice)
+	return nil
 }
 
 // ActionContext is the vendor-neutral action representation (KE-2).

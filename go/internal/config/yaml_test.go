@@ -169,6 +169,51 @@ func TestLoadYamlPolicyInvalidYaml(t *testing.T) {
 	}
 }
 
+// TestLoadYamlPolicyFromJSON verifies that LoadYamlPolicy correctly parses
+// JSON-formatted policies as produced by the TS hook's tryGoFastPath.
+// This is critical because the TS hook serializes pre-resolved policies as
+// JSON (not YAML) before passing them to the Go binary via a temp file.
+func TestLoadYamlPolicyFromJSON(t *testing.T) {
+	jsonData := `{"id":"ts-resolved","name":"Pre-resolved policies","rules":[{"action":"*","effect":"allow","reason":"Allow all"}],"severity":3}`
+	policy, err := config.LoadYamlPolicy([]byte(jsonData))
+	if err != nil {
+		t.Fatalf("unexpected error parsing JSON policy: %v", err)
+	}
+	if len(policy.Rules) != 1 {
+		t.Fatalf("expected 1 rule, got %d", len(policy.Rules))
+	}
+	rule := policy.Rules[0]
+	if len(rule.Action) != 1 || rule.Action[0] != "*" {
+		t.Errorf("expected action=[*], got %v", rule.Action)
+	}
+	if rule.Effect != "allow" {
+		t.Errorf("expected effect=allow, got %s", rule.Effect)
+	}
+}
+
+// TestLoadYamlPolicyWildcardAction verifies that action: "*" is correctly parsed.
+func TestLoadYamlPolicyWildcardAction(t *testing.T) {
+	yamlData := `
+id: test
+name: Test
+rules:
+  - action: "*"
+    effect: allow
+    reason: Allow everything
+`
+	policy, err := config.LoadYamlPolicy([]byte(yamlData))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(policy.Rules) != 1 {
+		t.Fatalf("expected 1 rule, got %d", len(policy.Rules))
+	}
+	rule := policy.Rules[0]
+	if len(rule.Action) != 1 || rule.Action[0] != "*" {
+		t.Errorf("expected action=[*], got %v", rule.Action)
+	}
+}
+
 func TestLoadYamlPolicyRequireFlags(t *testing.T) {
 	yamlData := `
 id: test

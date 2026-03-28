@@ -1,6 +1,7 @@
 package action_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/AgentGuardHQ/agentguard/go/internal/action"
@@ -59,6 +60,35 @@ func TestEvalResultDenied(t *testing.T) {
 	r := action.EvalResult{Allowed: false, Decision: "deny", Reason: "Protected branch"}
 	if r.Allowed {
 		t.Error("expected denied")
+	}
+}
+
+func TestStringOrSliceUnmarshalJSONString(t *testing.T) {
+	input := []byte(`{"action":"*"}`)
+	var rule struct {
+		Action action.StringOrSlice `json:"action"`
+	}
+	if err := json.Unmarshal(input, &rule); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if len(rule.Action) != 1 || rule.Action[0] != "*" {
+		t.Errorf("expected [*], got %v", rule.Action)
+	}
+}
+
+func TestStringOrSliceUnmarshalJSONArray(t *testing.T) {
+	input := []byte(`{"action":["git.push","git.commit"]}`)
+	var rule struct {
+		Action action.StringOrSlice `json:"action"`
+	}
+	if err := json.Unmarshal(input, &rule); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if len(rule.Action) != 2 {
+		t.Fatalf("expected 2 actions, got %d", len(rule.Action))
+	}
+	if rule.Action[0] != "git.push" || rule.Action[1] != "git.commit" {
+		t.Errorf("expected [git.push, git.commit], got %v", rule.Action)
 	}
 }
 

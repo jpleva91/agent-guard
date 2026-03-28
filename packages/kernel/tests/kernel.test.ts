@@ -51,6 +51,70 @@ describe('Kernel', () => {
     expect(result.decision.intent.destructive).toBe(true);
   });
 
+  it('wildcard allow rule permits destructive shell command (#1253)', async () => {
+    const kernel = createKernel({
+      dryRun: true,
+      policyDefs: [
+        {
+          id: 'allow-all',
+          name: 'Allow All',
+          rules: [{ action: '*', effect: 'allow', reason: 'Operator allows everything' }],
+          severity: 3,
+        },
+      ],
+      evaluateOptions: { defaultDeny: true },
+    });
+
+    const result = await kernel.propose({
+      tool: 'Bash',
+      command: 'rm -rf /tmp/test',
+      agent: 'test-agent',
+    });
+
+    expect(result.allowed).toBe(true);
+    expect(result.decision.intent.destructive).toBe(true);
+    expect(result.decision.decision.reason).toBe('Operator allows everything');
+  });
+
+  it('wildcard allow matches all action types with defaultDeny (#1253)', async () => {
+    const kernel = createKernel({
+      dryRun: true,
+      policyDefs: [
+        {
+          id: 'allow-all',
+          name: 'Allow All',
+          rules: [{ action: '*', effect: 'allow', reason: 'Allow all' }],
+          severity: 3,
+        },
+      ],
+      evaluateOptions: { defaultDeny: true },
+    });
+
+    // Test shell.exec (non-destructive)
+    const shellResult = await kernel.propose({
+      tool: 'Bash',
+      command: 'ls -la',
+      agent: 'test-agent',
+    });
+    expect(shellResult.allowed).toBe(true);
+
+    // Test file.write
+    const writeResult = await kernel.propose({
+      tool: 'Write',
+      file: 'src/index.ts',
+      content: 'hello',
+      agent: 'test-agent',
+    });
+    expect(writeResult.allowed).toBe(true);
+
+    // Test mcp.call (via unknown tool fallback)
+    const mcpResult = await kernel.propose({
+      tool: 'mcp__server__tool',
+      agent: 'test-agent',
+    });
+    expect(mcpResult.allowed).toBe(true);
+  });
+
   it('denies actions matching deny policy', async () => {
     const kernel = createKernel({
       dryRun: true,
