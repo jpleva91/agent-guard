@@ -1408,6 +1408,36 @@ describe('no-governance-self-modification', () => {
     expect(result.actual).toContain('command');
     expect(result.actual).toContain('modified');
   });
+
+  // Acceptance tests for #1182: agent-identity-bridge chicken-and-egg
+  // persona.env is the identity bootstrap file written by scripts/agent-identity-bridge.sh.
+  // It lives under .agentguard/ but is NOT a governance config file — it's a runtime identity
+  // file required for governance telemetry enrichment. Blocking it creates a chicken-and-egg
+  // where governance requires identity, but governance blocks setting identity.
+  // TODO(#1182): remove .skip once no-governance-self-modification adds persona.env allowlist.
+  it.skip('holds when writing .agentguard/persona.env (identity bootstrap — not governance config)', () => {
+    const result = inv.check({ currentTarget: '.agentguard/persona.env' });
+    expect(result.holds).toBe(true);
+  });
+
+  it.skip('holds when shell command writes .agentguard/persona.env via redirect', () => {
+    const result = inv.check({
+      currentCommand: 'echo "AGENTGUARD_AGENT_ROLE=developer" > .agentguard/persona.env',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it.skip('holds when modifiedFiles contains only .agentguard/persona.env', () => {
+    const result = inv.check({ modifiedFiles: ['.agentguard/persona.env'] });
+    expect(result.holds).toBe(true);
+  });
+
+  // Verify current (pre-fix) behavior so regressions in the fix are caught
+  it('currently blocks .agentguard/persona.env writes (pre-#1182-fix behavior)', () => {
+    const result = inv.check({ currentTarget: '.agentguard/persona.env' });
+    // This SHOULD become holds:true after #1182 is fixed — update alongside the fix
+    expect(result.holds).toBe(false);
+  });
 });
 
 describe('lockfile-integrity', () => {

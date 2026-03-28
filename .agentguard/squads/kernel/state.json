@@ -24,14 +24,46 @@
   },
   "health": "green",
   "testHealth": {
-    "total": 4364,
-    "passed": 4364,
+    "total": 4394,
+    "passed": 4394,
     "failed": 0,
     "packages": 18,
-    "lastRun": "2026-03-28T00:52:00.000Z",
+    "lastRun": "2026-03-28T06:50:00.000Z",
     "status": "all_passing",
-    "delta": "+14 vs prior QA run",
-    "regressions": []
+    "delta": "+30 vs prior QA run (4364→4394)",
+    "breakdown": {
+      "kernel": 889,
+      "agentguard": 837,
+      "policy": 480,
+      "invariants": 586,
+      "adapters": 281,
+      "storage": 243,
+      "renderers": 105,
+      "plugins": 125,
+      "matchers": 122,
+      "telemetry": 161,
+      "core": 194,
+      "swarm": 70,
+      "invariant-data-protection": 122,
+      "events": 76,
+      "sdk": 18,
+      "mcp": 24,
+      "telemetry-client": 27,
+      "scheduler": 34
+    },
+    "regressions": [],
+    "coverageGaps": [
+      {
+        "issue": 1182,
+        "description": "no-governance-self-modification invariant blocks .agentguard/persona.env writes — no acceptance test for allowlist behavior yet",
+        "location": "packages/invariants/tests/invariant-definitions.test.ts"
+      },
+      {
+        "issue": 1139,
+        "description": "$(date +format) blocking source not found in TS/Go codebase — may be emitted by AI safety layer, not AgentGuard. Needs investigation by senior engineer.",
+        "location": "unknown"
+      }
+    ]
   },
   "completedIssues": [
     { "issue": 1118, "pr": 1147, "mergedAt": "2026-03-27T23:09:36Z" },
@@ -44,6 +76,6 @@
     { "issue": 1119, "pr": 1153, "mergedAt": "2026-03-28T05:00:00.000Z", "note": "Merged after rebase on main" }
   ],
   "lastEmRun": "2026-03-28T06:10:00.000Z",
-  "lastQaRun": "2026-03-28T00:52:00.000Z",
-  "updatedAt": "2026-03-28T06:10:00.000Z"
+  "lastQaRun": "2026-03-28T06:50:00.000Z",
+  "updatedAt": "2026-03-28T06:50:00.000Z"
 }
