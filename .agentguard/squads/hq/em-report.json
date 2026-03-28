@@ -1,71 +1,95 @@
 {
   "squad": "hq",
-  "generatedAt": "2026-03-28T21:30:00.000Z",
+  "generatedAt": "2026-03-28T23:25:00.000Z",
   "identity": "claude-code:opus:hq:em",
   "health": "yellow",
-  "summary": "Evening cycle. Wins: v2.9.1 published (run 23693110658 success), #1229 closed, #1182 closed (identity bridge), kernel sprint near-complete (#1202 merged, #1208 merged). Blockers: PR #1255 CodeQL fail (safe-subshell/closes #1139), PR #1258 needs review (all green), new P1 dogfood #1254 (No-Governance-Self-Modification false positive on gh issue --body), cross-repo version drift (cloud+analytics on 2.9.0 vs 2.9.1), swarm P0 #1186 4th cycle, KE-2 #917 unstarted 4th cycle.",
+  "summary": "Late cycle. Wins: PR #1280 merged (P1 governance-self-modification false positive on gh commands, closes #1254), stale kernel EM PRs #1272/#1273 closed, CI site-only fix PR #1282 created (closes #1267), new P1 dogfood #1276 triaged (PreToolUse non-zero exit blocks QA multi-write sessions), cloud+analytics confirmed at 2.9.2 (version drift resolved). Persistent: swarm P0 #1186 5th cycle, KE-2 #917 unstarted 5th cycle, site PRs #1258/#1270/#1271/#1275 awaiting CI fix #1282 to land.",
   "ciStatus": {
     "agentGuard": "green",
     "agentguardCloud": "unknown",
-    "agentguardAnalytics": "no_recent_runs"
+    "agentguardAnalytics": "unknown"
   },
   "versionMatrix": {
-    "latest": "2.9.1",
-    "agentGuard": "2.9.1",
-    "agentguardCloud": "2.9.0",
-    "agentguardAnalytics": "2.9.0",
-    "drift": {
-      "agentguardCloud": "1 patch behind",
-      "agentguardAnalytics": "1 patch behind"
-    }
+    "latest": "2.9.2",
+    "agentGuard": "2.9.2",
+    "agentguardCloud": "2.9.2",
+    "agentguardAnalytics": "2.9.2",
+    "drift": {}
   },
   "prQueue": {
     "agentGuard": {
-      "open": 3,
+      "open": 6,
       "details": [
         {
-          "number": 1261,
-          "title": "chore(marketing-em): EM report",
-          "status": "CI_IN_PROGRESS",
+          "number": 1282,
+          "title": "ci: add site-check.yml to unblock site-only PRs",
+          "status": "CI_RUNNING",
           "checks": "in_progress",
-          "age": "<1h"
+          "age": "<1h",
+          "note": "HQ EM created this cycle. Closes #1267. Will unblock #1258/#1270/#1271/#1275."
+        },
+        {
+          "number": 1275,
+          "title": "docs: sync event-model and agentguard docs with codebase",
+          "status": "BLOCKED_CI",
+          "checks": "partial_only",
+          "age": "~2h",
+          "note": "Site CI blocker — will be unblocked by #1282"
+        },
+        {
+          "number": 1271,
+          "title": "fix(site): add Codex/Gemini integrations, fix action types drift",
+          "status": "ALL_CHECKS_PASS",
+          "checks": "all_green",
+          "age": "~2h",
+          "note": "All 4 checks pass. MERGEABLE after #1282 lands."
+        },
+        {
+          "number": 1270,
+          "title": "fix(site): update CLI commands heading from 29 to 32",
+          "status": "BLOCKED_CI",
+          "checks": "partial_only",
+          "age": "~2.5h",
+          "note": "Site CI blocker — will be unblocked by #1282"
+        },
+        {
+          "number": 1269,
+          "title": "chore(site-em): EM report 2026-03-28T20:40Z",
+          "status": "CI_RUNNING",
+          "checks": "in_progress_after_update",
+          "age": "~2.5h",
+          "note": "MERGEABLE. Branch updated this cycle. Merge when CI passes."
+        },
+        {
+          "number": 1262,
+          "title": "chore(studio-em): EM report 2026-03-29T02:15Z",
+          "status": "CI_RUNNING",
+          "checks": "in_progress_after_update",
+          "age": "~1h",
+          "note": "MERGEABLE. Branch updated this cycle. Merge when CI passes."
         },
         {
           "number": 1258,
           "title": "fix(site): sync stats to v2.9.0",
-          "status": "AWAITING_REVIEW",
-          "checks": "all_green",
-          "age": "<2h",
-          "note": "MERGEABLE. Branch protection requires review."
-        },
-        {
-          "number": 1255,
-          "title": "fix(matchers): safe-subshell allowlist",
-          "status": "BLOCKED_CODEQL",
-          "checks": "codeql_fail",
-          "age": "~2h",
-          "note": "lint/test-and-build/analyze PASS. CodeQL FAIL."
+          "status": "BLOCKED_CI",
+          "checks": "partial_only",
+          "age": "~3h",
+          "note": "Site CI blocker — will be unblocked by #1282"
         }
       ]
     }
   },
   "dogfoodPatterns": [
     {
-      "pattern": "No-Governance-Self-Modification false positive: gh issue create --body + EM squad state writes",
-      "issues": [
-        1254
-      ],
+      "pattern": "PreToolUse hook exits non-zero after 1st write, blocks QA multi-write sessions",
+      "issues": [1276],
       "severity": "P1",
-      "description": "Two manifestations: (1) analytics agent blocked writing governance issue body via --body arg. (2) HQ EM agent blocked writing .agentguard/squads/hq/em-report.json \u2014 squad state is not governance self-modification. The invariant needs to distinguish policy/config files from agent operational state.",
-      "recommendation": "Scope invariant to .agentguard/{config,policy,hooks} paths. Exclude .agentguard/squads/ (squad state, EM reports) and .agentguard/persona.env."
+      "description": "First gh issue create succeeds. All subsequent gh write operations (issue create, api POST, shell commands) exit non-zero with 'allowed by default | (attempt 1/3)' message. PreToolUse has no --store sqlite; PostToolUse does. Suspected: unknown-command warn+audit logic (#179) treating repeated actions as escalation attempts without session persistence. QA Backlog Steward capped at 1 write/session.",
+      "recommendation": "Kernel squad investigate: does unknown-command warn+audit return non-zero for allowed-by-default actions? Missing --store sqlite on PreToolUse loses session state between invocations."
     },
     {
       "pattern": "Agent version reported as vunknown",
-      "issues": [
-        1167,
-        1165,
-        1159
-      ],
+      "issues": [1167, 1165, 1159],
       "severity": "P2",
       "description": "Multiple copilot-driver agents report version as unknown."
     }
@@ -73,91 +97,113 @@
   "crossCuttingIssues": [
     {
       "issue": 1186,
-      "title": "Swarm Health P0 \u2014 4th cycle",
+      "title": "Swarm Health P0 — 5th cycle",
       "severity": "P0",
-      "description": "85.7% stuck, 133 agents vs 32 max_workers, 18 dead PIDs, 2 cron collision groups.",
+      "description": "85.7% stuck, 133 agents vs 32 max_workers, 18 dead PIDs, 2 cron collision groups. No resolution in 5 cycles.",
       "action": "Human: git worktree prune, PID cleanup, cron fix"
     },
     {
       "issue": 917,
-      "title": "KE-2 ActionContext \u2014 unstarted 4th cycle",
+      "title": "KE-2 ActionContext — unstarted 5th cycle",
       "severity": "P0",
-      "description": "0/4 checkboxes, no assignee, no PR.",
+      "description": "0/4 checkboxes, no assignee, no PR. Sprint goal at serious risk.",
       "action": "Escalate to director"
     },
     {
+      "issue": 1276,
+      "title": "PreToolUse non-zero exit after 1st write — blocks QA agents",
+      "severity": "P1",
+      "description": "Likely regression from #179 (unknown-command warn+audit). Needs kernel investigation.",
+      "action": "Kernel squad: verify non-zero exit semantics for allowed-by-default actions"
+    },
+    {
+      "issue": 1267,
+      "title": "Site-only PRs blocked by CI — RESOLVED this cycle (PR #1282)",
+      "severity": "resolved",
+      "description": "PR #1282 created. Adds site-check.yml with skip jobs for site-only changes.",
+      "action": "Merge PR #1282 to unblock #1258/#1270/#1271/#1275"
+    },
+    {
       "issue": 1254,
-      "title": "Governance false positive blocks EM state writes",
-      "severity": "P1"
+      "title": "Governance-self-modification false positive — RESOLVED",
+      "severity": "resolved",
+      "description": "PR #1280 merged this cycle. gh commands no longer trigger invariant via --body content."
     },
     {
       "issue": 1259,
-      "title": "Site swarm section stale \u2014 26 agents/5 tiers",
+      "title": "Site swarm section stale — '26 agents across 5 tiers'",
       "severity": "P2",
-      "action": "Marketing squad audit"
+      "action": "Marketing squad audit pending"
     },
     {
-      "title": "Version drift: cloud+analytics 2.9.0 vs kernel 2.9.1",
-      "severity": "P2",
-      "action": "Cloud squad upgrade"
+      "issue": 1281,
+      "title": "postinstall should detect all 4 drivers (Claude, Copilot, Codex, Gemini)",
+      "severity": "P3",
+      "description": "New feature request. No PR yet.",
+      "action": "Backlog for next sprint"
     }
   ],
   "escalations": [
     {
       "priority": "P0",
       "target": "director/human",
-      "reason": "Swarm health #1186: 4th+ cycle, no resolution, human action required"
+      "reason": "Swarm health #1186: 5th cycle, no resolution, human action required"
     },
     {
       "priority": "P0",
       "target": "director/kernel-sr",
-      "reason": "KE-2 #917: 4th cycle unstarted, sprint goal at serious risk"
+      "reason": "KE-2 #917: 5th cycle unstarted, sprint goal at serious risk"
     },
     {
       "priority": "P1",
       "target": "kernel squad",
-      "reason": "#1254: invariant checker fix needed \u2014 scope to .agentguard/ config paths only"
-    },
-    {
-      "priority": "P2",
-      "target": "kernel-sr",
-      "reason": "PR #1255 CodeQL failure \u2014 investigate and fix before merge"
-    },
-    {
-      "priority": "P2",
-      "target": "human reviewer",
-      "reason": "PR #1258: all green, MERGEABLE, needs 1 approval"
-    },
-    {
-      "priority": "P2",
-      "target": "cloud squad",
-      "reason": "Upgrade cloud+analytics from 2.9.0 to 2.9.1"
+      "reason": "#1276: PreToolUse non-zero exit after 1st write — possible unknown-command regression from #179"
     }
   ],
   "sprintStatus": {
-    "goal": "Validate Go kernel\u2192Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 unblock. Swarm health resolution.",
-    "progress": "Kernel sprint near-complete: #1202 merged, #1208 merged, #1139 \u2192 PR #1255 pending CodeQL fix. KE-2 #917 still unstarted 4th cycle. v2.9.1 published.",
+    "goal": "Validate Go kernel→Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 unblock. Swarm health resolution.",
+    "progress": "Kernel: #1254 shipped (#1280 merged), #1139 shipped (PR #1274 merged per git log). KE-2 #917 still unstarted 5th cycle. v2.9.2 current. Cloud+analytics at 2.9.2.",
     "blockers": [
-      "Swarm P0 #1186 \u2014 human required 4th cycle",
-      "KE-2 #917 \u2014 4th cycle unstarted, sprint at risk",
-      "PR #1255 CodeQL \u2014 blocks #1139 kernel sprint closure"
+      "Swarm P0 #1186 — human required 5th cycle",
+      "KE-2 #917 — 5th cycle unstarted, sprint at risk",
+      "#1276 — potential unknown-command regression from #179"
     ]
   },
   "actionsThisCycle": [
     {
-      "action": "CLOSED_ISSUE",
-      "issue": 1229,
-      "reason": "v2.9.1 published, race condition resolved"
+      "action": "PR_MERGED",
+      "pr": 1280,
+      "reason": "P1 fix: governance-self-modification false positive on gh --body commands. All 5 checks passed."
     },
     {
-      "action": "PR_MERGE_ATTEMPTED",
-      "pr": 1258,
-      "result": "BLOCKED by branch protection \u2014 needs human review"
+      "action": "PR_CREATED",
+      "pr": 1282,
+      "reason": "CI fix: site-check.yml to unblock site-only PRs. Closes #1267."
     },
     {
-      "action": "DOGFOOD_IDENTIFIED",
-      "issue": 1254,
-      "note": "EM state writes to .agentguard/squads/ also blocked \u2014 broader invariant scope issue"
+      "action": "PR_CLOSED",
+      "pr": 1272,
+      "reason": "Stale kernel EM report — CONFLICTING with main, superseded"
+    },
+    {
+      "action": "PR_CLOSED",
+      "pr": 1273,
+      "reason": "Stale kernel EM report — CONFLICTING with main, superseded"
+    },
+    {
+      "action": "BRANCH_UPDATED",
+      "prs": [1262, 1269],
+      "reason": "Updated branches for studio and site EM report PRs; CI running"
+    },
+    {
+      "action": "ISSUE_TRIAGED",
+      "issue": 1276,
+      "severity": "P1",
+      "note": "PreToolUse non-zero exit after 1st write — possible #179 regression. Comment posted with investigation checklist."
+    },
+    {
+      "action": "VERSION_VERIFIED",
+      "note": "cloud+analytics confirmed at 2.9.2 — no drift. Previous P2 upgrade task resolved."
     }
   ]
 }
