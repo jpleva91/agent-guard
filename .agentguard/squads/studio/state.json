@@ -33,15 +33,29 @@
       "severity": "P1",
       "description": "qa-regression-analyzer and qa-test-architect broken (#146). QA EM to retrigger April 1.",
       "autoResolves": "2026-04-01"
+    },
+    {
+      "id": "kernel-aab-normalization",
+      "severity": "P1",
+      "description": "AAB normalization failure (#1202) — ~700 unintended denials/day. rtk-prefixed commands misclassified as unknown. Directly impacts Studio agent dev workflow. Fix in progress on kernel squad.",
+      "autoResolves": "when kernel merges #1202 fix"
     }
   ],
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
-    "note": "PR #177 and #180 merged this cycle. Queue clear."
+    "note": "PR #193 (prev EM report) CONFLICTING — cannot merge, branch behind master. This cycle's EM report will be a new PR."
   },
   "humanEscalations": [
+    {
+      "issue": 179,
+      "title": "Option A default-deny for demo — kernel not yet assigned (April 4 P0)",
+      "deadline": "2026-04-04",
+      "priority": "P0",
+      "daysRemaining": 7,
+      "action": "Manually assign #179 to kernel senior. Conference demo depends on this."
+    },
     {
       "issue": 178,
       "title": "Nix design partner activation — schedule onboarding session before April 10",
@@ -55,5 +69,5 @@
       "priority": "P1"
     }
   ],
-  "updatedAt": "2026-03-28T08:37:00Z"
+  "updatedAt": "2026-03-28T23:15:00Z"
 }

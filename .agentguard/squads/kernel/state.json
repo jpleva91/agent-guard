@@ -1,28 +1,36 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Reduce false-positive governance denials blocking swarm agents: fix agent-identity-bridge chicken-and-egg (#1182) + add safe-subshell allowlist for $(date ...) false positive (#1139).",
-    "issues": [1182, 1139]
+    "goal": "Reduce false-positive governance denials blocking swarm agents: #1209 (MCP prefix match) → #1202 (KE-2 AAB normalization — strip rtk/time/timeout prefixes) → #1208 (heredoc false positive verify) → #1139 ($(date) command scanner allowlist).",
+    "issues": [1209, 1202, 1208, 1139]
   },
   "assignments": {
     "senior": {
-      "issue": [1182, 1139],
-      "title": "Fix false-positive governance denials: agent-identity invariant + command scanner safe-subshell allowlist",
+      "issue": [1209, 1202, 1208, 1139],
+      "title": "Fix AAB normalization gap + MCP prefix match + heredoc false positive + $(date) scanner",
       "status": "ready",
       "branch": null,
       "pr": null,
       "claimedAt": null,
-      "note": "#1182 is highest priority (P1) — blocks ALL scheduled agents from setting persona identity. Invariant fires on writes to .agentguard/persona.env via write-persona.sh. Fix: exempt agent-identity bootstrap path in no-governance-self-modification invariant. #1139 is P2 — command scanner in packages/matchers/src/command-scanner.ts over-matches $(date +format) as dangerous shell expansion. Fix: add read-only subshell pattern allowlist."
+      "note": "Sequence: #1209 first (1h warm-up — MCP exact-match → startsWith in matchers/policy). Then #1202 flagship (KE-2: strip rtk/time/timeout prefixes in aab.ts before pattern matching; emit UnknownActionType WARNING event; audit tool-action-map.json). Then verify #1208 (heredoc false positive — may still fire on commandViolation includes check at definitions.ts:1229-1232). Finally #1139 ($(date +format) safe-subshell allowlist in packages/matchers/src/command-scanner.ts). Issue #1182 CLOSED (PR #1212 merged)."
     }
   },
   "blockers": [],
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
-    "prs": []
+    "prs": [
+      {
+        "number": 1230,
+        "title": "chore(kernel-em): EM report 2026-03-28T14:30Z — yellow, sprint to #1202 KE-2 + escalate #1186",
+        "ci": "green",
+        "status": "needs-rebase",
+        "note": "CI 5/5 green. Branch behind main after #1227/#1228 merged. Needs rebase before merge."
+      }
+    ]
   },
-  "health": "green",
+  "health": "yellow",
   "testHealth": {
     "total": 4394,
     "passed": 4394,
@@ -54,14 +62,19 @@
     "regressions": [],
     "coverageGaps": [
       {
-        "issue": 1182,
-        "description": "no-governance-self-modification invariant blocks .agentguard/persona.env writes — no acceptance test for allowlist behavior yet",
-        "location": "packages/invariants/tests/invariant-definitions.test.ts"
+        "issue": 1202,
+        "description": "No test for rtk-prefixed command normalization in aab.ts — unknown action type fallthrough untested",
+        "location": "packages/kernel/tests/aab.test.ts"
+      },
+      {
+        "issue": 1209,
+        "description": "MCP server name prefix matching not tested — exact-match only",
+        "location": "packages/matchers/tests/policy-matcher.test.ts"
       },
       {
         "issue": 1139,
-        "description": "$(date +format) blocking source not found in TS/Go codebase — may be emitted by AI safety layer, not AgentGuard. Needs investigation by senior engineer.",
-        "location": "unknown"
+        "description": "$(date +format) blocking source not confirmed — may be AI safety layer or command-scanner.ts. Senior to locate in #1139 investigation.",
+        "location": "packages/matchers/src/command-scanner.ts"
       }
     ]
   },
@@ -73,9 +86,10 @@
     { "issue": 964, "pr": 969, "mergedAt": "2026-03-26T00:31:01Z" },
     { "issue": 1148, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
     { "issue": 1144, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
-    { "issue": 1119, "pr": 1153, "mergedAt": "2026-03-28T05:00:00.000Z", "note": "Merged after rebase on main" }
+    { "issue": 1119, "pr": 1153, "mergedAt": "2026-03-28T05:00:00.000Z", "note": "Merged after rebase on main" },
+    { "issue": 1182, "pr": 1212, "mergedAt": "2026-03-28T08:00:00.000Z", "note": "persona.env operational exemption in no-governance-self-modification invariant" }
   ],
-  "lastEmRun": "2026-03-28T06:10:00.000Z",
+  "lastEmRun": "2026-03-28T17:30:00.000Z",
   "lastQaRun": "2026-03-28T06:50:00.000Z",
-  "updatedAt": "2026-03-28T06:50:00.000Z"
+  "updatedAt": "2026-03-28T17:30:00.000Z"
 }
