@@ -1,67 +1,54 @@
 {
   "squad": "studio",
   "sprint": {
-    "goal": "AG Studio Portfolio Framework + First Asset \u2014 define asset template, scoring system, governance rules; research Guitar Jam Partner architecture; propose 10 highest-ROI starter projects",
+    "goal": "AG Studio Portfolio Framework + First Asset — define asset template, scoring system, governance rules; research Guitar Jam Partner architecture; propose 10 highest-ROI starter projects",
+    "status": "DELIVERED",
     "issues": []
   },
   "assignments": {
-    "studio-sr": "PR #472 filed in agentguard-cloud \u2014 feat: outcome filter + high-risk allows quick filter on events page (closes workspace#97 item 4). Items 1-3 of #97 already complete; #472 wires outcome filter end-to-end through dashboard UI. Three files changed (+57 lines, dashboard only, no backend changes needed).",
-    "studio-qa": "File cron collision fix PR (14 buckets in schedule.json). Continue worker pool PID bookkeeping investigation.",
-    "studio-designer": "Continue gh-pages hero CTA improvement (blocked on writable gh-pages worktree \u2014 ops must enable).",
-    "workspace-config-validator": "Ensure schedule.json schema is consistent across all 10 squads \u2014 also flag agents clustered in 02:00\u201304:00 UTC window for rescheduling",
-    "workspace-agent-reliability": "Track agent success rates across last 24h. Key: root cause for morning Claude API quota cascade. Target: no >10 agents per 30-min window."
+    "studio-sr": "PR #472 filed in agentguard-cloud — all checks green, ready to merge. Closes workspace#97 item 4 (final dashboard observability gap).",
+    "studio-qa": "Score remaining 9 portfolio candidates using SCORING_SYSTEM.md (now live on master via #143). Retrigger qa-regression-analyzer + qa-test-architect on bench-devs-platform (#146).",
+    "studio-designer": "Continue gh-pages hero CTA improvement (blocked on writable gh-pages worktree — ops must enable).",
+    "workspace-config-validator": "Audit all agents scheduled in 02:00–04:00 UTC window. Propose rescheduling to keep <10 agents per 30-min slot. Target: flatten daily quota cascade.",
+    "workspace-agent-reliability": "Track agent success rates across last 24h. Continue root cause analysis for morning Claude API quota cascade."
   },
   "blockers": [
     {
       "id": "gh-auth-in-worktrees",
-      "description": "gh CLI auth invalid in worktree environments for codex/gemini sandbox drivers. Copilot driver works fine (uses host ~/.config/gh/hosts.yml). PR #149 fixes missing sibling repo dirs in worktrees.",
+      "description": "gh CLI auth invalid in worktree environments for codex/gemini sandbox drivers. Copilot driver works fine (uses host ~/.config/gh/hosts.yml). PR #149 fixes missing sibling repo dirs.",
       "severity": "P1",
-      "action": "Monitor \u2014 copilot failover is working. When codex quota restores (Apr 3), re-test codex in worktrees."
+      "action": "Monitor — copilot failover is working. When codex quota restores (Apr 3), re-test codex in worktrees."
     },
     {
       "id": "agent-guard-ci-failures",
       "description": "7 open PRs in agent-guard failing lint + test-and-build CI (up from 5 last cycle). Blocking automated merges across kernel and cloud work.",
       "severity": "P1",
-      "action": "Kernel squad: investigate shared CI regression \u2014 block is growing"
+      "action": "Kernel squad: investigate shared CI regression — block is growing, escalation warranted"
     },
     {
       "id": "api-quota-scheduling",
-      "description": "29 agents hit Claude API daily quota in 02:00\u201304:00 UTC window causing morning cascade failures each day.",
+      "description": "29 agents hit Claude API daily quota in 02:00–04:00 UTC window causing morning cascade failures each day.",
       "severity": "P1",
-      "action": "Ops: spread high-frequency cron schedules to flatten API usage across 24h cycle"
+      "action": "workspace-config-validator: audit 02:00–04:00 UTC scheduling density and propose rebalancing. OPS: action the rescheduling."
     }
   ],
   "prQueue": {
-    "open": 4,
+    "open": 1,
     "reviewed": 0,
-    "mergeable": 0,
+    "mergeable": 1,
     "prs": [
-      {
-        "number": 131,
-        "title": "fix: use dynamic workspace path in run-studio-agent.sh",
-        "status": "awaiting-human-review",
-        "risk": "low"
-      },
-      {
-        "number": 133,
-        "title": "docs: sync org chart for ShellForge Go rewrite",
-        "status": "awaiting-human-review",
-        "risk": "low"
-      },
-      {
-        "number": 143,
-        "title": "docs: AG Studio Portfolio Framework \u2014 asset template, scoring system, governance rules + Guitar Jam Partner first asset",
-        "status": "awaiting-human-review",
-        "risk": "low"
-      },
       {
         "number": 472,
         "repo": "agentguard-cloud",
         "title": "feat(dashboard): outcome filter + high-risk allows quick filter on events page",
-        "status": "awaiting-human-review",
-        "risk": "low"
+        "status": "ready-to-merge",
+        "risk": "low",
+        "checks": "all-green",
+        "note": "Closes workspace#97 item 4. All CI + Vercel green. Awaiting human merge."
       }
-    ]
+    ],
+    "closedThisCycle": [131, 133],
+    "mergedPreviousCycle": [143, 148, 149, 147]
   },
-  "updatedAt": "2026-03-27T23:55:00.000Z"
+  "updatedAt": "2026-03-28T03:00:00.000Z"
 }

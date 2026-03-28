@@ -1,0 +1,173 @@
+{
+  "generatedAt": "2026-03-28T03:00:00.000Z",
+  "identity": "claude-code:opus:studio:em",
+  "runCycle": "3h",
+  "health": "yellow",
+  "summary": "Workspace PR queue fully cleared: PRs #131 and #133 closed by human (overlap resolved), #143/#148/#149 all merged. Sprint goal (AG Studio Portfolio Framework) is complete and live on master. Cross-repo PR #472 (outcome filter on events page) is all-green and ready for human review/merge. Main risks: swarm API quota cascade still active (29 agents rate-limited in 02:00–04:00 UTC window per #137), agent-guard CI failures blocking 7 kernel/cloud PRs (#agent-guard-ci-failures P1), QA agents on bench-devs-platform unconfirmed (needs retrigger for #146). Swarm health script confirmed telemetry pipeline healthy (last event 0.1h ago).",
+  "prQueue": {
+    "open": 1,
+    "reviewed": 0,
+    "mergeable": 1,
+    "mergedThisCycle": 0,
+    "prs": [
+      {
+        "number": 472,
+        "repo": "agentguard-cloud",
+        "title": "feat(dashboard): outcome filter + high-risk allows quick filter on events page",
+        "author": "studio-sr",
+        "risk": "low",
+        "checks": {
+          "buildAndTest": "SUCCESS",
+          "dockerBuild": "SUCCESS",
+          "detectAgentPR": "SUCCESS",
+          "vercelDashboard": "SUCCESS",
+          "vercelAPIServer": "SUCCESS",
+          "vercelCloud": "SUCCESS"
+        },
+        "recommendation": "MERGE — all CI checks green, Vercel deployments green, no review decision required by policy. Closes workspace#97 item 4 (final outstanding item).",
+        "closesIssue": "workspace#97 (item 4 of 4)"
+      }
+    ],
+    "closedThisCycle": [
+      { "number": 131, "title": "fix: use dynamic workspace path in run-studio-agent.sh", "reason": "Closed by human — overlap with #133 resolved" },
+      { "number": 133, "title": "docs: sync org chart for ShellForge Go rewrite", "reason": "Superseded by chore: regenerate org chart commit" }
+    ],
+    "mergedPreviousCycle": [
+      { "number": 143, "title": "docs: AG Studio Portfolio Framework", "risk": "low" },
+      { "number": 148, "title": "fix: stagger 5 cron collisions in server/schedule.json", "risk": "p0-resolved" },
+      { "number": 149, "title": "fix: symlink sibling repos into worktrees", "risk": "low" },
+      { "number": 147, "title": "fix: update stale WORKSPACE_REPO in check-version-drift.sh", "risk": "low" }
+    ]
+  },
+  "sprintProgress": {
+    "goal": "AG Studio Portfolio Framework + First Asset — define asset template, scoring system, governance rules; research Guitar Jam Partner architecture; propose 10 highest-ROI starter projects",
+    "velocity": "high",
+    "status": "DELIVERED",
+    "completedThisCycle": [
+      "Sprint goal fully complete — PR #143 merged, Portfolio Framework live on master",
+      "Workspace PR queue cleared (0 open workspace PRs)",
+      "Cross-repo PR #472 filed and green — closes workspace#97 item 4 (final dashboard gap)"
+    ],
+    "inProgress": [
+      "studio-qa: score remaining 9 portfolio candidates (SCORING_SYSTEM.md now live on master)",
+      "studio-designer: gh-pages hero CTA improvement (blocked on writable gh-pages worktree)"
+    ],
+    "nextSprint": "Define next sprint goal — candidates: (1) Guitar Jam Partner implementation kickoff, (2) score remaining 9 portfolio proposals and publish leaderboard, (3) swarm reliability dashboard (addresses #119)"
+  },
+  "triage": {
+    "p0Issues": 0,
+    "p1Issues": 3,
+    "p1": [
+      {
+        "issue": "gh-auth-in-worktrees",
+        "title": "gh CLI auth invalid for codex/gemini in worktrees",
+        "status": "Monitored — copilot failover working. Codex quota restores Apr 3.",
+        "action": "No action until Apr 3 — re-test codex auth in worktrees then"
+      },
+      {
+        "issue": "agent-guard-ci-failures",
+        "title": "7 open PRs in agent-guard failing lint + test-and-build CI",
+        "status": "Escalating — up from 5 last cycle. Shared CI regression blocking kernel and cloud work.",
+        "action": "KERNEL SQUAD: investigate shared CI regression urgently. Growing backlog = compounding risk."
+      },
+      {
+        "issue": "api-quota-scheduling",
+        "title": "29 agents rate-limited in 02:00–04:00 UTC window (issue #137)",
+        "status": "Active — cron stagger applied (#148) reduces clustering but total volume still too high.",
+        "action": "OPS: workspace-config-validator to audit remaining agents in 02:00–04:00 UTC window and propose rescheduling. Target: no >10 agents per 30-min window."
+      }
+    ],
+    "openIssues": [
+      { "issue": 146, "title": "qa-regression-analyzer and qa-test-architect broken (0/1 runs)", "action": "OPS: Retrigger both agents on bench-devs-platform to confirm transient vs persistent" },
+      { "issue": 119, "title": "Swarm reliability P0 — 56% failure rate", "action": "Systemic — API quota fix + CI fix should move the needle. Monitor after both are resolved." },
+      { "issue": 106, "title": "Cloud dashboard deployment gate — Apr 15 deadline", "action": "PR #472 closes workspace#97 item 4. Verify all 4 items of #97 now complete." }
+    ]
+  },
+  "crossSquad": {
+    "kernel": {
+      "health": "yellow",
+      "note": "7 open PRs failing CI (up from 5 last cycle) — growing regression backlog. Previous green status (4129/4129 tests) may be stale. No visible kernel EM report this cycle. Escalation warranted."
+    },
+    "cloud": {
+      "health": "yellow",
+      "note": "PR #472 (studio-sr work) all-green awaiting review. Dashboard deployment gate (#106, Apr 15 deadline) depends on workspace#97 completion — #97 items 1-3 done, item 4 closes with #472 merge. Cloud squad health otherwise unverified this cycle."
+    },
+    "analytics": {
+      "health": "yellow",
+      "note": "10 open issues including enforcement latency data requests (#22), agent_name/driver_type fields (#26 — needed for identity telemetry), and daily reports (#28). No new studio data requests this cycle. Key dependency for product storytelling: latency distribution (#22) and case study data (#23) remain open."
+    },
+    "qa": {
+      "health": "red",
+      "note": "Issue #146 open — qa-regression-analyzer and qa-test-architect have 0% success rate on bench-devs-platform (1 run each). Unconfirmed if transient. Retrigger needed."
+    }
+  },
+  "swarmHealth": {
+    "checkResult": "Script ran successfully — telemetry pipeline healthy (last event 0.1h ago), Copilot event pipeline verified. 128 agents skipped (no log dir on this worktree host). No local agent failures detected.",
+    "systemicIssues": [
+      "29 agents rate-limited in 02:00–04:00 UTC daily — quota cascade from scheduling density (#137)",
+      "7 agent-guard PRs failing shared CI — kernel regression growing (#agent-guard-ci-failures)",
+      "QA agents on bench-devs-platform: 0/1 success rate, needs retrigger (#146)"
+    ],
+    "positives": [
+      "Telemetry pipeline healthy",
+      "Cron collisions: 0 (down from 5, fixed via #148)",
+      "Sibling repo symlinks now in worktrees (#149) — improves agent state access"
+    ],
+    "totalEnabled": 128,
+    "cronCollisions": 0
+  },
+  "loopGuards": {
+    "prBudget": { "open": 1, "max": 3, "pass": true },
+    "retryLoops": { "stuckAgents": 0, "pass": true },
+    "blastRadius": { "withinLimits": true, "pass": true }
+  },
+  "blockers": [
+    {
+      "id": "agent-guard-ci-failures",
+      "description": "7 open PRs in agent-guard failing lint + test-and-build CI — up from 5 last cycle. Shared regression blocking kernel and cloud automated merges.",
+      "severity": "P1",
+      "owner": "kernel-squad",
+      "resolution": "Kernel EM: investigate shared CI regression root cause. File issue with findings. Target: CI green before end of week to unblock PR backlog."
+    },
+    {
+      "id": "api-quota-scheduling",
+      "description": "29 agents hit Claude API daily quota in 02:00–04:00 UTC window. Cron stagger applied (#148) helps but daily total volume too high.",
+      "severity": "P1",
+      "owner": "ops",
+      "resolution": "workspace-config-validator: audit all agents scheduled 02:00–04:00 UTC and propose rescheduling to flatten curve. Target: <10 agents per 30-min window."
+    },
+    {
+      "id": "gh-auth-worktrees-codex",
+      "description": "gh CLI auth invalid in worktrees for codex/gemini drivers. Copilot driver unaffected.",
+      "severity": "P1",
+      "owner": "ops",
+      "resolution": "Monitor until Apr 3 (codex quota restore). Re-test codex auth in worktrees after quota restore."
+    }
+  ],
+  "escalations": [
+    "HUMAN REVIEW NEEDED: agentguard-cloud PR #472 — all checks green, safe to merge. Closes workspace#97 item 4 (final dashboard observability gap before Apr 15 deployment gate).",
+    "ESCALATE TO KERNEL SQUAD: CI regression growing (7 failing PRs, up from 5). Needs root cause investigation this cycle.",
+    "OPS ACTION: Retrigger qa-regression-analyzer + qa-test-architect on bench-devs-platform (issue #146).",
+    "OPS ACTION: workspace-config-validator to schedule API quota audit — flatten 02:00–04:00 UTC agent density."
+  ],
+  "metrics": {
+    "prsOpened": 0,
+    "prsMerged": 0,
+    "issuesClosed": 0,
+    "governanceDenials": 0,
+    "agentRunsThisCycle": 1,
+    "agentRunSuccesses": 1,
+    "ciFixesApplied": 0,
+    "workspacePRQueueDepth": 0
+  },
+  "nextActions": [
+    "HUMAN: Merge agentguard-cloud #472 — all CI green, closes workspace#97 item 4",
+    "OPS: Retrigger qa-regression-analyzer + qa-test-architect on bench-devs-platform",
+    "OPS: workspace-config-validator audit — flatten 02:00–04:00 UTC agent scheduling density",
+    "KERNEL EM: Investigate shared CI regression (7 failing PRs in agent-guard)",
+    "Next cycle: define next sprint goal (Guitar Jam Partner kickoff vs. portfolio scoring vs. reliability dashboard)",
+    "Next cycle: verify workspace#97 fully closed after #472 merge",
+    "Next cycle: verify studio-sr reliability trend post-cron-stagger (#145)"
+  ],
+  "dogfoodReport": "No AgentGuard governance issues observed during this run. All tool calls completed without governance blocks."
+}
