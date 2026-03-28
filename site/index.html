@@ -750,6 +750,16 @@
             <svg class="w-6 h-6 text-text" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
             <span class="font-mono text-text text-sm font-medium">GitHub Copilot</span>
           </div>
+          <!-- Codex CLI -->
+          <div class="reveal flex items-center gap-2.5 opacity-70 hover:opacity-100 transition-opacity">
+            <svg class="w-6 h-6 text-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 9-3 3 3 3"/><path d="m15 9 3 3-3 3"/></svg>
+            <span class="font-mono text-text text-sm font-medium">Codex CLI</span>
+          </div>
+          <!-- Gemini CLI -->
+          <div class="reveal flex items-center gap-2.5 opacity-70 hover:opacity-100 transition-opacity">
+            <svg class="w-6 h-6 text-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg>
+            <span class="font-mono text-text text-sm font-medium">Gemini CLI</span>
+          </div>
           <!-- VS Code -->
           <div class="reveal flex items-center gap-2.5 opacity-70 hover:opacity-100 transition-opacity">
             <svg class="w-6 h-6 text-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
@@ -971,7 +981,7 @@
         <div class="grid md:grid-cols-3 gap-6 mt-16 reveal-stagger">
           <div class="reveal bg-surface border border-surface-light rounded-xl p-6">
             <h3 class="font-mono font-semibold text-cta text-sm mb-3">Action Authorization Boundary</h3>
-            <p class="text-muted text-sm leading-relaxed">The AAB normalizes raw tool calls into 27 canonical action types across 9 classes. Every agent operation&mdash;whether a Bash command, file write, or git push&mdash;gets classified before evaluation.</p>
+            <p class="text-muted text-sm leading-relaxed">The AAB normalizes raw tool calls into 41 canonical action types across 10 classes. Every agent operation&mdash;whether a Bash command, file write, or git push&mdash;gets classified before evaluation.</p>
           </div>
           <div class="reveal bg-surface border border-surface-light rounded-xl p-6">
             <h3 class="font-mono font-semibold text-info text-sm mb-3">Simulation Engine</h3>
@@ -1867,11 +1877,43 @@ rules:
             <h3 class="font-mono font-bold text-text text-lg mb-2">GitHub Copilot</h3>
             <p class="text-muted text-sm leading-relaxed mb-4">Same governance engine for Copilot CLI. Tool names normalized to canonical actions. All policies and invariants apply identically.</p>
             <div class="relative group mb-4">
-              <pre class="bg-bg/50 rounded-lg p-3 font-mono text-xs overflow-x-auto"><code class="text-muted"><span class="text-cta">$</span> agentguard copilot-init</code></pre>
+              <pre class="bg-bg/50 rounded-lg p-3 font-mono text-xs overflow-x-auto"><code class="text-muted"><span class="text-cta">$</span> aguard copilot-init</code></pre>
             </div>
             <div class="flex flex-wrap gap-2">
               <span class="text-xs font-mono text-muted bg-surface-light/50 px-2 py-1 rounded">preToolUse</span>
               <span class="text-xs font-mono text-muted bg-surface-light/50 px-2 py-1 rounded">postToolUse</span>
+            </div>
+          </div>
+
+          <!-- Codex CLI -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-8 card-lift cursor-pointer">
+            <div class="w-12 h-12 rounded-xl bg-cta/10 flex items-center justify-center mb-5">
+              <svg class="w-6 h-6 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 9-3 3 3 3"/><path d="m15 9 3 3-3 3"/></svg>
+            </div>
+            <h3 class="font-mono font-bold text-text text-lg mb-2">Codex CLI</h3>
+            <p class="text-muted text-sm leading-relaxed mb-4">OpenAI Codex CLI governance via PreToolUse/PostToolUse hooks. Same policy engine and invariant suite as all other drivers.</p>
+            <div class="relative group mb-4">
+              <pre class="bg-bg/50 rounded-lg p-3 font-mono text-xs overflow-x-auto"><code class="text-muted"><span class="text-cta">$</span> aguard codex-init</code></pre>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <span class="text-xs font-mono text-muted bg-surface-light/50 px-2 py-1 rounded">PreToolUse</span>
+              <span class="text-xs font-mono text-muted bg-surface-light/50 px-2 py-1 rounded">PostToolUse</span>
+            </div>
+          </div>
+
+          <!-- Gemini CLI -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-8 card-lift cursor-pointer">
+            <div class="w-12 h-12 rounded-xl bg-cta/10 flex items-center justify-center mb-5">
+              <svg class="w-6 h-6 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg>
+            </div>
+            <h3 class="font-mono font-bold text-text text-lg mb-2">Gemini CLI</h3>
+            <p class="text-muted text-sm leading-relaxed mb-4">Google Gemini CLI governance via PreToolUse/PostToolUse hooks. All policies and invariants apply identically across all four drivers.</p>
+            <div class="relative group mb-4">
+              <pre class="bg-bg/50 rounded-lg p-3 font-mono text-xs overflow-x-auto"><code class="text-muted"><span class="text-cta">$</span> aguard gemini-init</code></pre>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <span class="text-xs font-mono text-muted bg-surface-light/50 px-2 py-1 rounded">PreToolUse</span>
+              <span class="text-xs font-mono text-muted bg-surface-light/50 px-2 py-1 rounded">PostToolUse</span>
             </div>
           </div>
 
