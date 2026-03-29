@@ -29,6 +29,7 @@ export function createTelemetrySender(
   const maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES;
   const serverUrl = config.serverUrl;
   const cloudApiKey = config.cloudApiKey;
+  const cloudTenantId = config.cloudTenantId;
   const agentName = config.agentName;
 
   let timer: ReturnType<typeof setInterval> | null = null;
@@ -71,10 +72,13 @@ export function createTelemetrySender(
       headers['X-Agent-Persona'] = JSON.stringify(persona);
     }
 
-    // Cloud API key auth (from config.json or env var)
+    // Cloud auth: API key and/or tenant ID (from config.json or env var)
     if (cloudApiKey) {
       headers['X-API-Key'] = cloudApiKey;
       headers['X-Install-Id'] = identity?.install_id ?? 'unknown';
+    }
+    if (cloudTenantId) {
+      headers['X-Tenant-Id'] = cloudTenantId;
     }
 
     if (mode === 'verified' && identity) {
@@ -90,7 +94,8 @@ export function createTelemetrySender(
     }
 
     // When sending to cloud, use /v1/ path; for legacy servers use /api/v1/
-    const pathPrefix = cloudApiKey ? '/v1/telemetry/batch' : '/api/v1/telemetry/batch';
+    const isCloud = cloudApiKey || cloudTenantId;
+    const pathPrefix = isCloud ? '/v1/telemetry/batch' : '/api/v1/telemetry/batch';
     const url = serverUrl.replace(/\/+$/, '') + pathPrefix;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {

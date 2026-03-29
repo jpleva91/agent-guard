@@ -9,7 +9,8 @@ const DEFAULT_ENDPOINT = 'https://agentguard-cloud.vercel.app';
 
 interface CloudConfig {
   endpoint: string;
-  apiKey: string;
+  apiKey: string | null;
+  tenantId: string | null;
 }
 
 /**
@@ -72,7 +73,12 @@ function upsertEnvVar(envPath: string, key: string, value: string): void {
 function removeCloudEnvVars(envPath: string): void {
   if (!existsSync(envPath)) return;
   const lines = readFileSync(envPath, 'utf8').split('\n');
-  const cloudKeys = ['AGENTGUARD_API_KEY', 'AGENTGUARD_TELEMETRY_URL', 'AGENTGUARD_TELEMETRY'];
+  const cloudKeys = [
+    'AGENTGUARD_API_KEY',
+    'AGENTGUARD_TENANT_ID',
+    'AGENTGUARD_TELEMETRY_URL',
+    'AGENTGUARD_TELEMETRY',
+  ];
   const filtered = lines.filter((line) => {
     const trimmed = line.trim();
     // Remove the vars and their comment header
@@ -89,10 +95,11 @@ function removeCloudEnvVars(envPath: string): void {
 /** Load cloud config from the project .env. Returns null if not configured. */
 function loadCloudConfig(): CloudConfig | null {
   const envPath = getEnvPath();
-  const apiKey = readEnvVar(envPath, 'AGENTGUARD_API_KEY');
-  if (!apiKey) return null;
+  const apiKey = readEnvVar(envPath, 'AGENTGUARD_API_KEY') ?? null;
+  const tenantId = readEnvVar(envPath, 'AGENTGUARD_TENANT_ID') ?? null;
+  if (!apiKey && !tenantId) return null;
   const endpoint = readEnvVar(envPath, 'AGENTGUARD_TELEMETRY_URL') ?? DEFAULT_ENDPOINT;
-  return { endpoint, apiKey };
+  return { endpoint, apiKey, tenantId };
 }
 
 /** Validate API key format: must start with `ag_` and be at least 20 characters. */
@@ -149,22 +156,65 @@ export async function cloud(args: string[]): Promise<number> {
 }
 
 function cloudConnect(args: string[]): number {
-  // Parse --endpoint flag
+  // Parse flags: --endpoint/--api, --tenant, --key, or positional api-key
   let endpoint = DEFAULT_ENDPOINT;
   let apiKey: string | undefined;
+  let tenantId: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--endpoint' && args[i + 1]) {
-      endpoint = args[i + 1];
+    if ((args[i] === '--endpoint' || args[i] === '--api') && args[i + 1]) {
+      endpoint = args[i + 1]!;
+      i++; // skip value
+    } else if (args[i] === '--tenant' && args[i + 1]) {
+      tenantId = args[i + 1];
+      i++; // skip value
+    } else if (args[i] === '--key' && args[i + 1]) {
+      apiKey = args[i + 1];
       i++; // skip value
     } else if (!args[i]!.startsWith('-')) {
       apiKey = args[i];
     }
   }
 
+  // Tenant-based auth: --tenant without --key is valid
+  if (tenantId) {
+    const envPath = getEnvPath();
+    upsertEnvVar(envPath, 'AGENTGUARD_TENANT_ID', tenantId);
+    upsertEnvVar(envPath, 'AGENTGUARD_TELEMETRY_URL', endpoint);
+    upsertEnvVar(envPath, 'AGENTGUARD_TELEMETRY', 'true');
+    if (apiKey) {
+      const validationError = validateApiKey(apiKey);
+      if (validationError) {
+        process.stderr.write(`  ${FG.red}Error:${RESET} ${validationError}\n`);
+        return 1;
+      }
+      upsertEnvVar(envPath, 'AGENTGUARD_API_KEY', apiKey);
+    }
+
+    process.stderr.write('\n');
+    process.stderr.write(`  ${FG.green}✓${RESET}  Connected to AgentGuard Cloud\n`);
+    process.stderr.write(`  ${DIM}Endpoint:${RESET}  ${endpoint}\n`);
+    process.stderr.write(`  ${DIM}Tenant:${RESET}    ${tenantId}\n`);
+    if (apiKey) {
+      process.stderr.write(`  ${DIM}API Key:${RESET}   ${maskApiKey(apiKey)}\n`);
+    }
+    process.stderr.write(`  ${DIM}Telemetry:${RESET} enabled\n`);
+    process.stderr.write(`  ${DIM}Saved to:${RESET}  ${envPath}\n`);
+    process.stderr.write('\n');
+
+    return 0;
+  }
+
+  // API key-based auth (original path)
   if (!apiKey) {
     process.stderr.write(
-      `  ${FG.red}Error:${RESET} Missing API key. Usage: agentguard cloud connect <api-key>\n`
+      `  ${FG.red}Error:${RESET} Missing API key or tenant ID.\n`
+    );
+    process.stderr.write(
+      `  ${DIM}Usage: agentguard cloud connect <api-key>${RESET}\n`
+    );
+    process.stderr.write(
+      `  ${DIM}   or: agentguard cloud connect --api <url> --tenant <id>${RESET}\n`
     );
     return 1;
   }
@@ -210,7 +260,12 @@ function cloudStatus(): number {
 
   process.stderr.write(`  ${DIM}Status:${RESET}    ${FG.green}connected${RESET}\n`);
   process.stderr.write(`  ${DIM}Endpoint:${RESET}  ${cloud.endpoint}\n`);
-  process.stderr.write(`  ${DIM}API Key:${RESET}   ${maskApiKey(cloud.apiKey)}\n`);
+  if (cloud.tenantId) {
+    process.stderr.write(`  ${DIM}Tenant:${RESET}    ${cloud.tenantId}\n`);
+  }
+  if (cloud.apiKey) {
+    process.stderr.write(`  ${DIM}API Key:${RESET}   ${maskApiKey(cloud.apiKey)}\n`);
+  }
   process.stderr.write(`  ${DIM}Telemetry:${RESET} ${telemetryMode}\n`);
   process.stderr.write(`  ${DIM}Config:${RESET}    ${envPath}\n`);
   process.stderr.write('\n');
@@ -243,6 +298,18 @@ function requireCloudConfig(): CloudConfig | null {
     return null;
   }
   return cloud;
+}
+
+/** Build auth headers from a cloud config. Supports API key and/or tenant-based auth. */
+function buildAuthHeaders(config: CloudConfig): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (config.apiKey) {
+    headers['X-API-Key'] = config.apiKey;
+  }
+  if (config.tenantId) {
+    headers['X-Tenant-Id'] = config.tenantId;
+  }
+  return headers;
 }
 
 /** Build a URL from the cloud endpoint and path, appending query params. */
@@ -312,7 +379,7 @@ async function cloudEvents(args: string[]): Promise<number> {
 
   try {
     const res = await fetch(url, {
-      headers: { 'X-API-Key': cloud.apiKey },
+      headers: buildAuthHeaders(cloud),
       signal: AbortSignal.timeout(15_000),
     });
 
@@ -405,7 +472,7 @@ async function cloudRuns(args: string[]): Promise<number> {
 
   try {
     const res = await fetch(url, {
-      headers: { 'X-API-Key': cloud.apiKey },
+      headers: buildAuthHeaders(cloud),
       signal: AbortSignal.timeout(15_000),
     });
 
@@ -476,7 +543,7 @@ async function cloudSummary(): Promise<number> {
 
   try {
     const res = await fetch(url, {
-      headers: { 'X-API-Key': cloud.apiKey },
+      headers: buildAuthHeaders(cloud),
       signal: AbortSignal.timeout(15_000),
     });
 
@@ -526,8 +593,9 @@ function showCloudHelp(): number {
 
   ${BOLD}Usage:${RESET}
     agentguard cloud signup                         Sign up for AgentGuard Cloud
-    agentguard cloud connect <api-key>              Connect to cloud
+    agentguard cloud connect <api-key>              Connect with API key
     agentguard cloud connect <api-key> --endpoint <url>  Use custom endpoint
+    agentguard cloud connect --api <url> --tenant <id>   Connect with tenant ID
     agentguard cloud status                         Show connection status
     agentguard cloud disconnect                     Remove cloud connection
     agentguard cloud events [flags]                 Query governance events
@@ -545,12 +613,19 @@ function showCloudHelp(): number {
     --status <s>      Filter by status (e.g., completed, running)
     --agent <name>    Filter by agent ID
 
+  ${BOLD}Connect flags:${RESET}
+    --api <url>       API endpoint (alias for --endpoint)
+    --tenant <id>     Tenant ID (no API key required)
+    --key <key>       API key (optional with --tenant)
+    --endpoint <url>  API endpoint
+
   ${BOLD}API Key format:${RESET}
     Keys must start with "ag_" and be at least 20 characters.
 
   ${BOLD}Examples:${RESET}
     agentguard cloud connect ag_live_abc123def456xyz
     agentguard cloud connect ag_test_key1234567890 --endpoint https://custom.example.com
+    agentguard cloud connect --api https://agentguard-cloud.vercel.app --tenant <tenant-id>
     agentguard cloud status
     agentguard cloud disconnect
     agentguard cloud events

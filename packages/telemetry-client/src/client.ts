@@ -66,20 +66,29 @@ function createNoopClient(): TelemetryClient {
 }
 
 /**
- * Resolve cloud endpoint and API key from (in priority order):
- * 1. Env vars: AGENTGUARD_CLOUD_ENDPOINT, AGENTGUARD_CLOUD_API_KEY
- * 2. Config file: ~/.agentguard/config.json → cloud.endpoint, cloud.apiKey
+ * Resolve cloud endpoint, API key, and tenant ID from (in priority order):
+ * 1. Env vars: AGENTGUARD_CLOUD_ENDPOINT, AGENTGUARD_CLOUD_API_KEY, AGENTGUARD_TENANT_ID
+ * 2. Config file: ~/.agentguard/config.json → cloud.endpoint, cloud.apiKey, cloud.tenantId
  */
-function resolveCloudConfig(): { endpoint?: string; apiKey?: string } {
+function resolveCloudConfig(): { endpoint?: string; apiKey?: string; tenantId?: string } {
   const envEndpoint = process.env.AGENTGUARD_CLOUD_ENDPOINT;
   const envApiKey = process.env.AGENTGUARD_CLOUD_API_KEY;
-  if (envEndpoint) return { endpoint: envEndpoint, apiKey: envApiKey };
+  const envTenantId = process.env.AGENTGUARD_TENANT_ID;
+  if (envEndpoint) return { endpoint: envEndpoint, apiKey: envApiKey, tenantId: envTenantId };
 
   try {
     const configPath = join(homedir(), '.agentguard', 'config.json');
     const raw = JSON.parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
-    const cloud = raw.cloud as { endpoint?: string; apiKey?: string } | undefined;
-    if (cloud?.endpoint) return { endpoint: cloud.endpoint, apiKey: cloud.apiKey ?? envApiKey };
+    const cloud = raw.cloud as
+      | { endpoint?: string; apiKey?: string; tenantId?: string }
+      | undefined;
+    if (cloud?.endpoint) {
+      return {
+        endpoint: cloud.endpoint,
+        apiKey: cloud.apiKey ?? envApiKey,
+        tenantId: cloud.tenantId ?? envTenantId,
+      };
+    }
   } catch {
     // No config file or invalid JSON — fall through
   }
@@ -104,6 +113,7 @@ export async function createTelemetryClient(
   const fullConfig: TelemetryClientConfig = {
     serverUrl,
     cloudApiKey: cloud.apiKey,
+    cloudTenantId: cloud.tenantId,
     mode,
     flushIntervalMs: config?.flushIntervalMs ?? 60_000,
     batchSize: config?.batchSize ?? 50,
