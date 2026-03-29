@@ -1,20 +1,20 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "KE-4: Change default enforcement mode from guide to monitor — zero-friction onboarding (#1359)",
+    "goal": "KE-5: Worktree governance binary resilience — fallback to main worktree on ERR_MODULE_NOT_FOUND (#1376)",
     "issues": [
-      1359
+      1376
     ]
   },
   "assignments": {
     "senior": {
-      "issue": 1359,
-      "title": "Change default enforcement mode from guide to monitor (#1359)",
+      "issue": 1376,
+      "title": "Fix worktree CLI binary crash — fall back to main worktree binary when local fails (#1376)",
       "status": "ready",
       "branch": null,
       "pr": null,
-      "claimedAt": "2026-03-29T15:10:00Z",
-      "note": "KE-3 complete. PR #1361 merged (closes #1341 + #1322). New sprint KE-4: change claude-init wizard default from 'guide' to 'monitor' (claude-init.ts:194), update agentguard.yaml template (line 13, currently 'educate'), update README + site messaging. Conference deadline May 6."
+      "claimedAt": "2026-03-29T17:22:00Z",
+      "note": "KE-4 complete. PR #1374 merged (closes #1359). KE-5: modify scripts/claude-hook-wrapper.sh to validate binary with --version probe before using it; if local bin fails ERR_MODULE_NOT_FOUND, fall back to `git worktree list` main worktree binary. Main worktree binary always works (confirmed: /home/jared/agentguard-workspace/agent-guard/apps/cli/dist/bin.js v2.10.3). Fix must be silent — no new output on fallback, just governance continuity. Related: #1323, #1321 (pnpm interactive prompt hangs) may be separate follow-on."
     }
   },
   "blockers": [],
@@ -25,7 +25,7 @@
     "prs": []
   },
   "health": "green",
-  "healthReason": "KE-3 sprint complete. All 5 issues resolved. PR #1361 merged. No squad PRs open. No blockers. KE-4 sprint assigned: #1359 (enforcement mode default change).",
+  "healthReason": "KE-4 sprint complete. PR #1374 merged (closes #1359). No squad PRs open. No blockers. KE-5 sprint assigned: #1376 (worktree binary resilience). First-party dogfood confirmed: this EM run experienced the #1376 bug — governance was silently broken during this cycle.",
   "testHealth": {
     "total": 4129,
     "passed": 4129,
@@ -33,9 +33,9 @@
     "packages": 19,
     "lastRun": "2026-03-25T23:05:00.000Z",
     "status": "all_passing",
-    "note": "Last full run 2026-03-25. QA squad overdue. PR #1361 CI verified 796/796 passing."
+    "note": "Last full run 2026-03-25. QA squad overdue. PR #1374 CI verified passing."
   },
-  "lastEmRun": "2026-03-29T15:10:00.000Z",
+  "lastEmRun": "2026-03-29T17:22:00.000Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-29T15:10:00Z"
+  "updatedAt": "2026-03-29T17:22:00Z"
 }

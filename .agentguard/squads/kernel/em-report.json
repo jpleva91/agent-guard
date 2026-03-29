@@ -1,37 +1,100 @@
 {
-  "generatedAt": "2026-03-29T15:10:00.000Z",
+  "generatedAt": "2026-03-29T17:22:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
   "health": "green",
-  "healthReason": "KE-3 sprint COMPLETE — all 5 issues resolved. PR #1361 merged (closes #1341 + #1322). No open squad PRs. No blockers. Next sprint KE-4 (#1359: default enforcement mode monitor) ready to begin.",
-  "summary": "KE-3 sprint closed out this cycle. PR #1361 (bootstrap hardening: node_modules/.modules.yaml sentinel + trailing test-f binary check) merged with 4/4 CI green, closing #1341 and #1322. PR #1303 (KE-2 Go kernel, conflicting) closed — issues #955/#957 already resolved. No P0/P1 issues open. New sprint KE-4 identified: change default enforcement mode from guide to monitor (#1359). PR #1371 (bootstrap rtk-prefix fix, CI green) flagged for architect review — no squad ownership but closes dogfood #1347.",
+  "healthReason": "KE-4 sprint COMPLETE — PR #1374 merged, closes #1359 (default enforcement mode guide→monitor). No open squad PRs. No blockers. KE-5 sprint assigned: #1376 (worktree binary resilience). First-party dogfood: this EM run confirmed the #1376 bug — governance was silently broken during this cycle.",
+  "summary": "KE-4 closed this cycle. PR #1374 (feat: change default enforcement mode from guide to monitor, closes #1359) was merged between the previous EM run (15:10Z) and this run (17:22Z). PR #1371 (bootstrap rtk prefix fix, closes #1347) also merged — was flagged in last cycle as CI green, awaiting architect review. No P0/P1 issues open for kernel squad. New sprint KE-5 assigned: #1376 (worktree binary crash, ERR_MODULE_NOT_FOUND). FIRST-PARTY DOGFOOD: this EM session confirmed the #1376 bug — local bin.js exists but crashes at runtime, governance is silently broken for the entire run. Main worktree binary confirmed working (v2.10.3). Fix target: scripts/claude-hook-wrapper.sh binary validation + fallback. PR #1388 (studio, conference capture funnel) flagged for human review: MERGEABLE, 4/4 CI green, no approval yet. Hard deadline April 10.",
   "sprintTransition": {
-    "completed": "KE-3",
-    "completedIssues": [1316, 1341, 1322, 1325, 1332],
-    "next": "KE-4",
-    "nextGoal": "Change default enforcement mode from guide to monitor — zero-friction onboarding (#1359)"
+    "completed": "KE-4",
+    "completedIssues": [1359],
+    "completedPRs": [1374],
+    "next": "KE-5",
+    "nextGoal": "Worktree governance binary resilience — fallback to main worktree on ERR_MODULE_NOT_FOUND (#1376)"
   },
   "prQueue": {
     "open": 0,
-    "prs": []
+    "kernelPRs": [],
+    "repoPRsNeedingAttention": [
+      {
+        "number": 1388,
+        "title": "docs(readme): capture funnel CTA — GitHub stars badge, Get Started, cloud links",
+        "squad": "studio",
+        "mergeable": "MERGEABLE",
+        "ciStatus": "4/4 green",
+        "approval": "none",
+        "note": "Ready for human review/approval. Conference capture funnel (closes workspace#234). Hard deadline April 10."
+      },
+      {
+        "number": 1349,
+        "title": "fix(site): sync stats — event kinds 47→48, invariants 22→24",
+        "squad": "site",
+        "mergeable": "CONFLICTING",
+        "note": "Needs rebase before it can be reviewed."
+      },
+      {
+        "number": 1320,
+        "title": "docs: sync documentation with codebase state (v2.10.2)",
+        "squad": "docs",
+        "mergeable": "MERGEABLE",
+        "ciStatus": "analyze + CodeQL only (no test-and-build)",
+        "note": "Docs-only path — likely intentional CI skip. Needs human verification before merge."
+      }
+    ]
   },
   "mergedThisCycle": [
     {
-      "number": 1361,
-      "title": "fix(bootstrap): harden SessionStart install + build detection (#1341, #1322)",
-      "note": "Merged with 4/4 CI green. Closes #1341 (pnpm .modules.yaml sentinel) + #1322 (trailing test-f binary check). 796 tests passing, 38 pre-existing failures (no regressions)."
-    }
-  ],
-  "closedThisCycle": [
+      "number": 1374,
+      "title": "feat(init): change default enforcement mode from guide to monitor (#1359)",
+      "note": "KE-4 sprint goal. Closes #1359. Merged between 15:10Z and 17:22Z EM runs."
+    },
     {
-      "number": 1303,
-      "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
-      "note": "Closed (not merged). Was conflicting and stale — issues #955/#957 already closed in prior cycle."
+      "number": 1371,
+      "title": "fix(bootstrap): strip rtk prefix before bootstrap allowlist matching (closes #1347)",
+      "note": "Was flagged last cycle as CI green, awaiting architect review. Merged this cycle."
     }
   ],
+  "triage": {
+    "p0Issues": 0,
+    "p1Issues": 0,
+    "kernelIssuesReviewed": [
+      {
+        "number": 1376,
+        "title": "[dogfood] Worktree CLI binary crashes with ERR_MODULE_NOT_FOUND for @red-codes/storage",
+        "priority": "high",
+        "assignedTo": "senior",
+        "sprintAnchor": "KE-5",
+        "note": "First-party confirmed in this EM run. Local bin.js fails --version probe with ERR_MODULE_NOT_FOUND for @red-codes/storage. Main worktree binary at /home/jared/agentguard-workspace/agent-guard/apps/cli/dist/bin.js works (v2.10.3). Scope: add binary validation probe in scripts/claude-hook-wrapper.sh after setting AGENTGUARD_BIN; if probe fails and we're in a worktree, fall back to git-worktree-list main path."
+      },
+      {
+        "number": 1385,
+        "title": "feat: irreversible action detection — human confirmation gates for one-way operations",
+        "priority": "p2",
+        "assignedTo": null,
+        "sprintAnchor": "KE-6 (future)",
+        "note": "Good conference demo candidate. Extends blast radius foundation with first-class irreversibility concept. Kernel-native. Not blocking anything."
+      },
+      {
+        "number": 1384,
+        "title": "feat: browser governance invariants — scope, state, and pacing for browser agents",
+        "priority": "p2",
+        "assignedTo": null,
+        "sprintAnchor": "KE-7 (future, umbrella)",
+        "note": "Computer-use positioning play for May 6 conference. Larger scope. #1385 (irreversible action) is a prerequisite."
+      },
+      {
+        "number": 1381,
+        "title": "feat: 6-tier evaluator chain — regex → sigma → CEL → SQL → ML → LLM",
+        "priority": "p3",
+        "assignedTo": null,
+        "sprintAnchor": "backlog",
+        "note": "Research/harvest from Zenity architecture study. Hot path must stay <0.25ms p50. ML/LLM tiers are cloud-only."
+      }
+    ]
+  },
   "loopGuards": {
     "prBudget": {
-      "open": 0,
+      "kernelOpen": 0,
       "max": 3,
       "pass": true
     },
@@ -43,44 +106,6 @@
       "withinLimits": true,
       "pass": true
     }
-  },
-  "triage": {
-    "p0Issues": 0,
-    "p1Issues": 0,
-    "newAssignments": [
-      {
-        "agent": "senior",
-        "issue": 1359,
-        "title": "[kernel] Change default enforcement mode from guide to monitor",
-        "note": "KE-4 sprint anchor. Product decision with May 6 conference deadline. Scope: claude-init wizard (line 194), agentguard.yaml template (line 13, currently 'educate'), README quick start, site messaging. Small surface area, high leverage."
-      }
-    ],
-    "notableIssues": [
-      {
-        "number": 1359,
-        "title": "[kernel] Change default enforcement mode from guide to monitor",
-        "label": "enhancement",
-        "status": "open",
-        "pr": null,
-        "note": "KE-4 sprint anchor. Current wizard default is 'guide' (claude-init.ts:194). agentguard.yaml default is 'educate'. Issue requests 'monitor' as default — visibility first, enforcement opt-in. Conference demo May 6."
-      },
-      {
-        "number": 1371,
-        "title": "fix(bootstrap): strip rtk prefix before bootstrap allowlist matching",
-        "label": null,
-        "status": "open",
-        "pr": 1371,
-        "note": "CI green (4/4), MERGEABLE, no approval. Tier C from copilot-cli squad. Closes dogfood #1347. Flagged for architect review before merge."
-      },
-      {
-        "number": 1347,
-        "title": "[dogfood] Bootstrap exemption blocked when rtk prefix used",
-        "label": "dogfood",
-        "status": "open",
-        "pr": 1371,
-        "note": "Covered by PR #1371 (CI green). Waiting on review."
-      }
-    ]
   },
   "blockers": [],
   "escalations": [],
@@ -94,31 +119,33 @@
   },
   "metrics": {
     "prsOpened": 0,
-    "prsMerged": 1,
-    "prsClosed": 1,
+    "prsMerged": 2,
+    "prsClosed": 0,
     "issuesClosed": 2,
     "governanceDenials": 0,
-    "retries": 0
+    "retries": 0,
+    "note": "PR #1374 (KE-4 #1359) and PR #1371 (#1347) merged this cycle. Issues #1359 and #1347 closed."
   },
   "dogfoodObservations": [
     {
-      "severity": "info",
-      "description": "Worktree build failure at session start: turbo cache miss for @red-codes/agentguard caused fresh tsc compilation, which failed because node_modules workspace symlinks are absent in this worktree (test -d node_modules passes on empty dir — old pre-#1361 hook). Pre-existing dist/bin.js masked the failure. New worktrees created after #1361 merge will use .modules.yaml sentinel and pnpm install --force, avoiding this. Existing worktrees remain affected until recreated.",
-      "related": 1341
+      "severity": "high",
+      "issue": 1376,
+      "description": "FIRST-PARTY CONFIRMATION: This EM run (kernel-em-3647726) experienced the #1376 bug in production. `node apps/cli/dist/bin.js --version` crashes with ERR_MODULE_NOT_FOUND for @red-codes/storage. Startup build also failed (turbo cache miss for @red-codes/agentguard, 100+ TS2307 errors from missing workspace package type declarations). Result: ALL tool calls in this EM session were ungoverned. Main worktree binary at /home/jared/agentguard-workspace/agent-guard/apps/cli/dist/bin.js works (v2.10.3) — validated as the fallback target.",
+      "reproducible": true,
+      "worktree": "kernel-em-3647726",
+      "proposedFix": "In scripts/claude-hook-wrapper.sh after setting AGENTGUARD_BIN: add a `node $BIN --version &>/dev/null` probe. If probe fails, resolve main worktree via `git worktree list --porcelain | head -1 | sed 's/^worktree //'` and use that binary instead. Must be silent, no output change, no new log lines."
     },
     {
       "severity": "info",
-      "description": "No governance denials encountered during this EM cycle. AgentGuard operating normally.",
+      "description": "No governance denials observed (governance was broken for this session, so this is expected). No other anomalies.",
       "related": null
     }
   ],
   "testHealth": {
-    "total": 796,
-    "passed": 796,
+    "total": 4129,
+    "passed": 4129,
     "failed": 0,
-    "preExistingFailed": 38,
-    "packages": "CLI + bootstrap tests",
-    "status": "passing",
-    "note": "From PR #1361 CI run. Full workspace test run last confirmed 2026-03-25 (4129/4129). QA squad overdue for fresh run — no squad test run since 2026-03-25."
+    "status": "all_passing",
+    "note": "Last confirmed 2026-03-25. PR #1374 CI green (passing). QA squad overdue for fresh full run — no squad test run since 2026-03-25. Not blocking."
   }
 }
