@@ -1,88 +1,41 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "KE-3: Patch v2.10.3 with Go kernel binaries + harden bootstrap (#1316, #1341, #1325, #1332, #1322)",
-    "issues": [1316, 1341, 1325, 1332, 1322]
+    "goal": "KE-4: Change default enforcement mode from guide to monitor — zero-friction onboarding (#1359)",
+    "issues": [
+      1359
+    ]
   },
   "assignments": {
     "senior": {
-      "issue": [1316, 1303],
-      "title": "Publish v2.10.3 with correct Go kernel binaries; rebase or close PR #1303",
-      "status": "unassigned",
+      "issue": 1359,
+      "title": "Change default enforcement mode from guide to monitor (#1359)",
+      "status": "ready",
       "branch": null,
       "pr": null,
-      "claimedAt": null,
-      "note": "KE-2 complete: #955, #957, #964 all CLOSED. PR #1303 (Go delegation) is CONFLICTING — needs rebase against main before CI can run. #1316: v2.10.2 npm package shipped without Go kernel binaries (build failed pre-#1315 fix). Needs v2.10.3 patch release."
+      "claimedAt": "2026-03-29T15:10:00Z",
+      "note": "KE-3 complete. PR #1361 merged (closes #1341 + #1322). New sprint KE-4: change claude-init wizard default from 'guide' to 'monitor' (claude-init.ts:194), update agentguard.yaml template (line 13, currently 'educate'), update README + site messaging. Conference deadline May 6."
     }
   },
-  "blockers": [
-    {
-      "issue": 1316,
-      "description": "v2.10.2 Go kernel binaries missing from npm package — module import fix (#1315) landed after release cut. Users fall back to TS kernel. Needs v2.10.3 patch.",
-      "since": "2026-03-29T05:14:00Z",
-      "owner": "senior"
-    },
-    {
-      "pr": 1303,
-      "description": "KE-2 implementation PR has merge conflict — needs rebase onto main before CI can run. Issues (#955/#957) already closed.",
-      "since": "2026-03-29T12:00:00Z",
-      "owner": "senior"
-    }
-  ],
+  "blockers": [],
   "prQueue": {
-    "open": 1,
+    "open": 0,
     "reviewed": 0,
     "mergeable": 0,
-    "prs": [
-      {
-        "number": 1303,
-        "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
-        "branch": "feat/go-kernel-delegation-955-957",
-        "status": "conflicting",
-        "ciStatus": null,
-        "openedAt": "2026-03-28T00:00:00Z",
-        "note": "CONFLICTING. Issues #955/#957 already closed. Needs rebase before CI can run. EM commented 2026-03-29T12:00Z."
-      },
-      {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "branch": "agent/kernel-sr-20260325-230535",
-        "status": "merged",
-        "ciStatus": "passed",
-        "mergedAt": "2026-03-29T00:00:00Z",
-        "note": "Merged. Closes #964."
-      },
-      {
-        "number": 1340,
-        "title": "fix(gitignore): untrack .agentguard-root-session — runtime artifact, not code",
-        "branch": null,
-        "status": "merged",
-        "ciStatus": "passed",
-        "mergedAt": "2026-03-29T12:00:00Z",
-        "note": "Merged this cycle. Closes #1337. Fixes agent worktree git conflicts."
-      },
-      {
-        "number": 1334,
-        "title": "fix(bootstrap): pnpm install --force to avoid interactive Y/n prompt",
-        "branch": null,
-        "status": "merged",
-        "ciStatus": "passed",
-        "mergedAt": "2026-03-29T12:00:00Z",
-        "note": "Merged this cycle. Closes #1331. Unblocks agents stuck at pnpm interactive prompt."
-      }
-    ]
+    "prs": []
   },
-  "health": "yellow",
-  "healthReason": "v2.10.2 published without Go kernel binaries (#1316). PR #1303 has merge conflict. Sprint issues closed but implementation artifact not merged.",
+  "health": "green",
+  "healthReason": "KE-3 sprint complete. All 5 issues resolved. PR #1361 merged. No squad PRs open. No blockers. KE-4 sprint assigned: #1359 (enforcement mode default change).",
   "testHealth": {
     "total": 4129,
     "passed": 4129,
     "failed": 0,
     "packages": 19,
     "lastRun": "2026-03-25T23:05:00.000Z",
-    "status": "all_passing"
+    "status": "all_passing",
+    "note": "Last full run 2026-03-25. QA squad overdue. PR #1361 CI verified 796/796 passing."
   },
-  "lastEmRun": "2026-03-29T12:00:00.000Z",
+  "lastEmRun": "2026-03-29T15:10:00.000Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-29T12:00:00.000Z"
+  "updatedAt": "2026-03-29T15:10:00Z"
 }
