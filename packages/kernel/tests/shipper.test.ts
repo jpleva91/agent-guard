@@ -3,7 +3,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createNonBlockingEmitter } from '../src/emitter.js';
 import { createBackgroundShipper } from '../src/shipper.js';
-import type { DomainEvent, EventSink, GovernanceDecisionRecord, DecisionSink } from '@red-codes/core';
+import type {
+  DomainEvent,
+  EventSink,
+  GovernanceDecisionRecord,
+  DecisionSink,
+} from '@red-codes/core';
 
 function makeEvent(id: string): DomainEvent {
   return {

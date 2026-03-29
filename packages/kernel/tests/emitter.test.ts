@@ -59,7 +59,10 @@ describe('NonBlockingEmitter', () => {
     emitter.enqueue(e2);
 
     const drained: DomainEvent[] = [];
-    emitter.drain((e) => drained.push(e), () => {});
+    emitter.drain(
+      (e) => drained.push(e),
+      () => {}
+    );
 
     expect(drained).toEqual([e1, e2]);
     expect(emitter.eventQueueSize).toBe(0);
@@ -73,7 +76,10 @@ describe('NonBlockingEmitter', () => {
     emitter.enqueueDecision(d2);
 
     const drained: GovernanceDecisionRecord[] = [];
-    emitter.drain(() => {}, (d) => drained.push(d));
+    emitter.drain(
+      () => {},
+      (d) => drained.push(d)
+    );
 
     expect(drained).toEqual([d1, d2]);
     expect(emitter.decisionQueueSize).toBe(0);
@@ -84,7 +90,10 @@ describe('NonBlockingEmitter', () => {
     emitter.enqueue(makeEvent('e1'));
     emitter.enqueueDecision(makeDecisionRecord('d1'));
 
-    emitter.drain(() => {}, () => {});
+    emitter.drain(
+      () => {},
+      () => {}
+    );
 
     expect(emitter.eventQueueSize).toBe(0);
     expect(emitter.decisionQueueSize).toBe(0);

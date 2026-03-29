@@ -44,7 +44,7 @@ export interface NonBlockingEmitter {
    */
   drain(
     onEvent: (event: DomainEvent) => void,
-    onDecision: (record: GovernanceDecisionRecord) => void,
+    onDecision: (record: GovernanceDecisionRecord) => void
   ): void;
 }
 
@@ -93,7 +93,7 @@ export function createNonBlockingEmitter(capacity = EMITTER_DEFAULT_CAPACITY): N
 
     drain(
       onEvent: (event: DomainEvent) => void,
-      onDecision: (record: GovernanceDecisionRecord) => void,
+      onDecision: (record: GovernanceDecisionRecord) => void
     ): void {
       const events = eventQueue.splice(0);
       for (const e of events) {

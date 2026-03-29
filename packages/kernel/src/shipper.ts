@@ -13,7 +13,12 @@
 // backward compatibility with tests. A future Phase 2 can swap the drain
 // strategy for setImmediate-based batching without changing the API.
 
-import type { DomainEvent, EventSink, GovernanceDecisionRecord, DecisionSink } from '@red-codes/core';
+import type {
+  DomainEvent,
+  EventSink,
+  GovernanceDecisionRecord,
+  DecisionSink,
+} from '@red-codes/core';
 import type { NonBlockingEmitter } from './emitter.js';
 
 /** BackgroundShipper — failure-isolated bridge from Emitter to persistence sinks. */
@@ -59,7 +64,7 @@ export interface BackgroundShipper {
 export function createBackgroundShipper(
   emitter: NonBlockingEmitter,
   sinks: EventSink[],
-  decisionSinks: DecisionSink[],
+  decisionSinks: DecisionSink[]
 ): BackgroundShipper {
   let eventCount = 0;
 
