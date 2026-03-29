@@ -31,7 +31,6 @@
   { "pattern": "\\bpip\\s+uninstall\\b", "description": "Uninstall Python package", "riskLevel": "high", "category": "package" },
   { "pattern": "\\biptables\\s+-F\\b", "description": "Flush all firewall rules", "riskLevel": "critical", "category": "network" },
   { "pattern": "\\bufw\\s+disable\\b", "description": "Disable firewall", "riskLevel": "critical", "category": "network" },
-  { "pattern": "\\bdocker\\s+stop\\b", "description": "Stop Docker container", "riskLevel": "high", "category": "container" },
   { "pattern": "\\bdocker\\s+volume\\s+rm\\b", "description": "Remove Docker volume (data loss)", "riskLevel": "critical", "category": "container" },
   { "pattern": "\\bdocker\\s+volume\\s+prune\\b", "description": "Prune all unused Docker volumes", "riskLevel": "critical", "category": "container" },
   { "pattern": "\\bdocker\\s+network\\s+rm\\b", "description": "Remove Docker network", "riskLevel": "high", "category": "container" },

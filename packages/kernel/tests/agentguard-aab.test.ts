@@ -221,8 +221,8 @@ describe('agentguard/core/aab', () => {
     });
 
     // Expanded container/orchestration patterns
-    it('detects docker stop', () => {
-      expect(isDestructiveCommand('docker stop my-container')).toBe(true);
+    it('does not flag docker stop as destructive (reversible — container can be restarted, no data lost)', () => {
+      expect(isDestructiveCommand('docker stop my-container')).toBe(false);
     });
 
     it('detects docker volume rm', () => {
@@ -961,11 +961,9 @@ describe('agentguard/core/aab', () => {
           severity: 3,
         },
       ];
-      const result = authorize(
-        { tool: 'Bash', command: 'rm -rf /tmp/test' },
-        policies,
-        { defaultDeny: true }
-      );
+      const result = authorize({ tool: 'Bash', command: 'rm -rf /tmp/test' }, policies, {
+        defaultDeny: true,
+      });
       expect(result.result.allowed).toBe(true);
       expect(result.result.reason).toBe('Allow everything');
     });
@@ -979,21 +977,17 @@ describe('agentguard/core/aab', () => {
           severity: 3,
         },
       ];
-      const result = authorize(
-        { tool: 'Bash', command: 'rm -rf /tmp/test' },
-        policies,
-        { defaultDeny: true }
-      );
+      const result = authorize({ tool: 'Bash', command: 'rm -rf /tmp/test' }, policies, {
+        defaultDeny: true,
+      });
       expect(result.result.allowed).toBe(false);
       expect(result.result.reason).toContain('Destructive command detected');
     });
 
     it('destructive commands denied when no policies loaded (#1253)', () => {
-      const result = authorize(
-        { tool: 'Bash', command: 'dd if=/dev/zero of=/dev/sda' },
-        [],
-        { defaultDeny: false }
-      );
+      const result = authorize({ tool: 'Bash', command: 'dd if=/dev/zero of=/dev/sda' }, [], {
+        defaultDeny: false,
+      });
       expect(result.result.allowed).toBe(false);
       expect(result.result.reason).toContain('Destructive command detected');
     });
@@ -1010,11 +1004,9 @@ describe('agentguard/core/aab', () => {
           severity: 3,
         },
       ];
-      const result = authorize(
-        { tool: 'Bash', command: 'rm -rf /tmp/test' },
-        policies,
-        { defaultDeny: true }
-      );
+      const result = authorize({ tool: 'Bash', command: 'rm -rf /tmp/test' }, policies, {
+        defaultDeny: true,
+      });
       // Deny rule fires first (shell.exec matches), so even though destructive
       // check would also deny, the policy deny takes effect in the evaluator.
       // But the destructive gate still returns deny because the evaluator denied.
@@ -1113,10 +1105,7 @@ describe('agentguard/core/aab', () => {
           severity: 5,
         },
       ];
-      const result = authorize(
-        { tool: 'Bash', command: 'git push --force origin main' },
-        policies
-      );
+      const result = authorize({ tool: 'Bash', command: 'git push --force origin main' }, policies);
       expect(result.result.allowed).toBe(false);
       expect(result.result.reason).toContain('protected branch');
     });
@@ -1310,7 +1299,9 @@ describe('agentguard/core/aab', () => {
 
     it('only strips a single wrapper prefix', () => {
       // Nested wrappers: only the outermost is stripped
-      expect(stripCommandWrappers('rtk time git push origin main')).toBe('time git push origin main');
+      expect(stripCommandWrappers('rtk time git push origin main')).toBe(
+        'time git push origin main'
+      );
     });
 
     it('does not strip strace (multi-token flags handled by \\b patterns)', () => {
