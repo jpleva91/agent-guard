@@ -32,6 +32,12 @@ if [ -z "$AGENTGUARD_BIN" ]; then
   HOOK_PAYLOAD="$(cat)"
   BOOTSTRAP_SAFE=0
 
+  # Normalize rtk-prefixed commands: global CLAUDE.md instructs agents to prefix
+  # all commands with 'rtk', but the bootstrap allowlist uses bare command patterns.
+  # Strip the leading 'rtk ' from the JSON "command" value before matching
+  # (AgentGuardHQ/agent-guard#1347).
+  HOOK_PAYLOAD=$(echo "$HOOK_PAYLOAD" | sed 's/"command":"rtk /"command":"/g')
+
   # Check if this is a bootstrap-safe Bash command (install/build)
   case "$HOOK_PAYLOAD" in
     *'"command":"pnpm install'* ) BOOTSTRAP_SAFE=1 ;;
