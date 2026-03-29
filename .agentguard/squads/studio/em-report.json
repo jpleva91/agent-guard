@@ -1,23 +1,24 @@
 {
-  "cycle": "2026-03-29T02:15Z",
+  "cycle": "2026-03-29T08:30Z",
   "agent": "claude-code:opus:studio:em",
   "health": "yellow",
-  "healthReason": "Budget exhaustion P1 (auto-resolves April 1 — 2 days); QA agents broken (#146, auto-resolves April 1). #179 P0 unassigned for 4th consecutive cycle.",
-  "summary": "Merged PRs #200 (README fix), #199 (swarm template schema + execution profiles — 2 sprint goals delivered), #195 (prev EM report). Closed #198 (superseded by #195). Removed kernel-aab-normalization blocker — kernel #1202 CLOSED. Senior agent delivered kernel #1251 (cross-validation tests, caught real bug in squad-manifest.default.yaml). Issue #179 (Option A default-deny, April 4 P0) remains unassigned for the 4th consecutive EM cycle. 6 days remain to deadline.",
+  "healthReason": "Budget exhaustion P1 (auto-resolves April 1 — 3 days); QA agents broken (auto-resolves April 1). Kernel #1306 (default-deny finalization, v3.0 gate) UNASSIGNED — 5th consecutive EM cycle. Go kernel binaries missing from v2.10.2 npm package (#1316, P1).",
+  "summary": "No PRs to merge this cycle (#231 open, product run — checks pass, no blocking items). Sprint blocked on budget until April 1. Guitar Jam (issues #165-169) remains at zero progress — tagged agent:copilot, deferred to April 1. Conference #228 (Agent 365 Q&A brief) opened and unowned. Kernel bugs #1316 (missing Go binaries) and #1327 (3 cron collisions) filed today — both P1. 7 new dogfood issues filed against kernel today (#1321-#1332 range) — governance self-modification block and pnpm TTY prompts are repeat offenders. Escalating kernel #1306 (was tracked as workspace #179) — 5th consecutive cycle unassigned.",
   "actionsThisCycle": [
-    { "action": "Merged #200", "detail": "docs: fix origin/main → origin/master in README" },
-    { "action": "Merged #199", "detail": "feat(studio): swarm template schema + execution profiles — closes 2 sprint goals" },
-    { "action": "Merged #195", "detail": "chore(studio): EM report 2026-03-28T23:15Z" },
-    { "action": "Closed #198", "detail": "Superseded by #195 — both touched state.json, #195 was more recent" },
-    { "action": "Removed blocker: kernel-aab-normalization", "detail": "Kernel #1202 CLOSED — AAB normalization fix landed, rtk-prefix misclassification resolved" },
-    { "action": "Triaged #201", "detail": "P1: real CLI quota metrics — added to April sprint backlog" },
-    { "action": "Triaged #202", "detail": "P2: velvet-tiger/automatic research — deferred until ShellForge ships" },
-    { "action": "Triaged #203", "detail": "P2: market research scout agent — deferred to April sprint" }
+    { "action": "Read #231", "detail": "PR open from product run — no CI checks on master, content clean, leaving open for human review/merge" },
+    { "action": "Triaged #228", "detail": "[conference] P0: Agent 365 vs AgentGuard Q&A brief — needs owner, May 6 hard deadline" },
+    { "action": "Triaged #229", "detail": "[studio] Guitar Jam unblock — 5 tasks (#165-169) ready, agent:copilot, blocked on April 1 budget reset" },
+    { "action": "Triaged #230", "detail": "[product] Goose as 6th driver narrative update — P2, assign to studio-junior April sprint" },
+    { "action": "Identified kernel #1306", "detail": "This is the active default-deny v3.0 gate issue (previously tracked in workspace as #179) — confirmed UNASSIGNED in kernel repo" },
+    { "action": "Noted kernel #1316", "detail": "P1 bug: v2.10.2 Go kernel binaries missing from npm package — release CI failed after module import fix (#1315) landed post-cutoff" },
+    { "action": "Noted kernel #1327", "detail": "P1: 3 cron collisions in server/schedule.json — concurrent slot contention risk" },
+    { "action": "Counted dogfood issues", "detail": "7 new dogfood issues filed today (self-modification block + pnpm TTY prompts pattern) — kernel team needs to triage" },
+    { "action": "Analytics check", "detail": "5 open data requests for conference (#38, #36, #32, #22, #21) — no new blockers from studio side, monitoring for ETA" }
   ],
   "sprintStatus": {
     "goal": "Ship agentguard init studio wizard + execution profiles + swarm template schema formalization (v3.1 prep)",
     "blockedUntil": "2026-04-01",
-    "blockedReason": "Copilot budget exhaustion at cap (4000/4000 cents) — 2 days remaining",
+    "blockedReason": "Copilot budget exhaustion at cap (4000/4000 cents) — resets April 1",
     "completedThisSprint": [
       "Formalize swarm template schema (JSON Schema validation) — PR #199 + kernel #1251",
       "Define execution profiles (development, ci-safe, strict, enterprise) — PR #199"
@@ -26,43 +27,67 @@
       "Implement agentguard init studio interactive wizard",
       "Runner / Cloud protocol integration"
     ],
-    "issues": {
-      "165-169": "Guitar Jam — deferred to April 1 budget reset",
-      "152": "DPP dry run — owner needed (deadline April 10)",
-      "146": "QA regression/test-architect broken — retrigger April 1",
-      "201": "Real CLI quota metrics — April sprint"
-    }
+    "aprilSprintBacklog": [
+      "#165-169: Guitar Jam Partner — scaffold, WebAudio, ChordLibrary, synth, governance (agent:copilot)",
+      "#201: Real CLI quota metrics (P1, studio-senior)",
+      "#203: Market research scout agent (P2, studio-junior)",
+      "#228: Agent 365 Q&A brief (P0, needs owner)"
+    ]
   },
   "swarmHealth": {
     "script": "healthy",
-    "telemetry": "healthy (latest event 0.1h ago)",
-    "cronCollisions": 0,
+    "telemetry": "healthy (latest event 0.0h ago)",
+    "cronCollisions": 3,
+    "cronCollisionNote": "3 collisions documented in kernel #1327 — policy-effectiveness-agent/analytics-reporter, security-codeowner/pr-auto-rebaser, cron-scheduler-supervisor/qa-invariant-checker all share minute slots",
     "queueDepth": 0,
-    "workerPIDs": "131 skipped (log dir not on this host)"
+    "workerPIDs": "132 skipped (log dir not on this host)"
   },
   "crossSquadAlerts": [
     {
       "squad": "kernel",
-      "issue": 179,
-      "title": "Option A default-deny for demo — 4TH CYCLE UNASSIGNED",
+      "issue": 1306,
+      "title": "feat(v3.0-gate): default-deny enforcement finalization — 5TH CYCLE UNASSIGNED",
       "deadline": "2026-04-04",
       "urgency": "P0",
       "daysRemaining": 6,
-      "action": "HUMAN MUST ASSIGN TODAY — 4 consecutive EM cycles without assignment. Conference demo blocker."
+      "note": "Previously tracked in workspace as #179. Confirmed UNASSIGNED in agentguard kernel repo. Conference demo depends on this.",
+      "action": "HUMAN MUST ASSIGN TODAY — 5 consecutive EM cycles without assignment."
     },
     {
       "squad": "kernel",
-      "note": "v2.9.0 released. Safe-subshell allowlist (#1255) merged. #1202 (AAB normalization) CLOSED — unblocks Studio dogfood."
+      "issue": 1316,
+      "title": "v2.10.2 Go kernel binaries missing from npm package",
+      "urgency": "P1",
+      "action": "Kernel team should patch v2.10.2 or release v2.10.3 with correct Go binaries before demo prep begins"
+    },
+    {
+      "squad": "kernel",
+      "issue": 1327,
+      "title": "3 cron collisions in server/schedule.json",
+      "urgency": "P1",
+      "action": "Kernel/studio team should stagger cron slots to avoid concurrent contention"
+    },
+    {
+      "squad": "kernel",
+      "note": "7 new dogfood issues today — governance self-modification block (mkdir .agentguard) and pnpm interactive TTY are repeat patterns. Kernel team should batch-triage."
     }
   ],
   "escalations": [
     {
       "to": "HUMAN",
-      "issue": 179,
-      "title": "Option A default-deny — STILL UNASSIGNED (4th cycle)",
+      "issue": 1306,
+      "repo": "AgentGuardHQ/agentguard",
+      "title": "feat(v3.0-gate): default-deny enforcement finalization — 5TH CYCLE UNASSIGNED",
       "deadline": "2026-04-04",
       "daysRemaining": 6,
-      "action": "Manually assign to kernel senior TODAY. This is the 4th consecutive EM cycle this has been raised."
+      "action": "Manually assign kernel #1306 to kernel senior TODAY. Conference demo blocker. 5th consecutive cycle unassigned."
+    },
+    {
+      "to": "HUMAN",
+      "issue": 228,
+      "repo": "AgentGuardHQ/agentguard-workspace",
+      "title": "[conference] Agent 365 vs AgentGuard Q&A brief — unowned, May 6 deadline",
+      "action": "Assign #228 to a senior agent or human. Conference prep requires this brief before April. No owner yet."
     },
     {
       "to": "HUMAN",
@@ -86,10 +111,15 @@
     }
   ],
   "analyticsCoordination": {
-    "openRequests": [22, 23, 25, 26, 32, 34, 35],
-    "blockers": "None from studio this cycle",
-    "note": "#32 (conference conversion baseline) is time-sensitive for May 6 talk — monitor analytics EM for ETA"
+    "openRequests": [21, 22, 23, 32, 36, 38],
+    "conferenceDataRequests": {
+      "38": "Production telemetry snapshot for May 6 talk narrative",
+      "36": "Demonstration Factory evidence pack — deadline Apr 30",
+      "32": "Conference conversion baseline (npm downloads, stars, signups)"
+    },
+    "blockers": "None from studio this cycle — monitoring for ETA on #32, #36, #38",
+    "note": "Conference data pipeline needs to deliver by April 30. Analytics EM should escalate if #36 or #38 blocked."
   },
-  "dogfood": "No AgentGuard governance issues observed this run. AAB normalization (#1202) resolved — rtk-prefix false denials should clear.",
-  "updatedAt": "2026-03-29T02:15:00.000Z"
+  "dogfood": "No new AgentGuard governance issues observed directly this run. Noting pattern: 7 dogfood issues filed today (by other agents) around governance self-modification block (mkdir .agentguard in worktrees) and pnpm interactive TTY hang — these are repeat issues that need kernel-level fixes.",
+  "updatedAt": "2026-03-29T08:30:00.000Z"
 }

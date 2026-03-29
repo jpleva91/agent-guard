@@ -10,7 +10,7 @@
       "fix(swarm): real CLI quota metrics replacing subscription-cost tracking (#201) — April sprint"
     ],
     "blockedUntil": "2026-04-01",
-    "blockedReason": "Copilot budget exhaustion (4000/4000 cents) — 2 days remaining"
+    "blockedReason": "Copilot budget exhaustion (4000/4000 cents) — 3 days remaining"
   },
   "assignments": {
     "senior": {
@@ -36,20 +36,30 @@
     }
   ],
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
-    "note": "Cycle merged: #200 (README fix), #199 (schema+profiles), #195 (prev EM report). Closed #198 (superseded by #195). No open PRs remain."
+    "note": "PR #231 open (product run 2026-03-29 — docs only, no CI checks on master). Leaving for human review."
   },
   "humanEscalations": [
     {
-      "issue": 179,
-      "title": "Option A default-deny for demo — kernel not yet assigned (4TH CYCLE, April 4 P0)",
+      "issue": 1306,
+      "repo": "AgentGuardHQ/agentguard",
+      "title": "feat(v3.0-gate): default-deny enforcement finalization — 5TH CYCLE UNASSIGNED",
       "deadline": "2026-04-04",
       "priority": "P0",
       "daysRemaining": 6,
-      "consecutiveCyclesUnassigned": 4,
-      "action": "CRITICAL: Manually assign #179 to kernel senior immediately. Conference demo depends on this. 6 days remain."
+      "consecutiveCyclesUnassigned": 5,
+      "note": "Previously tracked as workspace #179 — correct kernel issue is #1306",
+      "action": "CRITICAL: Manually assign kernel #1306 to kernel senior immediately. Conference demo depends on this. 6 days remain."
+    },
+    {
+      "issue": 228,
+      "repo": "AgentGuardHQ/agentguard-workspace",
+      "title": "[conference] Agent 365 vs AgentGuard Q&A brief — UNOWNED",
+      "deadline": "2026-05-06",
+      "priority": "P0",
+      "action": "Assign #228 before April — no owner yet. Conference prep blocker."
     },
     {
       "issue": 178,
@@ -65,6 +75,27 @@
     }
   ],
   "newIssuesTriaged": [
+    {
+      "issue": 228,
+      "title": "[conference] Agent 365 vs AgentGuard Q&A brief",
+      "priority": "P0",
+      "squad": "studio/conference",
+      "action": "Unowned — assign immediately. May 6 deadline."
+    },
+    {
+      "issue": 229,
+      "title": "[studio] Guitar Jam Partner — unblock first Studio asset (5 tasks ready)",
+      "priority": "P1",
+      "squad": "studio",
+      "action": "Issues #165-169 ready. Assign to copilot-cli agent post April 1 budget reset."
+    },
+    {
+      "issue": 230,
+      "title": "[product] Goose CLI confirmed as 6th driver — update narrative docs",
+      "priority": "P2",
+      "squad": "studio",
+      "action": "Assign to studio-junior for April sprint."
+    },
     {
       "issue": 201,
       "title": "fix(swarm): real CLI quota metrics replacing subscription-cost tracking",
@@ -87,5 +118,5 @@
       "action": "Defer post-April 1. Assign to studio-junior for April sprint."
     }
   ],
-  "updatedAt": "2026-03-29T02:15:00Z"
+  "updatedAt": "2026-03-29T08:30:00Z"
 }
