@@ -753,7 +753,7 @@ CI
 **Setup (one-time)**:
 ```bash
 # Install AgentGuard hook in Claude Code
-npx agentguard claude-init
+npx aguard claude-init
 
 # Configure policies
 cp policies/developer.yaml .agentguard/active-policy.yaml
@@ -793,7 +793,7 @@ The scheduler configures `.claude/settings.json` in each worktree:
         "hooks": [
           {
             "type": "command",
-            "command": "npx agentguard claude-hook --mode=pre --run-id=run_abc"
+            "command": "npx aguard claude-hook --mode=pre --run-id=run_abc"
           }
         ]
       }
@@ -804,7 +804,7 @@ The scheduler configures `.claude/settings.json` in each worktree:
         "hooks": [
           {
             "type": "command",
-            "command": "npx agentguard claude-hook --mode=post --run-id=run_abc"
+            "command": "npx aguard claude-hook --mode=post --run-id=run_abc"
           }
         ]
       }

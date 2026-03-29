@@ -98,7 +98,7 @@ Rendering happens in the kernel after suggestion resolution. Unresolved variable
 
 1. **Action scope validation:** The corrected command must match the denied rule's action class. A `git.push` deny rule cannot produce a `correctedCommand` containing `curl` or `rm`. The kernel validates this before rendering.
 2. **Template variable escaping:** All `{{variable}}` values are shell-escaped before substitution. Branch names like `feat/$(whoami)` render as `feat/\$\(whoami\)`.
-3. **Policy pack trust:** `correctedCommand` values from external policy packs (installed via `agentguard plugin install`) require trust verification via the existing `policy-trust.ts` system before rendering. Untrusted packs have their `correctedCommand` fields stripped — only the `suggestion` text is shown.
+3. **Policy pack trust:** `correctedCommand` values from external policy packs (installed via `aguard plugin install`) require trust verification via the existing `policy-trust.ts` system before rendering. Untrusted packs have their `correctedCommand` fields stripped — only the `suggestion` text is shown.
 
 ### Retry Budget
 

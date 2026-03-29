@@ -151,12 +151,12 @@ FrameworkAdapterRegistry {
 Extend the existing `init` command to scaffold framework-specific integration:
 
 ```bash
-agentguard init mcp          # Set up MCP middleware
-agentguard init langchain    # Set up LangChain tool wrapper
-agentguard init openai       # Set up OpenAI Agents SDK middleware
-agentguard init autogen      # Set up AutoGen message interceptor
-agentguard init copilot      # Set up Copilot CLI hooks
-agentguard init claude-code  # Existing Claude Code setup
+aguard init mcp          # Set up MCP middleware
+aguard init langchain    # Set up LangChain tool wrapper
+aguard init openai       # Set up OpenAI Agents SDK middleware
+aguard init autogen      # Set up AutoGen message interceptor
+aguard init copilot      # Set up Copilot CLI hooks
+aguard init claude-code  # Existing Claude Code setup
 ```
 
 Each `init` command:
@@ -175,7 +175,7 @@ Each `init` command:
 ## Verification
 
 - Each adapter has integration tests against its framework's test harness
-- `agentguard init <framework>` works for all supported frameworks
+- `aguard init <framework>` works for all supported frameworks
 - All existing tests continue to pass (`npm run ts:test`)
 - Framework-specific payloads correctly translate to `RawAgentAction` with proper action classification
 

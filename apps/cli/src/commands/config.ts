@@ -155,7 +155,7 @@ export async function config(args: string[]): Promise<number> {
       return showConfigHelp();
     default:
       process.stderr.write(`  ${FG.red}Error:${RESET} Unknown subcommand: ${sub}\n`);
-      process.stderr.write(`  ${DIM}Run "agentguard config help" for usage.${RESET}\n`);
+      process.stderr.write(`  ${DIM}Run "aguard config help" for usage.${RESET}\n`);
       return 1;
   }
 }

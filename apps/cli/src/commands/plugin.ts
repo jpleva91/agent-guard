@@ -56,7 +56,7 @@ export async function plugin(args: string[]): Promise<number> {
 
     default:
       console.error(`  Unknown plugin subcommand: ${subcommand}`);
-      console.error('  Run "agentguard plugin help" for usage info.');
+      console.error('  Run "aguard plugin help" for usage info.');
       return 1;
   }
 }
@@ -67,7 +67,7 @@ function pluginList(): number {
 
   if (plugins.length === 0) {
     console.log(`\n  ${dim('No plugins installed.')}`);
-    console.log(`  ${dim('Run "agentguard plugin install <path>" to install a plugin.')}\n`);
+    console.log(`  ${dim('Run "aguard plugin install <path>" to install a plugin.')}\n`);
     return 0;
   }
 

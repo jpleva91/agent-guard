@@ -1,15 +1,14 @@
 {
   "name": "@red-codes/agentguard",
-  "version": "2.9.3",
-  "description": "Run AI agents without fear \u2014 CLI safety layer",
+  "version": "2.10.1",
+  "description": "Run AI agents without fear — CLI safety layer",
   "type": "module",
   "license": "Apache-2.0",
   "private": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "agentguard": "./dist/bin.js",
-    "aguard": "./dist/bin.js"
+    "agentguard": "./dist/bin.js"
   },
   "files": [
     "dist/",

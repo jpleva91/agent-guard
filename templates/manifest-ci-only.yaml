@@ -3,7 +3,7 @@
 # Minimal permissions for CI pipeline verification.
 # Read files, run tests, check types — no writes, no git mutations.
 #
-# Usage: agentguard guard --manifest manifest-ci-only.yaml
+# Usage: aguard guard --manifest manifest-ci-only.yaml
 # Docs:  https://docs.agentguard.dev/manifests
 
 sessionId: ci-session

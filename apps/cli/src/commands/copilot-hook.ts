@@ -12,6 +12,7 @@ import { tmpdir } from 'node:os';
 import type { CopilotCliHookPayload } from '@red-codes/adapters';
 import type { LoadedPolicy } from '@red-codes/policy';
 import type { CloudSinkBundle } from '@red-codes/telemetry';
+import { isBootstrapSafeAction, isModuleNotFoundError } from '../bootstrap.js';
 
 // --- Session state: persist formatPass/testsPass/writtenFiles across hook invocations
 // Copilot CLI hooks are stateless per invocation. We bridge this by writing
@@ -138,11 +139,11 @@ export async function copilotHook(hookType?: string, extraArgs: string[] = []): 
   // Load AGENTGUARD_* env vars from the project's .env file before anything reads them.
   loadProjectEnv();
 
+  let data: Record<string, unknown> | undefined;
   try {
     const input = await readStdin();
     if (!input) process.exit(0);
 
-    let data: Record<string, unknown>;
     try {
       data = JSON.parse(input) as Record<string, unknown>;
     } catch {
@@ -163,8 +164,16 @@ export async function copilotHook(hookType?: string, extraArgs: string[] = []): 
     } else {
       handlePostToolUse(data);
     }
-  } catch {
-    // Swallow all errors — hooks must never fail (fail-open)
+  } catch (err) {
+    // BOOTSTRAP AWARENESS (AgentGuardHQ/agentguard#995):
+    // When kernel modules aren't built, warn instead of silently disabling governance.
+    if (isModuleNotFoundError(err)) {
+      const isSafe = data ? isBootstrapSafeAction(data) : true;
+      process.stderr.write(
+        `[agentguard] Bootstrap mode — kernel not built. ${isSafe ? 'Allowing bootstrap action.' : 'Governance inactive — allowing action (fail-open).'} Run: pnpm install && pnpm build\n`
+      );
+    }
+    // Copilot hooks always fail-open — never block the agent on hook errors
   }
   process.exit(0);
 }
@@ -234,6 +243,9 @@ async function handlePreToolUse(
     // Sink creation failure is non-fatal
   }
 
+  // Resolve agent identity early — used for both session tracking and cloud telemetry.
+  const agentId = resolveAgentIdentity();
+
   // Cloud telemetry — send governance events to the telemetry server so the
   // dashboard can visualize Copilot agent activity alongside Claude agent activity.
   // Short-lived hook: we flush immediately after processing, not on an interval.
@@ -255,7 +267,7 @@ async function handlePreToolUse(
           identity?.server_url ??
           'https://telemetry.agentguard.dev',
         runId: cloudSessionId,
-        agentId: resolveAgentIdentity() ?? 'copilot-cli',
+        agentId: agentId ?? 'copilot-cli',
         installId: identity?.install_id,
         apiKey,
         flushIntervalMs: 0, // No interval — we flush manually before exit
@@ -323,6 +335,7 @@ async function handlePreToolUse(
   if (storage?.sessions) {
     storage.sessions.start(sessionKey, 'copilot-hook', {
       storageBackend: storageConfig.backend,
+      agentId: agentId ?? undefined,
     });
   }
 

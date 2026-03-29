@@ -22,7 +22,7 @@ AgentGuard sessions start without knowing which agent is running. The kernel nev
 
 #### Identity Resolution (ordered, first wins)
 
-1. `--agent-name <name>` CLI flag on `agentguard guard`
+1. `--agent-name <name>` CLI flag on `aguard guard`
 2. `AGENTGUARD_AGENT_NAME` environment variable (per-process)
 3. Interactive prompt (writes answer for session duration)
 
@@ -63,7 +63,7 @@ AgentGuard sessions start without knowing which agent is running. The kernel nev
 
 Orchestrators (swarm scaffolder, CI) pass identity via CLI flag:
 ```bash
-agentguard guard --agent-name "builder-agent-3" --policy agentguard.yaml
+aguard guard --agent-name "builder-agent-3" --policy agentguard.yaml
 ```
 
 No need to pre-write files. Each subprocess gets its own `--agent-name`.
@@ -71,7 +71,7 @@ No need to pre-write files. Each subprocess gets its own `--agent-name`.
 #### Interactive Flow
 
 ```
-$ agentguard guard
+$ aguard guard
 ⚠ No agent identity set.
 Agent name: █
 > my-dev-session

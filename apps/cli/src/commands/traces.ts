@@ -260,7 +260,7 @@ export async function traces(args: string[], storageConfig?: StorageConfig): Pro
 
     if (runs.length === 0) {
       process.stderr.write('\n  \x1b[2mNo runs recorded yet.\x1b[0m\n');
-      process.stderr.write('  Run \x1b[1magentguard guard\x1b[0m to start recording.\n\n');
+      process.stderr.write('  Run \x1b[1maguard guard\x1b[0m to start recording.\n\n');
       return 0;
     }
 

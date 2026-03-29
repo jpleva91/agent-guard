@@ -238,7 +238,7 @@ Depends on: KE-2 (ActionContext provides vendor-neutral normalization).
 
 - [ ] SQLite migration v2 — additional indexed columns
 - [ ] Adaptive governance depth — tiered evaluation (fast-path for known-safe, full eval for normal, simulation for high-risk)
-- [ ] Timeline viewer for governance sessions (`agentguard replay --ui`)
+- [ ] Timeline viewer for governance sessions (`aguard replay --ui`)
 - [ ] Application-level process and network monitoring
 
 ### Later — CI/CD Enforcement (Phase 12)
