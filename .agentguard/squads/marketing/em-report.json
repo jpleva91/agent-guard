@@ -1,38 +1,40 @@
 {
   "squad": "marketing",
-  "timestamp": "2026-03-29T20:00:00.000Z",
+  "timestamp": "2026-03-29T21:00:00.000Z",
   "health": "green",
-  "summary": "Conference capture funnel Phase 1 landed (PR #1388 merged — stars badge, Get Started, cloud+Discussions CTAs, 'Start Free' language). Major site stat drift corrected via new PR #1390 (og:description, JSON-LD, hero, body cards — invariants 22→24, patterns 87→93, event kinds 49→48, CLI heading 29→35). PR #1349 closed due to conflicts; replaced by #1390. PR #1320 (docs sync) CI triggered and awaiting merge. Issue #1260 scope expanded to v2.9→v2.10 arc with default mode change (guide→monitor) as new key message.",
+  "summary": "Site stat sync complete. PR #1390 merged (8 stat fixes). PR #1394 filed for 3 residual items PR #1390 missed: 'What's Inside' cards (21→24 invariants, 87→93 patterns) + stats counter (36→35). New urgent content opportunities: #1387 containment engineering post (Anthropic computer-use announcement — narrative window NOW), #1378 CLAW-10 scorecard, #1379 Meta incident demo (May 6 conference deadline). Sprint active on #1260 (v2.9→v2.10 arc, unblocked). Product at v2.10.3.",
   "contentPipeline": {
     "drafts": 1,
     "published": 0,
     "scheduled": 1,
-    "notes": "OWASP blog post at docs/blog/owasp-agentic-top10-agentguard.md — complete, still awaiting human to publish to LinkedIn. v2.9→v2.10 announcement (#1260) active, scope expanded to include default mode change and 5th governed driver (Goose)."
+    "notes": "OWASP blog post at docs/blog/owasp-agentic-top10-agentguard.md — complete, still awaiting human LinkedIn publish (3+ cycles). v2.9→v2.10 announcement (#1260) active and unblocked."
   },
   "siteAlignment": {
-    "status": "improving",
+    "status": "green",
     "fixedThisCycle": [
-      "PR #1388 MERGED: GitHub Stars badge, Get Started CTA, cloud+Discussions CTAs, 'Start Free' badge language",
-      "PR #1388 MERGED: Removed aguard alias — canonical @red-codes/agentguard only",
-      "PR #1390 FILED: og:description 22→24 invariants",
-      "PR #1390 FILED: JSON-LD description 22→24 invariants",
-      "PR #1390 FILED: Hero paragraph 22→24 built-in safety checks",
-      "PR #1390 FILED: Production-grade kernel card 22→24 invariants, 87→93 destructive patterns",
-      "PR #1390 FILED: Policy bullet 22 built-in invariants + 87 patterns → 24 + 93",
-      "PR #1390 FILED: Full Audit Trail card 49→48 event kinds",
-      "PR #1390 FILED: Pipeline Emit stage 49→48 event kinds",
-      "PR #1390 FILED: CLI section heading 29→35 CLI Commands"
+      "PR #1390 MERGED: og:description 22→24 invariants",
+      "PR #1390 MERGED: JSON-LD description 22→24 invariants",
+      "PR #1390 MERGED: Hero paragraph 22→24 built-in safety checks",
+      "PR #1390 MERGED: Production-Grade Kernel card 22→24 invariants, 87→93 patterns",
+      "PR #1390 MERGED: Policy bullet 22 + 87 → 24 + 93",
+      "PR #1390 MERGED: Full Audit Trail card 49→48 event kinds",
+      "PR #1390 MERGED: Pipeline Emit stage 49→48 event kinds",
+      "PR #1390 MERGED: CLI section heading 29→35 CLI Commands",
+      "PR #1394 FILED: 'What's Inside' card 21 Safety Invariants → 24 Safety Invariants",
+      "PR #1394 FILED: 'What's Inside' card 87 Destructive Patterns → 93 Destructive Patterns",
+      "PR #1394 FILED: Stats counter data-target 36 → 35"
     ],
     "staleContent": [
-      "PR #1390 awaiting CI merge — all remaining site stat drift resolved once it lands",
-      "PR #1320 awaiting CI — README/CLAUDE.md/ARCHITECTURE.md fixes pending merge"
+      "PR #1394 awaiting CI — 3 residual card stat fixes (should auto-merge, site-only changes)",
+      "README lines 25/101/124: '100+ agents' vs site '120 agents' — defensible as floor claim, low priority",
+      "Site does not mention OpenCode as a supported framework — supported via identity detection (OPENCODE_HOME), content gap not factual error"
     ],
     "dataVerification": {
-      "invariants": "24 — manually verified: 24 distinct named invariants in packages/invariants/src/definitions.ts (note: grep -c 'name:' returns 26 due to false positives from interface definition line + hostname:port substring match; manual count = 24 correct)",
+      "invariants": "24 — manually verified. CAUTION: grep -c 'name:' returns 26 (false positives from interface line + hostname). Use grep '^\\s*name:' or manual enumeration.",
       "destructivePatterns": "93 — verified: grep -c '\"pattern\"' packages/core/src/data/destructive-patterns.json",
       "eventKinds": "48 — verified: grep -c '^export const.*EventKind' packages/events/src/schema.ts",
       "actionTypes": "41 — unchanged",
-      "cliCommands": "35 top-level — 37 files in apps/cli/src/commands/ minus 2 subcommands (cloud-login.ts, policy-verify.ts)",
+      "cliCommands": "35 — 37 files minus cloud-login.ts and policy-verify.ts (subcommands)",
       "currentVersion": "2.10.3"
     }
   },
@@ -41,46 +43,67 @@
     "active": [
       {
         "issue": "#1260",
-        "title": "v2.9→v2.10 announcement content",
-        "status": "open — unblocked, scope expanded",
-        "note": "Updated this cycle to cover full v2.9→v2.10 arc. New key messages: (1) default mode changed guide→monitor (v2.10.x, commit a84e172) — gentler onramp, stronger adoption story; (2) wildcard policy fix (v2.9.0) security CTA; (3) 5 governed drivers — Claude Code, Codex, Copilot, Gemini, Goose. Assigned to marketing-launch-agent."
+        "title": "v2.9→v2.10 announcement content (scope: expanded)",
+        "status": "open — unblocked",
+        "note": "Assigned to marketing-launch-agent. Key messages: (1) default mode guide→monitor — 'monitor first, enforce when ready' adoption story; (2) wildcard policy fix security CTA; (3) 5 governed drivers (Claude Code, Codex CLI, Copilot CLI, Gemini CLI, Goose). Current version: v2.10.3."
+      }
+    ],
+    "newIssuesTriaged": [
+      {
+        "issue": "#1387",
+        "title": "Containment engineering post — computer-use governance narrative",
+        "priority": "🔴 URGENT — narrative window closing",
+        "recommendation": "Elevate to P0. Anthropic announcement provides the hook. Proof points (139 agents, 1,170 PRs, 24 invariants) are compelling. Should publish within days, not weeks. Assign to marketing-launch-agent alongside or instead of #1260."
+      },
+      {
+        "issue": "#1378",
+        "title": "CLAW-10 scorecard — AgentGuard vs raw OpenClaw",
+        "priority": "🟡 HIGH",
+        "recommendation": "Strong credibility play. Each score already has code evidence. Good follow-on to #1387 — scorecard as supporting asset for the containment engineering post."
+      },
+      {
+        "issue": "#1379",
+        "title": "Meta incident demo — governance survives context compaction",
+        "priority": "🟡 HIGH (May 6 hard deadline)",
+        "recommendation": "Conference demo must be built before May 6. Demo script defined in issue. Summer Yue incident makes the prompt-vs-kernel safety argument concrete and timely."
       }
     ]
   },
   "prQueue": {
-    "merged": ["#1388 (capture funnel CTA — conference P0 DONE)", "#1338 (Live Office README — merged previous cycle)"],
-    "closed": ["#1349 (site stats — conflicting, replaced by #1390)"],
-    "open": 2,
-    "prNumbers": ["#1390", "#1320"],
-    "notes": "#1390 comprehensive site stats PR (new this cycle — fixes all site stat drift in one PR); #1320 docs sync (CI now running after empty commit to trigger re-run — was blocked by path-ignore timing)"
+    "merged": ["#1390 (site stats — 8 stat fixes, this cycle)", "#1388 (capture funnel Phase 1)", "#1338 (Live Office README)"],
+    "open": 1,
+    "prNumbers": ["#1394"],
+    "notes": "#1394 filed this cycle — 3 residual stat fixes PR #1390 missed. Site-only, should pass CI."
   },
   "blockers": [],
   "escalations": [
-    "MEDIUM: OWASP blog post complete at docs/blog/owasp-agentic-top10-agentguard.md — needs human to publish to LinkedIn. Still no technical blocker.",
-    "LOW: PR #1390 site stats — awaiting CI checks. Should auto-merge once ci-skip-site.yml passes.",
-    "LOW: PR #1320 docs sync — CI now running (triggered this cycle). Should merge once checks pass.",
-    "INFO: Conference capture funnel Phase 1 COMPLETE (PR #1388 merged). April 10 deadline met. GitHub README now has install→cloud→community conversion path above the fold."
+    "MEDIUM: OWASP blog post at docs/blog/owasp-agentic-top10-agentguard.md — complete 3+ cycles, still awaiting LinkedIn publish. Consider direct ping to Jared.",
+    "MEDIUM: #1387 containment engineering post — narrative window closing. Recommend P0 escalation immediately.",
+    "LOW: PR #1394 awaiting CI merge.",
+    "LOW: README '100+' vs site '120' agent count inconsistency."
   ],
   "conferenceReadiness": {
-    "deadline": "2026-04-10 (Phase 1 hard deadline)",
-    "status": "Phase 1 COMPLETE — README capture funnel landed (PR #1388 merged)",
-    "remainingItems": [
-      "Phase 2: Validate onboarding wizard v2 in May 6 demo walk-through (workspace#233, deadline 2026-04-15)",
-      "Phase 2: Confirm QR code URL and link to onboarding path"
-    ]
+    "phase1": "COMPLETE — README capture funnel (PR #1388 merged, April 10 deadline met)",
+    "phase2Deadline": "2026-04-15 — onboarding wizard demo walk-through (workspace#233)",
+    "may6Conference": {
+      "status": "At risk",
+      "needed": ["#1379 Meta incident demo (not yet built)", "Demo video script", "QR code / onboarding path confirmed"],
+      "healthColor": "yellow"
+    }
   },
   "productInsights": [
-    "Default enforcement mode changed guide→monitor (commit a84e172, #1359). User-facing behavior change — marketing should lead with 'monitor mode lets teams see what's happening before committing to enforcement'. Strong adoption angle vs competitors.",
-    "5th governed driver: Goose (Block) added, DeepAgents removed. 'Works with any AI coding agent' story now covers Claude Code, Codex CLI, Copilot CLI, Gemini CLI, Goose — the full landscape.",
-    "Persistent site stat drift pattern: invariant, pattern, event kind, and CLI counts all drift as code evolves. Recommend build-time sync script to auto-patch site/index.html stats from source counts at deploy time (repeated recommendation, still unactioned — should become an engineering issue).",
-    "grep -c 'name:' for invariant count is unreliable — returns 26 due to false positives (interface definition + hostname:port substring). Use grep '^    name:' or manual count going forward.",
-    "PR #1388 merged cleanly — conference P0 complete. Post-May-6-talk attendees will land on a README with GitHub Stars social proof, clear install path, and cloud onboarding CTA above the fold."
+    "Default enforcement mode changed guide→monitor (v2.10.x). New installs now observe before enforcing — reduces onboarding friction. Strong 'try before you commit' adoption angle.",
+    "Product at v2.10.3. Sprint was targeting v2.9.x; updated to v2.9→v2.10 arc to cover default mode change and all intervening features.",
+    "Capture funnel (PR #1388) is live. README now has GitHub Stars badge, Get Started section, cloud/Discussions CTAs above the fold.",
+    "Build-time stat sync script recommended for 4th consecutive cycle — stat drift is systemic. Should be filed as an engineering issue with explicit owner.",
+    "OpenCode supported in identity system (OPENCODE_HOME detection, identity.ts) but not mentioned in site's Supported Frameworks section.",
+    "Goose uses MCP server protocol (not hook-based) — different integration model from the 4 hook-based drivers (Claude Code, Codex CLI, Copilot CLI, Gemini CLI)."
   ],
   "dogfoodReport": {
     "governanceDenialsThisRun": 0,
     "unexpectedBlocks": [],
     "unexpectedAllows": [],
-    "status": "clean — no governance issues this run. git add/commit/push, gh pr merge, gh pr close, gh issue comment, empty commit CI trigger all executed without denial."
+    "status": "clean — no governance issues this run. git add/commit/push, gh pr merge, gh pr create all executed without denial. Site-only writes clean."
   },
-  "agentIdentity": "claude-code:sonnet:marketing:em"
+  "agentIdentity": "claude-code:opus:marketing:em"
 }
