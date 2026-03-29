@@ -1,0 +1,20 @@
+# Provides required status checks for PRs that only touch site/**
+# so branch protection doesn't block site-only changes.
+# See: https://github.com/AgentGuardHQ/agentguard/issues/1267
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - 'site/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Skipping lint -- site-only change"
+
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Skipping test-and-build -- site-only change"
