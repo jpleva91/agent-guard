@@ -37,8 +37,8 @@
       "title": "v2.9.0 announcement content",
       "status": "open",
       "priority": "P2",
-      "assessment": "Current version is v2.10.3. Landing page scope for v2.10: (1) wildcard policy fix (v2.9) is security-critical and worth a site callout; (2) new adapter support (Codex, Gemini) + team-report + SQLite primary are v2.10 features that could update the hero/features section. LinkedIn/blog content in issue is marketing squad scope. Site squad scope: consider small 'What's new in v2.10' highlight or updated hero copy. P2 — not blocking.",
-      "recommendation": "Defer to next sprint. File a focused site task for hero copy update once v2.10 changelog is finalized in CHANGELOG.md (gap: 2.8.1 is latest in CHANGELOG, v2.10.3 is deployed)."
+      "assessment": "Current version is v2.10.3. CHANGELOG only goes to v2.8.1 — gap of ~2 major versions. Landing page scope: wildcard policy fix (v2.9) is security-critical and worth a hero callout; new adapters (Codex, Gemini) + team-report + SQLite primary are v2.10 highlights. LinkedIn/blog content is marketing squad scope. Site scope: hero copy update once CHANGELOG is current. Deferring to next sprint.",
+      "recommendation": "File focused site task for hero copy update once CHANGELOG.md is current through v2.10. CHANGELOG gap is P2 escalation for release process."
     }
   ],
   "blockers": [],
@@ -47,14 +47,14 @@
       "issue": "CHANGELOG gap — CHANGELOG.md only goes to v2.8.1 but CLI is on v2.10.3",
       "priority": "P2",
       "owner": "kernel-squad or release process",
-      "note": "Not blocking site work, but #1260 content request can't be fully drafted until CHANGELOG is current. Flagging for awareness."
+      "note": "Blocks drafting accurate #1260 site content. Not urgent — flagging for awareness."
     }
   ],
   "dogfoodReport": {
     "governanceDenialsThisRun": 0,
     "unexpectedBlocks": [],
     "unexpectedAllows": [],
-    "status": "clean — git, gh, bash operations all executed without denial."
+    "status": "clean — git, bash operations executed without denial."
   },
   "nextActions": [
     "site-builder: file GitHub issue for hero copy update (v2.10 features) once CHANGELOG is current",
