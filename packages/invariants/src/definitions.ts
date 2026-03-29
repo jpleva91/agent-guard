@@ -70,6 +70,12 @@ export interface SystemState {
   prAuthors?: string[];
   /** GitHub username of the current agent (from persona or GH_USER env) */
   agentGitHubUser?: string;
+  /**
+   * Configurable limit for aggregate unique files written across all repos in a session.
+   * The cross-repo-blast-radius invariant fires when sessionWrittenFiles.length exceeds this.
+   * Default: 50 files.
+   */
+  crossRepoBlastRadiusLimit?: number;
 }
 
 /** Patterns matched as substrings (case-insensitive) against file paths. */
@@ -1974,6 +1980,31 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         actual: hasNoVerify
           ? `--no-verify bypass detected in: ${command.slice(0, 100)}`
           : 'No --no-verify flag',
+      };
+    },
+  },
+
+  {
+    id: 'cross-repo-blast-radius',
+    name: 'Cross-Repo Blast Radius',
+    description:
+      'The cumulative number of unique files written across all repos in a session must not exceed the configured limit',
+    severity: 4,
+    check(state) {
+      const files = state.sessionWrittenFiles ?? [];
+      if (files.length === 0) {
+        return {
+          holds: true,
+          expected: 'N/A',
+          actual: 'No files written this session',
+        };
+      }
+      const limit = state.crossRepoBlastRadiusLimit ?? 50;
+      const count = files.length;
+      return {
+        holds: count <= limit,
+        expected: `At most ${limit} unique files written across all repos this session`,
+        actual: `${count} unique files written this session`,
       };
     },
   },

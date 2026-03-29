@@ -8,7 +8,7 @@ The system has one architectural spine: the **canonical event model**. All syste
 
 **Key characteristics:**
 - Governed action kernel: propose → normalize → evaluate → execute → emit
-- 24 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, no skill modification, no scheduled task modification, credential file creation, package script injection, lockfile integrity, recursive operation guard, large file write, CI/CD config modification, permission escalation, governance self-modification, container config modification, environment variable modification, network egress, destructive migration, transitive effect analysis, IDE socket access, commit scope guard, script execution tracking, no-verify-bypass)
+- 25 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, no skill modification, no scheduled task modification, credential file creation, package script injection, lockfile integrity, recursive operation guard, large file write, CI/CD config modification, permission escalation, governance self-modification, container config modification, environment variable modification, network egress, destructive migration, transitive effect analysis, IDE socket access, commit scope guard, script execution tracking, no-verify-bypass, cross-repo-blast-radius)
 - YAML/JSON policy format with pattern matching, scopes, and branch conditions
 - Escalation tracking: NORMAL → ELEVATED → HIGH → LOCKDOWN
 - SQLite event persistence for audit trail and replay (JSONL export still supported)
@@ -73,7 +73,7 @@ packages/
 │   ├── policy-trust.ts         # Policy trust verification
 │   └── yaml-loader.ts          # YAML policy parser
 ├── invariants/src/             # @red-codes/invariants — Invariant system
-│   ├── definitions.ts          # 24 built-in invariant definitions
+│   ├── definitions.ts          # 25 built-in invariant definitions
 │   └── checker.ts              # Invariant evaluation engine
 ├── matchers/src/               # @red-codes/matchers — Structured matchers (KE-1)
 │   ├── path-matcher.ts         # Glob-based path matching (picomatch)
@@ -229,7 +229,7 @@ The kernel loop is the core of AgentGuard. Every agent action passes through it:
 1. Agent proposes action (Claude Code tool call → `RawAgentAction`)
 2. AAB normalizes intent (tool → action type, detect git/destructive commands)
 3. Policy evaluator matches rules (deny/allow with scopes, branches, limits)
-4. Invariant checker verifies system state (24 defaults)
+4. Invariant checker verifies system state (25 defaults)
 5. If allowed: execute via adapter (file/shell/git handlers)
 6. Emit lifecycle events: `ACTION_REQUESTED` → `ACTION_ALLOWED/DENIED` → `ACTION_EXECUTED/FAILED`
 7. Sink all events to SQLite for audit trail
