@@ -1,20 +1,20 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "KE-4: Change default enforcement mode from guide to monitor — zero-friction onboarding (#1359)",
+    "goal": "KE-6: agentguard ci-gate — GitHub Action for governance checks (#1218)",
     "issues": [
-      1359
+      1218
     ]
   },
   "assignments": {
     "senior": {
-      "issue": 1359,
-      "title": "Change default enforcement mode from guide to monitor (#1359)",
+      "issue": 1218,
+      "title": "agentguard ci-gate — GitHub Action for governance checks (#1218)",
       "status": "ready",
       "branch": null,
       "pr": null,
-      "claimedAt": "2026-03-29T15:10:00Z",
-      "note": "KE-3 complete. PR #1361 merged (closes #1341 + #1322). New sprint KE-4: change claude-init wizard default from 'guide' to 'monitor' (claude-init.ts:194), update agentguard.yaml template (line 13, currently 'educate'), update README + site messaging. Conference deadline May 6."
+      "claimedAt": "2026-03-29T18:15:00Z",
+      "note": "KE-5 complete. PR #1391 merged (closes #1376 — worktree binary fallback). New sprint KE-6: ship ci-gate GitHub Action wrapping go binary ci-check command. Conference deadline May 6. Scope: composite GitHub Action in actions/ci-gate/, agentguard.yaml policy input, governance summary PR comment, cloud dashboard reporting. Go binary ci-check already exists. Label needs:refinement — senior should spike and define checklist before starting."
     }
   },
   "blockers": [],
@@ -25,17 +25,17 @@
     "prs": []
   },
   "health": "green",
-  "healthReason": "KE-3 sprint complete. All 5 issues resolved. PR #1361 merged. No squad PRs open. No blockers. KE-4 sprint assigned: #1359 (enforcement mode default change).",
+  "healthReason": "KE-5 complete. PR #1391 merged (closes #1376 — worktree binary ESM fallback). PR #1389 (prior EM report) merged. KE-6 sprint assigned: #1218 (ci-gate GitHub Action, conference demo May 6). 0 open squad PRs. 0 blockers.",
   "testHealth": {
-    "total": 4129,
-    "passed": 4129,
+    "total": 949,
+    "passed": 949,
     "failed": 0,
-    "packages": 19,
-    "lastRun": "2026-03-25T23:05:00.000Z",
+    "packages": "CLI + bootstrap tests",
+    "lastRun": "2026-03-29T17:40:46Z",
     "status": "all_passing",
-    "note": "Last full run 2026-03-25. QA squad overdue. PR #1361 CI verified 796/796 passing."
+    "note": "From PR #1391 CI run (949/949). Full workspace test run last confirmed 2026-03-25 (4129/4129). QA squad overdue for fresh run."
   },
-  "lastEmRun": "2026-03-29T15:10:00.000Z",
+  "lastEmRun": "2026-03-29T18:15:00Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-29T15:10:00Z"
+  "updatedAt": "2026-03-29T18:15:00Z"
 }

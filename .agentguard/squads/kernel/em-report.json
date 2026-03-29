@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-03-29T15:10:00.000Z",
+  "generatedAt": "2026-03-29T18:15:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
   "health": "green",
-  "healthReason": "KE-3 sprint COMPLETE — all 5 issues resolved. PR #1361 merged (closes #1341 + #1322). No open squad PRs. No blockers. Next sprint KE-4 (#1359: default enforcement mode monitor) ready to begin.",
-  "summary": "KE-3 sprint closed out this cycle. PR #1361 (bootstrap hardening: node_modules/.modules.yaml sentinel + trailing test-f binary check) merged with 4/4 CI green, closing #1341 and #1322. PR #1303 (KE-2 Go kernel, conflicting) closed — issues #955/#957 already resolved. No P0/P1 issues open. New sprint KE-4 identified: change default enforcement mode from guide to monitor (#1359). PR #1371 (bootstrap rtk-prefix fix, CI green) flagged for architect review — no squad ownership but closes dogfood #1347.",
+  "healthReason": "KE-5 complete — PR #1391 merged (worktree binary ESM fallback, closes #1376). PR #1389 (prior EM report) merged. 0 open squad PRs. 0 blockers. KE-6 sprint assigned: #1218 (ci-gate GitHub Action, May 6 conference deadline).",
+  "summary": "Arrived to find KE-4 and KE-5 already completed by prior cycles. PR #1391 (kernel-sr fix for #1376: silent governance failure in worktrees due to ERR_MODULE_NOT_FOUND) was already merged at 18:06Z with 4/4 CI green. Merged PR #1389 (prior EM cycle report, 4/4 CI green). Identified KE-6 sprint anchor: #1218 (agentguard ci-gate GitHub Action, P0 urgent, conference demo May 6). Two swarm-wide P0 health issues (#1319, #1289) remain open — require human action (dead PIDs, cron collisions, API quota exhaustion). Not kernel-specific; escalated to human.",
   "sprintTransition": {
-    "completed": "KE-3",
-    "completedIssues": [1316, 1341, 1322, 1325, 1332],
-    "next": "KE-4",
-    "nextGoal": "Change default enforcement mode from guide to monitor — zero-friction onboarding (#1359)"
+    "completed": "KE-5",
+    "completedIssues": [1376],
+    "next": "KE-6",
+    "nextGoal": "agentguard ci-gate — GitHub Action for governance checks (#1218)"
   },
   "prQueue": {
     "open": 0,
@@ -17,16 +17,14 @@
   },
   "mergedThisCycle": [
     {
-      "number": 1361,
-      "title": "fix(bootstrap): harden SessionStart install + build detection (#1341, #1322)",
-      "note": "Merged with 4/4 CI green. Closes #1341 (pnpm .modules.yaml sentinel) + #1322 (trailing test-f binary check). 796 tests passing, 38 pre-existing failures (no regressions)."
-    }
-  ],
-  "closedThisCycle": [
+      "number": 1391,
+      "title": "fix(bootstrap): fall back to main worktree binary when local binary fails (closes #1376)",
+      "note": "Already merged at 18:06Z by jpleva91. 4/4 CI green (CodeQL, analyze, lint, test-and-build). 949 CLI tests passing. Closes #1376 — silent governance failure in git worktrees when local ESM binary crashes with ERR_MODULE_NOT_FOUND."
+    },
     {
-      "number": 1303,
-      "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
-      "note": "Closed (not merged). Was conflicting and stale — issues #955/#957 already closed in prior cycle."
+      "number": 1389,
+      "title": "chore(kernel-em): EM cycle report 2026-03-29T17:22Z",
+      "note": "Merged this cycle. 4/4 CI green. Prior EM cycle state update."
     }
   ],
   "loopGuards": {
@@ -45,66 +43,87 @@
     }
   },
   "triage": {
-    "p0Issues": 0,
+    "p0Issues": 2,
     "p1Issues": 0,
     "newAssignments": [
       {
         "agent": "senior",
-        "issue": 1359,
-        "title": "[kernel] Change default enforcement mode from guide to monitor",
-        "note": "KE-4 sprint anchor. Product decision with May 6 conference deadline. Scope: claude-init wizard (line 194), agentguard.yaml template (line 13, currently 'educate'), README quick start, site messaging. Small surface area, high leverage."
+        "issue": 1218,
+        "title": "agentguard ci-gate — GitHub Action for governance checks",
+        "note": "KE-6 sprint anchor. Conference demo asset + distribution channel. May 6 deadline. Go binary ci-check already exists — composite action wrapping it is well-scoped. Label needs:refinement; senior should spike checklist before coding. Priority: P0 urgent per issue."
       }
     ],
     "notableIssues": [
       {
-        "number": 1359,
-        "title": "[kernel] Change default enforcement mode from guide to monitor",
-        "label": "enhancement",
+        "number": 1218,
+        "title": "agentguard ci-gate — GitHub Action for governance checks",
+        "label": "enhancement, needs:refinement",
         "status": "open",
         "pr": null,
-        "note": "KE-4 sprint anchor. Current wizard default is 'guide' (claude-init.ts:194). agentguard.yaml default is 'educate'. Issue requests 'monitor' as default — visibility first, enforcement opt-in. Conference demo May 6."
+        "note": "KE-6 anchor. Composite GitHub Action wrapping go binary ci-check. Posts governance summary as PR comment. Reports to cloud dashboard. Conference demo May 6."
       },
       {
-        "number": 1371,
-        "title": "fix(bootstrap): strip rtk prefix before bootstrap allowlist matching",
-        "label": null,
+        "number": 1319,
+        "title": "Swarm Health Alert — 2026-03-29 (P0)",
+        "label": "priority:P0, source:swarm-health-agent",
         "status": "open",
-        "pr": 1371,
-        "note": "CI green (4/4), MERGEABLE, no approval. Tier C from copilot-cli squad. Closes dogfood #1347. Flagged for architect review before merge."
+        "pr": null,
+        "note": "Swarm-wide P0: 85.7% agents stuck (133 queued vs 32 max_workers), 18 dead PIDs, 2 cron collision groups. Human action required: git worktree prune, PID cleanup, cron fix. 5th consecutive cycle unresolved. NOT kernel-specific — escalated to human."
       },
       {
-        "number": 1347,
-        "title": "[dogfood] Bootstrap exemption blocked when rtk prefix used",
-        "label": "dogfood",
+        "number": 1289,
+        "title": "Swarm Health Alert — 2026-03-29 (credit exhaustion)",
+        "label": "priority:P0, source:swarm-health-agent",
         "status": "open",
-        "pr": 1371,
-        "note": "Covered by PR #1371 (CI green). Waiting on review."
+        "pr": null,
+        "note": "26.5% agent failures from API credit/quota exhaustion across all four driver types. pr-merger-agent-cloud rapid-retry storm (81 total failures). Human action: replenish credits, fix circuit breaker."
+      },
+      {
+        "number": 1217,
+        "title": "[kernel] agentguard wt — fast worktree lifecycle management (Go)",
+        "label": "enhancement, needs:refinement",
+        "status": "open",
+        "pr": null,
+        "note": "Strong KE-7 candidate. Prevents recurrence of repo corruption from stale/symlink worktrees. Urgent priority signal in issue. Needs:refinement — not ready for immediate implementation."
       }
     ]
   },
   "blockers": [],
-  "escalations": [],
+  "escalations": [
+    {
+      "severity": "warning",
+      "target": "human",
+      "description": "Swarm P0 #1319 now in 5th consecutive unresolved cycle: 18 dead PIDs, 2 cron collision groups, 85.7% agents queued. Requires human to run git worktree prune, clean /tmp PIDs, fix cron schedule.",
+      "issue": 1319
+    },
+    {
+      "severity": "info",
+      "target": "human",
+      "description": "Swarm P0 #1289: API credit/quota exhaustion caused 26.5% agent failures (155 total). pr-merger-agent-cloud circuit breaker not preventing rapid retries. Human action: replenish credits for claude-code, copilot, gemini, codex.",
+      "issue": 1289
+    }
+  ],
   "escalationRules": {
     "triggered": {
       "twoPlusFailingCI": false,
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "No escalation triggers fired. All clear."
+    "notes": "No kernel-squad escalation triggers fired. P0 swarm health issues are infrastructure-level and require human action — not resolvable by kernel squad."
   },
   "metrics": {
     "prsOpened": 0,
-    "prsMerged": 1,
-    "prsClosed": 1,
-    "issuesClosed": 2,
+    "prsMerged": 2,
+    "prsClosed": 0,
+    "issuesClosed": 0,
     "governanceDenials": 0,
     "retries": 0
   },
   "dogfoodObservations": [
     {
-      "severity": "info",
-      "description": "Worktree build failure at session start: turbo cache miss for @red-codes/agentguard caused fresh tsc compilation, which failed because node_modules workspace symlinks are absent in this worktree (test -d node_modules passes on empty dir — old pre-#1361 hook). Pre-existing dist/bin.js masked the failure. New worktrees created after #1361 merge will use .modules.yaml sentinel and pnpm install --force, avoiding this. Existing worktrees remain affected until recreated.",
-      "related": 1341
+      "severity": "resolved",
+      "description": "Worktree governance silent failure (#1376) — FIXED by PR #1391. claude-hook-wrapper.sh now probes local binary with --version; if it crashes (ERR_MODULE_NOT_FOUND for @red-codes/storage), falls back to main worktree binary via git worktree list --porcelain. Fail-safe: if no fallback, clears AGENTGUARD_BIN to trigger bootstrap exemption handler.",
+      "related": 1376
     },
     {
       "severity": "info",
@@ -113,12 +132,12 @@
     }
   ],
   "testHealth": {
-    "total": 796,
-    "passed": 796,
+    "total": 949,
+    "passed": 949,
     "failed": 0,
-    "preExistingFailed": 38,
     "packages": "CLI + bootstrap tests",
+    "lastRun": "2026-03-29T17:40:46Z",
     "status": "passing",
-    "note": "From PR #1361 CI run. Full workspace test run last confirmed 2026-03-25 (4129/4129). QA squad overdue for fresh run — no squad test run since 2026-03-25."
+    "note": "From PR #1391 CI run (949/949 passing). Full workspace test run last confirmed 2026-03-25 (4129/4129). QA squad overdue for fresh run — no full run since 2026-03-25."
   }
 }
