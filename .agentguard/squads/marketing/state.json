@@ -1,34 +1,27 @@
 {
   "squad": "marketing",
   "sprint": {
-    "goal": "v2.9.x announcement, swarm section audit, OWASP post publication, unblock content agents",
-    "issues": ["#934", "#1259", "#1260"]
+    "goal": "v2.9.x announcement content (#1260) — content agents now unblocked",
+    "issues": ["#1260"]
   },
   "assignments": {
-    "marketing-launch-agent": ["#1260", "#934"],
-    "em-direct": ["#1259"]
+    "marketing-launch-agent": ["#1260"],
+    "em-direct": []
   },
-  "blockers": [
-    {
-      "issue": "#995",
-      "description": "Governance catch-22 blocks content agents — pnpm install blocked by hook before kernel exists",
-      "owner": "ops/hq-em",
-      "severity": "high",
-      "cyclesBlocked": 5,
-      "escalation": "Will set health=red if unresolved next cycle"
-    }
-  ],
+  "blockers": [],
   "prQueue": {
     "open": 2,
-    "reviewed": 0,
-    "mergeable": 0,
-    "prNumbers": ["#1255", "#1258"],
-    "notes": "#1255 matchers fix (kernel squad), #1258 site stats fix (marketing, awaiting CI)"
+    "reviewed": 1,
+    "mergeable": 2,
+    "prNumbers": ["#1338", "#1349"],
+    "notes": "#1338 Live Office README promotion (EM reviewed, accuracy note posted — align '100+' to site's '120', otherwise LGTM); #1349 site stats sync (event kinds 47→48, og+JSON-LD invariants 22→24, CLI heading 29→33)"
   },
   "recentlyCompleted": [
-    { "issue": "#925", "title": "OWASP blog post", "closedDate": "2026-03-28", "note": "Draft at docs/blog/owasp-agentic-top10-agentguard.md — ready for LinkedIn" },
+    { "issue": "#925", "title": "OWASP blog post", "closedDate": "2026-03-28", "note": "Draft at docs/blog/owasp-agentic-top10-agentguard.md — ready for LinkedIn publication" },
     { "issue": "#1084", "title": "User capture funnel v3.0", "closedDate": "2026-03-28", "note": "Confirmed closed" },
-    { "pr": "#1258", "title": "fix(site): sync stats to v2.9.0", "mergedDate": null, "note": "10 stale references fixed — invariants 24, patterns 93, event kinds 47" }
+    { "issue": "#1259", "title": "Swarm section audit — '26 agents across 5 tiers' stale", "closedDate": "2026-03-29", "note": "Closed — site updated to 120 agents / 4 drivers" },
+    { "issue": "#934", "title": "v2.7.x announcement (superseded by #1260)", "closedDate": "2026-03-29", "note": "Closed by marketing-em — too far behind current v2.9.1 state" },
+    { "issue": "#995", "title": "Governance catch-22 content agent blocker", "closedDate": "2026-03-29", "note": "Closed upstream — content pipeline is now unblocked" }
   ],
-  "updatedAt": "2026-03-28T20:15:00.000Z"
+  "updatedAt": "2026-03-29T20:00:00.000Z"
 }

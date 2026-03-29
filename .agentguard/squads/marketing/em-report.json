@@ -1,99 +1,74 @@
 {
   "squad": "marketing",
-  "timestamp": "2026-03-28T20:15:00.000Z",
-  "health": "yellow",
-  "summary": "Site accuracy pass complete — 10 stale stat references fixed across site/index.html (PR #1258). Sprint issues #925 and #1084 confirmed closed; #934 superseded by new v2.9.x announcement issue (#1260). Governance catch-22 (#995) still blocking content agents for 5th consecutive cycle. v2.9.1 shipped without announcement content.",
+  "timestamp": "2026-03-29T20:00:00.000Z",
+  "health": "green",
+  "summary": "Major unblock cycle. #995 (governance catch-22) resolved — content agents unblocked after 5 consecutive blocked cycles. #1259 (swarm section audit) closed — site updated to '120 agents / 4 drivers'. #934 (v2.7.x announcement) closed as superseded. New site stats PR #1349 filed correcting event kinds 47→48, og/JSON-LD invariants 22→24, CLI heading 29→33. PR #1338 reviewed (Live Office README promotion — LGTM with agent count alignment note). Sprint refocused on #1260 (v2.9.x announcement) as sole active issue.",
   "contentPipeline": {
     "drafts": 1,
     "published": 0,
-    "scheduled": 2,
-    "notes": "OWASP blog post at docs/blog/owasp-agentic-top10-agentguard.md — ready to publish. v2.9.x announcement needs drafting (#1260)."
+    "scheduled": 1,
+    "notes": "OWASP blog post at docs/blog/owasp-agentic-top10-agentguard.md — complete, ready for LinkedIn. v2.9.x announcement (#1260) now unblocked and assigned to marketing-launch-agent."
   },
   "siteAlignment": {
-    "status": "improved",
+    "status": "improving",
     "fixedThisCycle": [
-      "PR #1258: og:description 22 → 24 invariants",
-      "PR #1258: JSON-LD description 22 → 24 invariants",
-      "PR #1258: Hero paragraph 22 → 24 built-in safety checks",
-      "PR #1258: Production-Grade Kernel card: 22 invariants/87 patterns → 24/93",
-      "PR #1258: Policy section bullet: 22 invariants + 87 patterns → 24 + 93",
-      "PR #1258: Safety Invariants card heading: 21 → 24",
-      "PR #1258: Destructive Patterns card heading: 87 → 93",
-      "PR #1258: Full Audit Trail card: 49 → 47 event kinds",
-      "PR #1258: Pipeline Emit stage: 49 → 47 event kinds",
-      "PR #1258: Invariants section h2: 21 → 24 Built-in Invariants"
+      "PR #1349: Event kinds counter: 47 → 48 (UnknownCommandWarn added to schema)",
+      "PR #1349: og:description: '22 invariants' → '24 invariants'",
+      "PR #1349: JSON-LD description: '22 invariants' → '24 invariants'",
+      "PR #1349: Hero paragraph: '22 built-in safety checks' → '24 built-in safety checks'",
+      "PR #1349: CLI section heading: '29 CLI Commands' → '33 CLI Commands'",
+      "PR #1349: Added team-report, codex-init, gemini-init, goose-init, trust to CLI list"
     ],
     "staleContent": [
-      "Swarm section: '26 agents across 5 tiers' — actual is 9 squads (agent count unverified, audit filed as #1259)",
-      "No version badge — current release is v2.9.1, site has no release badge"
+      "PR #1338 agent count inconsistency: README says '100+', site says '120' — review comment posted, should align before merge"
     ],
     "dataVerification": {
-      "invariants": "24 — verified: grep 'name:' packages/invariants/src/definitions.ts | wc -l",
-      "destructivePatterns": "93 — verified: wc on packages/core/src/data/destructive-patterns.json",
-      "eventKinds": "47 — verified: grep '^export const.*EventKind' packages/events/src/schema.ts | wc -l",
-      "tests": "4394 — from QA report 2026-03-28",
-      "actionTypes": "41 — from PR #1224"
+      "invariants": "24 — verified: grep 'name:' packages/invariants/src/definitions.ts",
+      "destructivePatterns": "93 — verified: grep -c pattern packages/core/src/data/destructive-patterns.json",
+      "eventKinds": "48 — verified: grep -c EventKind packages/events/src/schema.ts (was 47; UnknownCommandWarn added)",
+      "actionTypes": "41 — unchanged",
+      "cliCommands": "37 files; ~33 top-level visible commands (cloud-login.ts is a cloud subcommand)"
     }
   },
   "sprintIssues": {
-    "closedPreviousCycles": [
-      { "issue": "#925", "title": "OWASP Agentic Top 10 blog post", "note": "Confirmed closed. Draft at docs/blog/owasp-agentic-top10-agentguard.md — ready for LinkedIn publication." },
-      { "issue": "#1084", "title": "User capture funnel (v3.0 ROADMAP)", "note": "Confirmed closed." },
-      { "issue": "#938", "title": "User capture funnel v1", "note": "Previously closed." },
-      { "issue": "#1007", "title": "Demo video placeholder", "note": "Previously closed." },
-      { "issue": "#1004", "title": "Weekly content pack", "note": "Previously closed." }
+    "closedThisCycle": [
+      { "issue": "#934", "title": "v2.7.x announcement", "note": "Superseded by #1260. Too far behind v2.9.1 to be useful." },
+      { "issue": "#995", "title": "Governance catch-22 content agent blocker", "note": "Resolved upstream. Content pipeline unblocked after 5 cycles." },
+      { "issue": "#1259", "title": "Swarm section audit — '26 agents stale'", "note": "Closed — site updated to 120 agents / 4 governed drivers." }
     ],
     "active": [
-      { "issue": "#934", "title": "v2.7.x announcement", "status": "open — superseded", "note": "Scope too old; v2.9.1 shipped. Close after #1260 drafts v2.9.x announcement." },
-      { "issue": "#1259", "title": "Swarm section audit — 26 agents stale", "status": "new", "note": "Needs squad manifest audit before fix." },
-      { "issue": "#1260", "title": "v2.9.x announcement content", "status": "new", "note": "v2.9.0 wildcard fix is newsworthy — security angle available." }
+      {
+        "issue": "#1260",
+        "title": "v2.9.0/v2.9.1 announcement content",
+        "status": "open — unblocked",
+        "note": "Assigned to marketing-launch-agent. Key angles: wildcard policy fix (action '*' now covers shell.exec, was a silent gap), safe-subshell allowlist, security upgrade CTA for anyone using wildcard policies before v2.9.0."
+      }
     ]
   },
   "prQueue": {
     "open": 2,
-    "reviewable": 1,
-    "mergeable": 0,
-    "prNumbers": ["#1255", "#1258"],
-    "notes": "#1255 is kernel/matchers (not marketing); #1258 is site stats fix (marketing, awaiting CI)"
+    "reviewable": 2,
+    "mergeable": 2,
+    "prNumbers": ["#1338", "#1349"],
+    "notes": "#1338 Live Office README (EM-reviewed: LGTM, needs agent count alignment '100+' → '120' to match site); #1349 site stats sync (new this cycle, site-only PR, ci-skip-site.yml provides required checks)"
   },
-  "contentAccuracyAudit": {
-    "pattern": "3rd consecutive cycle with stale stats discovered — PR #1224 fixed stats bar but missed inline text references. Root cause: hardcoded numbers in 10+ locations with no build-time sync. Recommend: add a script that reads invariant/pattern counts from source and patches index.html at deploy time.",
-    "risk": "medium — stale numbers are embarrassing but not product safety issues"
-  },
-  "blockers": [
-    {
-      "severity": "high",
-      "issue": "#995",
-      "description": "Content agents blocked by governance catch-22: hook blocks pnpm install before kernel exists",
-      "cyclesBlocked": 5,
-      "impact": "OWASP post, v2.8.x/v2.9.x announcements all in draft limbo. Content pipeline silent.",
-      "requiredAction": "Human to run pnpm install in content-agent worktree, or ops to patch hook to allow bootstrapping. 5 consecutive cycles — escalating to red next cycle."
-    },
-    {
-      "severity": "medium",
-      "issue": "#1259",
-      "description": "Swarm section shows '26 agents across 5 tiers' — actual is 9 squads",
-      "impact": "Content accuracy risk on a key marketing section",
-      "requiredAction": "Audit squad manifests for actual agent count, then update site"
-    }
-  ],
+  "blockers": [],
   "escalations": [
-    "HIGH: Content agents silent for 5 consecutive cycles. #995 unresolved. Human intervention required.",
-    "MEDIUM: OWASP blog post draft complete at docs/blog/ — needs human to publish to LinkedIn.",
-    "MEDIUM: v2.9.1 shipped with a significant policy fix (wildcard → shell.exec enforcement). Security-angle announcement in #1260 should be prioritized.",
-    "LOW: Close #934 (v2.7.x) — superseded by #1260 (v2.9.x)."
+    "MEDIUM: OWASP blog post complete at docs/blog/owasp-agentic-top10-agentguard.md — needs human to publish to LinkedIn. No technical blocker.",
+    "LOW: PR #1338 — agent count inconsistency (README '100+' vs site '120'). Review comment posted.",
+    "LOW: PR #1349 site stats — awaiting CI. Should auto-merge once ci-skip-site.yml checks pass."
   ],
   "productInsights": [
-    "v2.9.1 is current release. Wildcard policy fix is the biggest marketing story: 'if you use action: \"*\" in your policy, you were not blocking shell commands until v2.9.0. Upgrade now.' Strong security-angle CTA.",
-    "24 invariants (up from 22 last announced). No-env-var-modification and credential-file-creation are new additions — enterprise compliance angle.",
-    "9 active squads = credible 'autonomous swarm' story, but site still overclaims 26/5. Fix before any swarm-focused content.",
-    "OWASP Agentic Top 10 blog post is complete and ready — highest-leverage publish action available right now."
+    "Content agents unblocked for first time in 5 cycles — marketing-launch-agent can now work on #1260 without manual intervention.",
+    "v2.9.1 is current release. Wildcard policy fix is the best marketing angle: users who wrote 'action: \"*\"' thought they were blocking everything, but shell.exec was not covered until v2.9.0. Security-angle CTA drives upgrades.",
+    "New adapters shipped: codex-cli, gemini-cli, goose — now reflected in site CLI section (PR #1349). Widens 'works with' story.",
+    "Event kinds now 48 (was 47). Recurring stat drift pattern continues — recommend build-time sync script to auto-patch site/index.html from source counts at deploy time."
   ],
   "dogfoodReport": {
     "governanceDenialsThisRun": 0,
     "unexpectedBlocks": [],
     "unexpectedAllows": [],
-    "status": "clean — no governance issues encountered this run. All operations (git, gh pr, gh issue) executed without denial."
+    "status": "clean — no governance issues this run. git, gh pr, gh issue, and site file writes all executed without denial. ci-skip-site.yml correctly allows site-only PR creation without full CI gate."
   },
   "agentIdentity": "claude-code:sonnet:marketing:em"
 }
