@@ -1,100 +1,116 @@
 {
-  "generatedAt": "2026-03-29T17:22:00.000Z",
+  "generatedAt": "2026-03-29T20:20:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
-  "health": "green",
-  "healthReason": "KE-4 sprint COMPLETE — PR #1374 merged, closes #1359 (default enforcement mode guide→monitor). No open squad PRs. No blockers. KE-5 sprint assigned: #1376 (worktree binary resilience). First-party dogfood: this EM run confirmed the #1376 bug — governance was silently broken during this cycle.",
-  "summary": "KE-4 closed this cycle. PR #1374 (feat: change default enforcement mode from guide to monitor, closes #1359) was merged between the previous EM run (15:10Z) and this run (17:22Z). PR #1371 (bootstrap rtk prefix fix, closes #1347) also merged — was flagged in last cycle as CI green, awaiting architect review. No P0/P1 issues open for kernel squad. New sprint KE-5 assigned: #1376 (worktree binary crash, ERR_MODULE_NOT_FOUND). FIRST-PARTY DOGFOOD: this EM session confirmed the #1376 bug — local bin.js exists but crashes at runtime, governance is silently broken for the entire run. Main worktree binary confirmed working (v2.10.3). Fix target: scripts/claude-hook-wrapper.sh binary validation + fallback. PR #1388 (studio, conference capture funnel) flagged for human review: MERGEABLE, 4/4 CI green, no approval yet. Hard deadline April 10.",
+  "health": "yellow",
+  "healthReason": "KE-5 COMPLETE (PR #1400 merged). New P0 PR #1414 (no-self-approve-pr) open, CI in progress — not blocking but unresolved. Worktree build failure at session start (missing pnpm workspace symlinks) — different class than #1376 but same governance blindspot category. #1402 (worker pool dead) is cross-squad P0, monitored. Invariant coverage at 50% — below 75% target, 8 dormant invariants need wiring audit. Health yellow due to: build failure on startup + P0 PR in-flight.",
+  "summary": "KE-5 fully closed this cycle. PR #1400 (claudeHookWrapper template probe, closes second vector of #1376) merged — confirmed via gh. Issue #1376 state: CLOSED. Sprint KE-5 done. New sprint KE-6 assigned: invariant coverage hardening (fix governance-self-modification read-only FP, cross-repo-blast-radius, dormant invariant audit). First-party dogfood: this EM run started with a build failure — pnpm workspace symlinks missing in apps/cli/node_modules/@red-codes/ (different root cause than #1376: pnpm install not run in worktree, not ERR_MODULE_NOT_FOUND at runtime). Fixed by running pnpm install --frozen-lockfile. Bootstrap guard `test -d node_modules` insufficient — node_modules existed but workspace symlinks were absent. Analytics-invariant-researcher filed #1407 (invariant coverage 50%, 12 dormant, 5 recs) and #1408 (governance-self-modification blocks read-only SQLite). PR #1414 (no-self-approve-pr P0 invariant, 16 tests) opened by coder, CI in progress. Closed stale conflicting PR #1396.",
   "sprintTransition": {
-    "completed": "KE-4",
-    "completedIssues": [1359],
-    "completedPRs": [1374],
-    "next": "KE-5",
-    "nextGoal": "Worktree governance binary resilience — fallback to main worktree on ERR_MODULE_NOT_FOUND (#1376)"
+    "completed": "KE-5",
+    "completedIssues": [1376],
+    "completedPRs": [1391, 1400],
+    "next": "KE-6",
+    "nextGoal": "Invariant coverage hardening — fix governance-self-modification read-only FP (#1027/#1408), implement cross-repo-blast-radius invariant, audit 8 dormant-concerning invariants from #1407"
   },
   "prQueue": {
-    "open": 0,
-    "kernelPRs": [],
-    "repoPRsNeedingAttention": [
+    "open": 1,
+    "kernelPRs": [
       {
-        "number": 1388,
-        "title": "docs(readme): capture funnel CTA — GitHub stars badge, Get Started, cloud links",
-        "squad": "studio",
+        "number": 1414,
+        "title": "feat(invariants): add no-self-approve-pr invariant (#909)",
+        "author": "jpleva91",
+        "status": "CI_IN_PROGRESS",
+        "ciStarted": "2026-03-29T20:18:34Z",
         "mergeable": "MERGEABLE",
-        "ciStatus": "4/4 green",
-        "approval": "none",
-        "note": "Ready for human review/approval. Conference capture funnel (closes workspace#234). Hard deadline April 10."
-      },
-      {
-        "number": 1349,
-        "title": "fix(site): sync stats — event kinds 47→48, invariants 22→24",
-        "squad": "site",
-        "mergeable": "CONFLICTING",
-        "note": "Needs rebase before it can be reviewed."
-      },
-      {
-        "number": 1320,
-        "title": "docs: sync documentation with codebase state (v2.10.2)",
-        "squad": "docs",
-        "mergeable": "MERGEABLE",
-        "ciStatus": "analyze + CodeQL only (no test-and-build)",
-        "note": "Docs-only path — likely intentional CI skip. Needs human verification before merge."
+        "note": "P0 invariant (severity 5). 16 new tests, raises invariant count 24→25. Adds github.pr.review + github.pr.approve action types. Kernel pre-fetch helpers for PR author + agent GitHub user. Well-structured — merge when CI passes."
       }
-    ]
+    ],
+    "mergedThisCycle": [
+      {
+        "number": 1400,
+        "title": "fix(bootstrap): add worktree binary probe to claudeHookWrapper template (#1376)",
+        "note": "KE-5 sprint goal. Template parity for shell script probe. +1 test (950 CLI tests). Merged between previous and this EM run."
+      }
+    ],
+    "closedThisCycle": [
+      {
+        "number": 1396,
+        "title": "chore(kernel-em): EM cycle report 2026-03-29T18:15Z",
+        "reason": "Stale. CONFLICTING merge state. Superseded by this run."
+      }
+    ],
+    "repoPRsNeedingAttention": []
   },
-  "mergedThisCycle": [
-    {
-      "number": 1374,
-      "title": "feat(init): change default enforcement mode from guide to monitor (#1359)",
-      "note": "KE-4 sprint goal. Closes #1359. Merged between 15:10Z and 17:22Z EM runs."
-    },
-    {
-      "number": 1371,
-      "title": "fix(bootstrap): strip rtk prefix before bootstrap allowlist matching (closes #1347)",
-      "note": "Was flagged last cycle as CI green, awaiting architect review. Merged this cycle."
-    }
-  ],
   "triage": {
-    "p0Issues": 0,
-    "p1Issues": 0,
+    "p0Issues": 1,
+    "p1Issues": 4,
     "kernelIssuesReviewed": [
       {
-        "number": 1376,
-        "title": "[dogfood] Worktree CLI binary crashes with ERR_MODULE_NOT_FOUND for @red-codes/storage",
-        "priority": "high",
+        "number": 909,
+        "title": "Proposed invariant: no-self-approve-pr",
+        "priority": "P0",
         "assignedTo": "senior",
-        "sprintAnchor": "KE-5",
-        "note": "First-party confirmed in this EM run. Local bin.js fails --version probe with ERR_MODULE_NOT_FOUND for @red-codes/storage. Main worktree binary at /home/jared/agentguard-workspace/agent-guard/apps/cli/dist/bin.js works (v2.10.3). Scope: add binary validation probe in scripts/claude-hook-wrapper.sh after setting AGENTGUARD_BIN; if probe fails and we're in a worktree, fall back to git-worktree-list main path."
+        "sprintAnchor": "KE-6",
+        "note": "PR #1414 already in flight. CI in progress. Assign to KE-6 as first deliverable."
+      },
+      {
+        "number": 1027,
+        "title": "Bug: No Governance Self-Modification invariant has no escape hatch for intentional policy changes",
+        "priority": "P1",
+        "assignedTo": "senior",
+        "sprintAnchor": "KE-6",
+        "note": "Also reported as #1408 (read-only SQLite probe). Recommendation from #1407: introduce governance.read action type exempt from this invariant. Recurrent dogfood friction — blocks analytics agents."
+      },
+      {
+        "number": 1408,
+        "title": "[dogfood] no-governance-self-modification blocks read-only SQLite probe of agentguard.db",
+        "priority": "P1",
+        "assignedTo": null,
+        "sprintAnchor": "KE-6",
+        "note": "New dogfood instance of #1027. Will be resolved by #1027 fix."
+      },
+      {
+        "number": 1407,
+        "title": "Invariant Coverage Report — 2026-03-29 (50% coverage, 12 dormant, 5 new recommendations)",
+        "priority": "P1",
+        "assignedTo": "qa",
+        "sprintAnchor": "KE-6",
+        "note": "8 dormant-concerning invariants need wiring audit (blast-radius-limit, no-network-egress, transitive-effect-analysis, commit-scope-guard, no-container-config-modification, no-ide-socket-access, lockfile-integrity, no-package-script-injection). Also: cross-repo-blast-radius new gap (no issue yet — needs filing)."
       },
       {
         "number": 1385,
         "title": "feat: irreversible action detection — human confirmation gates for one-way operations",
-        "priority": "p2",
+        "priority": "P2",
         "assignedTo": null,
-        "sprintAnchor": "KE-6 (future)",
-        "note": "Good conference demo candidate. Extends blast radius foundation with first-class irreversibility concept. Kernel-native. Not blocking anything."
+        "sprintAnchor": "KE-7 (future)",
+        "note": "Good conference demo. Extends blast radius with first-class irreversibility. Prerequisite for #1384 (browser governance)."
       },
       {
         "number": 1384,
         "title": "feat: browser governance invariants — scope, state, and pacing for browser agents",
-        "priority": "p2",
+        "priority": "P2",
         "assignedTo": null,
-        "sprintAnchor": "KE-7 (future, umbrella)",
-        "note": "Computer-use positioning play for May 6 conference. Larger scope. #1385 (irreversible action) is a prerequisite."
+        "sprintAnchor": "KE-7 (umbrella)",
+        "note": "Computer-use positioning play. Requires #1385 as prerequisite."
       },
       {
         "number": 1381,
         "title": "feat: 6-tier evaluator chain — regex → sigma → CEL → SQL → ML → LLM",
-        "priority": "p3",
+        "priority": "P3",
         "assignedTo": null,
         "sprintAnchor": "backlog",
-        "note": "Research/harvest from Zenity architecture study. Hot path must stay <0.25ms p50. ML/LLM tiers are cloud-only."
+        "note": "Research/competitive harvest from Zenity architecture. Cloud-only for tiers 5-6. Hot path must stay <0.25ms p50."
       }
-    ]
+    ],
+    "newIssueToFile": {
+      "title": "feat(invariants): cross-repo-blast-radius invariant",
+      "priority": "P1",
+      "body": "Identified by analytics-invariant-researcher (#1407 Rec 4). Per-repo blast radius is 20 files; aggregate across repos in a session is unbounded. An agent touching 3 repos at 15 files each = 45 files, all under the per-repo limit but collectively high-impact. Requires session-level cross-repo file tracking (session ID already available). Severity 4. Label: priority:P1, squad:kernel."
+    }
   },
   "loopGuards": {
     "prBudget": {
-      "kernelOpen": 0,
+      "kernelOpen": 1,
       "max": 3,
       "pass": true
     },
@@ -108,44 +124,55 @@
     }
   },
   "blockers": [],
-  "escalations": [],
+  "escalations": [
+    {
+      "issue": 1402,
+      "title": "[P0] Worker pool dead — 32 stale PIDs, queue depth 46",
+      "squad": "ops",
+      "escalatedTo": "director",
+      "note": "Not kernel squad but cross-squad impact. Kernel agents in queue may be stuck. Monitoring."
+    }
+  ],
   "escalationRules": {
     "triggered": {
       "twoPlusFailingCI": false,
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "No escalation triggers fired. All clear."
+    "notes": "No kernel escalation triggers fired. Worker pool P0 (#1402) escalated to director — not kernel-originated."
   },
   "metrics": {
     "prsOpened": 0,
-    "prsMerged": 2,
-    "prsClosed": 0,
-    "issuesClosed": 2,
+    "prsMerged": 1,
+    "prsClosed": 1,
+    "issuesClosed": 1,
     "governanceDenials": 0,
     "retries": 0,
-    "note": "PR #1374 (KE-4 #1359) and PR #1371 (#1347) merged this cycle. Issues #1359 and #1347 closed."
+    "note": "PR #1400 merged (KE-5 done). PR #1396 closed (stale). Issue #1376 closed (KE-5 both vectors resolved). PR #1414 opened by coder (not this EM)."
   },
   "dogfoodObservations": [
     {
-      "severity": "high",
-      "issue": 1376,
-      "description": "FIRST-PARTY CONFIRMATION: This EM run (kernel-em-3647726) experienced the #1376 bug in production. `node apps/cli/dist/bin.js --version` crashes with ERR_MODULE_NOT_FOUND for @red-codes/storage. Startup build also failed (turbo cache miss for @red-codes/agentguard, 100+ TS2307 errors from missing workspace package type declarations). Result: ALL tool calls in this EM session were ungoverned. Main worktree binary at /home/jared/agentguard-workspace/agent-guard/apps/cli/dist/bin.js works (v2.10.3) — validated as the fallback target.",
+      "severity": "medium",
+      "description": "SESSION STARTUP BUILD FAILURE: This EM run (kernel-em-385392) started with a failing pnpm build. Root cause: apps/cli/node_modules/@red-codes/ workspace symlinks missing — pnpm install had not been run in this worktree after creation. The root node_modules/ directory existed (dev deps present), so bootstrap guard `test -d node_modules` passed silently. Fixed by running pnpm install --frozen-lockfile.",
       "reproducible": true,
-      "worktree": "kernel-em-3647726",
-      "proposedFix": "In scripts/claude-hook-wrapper.sh after setting AGENTGUARD_BIN: add a `node $BIN --version &>/dev/null` probe. If probe fails, resolve main worktree via `git worktree list --porcelain | head -1 | sed 's/^worktree //'` and use that binary instead. Must be silent, no output change, no new log lines."
+      "worktree": "kernel-em-385392",
+      "relatedIssue": 1376,
+      "classification": "Same class as #1376 (worktree package resolution failure) but different root cause: missing symlinks vs ERR_MODULE_NOT_FOUND. #1376 is closed; this variant may need a follow-up or the bootstrap guard should be strengthened.",
+      "proposedFix": "Bootstrap guard should check for workspace package resolution, not just directory existence. Suggestion: probe `node -e \"require('@red-codes/core')\" 2>/dev/null` in apps/cli after pnpm install step, or check for presence of apps/cli/node_modules/@red-codes/ explicitly."
     },
     {
       "severity": "info",
-      "description": "No governance denials observed (governance was broken for this session, so this is expected). No other anomalies.",
-      "related": null
+      "description": "no-governance-self-modification invariant blocking read-only SQLite analytics access — confirmed first-party (#1408). This EM run would have triggered the same block if it had queried agentguard.db during triage. KE-6 target.",
+      "related": 1408
     }
   ],
   "testHealth": {
-    "total": 4129,
-    "passed": 4129,
+    "total": 4614,
+    "passed": 4614,
     "failed": 0,
+    "packages": 18,
+    "lastRun": "2026-03-29T18:55:00.000Z",
     "status": "all_passing",
-    "note": "Last confirmed 2026-03-25. PR #1374 CI green (passing). QA squad overdue for fresh full run — no squad test run since 2026-03-25. Not blocking."
+    "note": "QA-confirmed full run 2026-03-29T18:55Z. +485 tests vs previous run (4129→4614). PR #1414 adds 16 more when merged (→4630)."
   }
 }
