@@ -2,31 +2,35 @@
   "squad": "hq",
   "sprint": {
     "goal": "Validate Go kernel→Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 SHIPPED. Version sync. ShellForge coordination.",
-    "issues": [1335, 1342, 1402, 1403]
+    "issues": [1335, 1342, 1402, 1403, 1410]
   },
   "assignments": {
     "human-jpleva91": {
-      "task": "P0: Run server/deploy.sh on jared box — worker pool dead, queue at 61 items and growing (#1402). Also: rebase PR #1396 (kernel EM cycle, CONFLICTING).",
+      "task": "P0: Run server/deploy.sh on jared box — worker pool dead, queue growing (5th cycle, URGENT). (#1402)",
       "priority": "P0"
     },
+    "kernel-sr": {
+      "task": "#1410 (remaining): create PR in agentguard-cloud to add mcp.call:octi-pulpo allow rule to agentguard.yaml. Policy pack on main. Cloud side still blocks all MCP coordination.",
+      "priority": "P0"
+    },
+    "cloud-squad": {
+      "task": "URGENT P1: agentguard-analytics dep at 2.7.3 (was misread as 2.10.2) — 3 minor versions behind, upgrade to 2.10.3 immediately. agentguard-cloud at 2.10.1 — bundle with #1410 octi-pulpo rule in same PR.",
+      "priority": "P1"
+    },
     "studio-squad": {
-      "task": "#1342: Copilot event pipeline producing 0 events — conference demo gap. No update in >24h. #1335 (circuit breakers) auto-resolves 2026-04-01.",
+      "task": "#1342: Copilot event pipeline 0 events — FINAL NOTICE. 4 cycles no update. Conference demo (May 6) gap. Investigate or escalate to director. #1335 auto-resolves 2026-04-01.",
       "priority": "P1"
     },
     "ops": {
-      "task": "#1403: readybench QA swarm non-operational 4+ days — wrong queue routing, bench-devs-platform not found on jared host. Needs box-level fix for readybench worker routing.",
+      "task": "#1403: readybench QA swarm non-operational 5+ days. Depends on #1402 resolution + box routing fix.",
       "priority": "P1"
     },
     "kernel-squad": {
-      "task": "#1408: no-governance-self-modification blocks read-only SQLite analytics queries (second occurrence). Fix: add read-only governance DB access exemption. Risk of LOCKDOWN on third attempt.",
+      "task": "KE-7: cross-repo-blast-radius (#1415) + octi-pulpo cloud policy coordination (#1410). #1408 RESOLVED this cycle.",
       "priority": "P1"
     },
-    "cloud-squad": {
-      "task": "Upgrade agentguard-cloud from 2.10.1 to 2.10.3, agentguard-analytics from 2.10.2 to 2.10.3 (3rd cycle outstanding)",
-      "priority": "P2"
-    },
     "director": {
-      "task": "Assign squad ownership for ShellForge initiative (issues #1362–#1367): single-binary, secret injection, artifact registry, composable stacks",
+      "task": "Assign squad ownership for ShellForge initiative (issues #1362–#1367): single-binary, secret injection, artifact registry, composable stacks. 4th cycle unassigned.",
       "priority": "P2"
     }
   },
@@ -43,6 +47,24 @@
       "resolvedAt": "2026-03-29T22:00:00.000Z",
       "note": "PR #1400 merged: wrapper probes binary, falls back to main worktree binary. Closes #1376."
     },
+    "no-governance-self-mod-1408": {
+      "task": "no-governance-self-modification false positive on agentguard.db reads (#1408)",
+      "priority": "P1",
+      "resolvedAt": "2026-03-29T23:00:00.000Z",
+      "note": "PR #1418 merged by kernel squad. LOCKDOWN risk eliminated. Analytics agents can now query governance DB."
+    },
+    "ke6-no-self-approve": {
+      "task": "KE-6: no-self-approve-pr invariant (#909)",
+      "priority": "P1",
+      "resolvedAt": "2026-03-29T22:40:00.000Z",
+      "note": "PR #1414 merged. Kernel squad KE-6 complete. KE-7 started."
+    },
+    "octi-pulpo-pack-main": {
+      "task": "octi-pulpo policy pack — create and merge to main (#1410 partial)",
+      "priority": "P0",
+      "resolvedAt": "2026-03-30T02:00:00.000Z",
+      "note": "policies/octi-pulpo/agentguard-pack.yaml merged via PR #1419. Cloud-side fix still pending kernel-sr."
+    },
     "marketing-em-cycle-1406": {
       "task": "Merge marketing EM cycle report PR #1406",
       "priority": "P3",
@@ -53,19 +75,19 @@
       "task": "Fix 3 cron collisions in server/schedule.json (issue #1327)",
       "priority": "P2",
       "resolvedAt": "2026-03-29T14:18:00.000Z",
-      "note": "Issue #1327 closed. analytics-reporter 5→6 19, analytics-invariant-researcher 35→36 19, shellforge-ollama-integration 0→1 8,20."
+      "note": "Issue #1327 closed."
     },
     "kernel-adapters-squad": {
-      "task": "Fix #1347: patch claude-hook-wrapper.sh bootstrap exemption to strip rtk prefix before pattern matching",
+      "task": "Fix #1347: patch claude-hook-wrapper.sh bootstrap exemption to strip rtk prefix",
       "priority": "P1",
       "resolvedAt": "2026-03-29T16:49:00.000Z",
-      "note": "Issue #1347 closed. PR #1371 merged. Bootstrap exemption now strips rtk prefix."
+      "note": "Issue #1347 closed. PR #1371 merged."
     },
     "ke2-actioncontext": {
-      "task": "KE-2 ActionContext — design and ship vendor-neutral action normalization (issue #917)",
+      "task": "KE-2 ActionContext — vendor-neutral action normalization (issue #917)",
       "priority": "P0",
       "resolvedAt": "2026-03-29T00:00:00.000Z",
-      "note": "Issue #917 closed. v3.0 item 1 checked. Phase 7 unblocked. p50 < 100µs verified."
+      "note": "Issue #917 closed. v3.0 item 1 checked. p50 < 100µs verified."
     },
     "swarm-health-p0": {
       "task": "Swarm health P0: 85.7% agents stuck (issue #1186)",
@@ -74,52 +96,63 @@
       "note": "Issue #1186 closed. Recovery controller: mode normal, risk score 9."
     },
     "no-governance-self-mod-falsepos": {
-      "task": "Fix No-Governance-Self-Modification false positive blocking analytics agents and EM state writes (issue #1254)",
+      "task": "Fix No-Governance-Self-Modification false positive (issue #1254)",
       "priority": "P1",
       "resolvedAt": "2026-03-29T00:00:00.000Z",
-      "note": "Issue #1254 closed. Fixed in PR #1351: scope narrowed to .agentguard/ config paths."
+      "note": "Issue #1254 closed. Fixed in PR #1351."
     }
   },
   "blockers": [
     {
       "issue": 1402,
-      "description": "P0: Worker pool dead on jared box. Queue depth 61 items and growing. All 32 PIDs dead. No scheduled agents running. Human must run server/deploy.sh.",
+      "description": "P0: Worker pool dead on jared box. Queue growing (5th cycle, ~100+ items estimated). All 32 PIDs dead. No scheduled agents running. Human must run server/deploy.sh.",
       "escalatedTo": "human (jpleva91)",
       "firstSeen": "2026-03-29T19:00:00.000Z",
-      "escalatedAt": "2026-03-29T22:00:00.000Z"
+      "escalatedAt": "2026-03-29T22:00:00.000Z",
+      "lastEscalated": "2026-03-30T02:00:00.000Z",
+      "cycleCount": 5
+    },
+    {
+      "issue": 1410,
+      "description": "P0: octi-pulpo MCP coordination blocked in governed sessions. Policy pack on main (merged via #1419). agentguard-cloud/agentguard.yaml still needs mcp.call:octi-pulpo allow rule.",
+      "escalatedTo": "kernel-sr",
+      "firstSeen": "2026-03-29T23:00:00.000Z",
+      "escalatedAt": "2026-03-30T02:00:00.000Z"
     },
     {
       "issue": 1403,
-      "description": "P1: readybench QA swarm non-operational 4+ days. All 19 agents skipping (wrong queue routing). bench-devs-platform not found on jared host.",
+      "description": "P1: readybench QA swarm non-operational 5+ days. All 19 agents skipping (wrong queue routing). Depends on #1402.",
       "escalatedTo": "ops",
       "firstSeen": "2026-03-25T00:00:00.000Z"
     },
     {
       "issue": 1335,
-      "description": "P1: Codex + Copilot circuit breakers OPEN (budget exhaustion). 68/132 agents blocked (52%). Auto-resolves 2026-04-01. No action needed.",
+      "description": "P1: Codex + Copilot circuit breakers OPEN (budget exhaustion). Auto-resolves 2026-04-01. No action needed.",
       "escalatedTo": "none (auto-resolve)",
       "firstSeen": "2026-03-29T00:00:00.000Z",
       "expectedResolution": "2026-04-01T00:00:00.000Z"
     },
     {
       "issue": 1342,
-      "description": "P1: Copilot event pipeline producing 0 events. Conference demo gap (May 6). No update in >24h.",
+      "description": "P1: Copilot event pipeline producing 0 events. Conference demo gap (May 6). FINAL NOTICE — 4 cycles no update from studio squad.",
       "escalatedTo": "studio-squad",
-      "firstSeen": "2026-03-29T00:00:00.000Z"
+      "firstSeen": "2026-03-29T00:00:00.000Z",
+      "cycleCount": 4
     },
     {
-      "issue": 1408,
-      "description": "P1: no-governance-self-modification blocks read-only SQLite analytics queries. Second occurrence. Third attempt would trigger LOCKDOWN.",
-      "escalatedTo": "kernel-squad",
-      "firstSeen": "2026-03-29T22:00:00.000Z"
+      "title": "analytics-severe-drift",
+      "description": "P1: agentguard-analytics dep at 2.7.3 vs published 2.10.3 — 3 minor versions behind. Was incorrectly tracked as 2.10.2.",
+      "escalatedTo": "cloud-squad",
+      "firstSeen": "2026-03-30T02:00:00.000Z"
     }
   ],
   "prQueue": {
-    "open": 1,
+    "open": 0,
     "reviewed": 0,
     "mergeable": 0,
-    "mergedThisCycle": 2,
-    "notes": "PR #1396 CONFLICTING (kernel EM cycle report) — needs rebase. Commented requesting rebase from kernel EM or human. PRs #1400 and #1406 merged this cycle."
+    "mergedThisCycle": 1,
+    "closedThisCycle": 1,
+    "notes": "PR #1419 (kernel EM KE-6) merged. PR #1417 (stale HQ EM cycle, conflicting) closed. Queue is clean."
   },
-  "updatedAt": "2026-03-29T22:00:00.000Z"
+  "updatedAt": "2026-03-30T02:00:00.000Z"
 }
