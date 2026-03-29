@@ -23,6 +23,20 @@ elif command -v agentguard &>/dev/null; then
   AGENTGUARD_BIN="agentguard"
 fi
 
+# Probe the local binary — in git worktrees, apps/cli/dist/bin.js may exist but
+# crash with ERR_MODULE_NOT_FOUND because node_modules is only in the main workspace.
+# (Node ESM resolves packages relative to the binary path; worktrees don't have
+# their own node_modules.) Fall back to the main worktree binary if probe fails (#1376).
+if [ -n "$AGENTGUARD_BIN" ] && ! $AGENTGUARD_BIN --version >/dev/null 2>&1; then
+  _MAIN_ROOT="$(git worktree list --porcelain 2>/dev/null | sed -n '1s/^worktree //p')"
+  if [ -n "$_MAIN_ROOT" ] && [ -f "$_MAIN_ROOT/apps/cli/dist/bin.js" ]; then
+    AGENTGUARD_BIN="node $_MAIN_ROOT/apps/cli/dist/bin.js"
+  else
+    # No fallback available — clear so bootstrap exemption handles the action
+    AGENTGUARD_BIN=""
+  fi
+fi
+
 # BOOTSTRAP EXEMPTION (AgentGuardHQ/agentguard#995):
 # When the kernel binary is missing, allow bootstrap commands (install/build)
 # and read-only tools through so the agent can self-bootstrap.
