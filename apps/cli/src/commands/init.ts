@@ -1715,8 +1715,7 @@ async function initStudio(parsed: ReturnType<typeof parseArgs>): Promise<number>
   for (const cfg of driverConfigs) {
     if (detection.agentRuntimes.includes(cfg.runtime)) {
       const setupHooks =
-        nonInteractive ||
-        (await studioConfirm(`\n  ${bold(`Configure ${cfg.label}?`)}`, true));
+        nonInteractive || (await studioConfirm(`\n  ${bold(`Configure ${cfg.label}?`)}`, true));
       if (setupHooks) {
         try {
           await cfg.setup();
