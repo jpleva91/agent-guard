@@ -84,5 +84,7 @@ export function buildSystemState(context: Record<string, unknown> = {}): SystemS
     networkEgressAllowlist: context.networkEgressAllowlist as string[] | undefined,
     stagedFiles: context.stagedFiles as string[] | undefined,
     sessionWrittenFiles: context.sessionWrittenFiles as string[] | undefined,
+    prAuthors: context.prAuthors as string[] | undefined,
+    agentGitHubUser: context.agentGitHubUser as string | undefined,
   };
 }

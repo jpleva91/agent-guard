@@ -66,6 +66,10 @@ export interface SystemState {
   stagedFiles?: string[];
   /** All file paths written/modified by this session, accumulated by the kernel */
   sessionWrittenFiles?: string[];
+  /** GitHub usernames of the PR author(s) for the current github.pr.merge or github.pr.review action */
+  prAuthors?: string[];
+  /** GitHub username of the current agent (from persona or GH_USER env) */
+  agentGitHubUser?: string;
 }
 
 /** Patterns matched as substrings (case-insensitive) against file paths. */
@@ -1868,6 +1872,72 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         holds: true,
         expected: 'Shell commands must not execute session-written scripts',
         actual: 'Command does not reference any session-written scripts',
+      };
+    },
+  },
+
+  {
+    id: 'no-self-approve-pr',
+    name: 'No Self-Approve PR',
+    description:
+      'An agent must not merge or approve a pull request it authored — enforces separation of duties in multi-agent swarms',
+    severity: 5,
+    check(state) {
+      const actionType = state.currentActionType || '';
+
+      // Only applies to PR merge and PR review actions
+      const isMerge = actionType === 'github.pr.merge';
+      const isReview = actionType === 'github.pr.review';
+
+      if (!isMerge && !isReview) {
+        return {
+          holds: true,
+          expected: 'No self-approval of PR',
+          actual: `Action type ${actionType || 'unknown'} is not a PR merge/review — skipped`,
+        };
+      }
+
+      // For review actions, only block approve operations (not comment or request-changes)
+      if (isReview) {
+        const command = (state.currentCommand || '').toLowerCase();
+        const isApprove = /\s--approve\b/.test(command);
+        if (!isApprove) {
+          return {
+            holds: true,
+            expected: 'No self-approval of PR',
+            actual: 'PR review is not an approval — skipped',
+          };
+        }
+      }
+
+      // Fail-open when agent identity is not available
+      const agentUser = state.agentGitHubUser?.toLowerCase().trim();
+      if (!agentUser) {
+        return {
+          holds: true,
+          expected: 'No self-approval of PR',
+          actual: 'Agent GitHub user not available — skipped',
+        };
+      }
+
+      // Fail-open when PR author data is not available
+      const prAuthors = state.prAuthors;
+      if (!prAuthors || prAuthors.length === 0) {
+        return {
+          holds: true,
+          expected: 'No self-approval of PR',
+          actual: 'PR author data not available — skipped',
+        };
+      }
+
+      const isSelfApproval = prAuthors.some((author) => author.toLowerCase().trim() === agentUser);
+
+      return {
+        holds: !isSelfApproval,
+        expected: 'No self-approval: agent must not merge or approve its own PR',
+        actual: isSelfApproval
+          ? `Self-approval detected: agent @${agentUser} is author of this PR`
+          : `Agent @${agentUser} is not the PR author — safe`,
       };
     },
   },

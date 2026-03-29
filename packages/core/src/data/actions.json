@@ -37,6 +37,8 @@
     "github.pr.close": { "class": "github", "description": "Close a pull request" },
     "github.pr.view": { "class": "github", "description": "View a pull request" },
     "github.pr.checks": { "class": "github", "description": "View pull request checks" },
+    "github.pr.approve": { "class": "github", "description": "Approve a pull request" },
+    "github.pr.review": { "class": "github", "description": "Submit a pull request review (approve, request changes, or comment)" },
     "github.issue.list": { "class": "github", "description": "List issues" },
     "github.issue.create": { "class": "github", "description": "Create an issue" },
     "github.issue.close": { "class": "github", "description": "Close an issue" },

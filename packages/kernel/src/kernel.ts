@@ -604,6 +604,21 @@ export function createKernel(config: KernelConfig = {}): Kernel {
               sessionWrittenFiles: [...sessionWrittenFiles],
             };
           }
+
+          // Pre-fetch PR authors and agent GitHub user for no-self-approve-pr invariant.
+          // Runs even in dryRun mode — both calls are read-only.
+          if (ctx.action === 'github.pr.merge' || ctx.action === 'github.pr.review') {
+            const commandOrTarget = ctx.command || ctx.target || '';
+            const [prAuthors, agentGitHubUser] = await Promise.all([
+              fetchPrAuthors(commandOrTarget),
+              fetchAgentGitHubUser(),
+            ]);
+            enrichedContext = {
+              ...enrichedContext,
+              prAuthors,
+              agentGitHubUser,
+            };
+          }
         }
 
         // KE-2: Pass the ActionContext to the monitor (flows through engine → authorize)
@@ -1798,5 +1813,63 @@ async function fetchStagedFiles(cwd?: string): Promise<string[]> {
       .map((f) => resolve(workDir, f));
   } catch {
     return [];
+  }
+}
+
+// fetchPrAuthors — pre-fetch for no-self-approve-pr invariant
+// ---------------------------------------------------------------------------
+
+/** Extract a PR number from a gh command string or numeric target. */
+function extractPrNumber(commandOrTarget: string): string | null {
+  if (!commandOrTarget) return null;
+  // Match first standalone integer — covers "gh pr merge 123", "123", "PR #123"
+  const match = commandOrTarget.match(/\b(\d+)\b/);
+  return match ? match[1]! : null;
+}
+
+/**
+ * Fetch the author login of a GitHub PR using `gh pr view`.
+ * Returns an empty array on any error (fail-open: invariant skips when data unavailable).
+ */
+async function fetchPrAuthors(commandOrTarget: string): Promise<string[]> {
+  const prNumber = extractPrNumber(commandOrTarget);
+  if (!prNumber) return [];
+
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const execFileAsync = promisify(execFile);
+  try {
+    const { stdout } = await execFileAsync(
+      'gh',
+      ['pr', 'view', prNumber, '--json', 'author', '--jq', '.author.login'],
+      { timeout: 10_000 }
+    );
+    const login = stdout.trim();
+    return login ? [login] : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Resolve the current agent's GitHub username.
+ * Checks GH_USER / GITHUB_USER env first, then calls `gh api user` as fallback.
+ * Returns undefined on failure (fail-open).
+ */
+async function fetchAgentGitHubUser(): Promise<string | undefined> {
+  const envUser = process.env['GH_USER'] || process.env['GITHUB_USER'];
+  if (envUser) return envUser;
+
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const execFileAsync = promisify(execFile);
+  try {
+    const { stdout } = await execFileAsync('gh', ['api', 'user', '--jq', '.login'], {
+      timeout: 5_000,
+    });
+    const login = stdout.trim();
+    return login || undefined;
+  } catch {
+    return undefined;
   }
 }

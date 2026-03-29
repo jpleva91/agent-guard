@@ -5,6 +5,7 @@
   { "patterns": ["\\bgh\\s+pr\\s+(close|delete)\\b"], "actionType": "github.pr.close" },
   { "patterns": ["\\bgh\\s+pr\\s+view\\b"], "actionType": "github.pr.view" },
   { "patterns": ["\\bgh\\s+pr\\s+checks\\b"], "actionType": "github.pr.checks" },
+  { "patterns": ["\\bgh\\s+pr\\s+review\\b"], "actionType": "github.pr.review" },
   { "patterns": ["\\bgh\\s+issue\\s+list\\b"], "actionType": "github.issue.list" },
   { "patterns": ["\\bgh\\s+issue\\s+(create|new)\\b"], "actionType": "github.issue.create" },
   { "patterns": ["\\bgh\\s+issue\\s+close\\b"], "actionType": "github.issue.close" },
