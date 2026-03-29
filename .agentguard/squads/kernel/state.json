@@ -41,7 +41,7 @@
         "status": "conflicting",
         "ciStatus": null,
         "openedAt": "2026-03-28T00:00:00Z",
-        "note": "CONFLICTING. Issues #955/#957 already closed. Needs rebase before CI can run. EM commented 2026-03-29T12:00Z."
+        "note": "CONFLICTING. Issues #955/#957 already closed. Needs rebase before CI can run. EM commented 2026-03-29T12:00Z and 2026-03-29T15:30Z. 2nd flag — needs senior action before next cycle."
       },
       {
         "number": 969,
@@ -82,7 +82,7 @@
     "lastRun": "2026-03-25T23:05:00.000Z",
     "status": "all_passing"
   },
-  "lastEmRun": "2026-03-29T12:00:00.000Z",
+  "lastEmRun": "2026-03-29T15:30:00.000Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-29T12:00:00.000Z"
+  "updatedAt": "2026-03-29T15:30:00.000Z"
 }
