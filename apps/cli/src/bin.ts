@@ -901,14 +901,6 @@ async function main() {
       break;
     }
 
-      await deepAgentsInit(args.slice(1));
-      break;
-    }
-
-      await deepAgentsHook(args[1], args.slice(2)); // 'before' or 'after', then remaining flags
-      break;
-    }
-
     case 'auto-setup': {
       if (wantsHelp) {
         console.log(formatHelp(COMMANDS['auto-setup']));
