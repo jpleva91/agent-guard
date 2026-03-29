@@ -28,7 +28,7 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | Action Authorization Boundary (AAB) | Implemented | Bypass vectors closed (3 fixed in v2.4.0) |
 | Policy evaluator (YAML/JSON, composition, packs) | Implemented | Production |
 | 24 built-in invariants | Implemented | Production |
-| Canonical event model (47 event kinds) | Implemented | Production |
+| Canonical event model (48 event kinds) | Implemented | Production |
 | Pre-execution simulation engine (3 simulators) | Implemented | Production |
 | Blast radius computation | Implemented | Production |
 | Escalation state machine (NORMAL → LOCKDOWN) | Implemented | Production |
