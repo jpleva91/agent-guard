@@ -1224,17 +1224,30 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       // Operational state files are NOT governance config — allow writes to squads, director brief, etc.
       const OPERATIONAL_STATE_PATTERNS = [
         '.agentguard/squads/',
+        '.agentguard/roadmaps/',
         '.agentguard/director-brief',
         '.agentguard/persona.env',
         '.agentguard/agent-reliability',
         '.agentguard/swarm-state',
         '.agentguard/budget-config',
+        '.agentguard/queue.txt',
+        '.agentguard/metrics',
         'em-report.json',
+        '.agentguard-identity',
+        '.agentguard-root-session',
       ];
       const GOVERNANCE_FILE_BASENAMES = ['agentguard.yaml', 'agentguard.yml', '.agentguard.yaml'];
 
       const matchesGovernancePath = (path: string) => {
-        const lower = path.toLowerCase();
+        // Normalize to prevent traversal bypass (e.g. .agentguard/squads/../agentguard.yaml)
+        const segments = path.split(/[\\/]/);
+        const cleaned: string[] = [];
+        for (const seg of segments) {
+          if (seg === '..') cleaned.pop();
+          else if (seg !== '.') cleaned.push(seg);
+        }
+        const normalized = cleaned.join('/');
+        const lower = normalized.toLowerCase();
         // Operational state files are writable — only actual governance config is protected
         if (OPERATIONAL_STATE_PATTERNS.some((p) => lower.includes(p.toLowerCase()))) {
           return false;
@@ -1242,7 +1255,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         if (GOVERNANCE_DIR_PATTERNS.some((p) => lower.includes(p.toLowerCase()))) {
           return true;
         }
-        const basename = path.split(/[\\/]/).pop() || '';
+        const basename = normalized.split(/[\\/]/).pop() || '';
         if (GOVERNANCE_FILE_BASENAMES.some((f) => basename.toLowerCase() === f)) {
           return true;
         }

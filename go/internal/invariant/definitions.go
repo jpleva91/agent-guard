@@ -108,6 +108,23 @@ var migrationDirPatterns = []string{
 // Governance directory patterns.
 var governanceDirPatterns = []string{".agentguard/", ".agentguard\\", "policies/", "policies\\"}
 
+// Operational state patterns — these are runtime state, NOT governance config.
+// Writes to these paths are allowed (squad state, roadmaps, queue, persona, etc.).
+var operationalStatePatterns = []string{
+	".agentguard/squads/",
+	".agentguard/roadmaps/",
+	".agentguard/director-brief",
+	".agentguard/persona.env",
+	".agentguard/agent-reliability",
+	".agentguard/swarm-state",
+	".agentguard/budget-config",
+	".agentguard/queue.txt",
+	".agentguard/metrics",
+	"em-report.json",
+	".agentguard-identity",
+	".agentguard-root-session",
+}
+
 // Governance file basenames.
 var governanceFileBasenames = []string{"agentguard.yaml", "agentguard.yml", ".agentguard.yaml"}
 
@@ -1292,13 +1309,21 @@ func checkNoGovernanceSelfModification() InvariantDef {
 			}
 
 			matchesGovernancePath := func(path string) bool {
-				lower := strings.ToLower(path)
+				// Normalize path to prevent traversal bypass (e.g. .agentguard/squads/../agentguard.yaml)
+				cleaned := filepath.Clean(path)
+				lower := strings.ToLower(cleaned)
+				// Operational state files are writable — not governance config
+				for _, op := range operationalStatePatterns {
+					if strings.Contains(lower, strings.ToLower(op)) {
+						return false
+					}
+				}
 				for _, p := range governanceDirPatterns {
 					if strings.Contains(lower, strings.ToLower(p)) {
 						return true
 					}
 				}
-				base := strings.ToLower(filepath.Base(path))
+				base := strings.ToLower(filepath.Base(cleaned))
 				for _, f := range governanceFileBasenames {
 					if base == f {
 						return true
@@ -1314,16 +1339,33 @@ func checkNoGovernanceSelfModification() InvariantDef {
 				violations = append(violations, fmt.Sprintf("target: %s", target))
 			}
 
+			// For command scanning: only check the header line, not heredoc body.
+			// Skip gh commands entirely — they make GitHub API calls, not local file writes.
 			command := ctx.Action.Command
 			if command != "" {
-				if matchesGovernancePath(command) {
-					violations = append(violations, "command references governance paths")
-				} else {
-					lowerCmd := strings.ToLower(command)
-					for _, f := range governanceFileBasenames {
-						if strings.Contains(lowerCmd, f) {
-							violations = append(violations, "command references governance paths")
-							break
+				trimmed := strings.TrimSpace(command)
+				isGhCommand := extractBaseCommand(trimmed) == "gh"
+				if !isGhCommand {
+					// Strip heredoc body: keep everything up to the first newline after <<
+					// so the redirect target on the header line is still scanned.
+					// e.g. "cat << 'EOF' > target.yaml\nbody\nEOF" → "cat << 'EOF' > target.yaml"
+					cmdHeader := command
+					if idx := strings.Index(command, "<<"); idx >= 0 {
+						rest := command[idx:]
+						if nlIdx := strings.Index(rest, "\n"); nlIdx >= 0 {
+							cmdHeader = command[:idx+nlIdx]
+						}
+						// No newline means single-line command — keep as-is
+					}
+					if matchesGovernancePath(cmdHeader) {
+						violations = append(violations, "command references governance paths")
+					} else {
+						lowerCmd := strings.ToLower(cmdHeader)
+						for _, f := range governanceFileBasenames {
+							if strings.Contains(lowerCmd, f) {
+								violations = append(violations, "command references governance paths")
+								break
+							}
 						}
 					}
 				}
