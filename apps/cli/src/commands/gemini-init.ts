@@ -56,11 +56,11 @@ export async function geminiInit(args: string[] = []): Promise<void> {
   // Parse --mode flag for enforcement mode
   const modeArgIdx = args.findIndex((a) => a === '--mode');
   const modeArg = modeArgIdx !== -1 ? args[modeArgIdx + 1] : undefined;
-  const VALID_MODES: EnforcementMode[] = ['guide', 'educate', 'monitor', 'enforce'];
+  const VALID_MODES: EnforcementMode[] = ['monitor', 'educate', 'guide', 'enforce'];
   const selectedMode: EnforcementMode =
     modeArg && VALID_MODES.includes(modeArg as EnforcementMode)
       ? (modeArg as EnforcementMode)
-      : 'guide';
+      : 'monitor';
 
   // Gemini CLI hooks location:
   // Repo-level: .gemini/settings.json
@@ -220,10 +220,10 @@ name: Default Safety Policy
 description: Baseline safety rules for AI coding agents
 severity: 4
 
-# Enforcement mode: guide | educate | monitor | enforce
-#   guide   — block dangerous actions with corrective suggestions (recommended)
+# Enforcement mode: monitor | educate | guide | enforce
+#   monitor — log threats, don't block (default — visibility first)
 #   educate — allow actions but teach correct patterns
-#   monitor — log threats, don't block
+#   guide   — block dangerous actions with corrective suggestions
 #   enforce — block dangerous actions, no suggestions
 mode: ${mode}
 
@@ -295,7 +295,7 @@ const POLICY_CANDIDATES = [
   '.agentguard.yml',
 ];
 
-function generateStarterPolicy(mode: EnforcementMode = 'guide'): boolean {
+function generateStarterPolicy(mode: EnforcementMode = 'monitor'): boolean {
   const repoRoot = resolveMainRepoRoot();
   for (const candidate of POLICY_CANDIDATES) {
     if (existsSync(join(repoRoot, candidate))) {
@@ -311,7 +311,7 @@ function generateStarterPolicy(mode: EnforcementMode = 'guide'): boolean {
   return true;
 }
 
-function showProtectionSummary(policyGenerated: boolean, mode: EnforcementMode = 'guide'): void {
+function showProtectionSummary(policyGenerated: boolean, mode: EnforcementMode = 'monitor'): void {
   process.stderr.write('\n');
   process.stderr.write(`  ${FG.green}${BOLD}AgentGuard is active for Gemini CLI.${RESET}\n\n`);
 

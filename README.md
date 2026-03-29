@@ -77,7 +77,7 @@ echo '{"tool":"Bash","command":"git push origin main"}' | agentguard guard --dry
 Non-interactive setup (CI or scripted installs):
 
 ```bash
-agentguard claude-init --mode guide --pack essentials
+agentguard claude-init --mode monitor --pack essentials
 ```
 
 > **Join the waitlist** — get cloud governance, team dashboards, and real-time telemetry:
@@ -131,7 +131,7 @@ Drop `agentguard.yaml` in your repo root. It's picked up automatically.
 ### Minimal policy
 
 ```yaml
-mode: guide        # monitor | educate | guide | enforce
+mode: monitor      # monitor | educate | guide | enforce
 pack: essentials   # curated invariant profile
 
 rules:
@@ -155,7 +155,7 @@ Four enforcement modes control how AgentGuard responds to policy violations:
 Set the mode globally and override per-invariant:
 
 ```yaml
-mode: guide                  # global default
+mode: monitor                # global default
 
 invariants:
   no-secret-exposure: enforce   # always block secrets (hardcoded)
@@ -405,7 +405,7 @@ The Go kernel includes: action normalization with AST-based shell parsing, polic
 # Setup (interactive wizard)
 agentguard claude-init                    # Interactive wizard: mode + pack → creates policy + hooks
 agentguard claude-init --global           # Install hooks globally (~/.claude/settings.json)
-agentguard claude-init --mode guide --pack essentials  # Non-interactive setup
+agentguard claude-init --mode monitor --pack essentials  # Non-interactive setup
 agentguard copilot-init                   # Set up GitHub Copilot CLI hook integration
 agentguard deepagents-init                # Set up DeepAgents (.deepagents/agentguard_middleware.py) middleware
 agentguard init --template strict         # Scaffold policy from a template

@@ -5,12 +5,12 @@ id: default-policy
 name: Default Safety Policy
 description: Baseline safety rules for AI coding agents
 
-# Enforcement mode: guide | educate | monitor | enforce
-#   guide   — block dangerous actions with corrective suggestions (recommended)
+# Enforcement mode: monitor | educate | guide | enforce
+#   monitor — log threats, don't block (default — visibility first)
 #   educate — allow actions but teach correct patterns
-#   monitor — log threats, don't block
+#   guide   — block dangerous actions with corrective suggestions
 #   enforce — block dangerous actions, no suggestions
-mode: guide
+mode: monitor
 
 # Agent identity: defaults to .agentguard-identity file (created by claude-init).
 # For CI/cron agents, set AGENTGUARD_AGENT_NAME env var to override.

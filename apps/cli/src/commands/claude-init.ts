@@ -191,27 +191,27 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   const packArgIdx = args.findIndex((a) => a === '--pack');
   const packArg = packArgIdx !== -1 ? args[packArgIdx + 1] : undefined;
 
-  let selectedMode: EnforcementMode = 'guide';
+  let selectedMode: EnforcementMode = 'monitor';
   let selectedPack: string | undefined = 'essentials';
 
-  const VALID_MODES: EnforcementMode[] = ['guide', 'educate', 'monitor', 'enforce'];
+  const VALID_MODES: EnforcementMode[] = ['monitor', 'educate', 'guide', 'enforce'];
 
   if (modeArg) {
     selectedMode = VALID_MODES.includes(modeArg as EnforcementMode)
       ? (modeArg as EnforcementMode)
-      : 'guide';
+      : 'monitor';
   } else if (process.stdin.isTTY && !isRefresh) {
     const modeChoice = await promptChoice(
       'Start in which mode?',
       [
-        `Guide ${DIM}— block dangerous actions with corrective suggestions (recommended)${RESET}`,
+        `Monitor ${DIM}— log threats, don't block (default — visibility first)${RESET}`,
         `Educate ${DIM}— allow actions but teach correct patterns${RESET}`,
-        `Monitor ${DIM}— log threats, don't block${RESET}`,
+        `Guide ${DIM}— block dangerous actions with corrective suggestions${RESET}`,
         `Enforce ${DIM}— block dangerous actions, no suggestions${RESET}`,
       ],
       0
     );
-    const modeMap: EnforcementMode[] = ['guide', 'educate', 'monitor', 'enforce'];
+    const modeMap: EnforcementMode[] = ['monitor', 'educate', 'guide', 'enforce'];
     selectedMode = modeMap[modeChoice];
   }
 
@@ -678,10 +678,10 @@ id: default-policy
 name: Default Safety Policy
 description: Baseline safety rules for AI coding agents
 
-# Enforcement mode: guide | educate | monitor | enforce
-#   guide   — block dangerous actions with corrective suggestions (recommended)
+# Enforcement mode: monitor | educate | guide | enforce
+#   monitor — log threats, don't block (default — visibility first)
 #   educate — allow actions but teach correct patterns
-#   monitor — log threats, don't block
+#   guide   — block dangerous actions with corrective suggestions
 #   enforce — block dangerous actions, no suggestions
 mode: ${mode}
 
@@ -859,7 +859,7 @@ const POLICY_CANDIDATES = [
 ];
 
 function generateStarterPolicy(
-  mode: EnforcementMode = 'guide',
+  mode: EnforcementMode = 'monitor',
   pack?: string,
   forceOverwrite = false
 ): boolean {
@@ -885,7 +885,7 @@ function showProtectionSummary(
   _policyGenerated: boolean,
   rtkStatus?: { available: boolean; version?: string },
   isGlobal?: boolean,
-  mode: EnforcementMode = 'guide'
+  mode: EnforcementMode = 'monitor'
 ): void {
   process.stderr.write('\n');
   process.stderr.write(`  ${FG.green}${BOLD}AgentGuard is active.${RESET}\n\n`);
@@ -959,13 +959,13 @@ function showProtectionSummary(
   process.stderr.write(`  ${BOLD}Next steps:${RESET}\n`);
   if (mode === 'monitor') {
     process.stderr.write(
-      `  ${DIM}1. Start a Claude Code session — warnings appear in your terminal${RESET}\n`
+      `  ${DIM}1. Start a Claude Code session — violations are logged, nothing is blocked${RESET}\n`
     );
     process.stderr.write(
       `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`
     );
     process.stderr.write(
-      `  ${DIM}3. Edit ${FG.cyan}agentguard.yaml${RESET}${DIM} → set ${FG.cyan}mode: guide${RESET}${DIM} when ready to block with suggestions${RESET}\n`
+      `  ${DIM}3. When ready to enforce: set ${FG.cyan}mode: guide${RESET}${DIM} (or ${FG.cyan}educate${RESET}${DIM} / ${FG.cyan}enforce${RESET}${DIM}) in agentguard.yaml${RESET}\n`
     );
   } else if (mode === 'educate') {
     process.stderr.write(
@@ -975,7 +975,7 @@ function showProtectionSummary(
       `  ${DIM}2. Run ${FG.cyan}aguard inspect --last${RESET}${DIM} to review the audit trail${RESET}\n`
     );
     process.stderr.write(
-      `  ${DIM}3. Edit ${FG.cyan}agentguard.yaml${RESET}${DIM} → set ${FG.cyan}mode: guide${RESET}${DIM} when ready to block with suggestions${RESET}\n`
+      `  ${DIM}3. When ready to block: set ${FG.cyan}mode: guide${RESET}${DIM} or ${FG.cyan}mode: enforce${RESET}${DIM} in agentguard.yaml${RESET}\n`
     );
   } else {
     process.stderr.write(
