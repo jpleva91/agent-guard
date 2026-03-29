@@ -1505,6 +1505,46 @@ describe('no-governance-self-modification', () => {
     const result = inv.check({ currentCommand: heredocCmd });
     expect(result.holds).toBe(false);
   });
+
+  // Acceptance tests for #1408: read-only SQLite probe of agentguard.db
+  // The audit database is operational data produced by the runtime — not governance config.
+  // Analytics and monitoring agents must be able to query it without triggering this invariant.
+  it('holds when currentTarget is the governance audit DB (operational state, not config)', () => {
+    const result = inv.check({ currentTarget: '.agentguard/agentguard.db' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when shell command is a read-only SQLite probe of agentguard.db', () => {
+    const result = inv.check({
+      currentCommand: "python3 -c \"import sqlite3; conn = sqlite3.connect('.agentguard/agentguard.db'); print(conn.execute('SELECT count(*) FROM events').fetchone())\"",
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when shell command queries agentguard.db via path prefix (analytics worktree pattern)', () => {
+    const result = inv.check({
+      currentCommand: "python3 -c \"import sqlite3; conn = sqlite3.connect('agent-guard/.agentguard/agentguard.db'); ...\"",
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when sqlite3 CLI reads agentguard.db schema', () => {
+    const result = inv.check({
+      currentCommand: 'sqlite3 .agentguard/agentguard.db .tables',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when modifiedFiles contains only agentguard.db (kernel writes audit trail)', () => {
+    const result = inv.check({ modifiedFiles: ['.agentguard/agentguard.db'] });
+    expect(result.holds).toBe(true);
+  });
+
+  it('still fails when command modifies .agentguard/ without touching the audit DB', () => {
+    // Only the audit DB path is exempt — other .agentguard/ writes are still blocked
+    const result = inv.check({ currentCommand: 'cp /tmp/policy-override.yaml .agentguard/custom-policy.yaml' });
+    expect(result.holds).toBe(false);
+  });
 });
 
 describe('lockfile-integrity', () => {

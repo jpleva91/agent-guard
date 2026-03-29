@@ -1236,6 +1236,9 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         '.agentguard/budget-config',
         '.agentguard/queue.txt',
         '.agentguard/metrics',
+        // Audit database — operational data produced by the runtime, not governance config.
+        // Analytics and monitoring agents need to query it (read-only SQLite probes). Closes #1408.
+        '.agentguard/agentguard.db',
         'em-report.json',
         '.agentguard-identity',
         '.agentguard-root-session',
