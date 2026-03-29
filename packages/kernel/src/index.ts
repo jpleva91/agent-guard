@@ -1,4 +1,6 @@
 export * from './kernel.js';
+export * from './emitter.js';
+export * from './shipper.js';
 export * from './aab.js';
 export * from './decision.js';
 export * from './monitor.js';

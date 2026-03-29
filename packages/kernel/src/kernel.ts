@@ -2,6 +2,11 @@
 // Connects monitor (AAB + policy + invariants) with execution adapters.
 // Emits full action lifecycle events: REQUESTED → ALLOWED/DENIED → EXECUTED/FAILED.
 // Builds GovernanceDecisionRecords and sinks them for audit.
+//
+// KE-4: Three failure-isolated planes:
+//   Evaluator — synchronous policy + invariant evaluation (this file)
+//   Emitter   — non-blocking bounded event buffer (emitter.ts)
+//   Shipper   — failure-isolated persistence to sinks (shipper.ts)
 
 import type {
   DomainEvent,
@@ -57,6 +62,9 @@ import type { SimulatorRegistry, ImpactForecast } from './simulation/types.js';
 import { buildImpactForecast } from './simulation/forecast.js';
 import type { IntentSpec, IntentDriftResult } from './intent.js';
 import { checkIntentAlignment } from './intent.js';
+import { createNonBlockingEmitter } from './emitter.js';
+import { createBackgroundShipper } from './shipper.js';
+import type { BackgroundShipper } from './shipper.js';
 /** Minimal tracer interface (previously from @red-codes/telemetry, now inlined). */
 interface TraceSpan {
   setAttribute(key: string, value: string | number | boolean): void;
@@ -201,8 +209,6 @@ function generateRunId(rng: SeededRng): string {
 export function createKernel(config: KernelConfig = {}): Kernel {
   const rng = config.rng || createSeededRng(generateSeed());
   const runId = config.runId || generateRunId(rng);
-  const sinks: EventSink[] = config.sinks || [];
-  const decisionSinks: DecisionSink[] = config.decisionSinks || [];
   const adapters = config.adapters || createAdapterRegistry();
   const dryRun = config.dryRun ?? false;
   const simulators = config.simulators || null;
@@ -221,9 +227,16 @@ export function createKernel(config: KernelConfig = {}): Kernel {
     ? createTierRouter(config.tierRouterConfig)
     : null;
   const actionLog: KernelResult[] = [];
-  let eventCount = 0;
   let filesModifiedCount = 0;
   const sessionWrittenFiles = new Set<string>();
+
+  // KE-4: Plane separation — Emitter buffers events, Shipper persists them.
+  const emitter = createNonBlockingEmitter();
+  const shipper: BackgroundShipper = createBackgroundShipper(
+    emitter,
+    config.sinks ?? [],
+    config.decisionSinks ?? [],
+  );
 
   const monitor = createMonitor({
     policyDefs: config.policyDefs,
@@ -246,23 +259,20 @@ export function createKernel(config: KernelConfig = {}): Kernel {
     return resolved ?? undefined;
   }
 
+  // KE-4: Evaluator plane delegates all persistence to the Shipper.
+  // These thin wrappers preserve the existing call-sites while routing through
+  // the failure-isolated Emitter → Shipper pipeline.
+
   function sinkEvent(event: DomainEvent): void {
-    eventCount++;
-    for (const sink of sinks) {
-      sink.write(event);
-    }
+    shipper.ship(event);
   }
 
   function sinkEvents(events: DomainEvent[]): void {
-    for (const event of events) {
-      sinkEvent(event);
-    }
+    shipper.shipAll(events);
   }
 
   function sinkDecision(record: GovernanceDecisionRecord): void {
-    for (const sink of decisionSinks) {
-      sink.write(record);
-    }
+    shipper.shipDecision(record);
   }
 
   // Emit RUN_STARTED event with agent identity
@@ -1744,7 +1754,8 @@ export function createKernel(config: KernelConfig = {}): Kernel {
     },
 
     getEventCount() {
-      return eventCount;
+      // KE-4: event count is tracked by the Shipper (counts enqueued events).
+      return shipper.eventCount;
     },
 
     getTierMetrics() {
@@ -1756,12 +1767,8 @@ export function createKernel(config: KernelConfig = {}): Kernel {
     },
 
     shutdown() {
-      for (const sink of sinks) {
-        if (sink.flush) sink.flush();
-      }
-      for (const sink of decisionSinks) {
-        if (sink.flush) sink.flush();
-      }
+      // KE-4: final drain + flush delegated to the Shipper plane.
+      shipper.shutdown();
       tracer?.shutdown();
     },
   };
