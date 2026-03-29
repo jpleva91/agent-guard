@@ -235,7 +235,7 @@ export function createKernel(config: KernelConfig = {}): Kernel {
   const shipper: BackgroundShipper = createBackgroundShipper(
     emitter,
     config.sinks ?? [],
-    config.decisionSinks ?? [],
+    config.decisionSinks ?? []
   );
 
   const monitor = createMonitor({
