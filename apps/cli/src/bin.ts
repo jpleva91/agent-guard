@@ -901,14 +901,10 @@ async function main() {
       break;
     }
 
-    case 'deepagents-init': {
-      const { deepAgentsInit } = await import('./commands/deepagents-init.js');
       await deepAgentsInit(args.slice(1));
       break;
     }
 
-    case 'deepagents-hook': {
-      const { deepAgentsHook } = await import('./commands/deepagents-hook.js');
       await deepAgentsHook(args[1], args.slice(2)); // 'before' or 'after', then remaining flags
       break;
     }
@@ -1068,13 +1064,10 @@ function printHelp(): void {
     agentguard copilot-init --global          Install hooks globally (~/.copilot/hooks/)
     agentguard goose-init                     Set up Goose (Block) CLI integration
     agentguard goose-init --global            Install extension globally (~/.config/goose/)
-    agentguard deepagents-init                Set up DeepAgents (LangChain) hook integration
-    agentguard deepagents-init --global       Install middleware globally (~/.deepagents/)
     agentguard auto-setup                     Auto-detect and configure hooks
     agentguard auto-setup --dry-run           Detect without installing
     agentguard claude-hook                    Claude Code hook handler (internal)
     agentguard copilot-hook                   Copilot CLI hook handler (internal)
-    agentguard deepagents-hook                DeepAgents hook handler (internal)
     agentguard status                         Check safety readiness (hooks, policy, dirs)
     agentguard status --quiet                 Machine-readable check (exit code only)
     agentguard demo                           See AgentGuard in action (interactive showcase)
