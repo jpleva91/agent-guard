@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
-	"github.com/AgentGuardHQ/agent-guard/go/internal/config"
-	"github.com/AgentGuardHQ/agent-guard/go/internal/engine"
-	"github.com/AgentGuardHQ/agent-guard/go/internal/invariant"
+	"github.com/AgentGuardHQ/agentguard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/config"
+	"github.com/AgentGuardHQ/agentguard/go/internal/engine"
+	"github.com/AgentGuardHQ/agentguard/go/internal/invariant"
 )
 
 // readOnlyTools are tools that cannot mutate state.
