@@ -2,23 +2,25 @@
   "squad": "studio",
   "sprint": {
     "goal": "Ship agentguard init studio wizard + execution profiles + swarm template schema formalization (v3.1 prep)",
+    "status": "COMPLETE — all 3 goals shipped",
     "issues": [
       "Formalize swarm template schema (JSON Schema validation) — DONE (PR #199 + kernel #1251)",
       "Define execution profiles (development, ci-safe, strict, enterprise) — DONE (PR #199 merged)",
-      "Implement agentguard init studio interactive wizard",
-      "Runner / Cloud protocol integration",
+      "Implement agentguard init studio interactive wizard — DONE (kernel #80b69f9, tests #1268)",
+      "Wizard 6-driver detection + all-driver hook setup — DONE (kernel #1339, 2026-03-29)",
+      "Runner / Cloud protocol integration — Q2 2026 (workspace #24, cloud-side must land first)",
       "fix(swarm): real CLI quota metrics replacing subscription-cost tracking (#201) — April sprint"
     ],
     "blockedUntil": "2026-04-01",
-    "blockedReason": "Copilot budget exhaustion (4000/4000 cents) — 2 days remaining"
+    "blockedReason": "Copilot budget exhaustion (4000/4000 cents). Guitar-jam issues #165-169 deferred to April 1 per EM."
   },
   "assignments": {
     "senior": {
       "agent": "copilot-cli:sonnet:studio:senior",
-      "issue": 1251,
+      "issue": 1339,
       "status": "completed",
-      "completedAt": "2026-03-28T23:45:00Z",
-      "summary": "Added schema cross-validation tests for default swarm YAML templates. Found and fixed missing `name` field on all 4 squads in squad-manifest.default.yaml (real bug caught by the new tests). Extended cli-init test coverage from 4 to 6 execution profiles. Closes sprint goal: Formalize swarm template schema. PR: AgentGuardHQ/agentguard#1251"
+      "completedAt": "2026-03-29T10:37:00Z",
+      "summary": "Extended agentguard init studio wizard to detect and configure all 6 drivers. Added Codex CLI (.codex), Gemini CLI (.gemini), and Goose (.goose) to detectProject(). Refactored step 6 from Claude-Code-only to a data-driven loop over all 5 hook-configurable drivers. Updated summary to show all configured hooks. Added 5 new unit tests. No pre-existing TS errors added. PR: AgentGuardHQ/agentguard#1339. Vitest environment broken locally (symlink to deleted worktree) — CI will verify tests."
     }
   },
   "blockers": [
@@ -36,20 +38,28 @@
     }
   ],
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
-    "note": "Cycle merged: #200 (README fix), #199 (schema+profiles), #195 (prev EM report). Closed #198 (superseded by #195). No open PRs remain."
+    "note": "PR #1339 open (2026-03-29): studio wizard 6-driver detection + hook setup extension. CI checks pending."
   },
   "humanEscalations": [
     {
-      "issue": 179,
-      "title": "Option A default-deny for demo — kernel not yet assigned (4TH CYCLE, April 4 P0)",
+      "issue": 1306,
+      "repo": "AgentGuardHQ/agentguard",
+      "title": "feat(v3.0-gate): default-deny enforcement finalization — 5TH+ CYCLE UNASSIGNED",
       "deadline": "2026-04-04",
       "priority": "P0",
       "daysRemaining": 6,
-      "consecutiveCyclesUnassigned": 4,
-      "action": "CRITICAL: Manually assign #179 to kernel senior immediately. Conference demo depends on this. 6 days remain."
+      "action": "CRITICAL: Manually assign kernel #1306 to kernel senior immediately. Conference demo depends on this."
+    },
+    {
+      "issue": 228,
+      "repo": "AgentGuardHQ/agentguard-workspace",
+      "title": "[conference] Agent 365 vs AgentGuard Q&A brief — UNOWNED",
+      "deadline": "2026-05-06",
+      "priority": "P0",
+      "action": "Assign #228 before April — no owner yet. Conference prep blocker."
     },
     {
       "issue": 178,
@@ -87,5 +97,5 @@
       "action": "Defer post-April 1. Assign to studio-junior for April sprint."
     }
   ],
-  "updatedAt": "2026-03-29T02:15:00Z"
+  "updatedAt": "2026-03-29T10:37:00Z"
 }

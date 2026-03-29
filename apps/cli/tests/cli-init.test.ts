@@ -497,6 +497,10 @@ describe('init command', () => {
 
     function setupStudioMocks({
       hasClaudeCode = false,
+      hasCopilot = false,
+      hasCodex = false,
+      hasGemini = false,
+      hasGoose = false,
       hasCICD = false,
       isMonorepo = false,
       hasExistingYaml = false,
@@ -509,8 +513,12 @@ describe('init command', () => {
         if (path.endsWith('.yaml') && path.includes('templates')) return true;
         // output agentguard.yaml
         if (path.endsWith('agentguard.yaml')) return hasExistingYaml;
-        // Claude Code agent runtime detection
+        // Agent runtime detection
         if (path.endsWith('.claude') || path.endsWith('CLAUDE.md')) return hasClaudeCode;
+        if (path.includes('.github/copilot')) return hasCopilot;
+        if (path.endsWith('.codex')) return hasCodex;
+        if (path.endsWith('.gemini')) return hasGemini;
+        if (path.endsWith('.goose')) return hasGoose;
         // CI/CD detection
         if (path.includes('.github/workflows')) return hasCICD;
         // Monorepo detection via pnpm workspace
@@ -652,6 +660,51 @@ describe('init command', () => {
 
       const output = consoleSpy.mock.calls.flat().join('\n');
       expect(output).toContain('studio');
+    });
+
+    it('should detect Codex CLI runtime when .codex directory is present', async () => {
+      setupStudioMocks({ hasCodex: true });
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init(['studio', '--non-interactive']);
+
+      const output = consoleSpy.mock.calls.flat().join('\n');
+      expect(output).toContain('Codex CLI');
+    });
+
+    it('should detect Gemini CLI runtime when .gemini directory is present', async () => {
+      setupStudioMocks({ hasGemini: true });
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init(['studio', '--non-interactive']);
+
+      const output = consoleSpy.mock.calls.flat().join('\n');
+      expect(output).toContain('Gemini CLI');
+    });
+
+    it('should detect Goose runtime when .goose directory is present', async () => {
+      setupStudioMocks({ hasGoose: true });
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init(['studio', '--non-interactive']);
+
+      const output = consoleSpy.mock.calls.flat().join('\n');
+      expect(output).toContain('Goose');
+    });
+
+    it('should detect GitHub Copilot runtime when .github/copilot directory is present', async () => {
+      setupStudioMocks({ hasCopilot: true });
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init(['studio', '--non-interactive']);
+
+      const output = consoleSpy.mock.calls.flat().join('\n');
+      expect(output).toContain('GitHub Copilot');
+    });
+
+    it('should show no hooks in summary when no driver is detected', async () => {
+      setupStudioMocks();
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init(['studio', '--non-interactive']);
+
+      const output = consoleSpy.mock.calls.flat().join('\n');
+      expect(output).not.toContain('Hooks:');
     });
   });
 });

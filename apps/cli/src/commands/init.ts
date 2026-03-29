@@ -1469,6 +1469,9 @@ function detectProject(projectRoot: string): ProjectDetection {
   // Agent runtime detection
   if (has('.claude') || has('CLAUDE.md')) result.agentRuntimes.push('Claude Code');
   if (has('.github/copilot')) result.agentRuntimes.push('GitHub Copilot');
+  if (has('.codex')) result.agentRuntimes.push('Codex CLI');
+  if (has('.gemini')) result.agentRuntimes.push('Gemini CLI');
+  if (has('.goose')) result.agentRuntimes.push('Goose');
   if (has('.cursor')) result.agentRuntimes.push('Cursor');
   if (has('.continue')) result.agentRuntimes.push('Continue');
 
@@ -1659,18 +1662,69 @@ async function initStudio(parsed: ReturnType<typeof parseArgs>): Promise<number>
     }
   }
 
-  // Step 6: Set up Claude Code hooks (if Claude Code detected)
-  if (detection.agentRuntimes.includes('Claude Code')) {
-    const setupHooks =
-      nonInteractive ||
-      (await studioConfirm(`\n  ${bold('Configure Claude Code governance hooks?')}`, true));
-    if (setupHooks) {
-      try {
+  // Step 6: Set up governance hooks for each detected driver
+  type DriverConfig = {
+    runtime: string;
+    label: string;
+    setup: () => Promise<void>;
+  };
+  const driverConfigs: DriverConfig[] = [
+    {
+      runtime: 'Claude Code',
+      label: 'Claude Code governance hooks',
+      setup: async () => {
         const { claudeInit } = await import('./claude-init.js');
         await claudeInit(['--reset']);
-        console.log(`  ${color('✓', 'green')} Claude Code hooks configured`);
-      } catch {
-        console.error(`  ${color('⚠', 'yellow')} Failed to configure Claude Code hooks`);
+      },
+    },
+    {
+      runtime: 'GitHub Copilot',
+      label: 'GitHub Copilot governance hooks',
+      setup: async () => {
+        const { copilotInit } = await import('./copilot-init.js');
+        await copilotInit([]);
+      },
+    },
+    {
+      runtime: 'Codex CLI',
+      label: 'Codex CLI governance hooks',
+      setup: async () => {
+        const { codexInit } = await import('./codex-init.js');
+        await codexInit([]);
+      },
+    },
+    {
+      runtime: 'Gemini CLI',
+      label: 'Gemini CLI governance hooks',
+      setup: async () => {
+        const { geminiInit } = await import('./gemini-init.js');
+        await geminiInit([]);
+      },
+    },
+    {
+      runtime: 'Goose',
+      label: 'Goose governance extension',
+      setup: async () => {
+        const gooseInitModule = await import('./goose-init.js');
+        await gooseInitModule.default([]);
+      },
+    },
+  ];
+
+  const configuredHooks: string[] = [];
+  for (const cfg of driverConfigs) {
+    if (detection.agentRuntimes.includes(cfg.runtime)) {
+      const setupHooks =
+        nonInteractive ||
+        (await studioConfirm(`\n  ${bold(`Configure ${cfg.label}?`)}`, true));
+      if (setupHooks) {
+        try {
+          await cfg.setup();
+          console.log(`  ${color('✓', 'green')} ${cfg.label} configured`);
+          configuredHooks.push(cfg.label);
+        } catch {
+          console.error(`  ${color('⚠', 'yellow')} Failed to configure ${cfg.label}`);
+        }
       }
     }
   }
@@ -1696,8 +1750,8 @@ async function initStudio(parsed: ReturnType<typeof parseArgs>): Promise<number>
       `    ${dim('Swarm:')}     ${selectedPreset} preset (${SWARM_PRESETS[selectedPreset].join(', ')})`
     );
   }
-  if (detection.agentRuntimes.includes('Claude Code')) {
-    console.log(`    ${dim('Hooks:')}     Claude Code governance hooks`);
+  if (configuredHooks.length > 0) {
+    console.log(`    ${dim('Hooks:')}     ${configuredHooks.join(', ')}`);
   }
 
   console.log(`\n  ${bold('Next steps:')}`);
