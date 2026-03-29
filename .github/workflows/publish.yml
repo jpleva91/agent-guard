@@ -141,7 +141,15 @@ jobs:
 
       - name: Publish @red-codes/agentguard (CLI)
         working-directory: apps/cli
-        run: pnpm publish --provenance --access public --no-git-checks
+        run: |
+          OUTPUT=$(pnpm publish --provenance --access public --no-git-checks 2>&1) && echo "$OUTPUT" || {
+            echo "$OUTPUT"
+            if echo "$OUTPUT" | grep -q "cannot publish over the previously published"; then
+              echo "::notice::@red-codes/agentguard already published at this version, skipping"
+            else
+              exit 1
+            fi
+          }
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
