@@ -168,6 +168,36 @@ echo "Then run: scripts/write-persona.sh <driver> <role>"
 exit 0
 `;
 
+/**
+ * Bootstrap-safe commands that should be allowed through when the kernel binary
+ * is not yet available. These are the minimum commands needed to install
+ * dependencies and build the project so the kernel can become available.
+ *
+ * This resolves the catch-22 where the governance hook blocks `pnpm install`
+ * before the kernel binary exists. See: AgentGuardHQ/agentguard#995
+ */
+export const BOOTSTRAP_COMMANDS = [
+  'pnpm install',
+  'pnpm i',
+  'npm install',
+  'npm ci',
+  'npm i',
+  'yarn install',
+  'yarn',
+  'pnpm build',
+  'npm run build',
+  'yarn build',
+  'npx turbo build',
+  'pnpm turbo build',
+];
+
+/**
+ * Read-only tools that are safe to allow through during bootstrap.
+ * These cannot mutate state and blocking them prevents agents from
+ * even reading files to understand the project structure.
+ */
+export const BOOTSTRAP_SAFE_TOOLS = ['Read', 'Glob', 'Grep', 'LS', 'WebSearch', 'WebFetch'];
+
 /** Hook wrapper template — needs CLI prefix injected */
 export function claudeHookWrapper(
   cliPrefix: string,
@@ -177,6 +207,12 @@ export function claudeHookWrapper(
   // For local dev (cliPrefix = "node apps/cli/dist/bin.js"), the binary is always resolvable.
   // For installed package (cliPrefix = "agentguard"), we need to resolve from node_modules/.bin.
   const isLocal = cliPrefix.startsWith('node ');
+
+  // Build the bootstrap allowlist patterns for the shell script.
+  // Each pattern matches the start of a Bash command in the hook payload.
+  const bootstrapPatterns = BOOTSTRAP_COMMANDS.map((cmd) => `  *'"command":"${cmd}'* ) BOOTSTRAP_SAFE=1 ;;`).join('\n');
+  const bootstrapToolPatterns = BOOTSTRAP_SAFE_TOOLS.map((tool) => `  *'"tool_name":"${tool}"'* ) BOOTSTRAP_SAFE=1 ;;`).join('\n');
+
   const resolveBlock = isLocal
     ? `AGENTGUARD_BIN="${cliPrefix}"`
     : `# Resolve the agentguard binary: local node_modules first, then PATH
@@ -187,16 +223,41 @@ elif command -v agentguard &>/dev/null; then
   AGENTGUARD_BIN="agentguard"
 fi
 
-# SECURITY: fail closed — if kernel binary is missing, block the action
+# BOOTSTRAP EXEMPTION (AgentGuardHQ/agentguard#995):
+# When the kernel binary is missing, allow bootstrap commands (install/build)
+# and read-only tools through so the agent can self-bootstrap.
+# All other actions remain blocked (fail-closed).
 if [ -z "\$AGENTGUARD_BIN" ]; then
-  echo '{"decision":"block","reason":"AgentGuard kernel binary not found — governance cannot evaluate this action. Run: pnpm install"}'
+  # Read stdin to inspect the hook payload
+  HOOK_PAYLOAD="\$(cat)"
+  BOOTSTRAP_SAFE=0
+
+  # Check if this is a bootstrap-safe Bash command (install/build)
+  case "\$HOOK_PAYLOAD" in
+${bootstrapPatterns}
+  esac
+
+  # Check if this is a read-only tool (safe regardless of kernel state)
+  case "\$HOOK_PAYLOAD" in
+${bootstrapToolPatterns}
+  esac
+
+  if [ "\$BOOTSTRAP_SAFE" -eq 1 ]; then
+    # Allow through — emit a warning so the agent knows governance is not active
+    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"[AgentGuard bootstrap] Kernel binary not found — allowing bootstrap/read-only action. Run pnpm install && pnpm build to enable full governance."}}'
+    exit 0
+  fi
+
+  # Not a bootstrap command — fail closed
+  echo '{"decision":"block","reason":"AgentGuard kernel binary not found — governance cannot evaluate this action. Run: pnpm install && pnpm build"}'
   exit 0
 fi`;
 
   return `#!/usr/bin/env bash
 # claude-hook-wrapper.sh — Sources persona identity before running governance hook
-# SECURITY: This script MUST fail closed. If the kernel binary cannot be found,
-# it outputs a block response so Claude Code denies the action.
+# SECURITY: This script MUST fail closed for non-bootstrap actions.
+# Bootstrap exemption: install/build commands and read-only tools are allowed
+# when the kernel binary is not yet available (AgentGuardHQ/agentguard#995).
 
 # Resolve project root (hook CWD may not match the project directory)
 AGENTGUARD_WORKSPACE="\$(git rev-parse --show-toplevel 2>/dev/null || pwd)"

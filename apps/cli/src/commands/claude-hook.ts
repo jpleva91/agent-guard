@@ -18,6 +18,88 @@ import type { CloudSinkBundle } from '@red-codes/telemetry';
 import { detectDriver, detectModel, VALID_ROLES } from '../identity.js';
 import type { Driver } from '../identity.js';
 
+// --- Bootstrap detection (AgentGuardHQ/agentguard#995) -------------------------
+// When the kernel packages haven't been built yet, dynamic imports will fail.
+// Instead of blocking all actions with a cryptic error, detect bootstrap mode
+// and allow install/build commands and read-only tools through.
+
+/**
+ * Commands that are safe to allow through during bootstrap (before the kernel is built).
+ * These are the minimum commands needed to install dependencies and build the project.
+ */
+const BOOTSTRAP_SAFE_COMMANDS = [
+  'pnpm install',
+  'pnpm i ',
+  'pnpm i\n',
+  'npm install',
+  'npm ci',
+  'npm i ',
+  'npm i\n',
+  'yarn install',
+  'yarn\n',
+  'pnpm build',
+  'npm run build',
+  'yarn build',
+  'npx turbo build',
+  'pnpm turbo build',
+];
+
+/**
+ * Read-only tools that are safe to allow during bootstrap.
+ * These cannot mutate state.
+ */
+const BOOTSTRAP_SAFE_TOOLS = new Set([
+  'Read',
+  'Glob',
+  'Grep',
+  'LS',
+  'NotebookRead',
+  'WebSearch',
+  'WebFetch',
+]);
+
+/**
+ * Check if a hook payload represents a bootstrap-safe action.
+ * Returns true if the action should be allowed through without kernel evaluation.
+ */
+export function isBootstrapSafeAction(data: Record<string, unknown>): boolean {
+  const toolName = data.tool_name as string | undefined;
+  if (!toolName) return false;
+
+  // Read-only tools are always safe
+  if (BOOTSTRAP_SAFE_TOOLS.has(toolName)) return true;
+
+  // Bash commands: check if the command is a bootstrap command
+  if (toolName === 'Bash') {
+    const input = (data.tool_input || {}) as Record<string, unknown>;
+    const command = (input.command as string | undefined)?.trim();
+    if (!command) return false;
+
+    return BOOTSTRAP_SAFE_COMMANDS.some(
+      (safe) => command === safe.trim() || command.startsWith(safe.trimEnd() + ' ') || command.startsWith(safe.trimEnd() + '\t')
+    );
+  }
+
+  return false;
+}
+
+/**
+ * Emit a bootstrap-mode allow response to stdout.
+ * This tells Claude Code to allow the action while warning that governance is inactive.
+ */
+function emitBootstrapAllow(): void {
+  process.stdout.write(
+    JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: 'PreToolUse',
+        permissionDecision: 'allow',
+        additionalContext:
+          '[AgentGuard bootstrap] Kernel not yet built — allowing bootstrap/read-only action. Run: pnpm install && pnpm build to enable full governance.',
+      },
+    })
+  );
+}
+
 // --- Session state: persist formatPass/testsPass across hook invocations ----
 // Each Claude Code session is stateless per hook call. We bridge this by writing
 // a small JSON file keyed by session_id so format/test results from one call are
@@ -359,15 +441,34 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
         // Exit code 2 tells Claude Code to block the action
         process.exit(denied ? 2 : 0);
       } catch (preErr) {
+        const errMsg = preErr instanceof Error ? preErr.message : String(preErr);
+        const isModuleError =
+          errMsg.includes('Cannot find module') ||
+          errMsg.includes('ERR_MODULE_NOT_FOUND') ||
+          errMsg.includes('ENOENT');
+
+        // BOOTSTRAP EXEMPTION (AgentGuardHQ/agentguard#995):
+        // If the kernel hasn't been built yet (module not found), allow bootstrap
+        // commands (install/build) and read-only tools through so the agent can
+        // self-bootstrap. All other actions remain blocked (fail-closed).
+        if (isModuleError && isBootstrapSafeAction(data)) {
+          process.stderr.write(
+            `[agentguard] Bootstrap mode — kernel not built. Allowing bootstrap/read-only action.\n`
+          );
+          emitBootstrapAllow();
+          process.exit(0);
+          return;
+        }
+
         // SECURITY: fail closed on PreToolUse — if the kernel crashes, block the action
         // rather than silently allowing it through.
         process.stderr.write(
-          `[agentguard] PreToolUse hook error: ${preErr instanceof Error ? preErr.message : String(preErr)}\n`
+          `[agentguard] PreToolUse hook error: ${errMsg}\n`
         );
         process.stdout.write(
           JSON.stringify({
             decision: 'block',
-            reason: `AgentGuard governance hook crashed: ${preErr instanceof Error ? preErr.message : 'unknown error'}. Action blocked for safety.`,
+            reason: `AgentGuard governance hook crashed: ${errMsg}. Action blocked for safety.`,
           })
         );
         process.exit(2);
