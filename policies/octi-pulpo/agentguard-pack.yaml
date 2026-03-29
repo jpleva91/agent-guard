@@ -1,0 +1,27 @@
+# Octi Pulpo policy pack — allow AgentGuard coordination tools.
+# Enables MCP-based agent coordination: memory, dispatch, sprint tracking, and health probes.
+#
+# Octi Pulpo tools normalize to action=mcp.call, target=octi-pulpo in the AAB.
+# All 13 coordination tools are covered by the single target-scoped rule below.
+#
+# Tools covered:
+#   memory_store, memory_recall, memory_status
+#   coord_claim, coord_signal
+#   route_recommend, health_report
+#   dispatch_event, dispatch_status, dispatch_trigger
+#   sprint_status, sprint_sync, benchmark_status
+#
+# Usage:
+#   extends: ["./policies/octi-pulpo"]
+
+id: octi-pulpo-pack
+name: Octi Pulpo Coordination Pack
+description: Allow all Octi Pulpo MCP coordination tools — memory, dispatch, sprint tracking, health
+severity: 2
+version: 1.0.0
+
+rules:
+  - action: mcp.call
+    target: octi-pulpo
+    effect: allow
+    reason: Octi Pulpo coordination tools — memory, dispatch, sprint tracking, health probes
