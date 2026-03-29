@@ -173,7 +173,7 @@ apps/
 │   ├── session-store.ts        # Session management
 │   ├── file-event-store.ts     # File-based event persistence
 │   ├── evidence-summary.ts     # Evidence summary generator for PR reports
-│   └── commands/               # guard, inspect, replay, export, import, simulate, ci-check, plugin, policy (validate, suggest, verify), claude-hook, claude-init, copilot-hook, copilot-init, deepagents-hook, deepagents-init, cloud, init, diff, evidence-pr, traces, session-viewer, status, analytics, auto-setup, config, audit-verify, demo, adoption, learn, migrate, trust, team-report
+│   └── commands/               # guard, inspect, replay, export, import, simulate, ci-check, plugin, policy (validate, suggest, verify), claude-hook, claude-init, copilot-hook, copilot-init, codex-hook, codex-init, gemini-hook, gemini-init, goose-init, cloud, init, diff, evidence-pr, traces, session-viewer, status, analytics, auto-setup, config, audit-verify, demo, adoption, learn, migrate, trust, team-report
 ├── mcp-server/src/             # @red-codes/mcp-server — MCP governance server
 │   ├── index.ts                # Entry point
 │   ├── server.ts               # MCP server implementation
@@ -229,7 +229,7 @@ The kernel loop is the core of AgentGuard. Every agent action passes through it:
 1. Agent proposes action (Claude Code tool call → `RawAgentAction`)
 2. AAB normalizes intent (tool → action type, detect git/destructive commands)
 3. Policy evaluator matches rules (deny/allow with scopes, branches, limits)
-4. Invariant checker verifies system state (21 defaults)
+4. Invariant checker verifies system state (24 defaults)
 5. If allowed: execute via adapter (file/shell/git handlers)
 6. Emit lifecycle events: `ACTION_REQUESTED` → `ACTION_ALLOWED/DENIED` → `ACTION_EXECUTED/FAILED`
 7. Sink all events to SQLite for audit trail
@@ -244,7 +244,7 @@ Each workspace package maps to a single architectural concept:
 - **packages/policy/** — Policy evaluator + loaders (YAML/JSON, pack loader, semantic versioning)
 - **packages/invariants/** — Invariant definitions + checker
 - **packages/matchers/** — Structured matchers for enforcement (Aho-Corasick, globs, hash sets)
-- **packages/adapters/** — Execution adapters (file, shell, git, claude-code, copilot-cli)
+- **packages/adapters/** — Execution adapters (file, shell, git, claude-code, copilot-cli, codex-cli, gemini-cli)
 - **packages/plugins/** — Plugin ecosystem (discovery, registry, validation, sandboxing)
 - **packages/renderers/** — Renderer plugin system (registry, TUI renderer)
 - **packages/core/** — Shared utilities (types, actions, hash, execution-log)
@@ -293,8 +293,11 @@ Each workspace package maps to a single architectural concept:
 - `agentguard cloud login|signup|connect|status|events|runs|summary|disconnect` — Cloud governance analytics
 - `agentguard copilot-hook` — Handle GitHub Copilot PreToolUse/PostToolUse hook events
 - `agentguard copilot-init` — Set up GitHub Copilot hook integration
-- `agentguard deepagents-hook` — Handle DeepAgents (LangChain) PreToolUse/PostToolUse hook events
-- `agentguard deepagents-init` — Set up DeepAgents hook integration (generates Python middleware)
+- `agentguard codex-hook` — Handle OpenAI Codex CLI PreToolUse/PostToolUse hook events
+- `agentguard codex-init` — Set up OpenAI Codex CLI hook integration
+- `agentguard gemini-hook` — Handle Google Gemini CLI BeforeTool/AfterTool hook events
+- `agentguard gemini-init` — Set up Google Gemini CLI hook integration
+- `agentguard goose-init` — Set up Goose (Block) CLI integration (MCP extension)
 - `agentguard team-report` — Team-level governance observability across agents
 - `agentguard telemetry [on|off|status]` — Manage anonymous telemetry settings
 

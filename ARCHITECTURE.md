@@ -55,7 +55,7 @@ packages/
 ├── invariant-data-protection/ @red-codes/invariant-data-protection — Data protection invariant plugin
 ├── matchers/      @red-codes/matchers — Structured matchers (Aho-Corasick, globs, hash sets)
 ├── kernel/        @red-codes/kernel — Governed action kernel (orchestrate, normalize, decide, escalate)
-├── adapters/      @red-codes/adapters — Execution adapters (file, shell, git, claude-code, copilot-cli, deepagents)
+├── adapters/      @red-codes/adapters — Execution adapters (file, shell, git, claude-code, copilot-cli, codex-cli, gemini-cli)
 ├── storage/       @red-codes/storage — SQLite storage backend (opt-in)
 ├── telemetry/     @red-codes/telemetry — Runtime telemetry and logging
 ├── plugins/       @red-codes/plugins — Plugin ecosystem (discovery, registry, validation, sandboxing)

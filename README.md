@@ -16,7 +16,7 @@ Install in 30 seconds. Your agents can't break what matters.</p>
 
 ---
 
-AI coding agents (Claude Code, Codex CLI, GitHub Copilot CLI, Google Gemini CLI, OpenCode, DeepAgents, and more) run autonomously — writing files, executing commands, pushing code. AgentGuard prevents them from doing catastrophic things: no accidental pushes to main, no credential leaks, no runaway destructive loops. 24 built-in safety checks, zero config required.
+AI coding agents (Claude Code, Codex CLI, GitHub Copilot CLI, Google Gemini CLI, OpenCode, Goose, and more) run autonomously — writing files, executing commands, pushing code. AgentGuard prevents them from doing catastrophic things: no accidental pushes to main, no credential leaks, no runaway destructive loops. 24 built-in safety checks, zero config required.
 
 **For individuals:** stop your AI from wrecking your machine or repo.
 **For teams:** run fleets of agents safely at scale, with audit trails that pass compliance.
@@ -111,14 +111,14 @@ Identity consists of a **role** (`developer`, `reviewer`, `ops`, `security`, `ci
 |------------|---------|
 | **Policy enforcement** | YAML rules with deny / allow / escalate — drop `agentguard.yaml` in your repo |
 | **24 built-in invariants** | Secret exposure, protected branches, blast radius, path traversal, CI/CD config, package script injection, and more |
-| **47 event kinds** | Full lifecycle telemetry: `ActionRequested → ActionAllowed/Denied → ActionExecuted` |
+| **48 event kinds** | Full lifecycle telemetry: `ActionRequested → ActionAllowed/Denied → ActionExecuted` |
 | **Real-time cloud dashboard** | Telemetry streams to your team dashboard; opt-in, anonymous by default |
 | **Multi-tenant** | Team workspaces, GitHub/Google OAuth, SSO-ready |
 | **Live Office visualization** | 2D view of agents working in real time — share a link with your team |
 | **Agent SDK** | Programmatic governance for custom integrations and RunManifest-driven workflows |
 | **Agent identity** | Declare agent role + driver for governance telemetry — automatic prompt or CLI flag |
 | **Pre-push hooks** | Branch protection enforcement via git pre-push hooks, configured from agentguard.yaml |
-| **Works with** | Claude Code, Codex CLI, GitHub Copilot CLI, Google Gemini CLI, OpenCode, DeepAgents (LangChain), any MCP client |
+| **Works with** | Claude Code, Codex CLI, GitHub Copilot CLI, Google Gemini CLI, OpenCode, Goose (Block), any MCP client |
 
 ## Policy Format (YAML)
 
@@ -339,7 +339,7 @@ AgentGuard Kernel
   2. Evaluate    — match policy rules (deny / allow / escalate)
   3. Check       — run 24 built-in invariants
   4. Execute     — run action via adapter (file, shell, git)
-  5. Emit        — 47 event kinds → SQLite audit trail + cloud telemetry
+  5. Emit        — 48 event kinds → SQLite audit trail + cloud telemetry
 ```
 
 **Storage:** SQLite audit trail at `.agentguard/`. Every decision is recorded and verifiable.
@@ -403,7 +403,9 @@ agentguard claude-init                    # Interactive wizard: mode + pack → 
 agentguard claude-init --global           # Install hooks globally (~/.claude/settings.json)
 agentguard claude-init --mode guide --pack essentials  # Non-interactive setup
 agentguard copilot-init                   # Set up GitHub Copilot CLI hook integration
-agentguard deepagents-init                # Set up DeepAgents (.deepagents/agentguard_middleware.py) middleware
+agentguard codex-init                     # Set up OpenAI Codex CLI hook integration
+agentguard gemini-init                    # Set up Google Gemini CLI hook integration
+agentguard goose-init                     # Set up Goose (Block) CLI integration
 agentguard init --template strict         # Scaffold policy from a template
 agentguard status                         # Show governance status
 
