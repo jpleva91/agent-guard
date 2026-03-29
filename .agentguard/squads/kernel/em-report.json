@@ -1,39 +1,58 @@
 {
-  "generatedAt": "2026-03-26T00:00:00.000Z",
+  "generatedAt": "2026-03-29T12:00:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
-  "health": "green",
-  "summary": "Steady-state cycle. PR #969 (fix claude-init binary path, closes #964 priority:critical) is CI-green (5/5 checks) — flagged for architect review. Closed stale EM report PR #966 (superseded). Sprint issues #955 (Go kernel hook delegation) and #957 (Go pack resolution) remain open with no PR; senior coder still assigned. PR budget: 1 open / 3 max. 4129 tests passing.",
+  "health": "yellow",
+  "healthReason": "v2.10.2 published without Go kernel binaries (#1316 — OPEN). PR #1303 (KE-2 implementation) has a merge conflict and cannot be merged until rebased. Sprint KE-2 issues are closed but the Go delegation path is not yet live in a released package.",
+  "summary": "KE-2 sprint COMPLETE — issues #955, #957, #964 all closed. PR #969 (claude-init binary path) merged. Merged #1340 (gitignore) and #1334 (bootstrap pnpm --force). Closed stale EM reports #1324 and #1336. Flagged PR #1303 as conflicting. New sprint KE-3: patch v2.10.3 with Go kernel binaries + harden bootstrap dogfood.",
+  "sprintTransition": {
+    "completed": "KE-2",
+    "completedIssues": [955, 957, 964],
+    "next": "KE-3",
+    "nextGoal": "Patch v2.10.3 with Go kernel binaries + harden bootstrap (#1316, #1341, #1325, #1332, #1322)"
+  },
   "prQueue": {
     "open": 1,
     "prs": [
       {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "branch": "agent/kernel-sr-20260325-230535",
-        "status": "awaiting_review",
-        "ciStatus": "passed",
-        "checks": {
-          "total": 5,
-          "passed": 5,
-          "failed": 0,
-          "names": ["CodeQL", "test-and-build", "lint", "rust-kernel", "analyze"]
-        },
-        "closesIssue": 964,
-        "openedAt": "2026-03-25T23:11:08Z",
-        "note": "CI all green. No reviews yet. Flagging for architect attention."
+        "number": 1303,
+        "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
+        "branch": "feat/go-kernel-delegation-955-957",
+        "status": "conflicting",
+        "ciStatus": null,
+        "note": "CONFLICTING. Issues already closed. EM commented requesting rebase. No CI runs possible until rebased."
       }
     ]
   },
-  "mergedThisCycle": [],
-  "closedThisCycle": [
+  "mergedThisCycle": [
     {
-      "number": 966,
-      "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
-      "note": "Stale EM report from prior cycle — superseded by current run"
+      "number": 969,
+      "title": "fix(claude-init): write hooks with full binary path (closes #964)",
+      "note": "Merged prior to this cycle. Closes priority:critical issue #964."
+    },
+    {
+      "number": 1340,
+      "title": "fix(gitignore): untrack .agentguard-root-session — runtime artifact, not code",
+      "note": "Merged this cycle. All CI green. Closes #1337 — fixes git checkout/rebase blocks in agent worktrees."
+    },
+    {
+      "number": 1334,
+      "title": "fix(bootstrap): pnpm install --force to avoid interactive Y/n prompt",
+      "note": "Merged this cycle. All CI green. Closes #1331 — unblocks agents stuck at pnpm interactive prompt."
     }
   ],
-  "newIssues": [],
+  "closedThisCycle": [
+    {
+      "number": 1324,
+      "title": "chore(kernel-em): EM cycle report 2026-03-29T06:10Z",
+      "note": "Stale EM report — superseded by current run"
+    },
+    {
+      "number": 1336,
+      "title": "chore(kernel-em): EM cycle report 2026-03-29T09:00Z",
+      "note": "Stale EM report — superseded by current run"
+    }
+  ],
   "loopGuards": {
     "prBudget": {
       "open": 1,
@@ -50,59 +69,104 @@
     }
   },
   "triage": {
-    "p0Issues": 0,
+    "p0Issues": 2,
     "p1Issues": 0,
     "newAssignments": [],
     "notableIssues": [
       {
-        "number": 964,
-        "title": "fix(claude-init): write hooks with full binary path",
-        "label": "priority:critical",
-        "status": "pr_open",
-        "pr": 969,
-        "note": "PR #969 CI green, awaiting architect review"
+        "number": 1316,
+        "title": "v2.10.2 Go kernel binaries missing from npm package",
+        "label": "bug",
+        "status": "open",
+        "pr": null,
+        "note": "Critical for KE-3. v2.10.2 published without Go kernel binaries — Go build failed before PR #1315 landed. Users fall back to TS kernel. Needs v2.10.3 patch release."
       },
       {
-        "number": 955,
-        "title": "Go kernel not invoked by claude-hook",
-        "label": "priority:high",
-        "status": "in_progress",
-        "pr": null,
-        "note": "Senior assigned, no PR yet — main sprint work"
+        "number": 1303,
+        "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
+        "label": null,
+        "status": "conflicting",
+        "pr": 1303,
+        "note": "KE-2 PR: CONFLICTING, no CI. Issues already closed. Needs rebase. Could close if Go path ships via v2.10.3 patch."
       },
       {
-        "number": 957,
-        "title": "Go kernel evaluate does not resolve pack: or YAML",
-        "label": "priority:high",
-        "status": "in_progress",
+        "number": 1341,
+        "title": "[dogfood] SessionStart hook silently skips pnpm install when partial .pnpm store exists",
+        "label": "dogfood",
+        "status": "open",
         "pr": null,
-        "note": "Senior assigned as sub-task of #955"
+        "note": "Bootstrap hardening for KE-3. Kernel binary absent when partial store exists."
+      },
+      {
+        "number": 1332,
+        "title": "[dogfood] start-governance-runtime: mkdir .agentguard blocked by self-modification invariant",
+        "label": "dogfood",
+        "status": "open",
+        "pr": null,
+        "note": "No-governance-self-modification invariant too broad — blocks legitimate EM state writes to .agentguard/squads/."
+      },
+      {
+        "number": 1325,
+        "title": "[dogfood] guide-mode no-governance-self-modification blocks mkdir -p .agentguard",
+        "label": "dogfood",
+        "status": "open",
+        "pr": null,
+        "note": "Same invariant scope issue as #1332. Both need KE-3 attention."
+      },
+      {
+        "number": 1319,
+        "title": "Swarm Health Alert — 2026-03-29",
+        "label": "priority:P0",
+        "status": "open",
+        "pr": null,
+        "note": "P0 swarm alert: 85.7% agents stuck, 18 dead PIDs, cron collisions. Human action required (git worktree prune, PID cleanup). Also flags kernel bootstrap failure in swarm-health-agent worktree."
       }
     ]
   },
-  "blockers": [],
+  "blockers": [
+    {
+      "issue": 1316,
+      "description": "v2.10.2 on npm is missing Go kernel binaries. Users fall back to slow TS kernel. Needs v2.10.3 patch.",
+      "since": "2026-03-29T05:14:00Z",
+      "escalate": false
+    },
+    {
+      "pr": 1303,
+      "description": "KE-2 implementation PR has merge conflict. Needs rebase before CI can run. Assigned to senior.",
+      "since": "2026-03-29T12:00:00Z",
+      "escalate": false
+    }
+  ],
   "escalations": [],
-  "metrics": {
-    "prsOpened": 1,
-    "prsMerged": 0,
-    "prsClosed": 1,
-    "issuesClosed": 0,
-    "governanceDenials": 0,
-    "retries": 0
-  },
-  "testHealth": {
-    "total": 4129,
-    "passed": 4129,
-    "failed": 0,
-    "packages": 19,
-    "status": "all_passing"
-  },
   "escalationRules": {
     "triggered": {
       "twoPlusFailingCI": false,
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "No escalation triggers. PR #969 needs architect review — not a blocker yet."
+    "notes": "No escalation triggers fired this cycle. #1316 is a concern but does not trigger the 'blocker across 2 runs' rule yet (first observation this cycle). Will escalate if unresolved next cycle."
+  },
+  "metrics": {
+    "prsOpened": 0,
+    "prsMerged": 2,
+    "prsClosed": 2,
+    "issuesClosed": 0,
+    "governanceDenials": 0,
+    "retries": 0
+  },
+  "dogfoodObservations": [
+    {
+      "severity": "info",
+      "description": "No governance denials encountered this EM cycle. AgentGuard operating normally for all tool calls.",
+      "related": null
+    }
+  ],
+  "testHealth": {
+    "total": 4129,
+    "passed": 4129,
+    "failed": 0,
+    "packages": 19,
+    "status": "all_passing",
+    "note": "Last run 2026-03-25. QA squad stale — no fresh test run this cycle."
   }
 }

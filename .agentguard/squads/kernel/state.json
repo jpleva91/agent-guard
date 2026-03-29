@@ -1,48 +1,79 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Wire Go kernel into npm hook path (#955). TS claude-hook must delegate to Go binary for 100x latency win.",
-    "issues": [955, 957, 964]
+    "goal": "KE-3: Patch v2.10.3 with Go kernel binaries + harden bootstrap (#1316, #1341, #1325, #1332, #1322)",
+    "issues": [1316, 1341, 1325, 1332, 1322]
   },
   "assignments": {
     "senior": {
-      "issue": [955, 957],
-      "title": "Wire Go kernel into claude-hook.ts — delegate evaluation to Go binary + resolve pack/YAML",
-      "status": "in_progress",
+      "issue": [1316, 1303],
+      "title": "Publish v2.10.3 with correct Go kernel binaries; rebase or close PR #1303",
+      "status": "unassigned",
       "branch": null,
       "pr": null,
       "claimedAt": null,
-      "note": "#964 has PR #969 up (CI green, awaiting review). Senior should focus on #955 (claude-hook.ts delegates to Go binary) and #957 (TS pre-resolves pack/YAML to flat JSON before handing to Go evaluate)."
+      "note": "KE-2 complete: #955, #957, #964 all CLOSED. PR #1303 (Go delegation) is CONFLICTING — needs rebase against main before CI can run. #1316: v2.10.2 npm package shipped without Go kernel binaries (build failed pre-#1315 fix). Needs v2.10.3 patch release."
     }
   },
-  "blockers": [],
+  "blockers": [
+    {
+      "issue": 1316,
+      "description": "v2.10.2 Go kernel binaries missing from npm package — module import fix (#1315) landed after release cut. Users fall back to TS kernel. Needs v2.10.3 patch.",
+      "since": "2026-03-29T05:14:00Z",
+      "owner": "senior"
+    },
+    {
+      "pr": 1303,
+      "description": "KE-2 implementation PR has merge conflict — needs rebase onto main before CI can run. Issues (#955/#957) already closed.",
+      "since": "2026-03-29T12:00:00Z",
+      "owner": "senior"
+    }
+  ],
   "prQueue": {
     "open": 1,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
       {
+        "number": 1303,
+        "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
+        "branch": "feat/go-kernel-delegation-955-957",
+        "status": "conflicting",
+        "ciStatus": null,
+        "openedAt": "2026-03-28T00:00:00Z",
+        "note": "CONFLICTING. Issues #955/#957 already closed. Needs rebase before CI can run. EM commented 2026-03-29T12:00Z."
+      },
+      {
         "number": 969,
         "title": "fix(claude-init): write hooks with full binary path (closes #964)",
         "branch": "agent/kernel-sr-20260325-230535",
-        "status": "awaiting_review",
+        "status": "merged",
         "ciStatus": "passed",
-        "openedAt": "2026-03-25T23:11:08Z",
-        "note": "CI all green (5/5). Needs architect review before merge."
+        "mergedAt": "2026-03-29T00:00:00Z",
+        "note": "Merged. Closes #964."
       },
       {
-        "number": 966,
-        "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
-        "branch": "agent/kernel-em-20260325-230535",
-        "status": "closed",
-        "ciStatus": null,
-        "openedAt": "2026-03-25T23:08:39Z",
-        "closedAt": "2026-03-26T00:00:00.000Z",
-        "note": "Stale EM report, closed this cycle as superseded"
+        "number": 1340,
+        "title": "fix(gitignore): untrack .agentguard-root-session — runtime artifact, not code",
+        "branch": null,
+        "status": "merged",
+        "ciStatus": "passed",
+        "mergedAt": "2026-03-29T12:00:00Z",
+        "note": "Merged this cycle. Closes #1337. Fixes agent worktree git conflicts."
+      },
+      {
+        "number": 1334,
+        "title": "fix(bootstrap): pnpm install --force to avoid interactive Y/n prompt",
+        "branch": null,
+        "status": "merged",
+        "ciStatus": "passed",
+        "mergedAt": "2026-03-29T12:00:00Z",
+        "note": "Merged this cycle. Closes #1331. Unblocks agents stuck at pnpm interactive prompt."
       }
     ]
   },
-  "health": "green",
+  "health": "yellow",
+  "healthReason": "v2.10.2 published without Go kernel binaries (#1316). PR #1303 has merge conflict. Sprint issues closed but implementation artifact not merged.",
   "testHealth": {
     "total": 4129,
     "passed": 4129,
@@ -51,7 +82,7 @@
     "lastRun": "2026-03-25T23:05:00.000Z",
     "status": "all_passing"
   },
-  "lastEmRun": "2026-03-26T00:00:00.000Z",
+  "lastEmRun": "2026-03-29T12:00:00.000Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-26T00:00:00.000Z"
+  "updatedAt": "2026-03-29T12:00:00.000Z"
 }
