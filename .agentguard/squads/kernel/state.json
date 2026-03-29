@@ -1,48 +1,56 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Wire Go kernel into npm hook path (#955). TS claude-hook must delegate to Go binary for 100x latency win.",
-    "issues": [955, 957, 964]
+    "goal": "Wire Go kernel into npm hook path (#955, #957). TS claude-hook must delegate to Go binary for 100x latency win.",
+    "issues": [955, 957, 964, 920]
   },
   "assignments": {
     "senior": {
       "issue": [955, 957],
-      "title": "Wire Go kernel into claude-hook.ts — delegate evaluation to Go binary + resolve pack/YAML",
-      "status": "in_progress",
-      "branch": null,
-      "pr": null,
-      "claimedAt": null,
-      "note": "#964 has PR #969 up (CI green, awaiting review). Senior should focus on #955 (claude-hook.ts delegates to Go binary) and #957 (TS pre-resolves pack/YAML to flat JSON before handing to Go evaluate)."
+      "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
+      "status": "pr_conflict",
+      "branch": "feat/go-kernel-delegation-955-957",
+      "pr": 1303,
+      "claimedAt": "2026-03-29T03:44:52Z",
+      "note": "PR #1303 opened 2026-03-29T03:44Z, closes #955+#957. Has merge conflict (dirty). CI blocked. Human must rebase before sprint goal can ship."
     }
   },
-  "blockers": [],
+  "blockers": [
+    {
+      "pr": 1303,
+      "description": "PR #1303 merge conflict (dirty) — CI blocked. Human must rebase branch feat/go-kernel-delegation-955-957.",
+      "firstSeenAt": "2026-03-29T12:15:00.000Z",
+      "cycleCount": 1
+    }
+  ],
   "prQueue": {
     "open": 1,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
       {
+        "number": 1303,
+        "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
+        "branch": "feat/go-kernel-delegation-955-957",
+        "status": "merge_conflict",
+        "ciStatus": "not_run",
+        "closesIssues": [955, 957],
+        "openedAt": "2026-03-29T03:44:52Z",
+        "note": "mergeable_state=dirty. label=conflict:needs-human. Needs human rebase to unblock CI."
+      },
+      {
         "number": 969,
         "title": "fix(claude-init): write hooks with full binary path (closes #964)",
         "branch": "agent/kernel-sr-20260325-230535",
-        "status": "awaiting_review",
+        "status": "merged",
         "ciStatus": "passed",
         "openedAt": "2026-03-25T23:11:08Z",
-        "note": "CI all green (5/5). Needs architect review before merge."
-      },
-      {
-        "number": 966,
-        "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
-        "branch": "agent/kernel-em-20260325-230535",
-        "status": "closed",
-        "ciStatus": null,
-        "openedAt": "2026-03-25T23:08:39Z",
-        "closedAt": "2026-03-26T00:00:00.000Z",
-        "note": "Stale EM report, closed this cycle as superseded"
+        "mergedAt": "2026-03-26T00:31:01Z",
+        "note": "Confirmed merged by jpleva91 on 2026-03-26."
       }
     ]
   },
-  "health": "green",
+  "health": "yellow",
   "testHealth": {
     "total": 4129,
     "passed": 4129,
@@ -51,7 +59,7 @@
     "lastRun": "2026-03-25T23:05:00.000Z",
     "status": "all_passing"
   },
-  "lastEmRun": "2026-03-26T00:00:00.000Z",
+  "lastEmRun": "2026-03-29T12:15:00.000Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-26T00:00:00.000Z"
+  "updatedAt": "2026-03-29T12:15:00.000Z"
 }

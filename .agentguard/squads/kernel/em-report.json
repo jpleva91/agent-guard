@@ -1,38 +1,37 @@
 {
-  "generatedAt": "2026-03-26T00:00:00.000Z",
+  "generatedAt": "2026-03-29T12:15:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
-  "health": "green",
-  "summary": "Steady-state cycle. PR #969 (fix claude-init binary path, closes #964 priority:critical) is CI-green (5/5 checks) — flagged for architect review. Closed stale EM report PR #966 (superseded). Sprint issues #955 (Go kernel hook delegation) and #957 (Go pack resolution) remain open with no PR; senior coder still assigned. PR budget: 1 open / 3 max. 4129 tests passing.",
+  "health": "yellow",
+  "summary": "Sprint PR #1303 landed (feat/go-kernel-delegation, closes #955+#957), but has a merge conflict (mergeable_state: dirty) blocking CI. Needs human to rebase before CI can run. PR #969 confirmed merged on 2026-03-26 (closes #964 — full binary path fix). Swarm-wide P0 alerts (#1319, #1289: credit exhaustion + stuck worktrees) noted; not kernel-caused. PR budget: 1 open / 3 max — PASS. No stuck agents in kernel squad.",
   "prQueue": {
     "open": 1,
     "prs": [
       {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "branch": "agent/kernel-sr-20260325-230535",
-        "status": "awaiting_review",
-        "ciStatus": "passed",
-        "checks": {
-          "total": 5,
-          "passed": 5,
-          "failed": 0,
-          "names": ["CodeQL", "test-and-build", "lint", "rust-kernel", "analyze"]
-        },
-        "closesIssue": 964,
-        "openedAt": "2026-03-25T23:11:08Z",
-        "note": "CI all green. No reviews yet. Flagging for architect attention."
+        "number": 1303,
+        "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
+        "branch": "feat/go-kernel-delegation-955-957",
+        "status": "merge_conflict",
+        "ciStatus": "not_run",
+        "closesIssues": [955, 957],
+        "openedAt": "2026-03-29T03:44:52Z",
+        "commits": 43,
+        "changedFiles": 119,
+        "additions": 7795,
+        "deletions": 695,
+        "note": "mergeable_state=dirty. label=conflict:needs-human. CI blocked until conflict resolved. Escalating to human for rebase."
       }
     ]
   },
-  "mergedThisCycle": [],
-  "closedThisCycle": [
+  "mergedThisCycle": [
     {
-      "number": 966,
-      "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
-      "note": "Stale EM report from prior cycle — superseded by current run"
+      "number": 969,
+      "title": "fix(claude-init): write hooks with full binary path (closes #964)",
+      "mergedAt": "2026-03-26T00:31:01Z",
+      "note": "Confirmed merged — was listed as awaiting_review in prior cycle state, now confirmed closed."
     }
   ],
+  "closedThisCycle": [],
   "newIssues": [],
   "loopGuards": {
     "prBudget": {
@@ -50,42 +49,71 @@
     }
   },
   "triage": {
-    "p0Issues": 0,
+    "p0Issues": 2,
     "p1Issues": 0,
     "newAssignments": [],
     "notableIssues": [
       {
-        "number": 964,
-        "title": "fix(claude-init): write hooks with full binary path",
-        "label": "priority:critical",
-        "status": "pr_open",
-        "pr": 969,
-        "note": "PR #969 CI green, awaiting architect review"
+        "number": 1319,
+        "title": "Swarm Health Alert — 2026-03-29 (5th+ cycle)",
+        "label": "priority:P0",
+        "squad": "swarm-wide",
+        "note": "Dead PIDs, stuck worktrees, 85.7% agents queued. Human action required. Not kernel-caused but mentions kernel #955/#957 on critical path."
       },
       {
-        "number": 955,
-        "title": "Go kernel not invoked by claude-hook",
-        "label": "priority:high",
-        "status": "in_progress",
-        "pr": null,
-        "note": "Senior assigned, no PR yet — main sprint work"
+        "number": 1289,
+        "title": "Swarm Health Alert — credit/quota exhaustion (26.5% agent failures)",
+        "label": "priority:P0",
+        "squad": "swarm-wide",
+        "note": "Credit exhaustion wave across all 4 drivers. Root cause: API budget. Not kernel-caused."
       },
       {
-        "number": 957,
-        "title": "Go kernel evaluate does not resolve pack: or YAML",
+        "number": 1303,
+        "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
+        "label": "conflict:needs-human",
+        "status": "pr_open_merge_conflict",
+        "pr": 1303,
+        "closesIssues": [955, 957],
+        "note": "PR exists but blocked by merge conflict. Human must rebase before CI can gate."
+      },
+      {
+        "number": 920,
+        "title": "v3.0 GATE: KE-2 ActionContext — vendor-neutral action metadata",
         "label": "priority:high",
-        "status": "in_progress",
-        "pr": null,
-        "note": "Senior assigned as sub-task of #955"
+        "status": "unassigned",
+        "note": "Kernel squad suggested owner. No PR, no assignment. v3.0 gate — needs planning."
+      },
+      {
+        "number": 648,
+        "title": "bug: governance hook blocks read-only operations on protected paths",
+        "label": "priority:high",
+        "status": "unassigned",
+        "note": "Kernel squad issue — hook mis-classifies diff/grep/git-add as file.write. Needs triage."
       }
     ]
   },
-  "blockers": [],
-  "escalations": [],
+  "blockers": [
+    {
+      "issue": null,
+      "pr": 1303,
+      "description": "PR #1303 (closes #955+#957) has merge conflict (dirty). CI blocked. Sprint goal cannot be validated until human resolves rebase.",
+      "firstSeenAt": "2026-03-29T12:15:00.000Z",
+      "cycleCount": 1,
+      "escalated": false
+    }
+  ],
+  "escalations": [
+    {
+      "type": "human_action_required",
+      "pr": 1303,
+      "message": "PR #1303 (feat/go-kernel-delegation, closes #955+#957) has a merge conflict and cannot be CI-gated. Human must rebase or resolve conflicts on branch feat/go-kernel-delegation-955-957 before sprint goal can ship.",
+      "priority": "high"
+    }
+  ],
   "metrics": {
     "prsOpened": 1,
     "prsMerged": 0,
-    "prsClosed": 1,
+    "prsClosed": 0,
     "issuesClosed": 0,
     "governanceDenials": 0,
     "retries": 0
@@ -95,7 +123,8 @@
     "passed": 4129,
     "failed": 0,
     "packages": 19,
-    "status": "all_passing"
+    "status": "all_passing",
+    "note": "Last confirmed run 2026-03-25T23:05:00Z. No new test run available this cycle (CI blocked on PR #1303 conflict)."
   },
   "escalationRules": {
     "triggered": {
@@ -103,6 +132,6 @@
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "No escalation triggers. PR #969 needs architect review — not a blocker yet."
+    "notes": "Merge conflict blocker on #1303 is 1st cycle — not yet a persistent escalation. Will trigger 'persistentBlocker' rule if unresolved next cycle."
   }
 }
