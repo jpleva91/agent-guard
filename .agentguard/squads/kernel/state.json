@@ -1,48 +1,46 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Wire Go kernel into npm hook path (#955). TS claude-hook must delegate to Go binary for 100x latency win.",
-    "issues": [955, 957, 964]
+    "goal": "Wire Go kernel into npm hook path (#955/#957). PR #1303 open/conflicting — senior must assess: rebase or close after PR #1300 (complete Go kernel, 145x faster) merged 2026-03-29.",
+    "issues": [955, 957]
   },
   "assignments": {
     "senior": {
       "issue": [955, 957],
-      "title": "Wire Go kernel into claude-hook.ts — delegate evaluation to Go binary + resolve pack/YAML",
-      "status": "in_progress",
-      "branch": null,
-      "pr": null,
-      "claimedAt": null,
-      "note": "#964 has PR #969 up (CI green, awaiting review). Senior should focus on #955 (claude-hook.ts delegates to Go binary) and #957 (TS pre-resolves pack/YAML to flat JSON before handing to Go evaluate)."
+      "title": "Assess PR #1303 after #1300: rebase TS delegation or close as superseded",
+      "status": "blocked",
+      "branch": "feat/go-kernel-delegation-955-957",
+      "pr": 1303,
+      "claimedAt": "2026-03-25T14:51:03Z",
+      "note": "PR #1303 is CONFLICTING (merge conflicts with main after PR #1300 merged). Senior must assess: (1) Is TS-delegates-to-Go approach in #1303 still needed after #1300 replaced TS entirely with Go? (2) If yes: rebase #1303 against main and resolve conflicts, get CI green. (3) If no: close #1303 and mark #955/#957 as resolved via #1300."
     }
   },
-  "blockers": [],
+  "blockers": [
+    {
+      "id": "pr-1303-conflicts",
+      "description": "PR #1303 (sprint #955/#957) CONFLICTING with main after PR #1300 (complete Go kernel) merged 2026-03-29T03:23Z. CI not running.",
+      "firstSeenAt": "2026-03-29T06:10:00.000Z",
+      "runsBlocked": 1,
+      "escalateAfterRuns": 2
+    }
+  ],
   "prQueue": {
     "open": 1,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
       {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "branch": "agent/kernel-sr-20260325-230535",
-        "status": "awaiting_review",
-        "ciStatus": "passed",
-        "openedAt": "2026-03-25T23:11:08Z",
-        "note": "CI all green (5/5). Needs architect review before merge."
-      },
-      {
-        "number": 966,
-        "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
-        "branch": "agent/kernel-em-20260325-230535",
-        "status": "closed",
+        "number": 1303,
+        "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
+        "branch": "feat/go-kernel-delegation-955-957",
+        "status": "conflicting",
         "ciStatus": null,
-        "openedAt": "2026-03-25T23:08:39Z",
-        "closedAt": "2026-03-26T00:00:00.000Z",
-        "note": "Stale EM report, closed this cycle as superseded"
+        "openedAt": "2026-03-29T03:44:21Z",
+        "note": "CONFLICTING — cannot merge until senior rebases against main (post-#1300). May be superseded."
       }
     ]
   },
-  "health": "green",
+  "health": "yellow",
   "testHealth": {
     "total": 4129,
     "passed": 4129,
@@ -51,7 +49,7 @@
     "lastRun": "2026-03-25T23:05:00.000Z",
     "status": "all_passing"
   },
-  "lastEmRun": "2026-03-26T00:00:00.000Z",
+  "lastEmRun": "2026-03-29T06:10:00.000Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-26T00:00:00.000Z"
+  "updatedAt": "2026-03-29T06:10:00.000Z"
 }

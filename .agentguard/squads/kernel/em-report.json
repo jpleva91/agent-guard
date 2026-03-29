@@ -1,44 +1,91 @@
 {
-  "generatedAt": "2026-03-26T00:00:00.000Z",
+  "generatedAt": "2026-03-29T06:10:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
-  "health": "green",
-  "summary": "Steady-state cycle. PR #969 (fix claude-init binary path, closes #964 priority:critical) is CI-green (5/5 checks) — flagged for architect review. Closed stale EM report PR #966 (superseded). Sprint issues #955 (Go kernel hook delegation) and #957 (Go pack resolution) remain open with no PR; senior coder still assigned. PR budget: 1 open / 3 max. 4129 tests passing.",
+  "health": "yellow",
+  "summary": "Sprint PR #1303 (closes #955/#957: TS→Go hook delegation) is CONFLICTING after PR #1300 merged (complete Go kernel, 145x faster, 2ms vs 290ms). CI cannot run on #1303 until conflicts resolved. Senior coder must assess: (1) does TS delegation remain relevant given #1300 fully replaced TS with Go? (2) rebase or close #1303? PR #969 confirmed merged (closes #964). No P0/P1 issues open. PR #1317 (Gemini adapter tests, 4/4 CI green, copilot squad) is ready for human review.",
   "prQueue": {
     "open": 1,
     "prs": [
       {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "branch": "agent/kernel-sr-20260325-230535",
-        "status": "awaiting_review",
-        "ciStatus": "passed",
-        "checks": {
-          "total": 5,
-          "passed": 5,
-          "failed": 0,
-          "names": ["CodeQL", "test-and-build", "lint", "rust-kernel", "analyze"]
-        },
-        "closesIssue": 964,
-        "openedAt": "2026-03-25T23:11:08Z",
-        "note": "CI all green. No reviews yet. Flagging for architect attention."
+        "number": 1303,
+        "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
+        "branch": "feat/go-kernel-delegation-955-957",
+        "status": "conflicting",
+        "ciStatus": null,
+        "closesIssues": [955, 957],
+        "openedAt": "2026-03-29T03:44:21Z",
+        "note": "CONFLICTING — merge conflicts with main after PR #1300 (complete Go kernel) merged March 29. CI not running. Senior coder must rebase or assess if TS delegation approach is superseded by #1300."
       }
     ]
   },
-  "mergedThisCycle": [],
-  "closedThisCycle": [
+  "mergedThisCycle": [
     {
-      "number": 966,
-      "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
-      "note": "Stale EM report from prior cycle — superseded by current run"
+      "number": 969,
+      "title": "fix(claude-init): write hooks with full binary path (closes #964)",
+      "mergedAt": "2026-03-26T00:31:01Z",
+      "note": "Confirmed merged from previous cycle."
+    },
+    {
+      "number": 1295,
+      "title": "fix: bootstrap exemption for governance hooks (#995)",
+      "mergedAt": "2026-03-29T01:15:44Z",
+      "note": "Critical fix — unblocked 5 EM cycles of marketing squad. Bootstrap catch-22 resolved."
+    },
+    {
+      "number": 1296,
+      "title": "fix(ci): add skip workflow for site-only PRs (closes #1267)",
+      "mergedAt": "2026-03-29T02:19:50Z",
+      "note": "CI infra fix — site PRs no longer fail on test-and-build."
+    },
+    {
+      "number": 1300,
+      "title": "feat(go): complete Go kernel — replace TS hook pipeline entirely",
+      "mergedAt": "2026-03-29T03:23:50Z",
+      "note": "MAJOR MILESTONE: Go kernel delivers 145x faster hook evaluation (2ms vs 290ms). Full TS parity. Likely caused merge conflicts on #1303."
     }
   ],
-  "newIssues": [],
+  "closedThisCycle": [],
+  "notablePRsOtherSquads": [
+    {
+      "number": 1317,
+      "title": "test: add unit tests for Gemini CLI adapter",
+      "squad": "copilot",
+      "ciStatus": "passed",
+      "checks": 4,
+      "note": "4/4 CI green. No approval yet. Ready for human review/merge."
+    },
+    {
+      "number": 1318,
+      "title": "docs: sync documentation with codebase",
+      "squad": "copilot",
+      "ciStatus": "partial",
+      "checks": 2,
+      "note": "Docs-only PR, 2/2 checks (CodeQL + analyze). Awaiting review."
+    },
+    {
+      "number": 1320,
+      "title": "docs: sync documentation with codebase state (v2.10.2)",
+      "squad": "maintenance",
+      "ciStatus": "partial",
+      "checks": 2,
+      "note": "Docs-only PR, 2/2 checks. Awaiting review."
+    }
+  ],
+  "newIssues": [
+    {
+      "number": 1323,
+      "title": "[dogfood] pnpm install --frozen-lockfile hangs on interactive prompt during SessionStart bootstrap",
+      "label": "dogfood,bug",
+      "note": "Filed this cycle — pnpm install bootstrap path unreliable in non-TTY worktree. Workaround: --force flag."
+    }
+  ],
   "loopGuards": {
     "prBudget": {
       "open": 1,
       "max": 3,
-      "pass": true
+      "pass": true,
+      "note": "Kernel squad: 1 PR open. Other squads have 3 more (not counted against kernel budget)."
     },
     "retryLoops": {
       "stuckAgents": 0,
@@ -55,38 +102,46 @@
     "newAssignments": [],
     "notableIssues": [
       {
-        "number": 964,
-        "title": "fix(claude-init): write hooks with full binary path",
-        "label": "priority:critical",
-        "status": "pr_open",
-        "pr": 969,
-        "note": "PR #969 CI green, awaiting architect review"
-      },
-      {
         "number": 955,
         "title": "Go kernel not invoked by claude-hook",
         "label": "priority:high",
-        "status": "in_progress",
-        "pr": null,
-        "note": "Senior assigned, no PR yet — main sprint work"
+        "status": "pr_conflicting",
+        "pr": 1303,
+        "note": "PR #1303 conflicting. May be superseded by #1300 (complete Go kernel). Senior to assess."
       },
       {
         "number": 957,
         "title": "Go kernel evaluate does not resolve pack: or YAML",
         "label": "priority:high",
-        "status": "in_progress",
-        "pr": null,
-        "note": "Senior assigned as sub-task of #955"
+        "status": "pr_conflicting",
+        "pr": 1303,
+        "note": "Same as #955 — blocked on #1303 rebase/assessment."
       }
     ]
   },
-  "blockers": [],
+  "blockers": [
+    {
+      "id": "pr-1303-conflicts",
+      "description": "PR #1303 (sprint #955/#957) has merge conflicts after PR #1300 merged. CI blocked. Senior coder must rebase or close.",
+      "firstSeenAt": "2026-03-29T06:10:00.000Z",
+      "runsBlocked": 1,
+      "action": "Senior coder: assess if TS delegation in #1303 is still needed after #1300 (pure Go replacement). If yes: rebase. If no: close #1303 and mark #955/#957 closed via #1300."
+    }
+  ],
   "escalations": [],
+  "dogfoodEvents": [
+    {
+      "issue": 1323,
+      "description": "pnpm install --frozen-lockfile non-interactive hang in SessionStart bootstrap. Required --force workaround.",
+      "severity": "medium",
+      "filed": true
+    }
+  ],
   "metrics": {
-    "prsOpened": 1,
-    "prsMerged": 0,
-    "prsClosed": 1,
-    "issuesClosed": 0,
+    "prsOpened": 0,
+    "prsMerged": 4,
+    "prsClosed": 0,
+    "issuesClosed": 1,
     "governanceDenials": 0,
     "retries": 0
   },
@@ -95,7 +150,8 @@
     "passed": 4129,
     "failed": 0,
     "packages": 19,
-    "status": "all_passing"
+    "status": "all_passing",
+    "note": "Stale — from last QA run 2026-03-25. Tests not re-run this cycle."
   },
   "escalationRules": {
     "triggered": {
@@ -103,6 +159,6 @@
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "No escalation triggers. PR #969 needs architect review — not a blocker yet."
+    "notes": "PR #1303 conflict is a first-cycle blocker — not yet persistent. Will escalate if unresolved after next EM run."
   }
 }
