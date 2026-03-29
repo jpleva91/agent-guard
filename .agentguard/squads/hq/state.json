@@ -1,33 +1,29 @@
 {
   "squad": "hq",
   "sprint": {
-    "goal": "Validate Go kernel\u2192Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 unblock. Swarm health resolution.",
-    "issues": [
-      917,
-      1186,
-      1254
-    ]
+    "goal": "Validate Go kernel\u2192Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-3: v2.10.3 patch + bootstrap hardening. Swarm health resolution.",
+    "issues": [917, 1186, 1316, 1341, 1325, 1332, 1322, 1347]
   },
   "assignments": {
-    "kernel-squad": {
-      "task": "Fix #1254: scope No-Governance-Self-Modification to .agentguard/ config paths (not squad state or gh --body args). Fix PR #1255 CodeQL failure.",
-      "priority": "P1"
-    },
-    "kernel-sr": {
-      "task": "Assign KE-2 (ActionContext, issue #917) \u2014 0/4 checkboxes, no PR, 4 EM cycles unstarted.",
+    "kernel-squad-ke3": {
+      "task": "KE-3: (1) Cut v2.10.3 with correct Go kernel binaries (#1316), (2) Fix no-governance-self-modification scope to .agentguard/{config,policy,hooks} only (#1254/#1325/#1332), (3) Fix guide-mode to warn not block, (4) Update claude-hook-wrapper allowlist to strip rtk prefix (#1347), (5) Fix pnpm install check to test .modules.yaml not directory (#1341)",
       "priority": "P0"
     },
+    "kernel-sr": {
+      "task": "Rebase PR #1303 (KE-2 Go kernel delegation) against current main \u2014 it has merge conflicts and no CI. Issues #955/#957/#964 are closed; just needs rebase + CI green to merge.",
+      "priority": "P1"
+    },
     "cloud-squad": {
-      "task": "Upgrade @red-codes/agentguard from 2.9.0 to 2.9.1 in agentguard-cloud and agentguard-analytics",
+      "task": "Hold on upgrading @red-codes/agentguard \u2014 skip v2.10.2 (missing Go binaries). Upgrade directly to v2.10.3 when cut.",
       "priority": "P2"
     },
     "human-reviewer": {
-      "task": "Review and merge PR #1258 (site stats sync \u2014 all checks green, MERGEABLE)",
+      "task": "Review and merge PR #1320 (docs sync v2.10.2, all green), then close duplicate #1318. Also merge PR #1338 (Live Office README, all green).",
       "priority": "P2"
     },
-    "marketing-squad": {
-      "task": "Audit squad manifests for accurate agent count, update site/index.html swarm section (issue #1259)",
-      "priority": "P2"
+    "studio-squad": {
+      "task": "Rebase PR #1339 (studio init wizard) and PR #1345 (studio EM report) \u2014 both have merge conflicts.",
+      "priority": "P3"
     }
   },
   "resolved": {
@@ -58,31 +54,50 @@
       "priority": "HIGH",
       "resolvedAt": "2026-03-28T21:00:00.000Z",
       "note": "Fixed in PR #1252"
+    },
+    "cron-collisions": {
+      "task": "Fix 3 cron collision pairs in server/schedule.json (#1327)",
+      "priority": "P2",
+      "resolvedAt": "2026-03-29T13:00:00.000Z",
+      "note": "Workspace PR #236 opened \u2014 analytics-reporter, analytics-invariant-researcher, shellforge-ollama-integration offset by 1-2 minutes"
     }
   },
   "blockers": [
     {
       "issue": 1186,
-      "description": "Swarm health P0 \u2014 85.7% agents stuck (4th+ cycle). Human intervention required.",
-      "escalatedTo": "director",
+      "description": "Swarm health P0 \u2014 85.7% agents stuck (5th+ cycle). Human intervention required: git worktree prune, PID cleanup.",
+      "escalatedTo": "director/human",
       "firstSeen": "2026-03-28T06:02:00.000Z"
     },
     {
-      "issue": 917,
-      "description": "KE-2 unstarted \u2014 4 EM cycles, no assignee, 0/4 checkboxes. Sprint goal at serious risk.",
-      "escalatedTo": "director/kernel-sr"
+      "issue": 1316,
+      "description": "v2.10.2 npm package missing Go kernel binaries \u2014 released before fix #1315 landed. v2.10.3 patch required.",
+      "escalatedTo": "kernel-squad-ke3",
+      "firstSeen": "2026-03-29T05:00:00.000Z"
     },
     {
-      "issue": 1254,
-      "description": "New P1 dogfood: No-Governance-Self-Modification false positive blocks analytics agents and EM state writes.",
-      "escalatedTo": "kernel-squad"
+      "issues": [1254, 1325, 1332, 1341, 1347],
+      "description": "Bootstrap invariant cascade \u2014 5 dogfood issues in 2 days. no-governance-self-modification false positives + guide-mode broken + rtk prefix breaks allowlist + pnpm check fails.",
+      "escalatedTo": "kernel-squad-ke3",
+      "firstSeen": "2026-03-28T20:00:00.000Z"
+    },
+    {
+      "issue": 1335,
+      "description": "Codex + Copilot CBs OPEN \u2014 52% swarm blocked. Budget exhaustion. Auto-resolves 2026-04-01.",
+      "escalatedTo": "monitoring",
+      "firstSeen": "2026-03-29T08:44:00.000Z"
+    },
+    {
+      "issue": 1342,
+      "description": "Copilot events 0 in API \u2014 conference demo May 6 at risk. Linked to CB state.",
+      "escalatedTo": "human",
+      "firstSeen": "2026-03-29T11:00:00.000Z"
     }
   ],
   "prQueue": {
-    "open": 3,
-    "reviewed": 0,
-    "mergeable": 1,
-    "notes": "PR #1258 all green needs review. PR #1255 CodeQL fail. PR #1261 CI in progress."
+    "open": 6,
+    "mergedThisCycle": 1,
+    "notes": "PR #1344 merged. #1320 all green needs review. #1318 duplicate of #1320. #1338 all green needs review. #1303 CONFLICTING needs rebase. #1339/#1345 CONFLICTING."
   },
-  "updatedAt": "2026-03-28T21:30:00.000Z"
+  "updatedAt": "2026-03-29T13:00:00.000Z"
 }
