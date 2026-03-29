@@ -24,7 +24,7 @@ No phase may regress these baselines.
 | Criterion | Verification Method |
 |-----------|-------------------|
 | Each adapter has integration tests | `npm run ts:test -- --grep "adapter"` — all pass |
-| `agentguard init <framework>` works for all supported frameworks | Manual test: init each framework in clean project |
+| `aguard init <framework>` works for all supported frameworks | Manual test: init each framework in clean project |
 | Framework payloads correctly translate to `RawAgentAction` | Unit tests with framework-specific payload fixtures |
 | Existing tests continue to pass | `npm run ts:test` — zero regressions |
 
@@ -109,9 +109,9 @@ No phase may regress these baselines.
 
 | Criterion | Verification Method |
 |-----------|-------------------|
-| Compliance report generates for each framework | `agentguard compliance audit --framework <x>` for SOC2, ISO, HIPAA |
+| Compliance report generates for each framework | `aguard compliance audit --framework <x>` for SOC2, ISO, HIPAA |
 | Control mappings are complete | Automated check: no unmapped AgentGuard features |
-| Policy templates pass validation | `agentguard policy validate` for each compliance template |
+| Policy templates pass validation | `aguard policy validate` for each compliance template |
 
 ### 2.5 — Cryptographic Non-Repudiation
 
@@ -138,7 +138,7 @@ No phase may regress these baselines.
 | Hardware adapters pass through governance loop identically | Same action through software and hardware adapter, compare decisions |
 | LED feedback matches governance state | Integration test with mock LED controller |
 | Physical kill switch immediately triggers LOCKDOWN | Simulated button press → verify LOCKDOWN event |
-| `agentguard init sentinel` scaffolds edge runtime | Manual test in clean directory |
+| `aguard init sentinel` scaffolds edge runtime | Manual test in clean directory |
 
 ---
 

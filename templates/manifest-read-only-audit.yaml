@@ -3,7 +3,7 @@
 # Grants read-only access for auditing and inspection.
 # No file writes, no git operations, no shell commands.
 #
-# Usage: agentguard guard --manifest manifest-read-only-audit.yaml
+# Usage: aguard guard --manifest manifest-read-only-audit.yaml
 # Docs:  https://docs.agentguard.dev/manifests
 
 sessionId: audit-session

@@ -4,5 +4,6 @@ export * from './shell.js';
 export * from './git.js';
 export * from './claude-code.js';
 export * from './copilot-cli.js';
-export * from './deepagents.js';
+export * from './codex-cli.js';
+export * from './gemini-cli.js';
 export * from './hook-integrity.js';

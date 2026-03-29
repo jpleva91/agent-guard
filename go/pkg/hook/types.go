@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -43,21 +44,31 @@ type HookResponse struct {
 }
 
 // FromEnv reads hook input from environment variables set by Claude Code.
-// Required: CLAUDE_TOOL_NAME, CLAUDE_HOOK_EVENT_NAME.
+// Falls back to reading JSON from stdin when env vars are not set.
+// Required: CLAUDE_TOOL_NAME (env) or tool_name (stdin JSON), CLAUDE_HOOK_EVENT_NAME.
 // Optional: CLAUDE_TOOL_INPUT (JSON), CLAUDE_SESSION_ID.
 func FromEnv() (HookInput, error) {
 	tool := os.Getenv("CLAUDE_TOOL_NAME")
+
+	// Env vars not set — try reading JSON payload from stdin.
+	// Claude Code sends hook payloads via stdin, not env vars.
 	if tool == "" {
-		return HookInput{}, errors.New("CLAUDE_TOOL_NAME not set")
+		stdinInput, err := FromStdin()
+		if err == nil {
+			return stdinInput, nil
+		}
+		return HookInput{}, errors.New("CLAUDE_TOOL_NAME not set and stdin read failed: " + err.Error())
 	}
 
 	eventStr := os.Getenv("CLAUDE_HOOK_EVENT_NAME")
 	if eventStr == "" {
-		return HookInput{}, errors.New("CLAUDE_HOOK_EVENT_NAME not set")
+		eventStr = string(PreToolUse) // default to PreToolUse
 	}
 
 	event := HookEvent(eventStr)
-	if event != PreToolUse && event != PostToolUse {
+	// Accept all known hook events (PreToolUse, PostToolUse, Stop, Notification)
+	validEvents := map[HookEvent]bool{PreToolUse: true, PostToolUse: true, "Stop": true, "Notification": true}
+	if !validEvents[event] {
 		return HookInput{}, fmt.Errorf("unknown hook event: %s", eventStr)
 	}
 
@@ -75,6 +86,37 @@ func FromEnv() (HookInput, error) {
 		Input:     input,
 		SessionID: os.Getenv("CLAUDE_SESSION_ID"),
 		Event:     event,
+	}, nil
+}
+
+// FromStdin reads a Claude Code hook payload from stdin JSON.
+// The payload format is: {"tool_name":"...", "tool_input":{...}, "session_id":"...", ...}
+func FromStdin() (HookInput, error) {
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return HookInput{}, fmt.Errorf("reading stdin: %w", err)
+	}
+	if len(data) == 0 {
+		return HookInput{}, errors.New("stdin is empty")
+	}
+
+	var payload struct {
+		ToolName  string          `json:"tool_name"`
+		ToolInput json.RawMessage `json:"tool_input"`
+		SessionID string          `json:"session_id"`
+	}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return HookInput{}, fmt.Errorf("parsing stdin JSON: %w", err)
+	}
+	if payload.ToolName == "" {
+		return HookInput{}, errors.New("tool_name not found in stdin payload")
+	}
+
+	return HookInput{
+		Tool:      payload.ToolName,
+		Input:     payload.ToolInput,
+		SessionID: payload.SessionID,
+		Event:     PreToolUse, // stdin payloads are always PreToolUse
 	}, nil
 }
 

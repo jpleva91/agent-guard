@@ -1,103 +1,57 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "Reduce false-positive governance denials blocking swarm agents: #1202 (KE-2 AAB normalization — strip rtk/time/timeout prefixes) → #1208 (heredoc false positive) → #1139 ($(date) command scanner allowlist). [#1209 closed via #1243. #1202 closed via #1252. #1208 closed via #1238.]",
-    "issues": [1139]
+    "goal": "Wire Go kernel into npm hook path (#955). TS claude-hook must delegate to Go binary for 100x latency win.",
+    "issues": [955, 957, 964]
   },
   "assignments": {
     "senior": {
-      "issue": [1139],
-      "title": "$(date) scanner allowlist — PR #1274 open, CI green",
-      "status": "pr-open",
-      "branch": "unknown",
-      "pr": 1274,
-      "claimedAt": null,
-      "note": "#1202 DONE (PR #1252 merged — stripCommandWrappers in aab.ts, 13 tests). #1139 fix is PR #1274: stripSafeSubshells() in command-scanner.ts, 20 new tests, CI 4/4 green. Awaiting merge."
-    },
-    "copilot-cli": {
-      "issue": [],
-      "title": "Sprint items complete — available for next sprint",
-      "status": "ready",
+      "issue": [955, 957],
+      "title": "Wire Go kernel into claude-hook.ts — delegate evaluation to Go binary + resolve pack/YAML",
+      "status": "in_progress",
       "branch": null,
       "pr": null,
       "claimedAt": null,
-      "note": "#1208 DONE (PR #1238 merged — stripHeredocBody in definitions.ts, 9 tests, +12 invariants total). Available for new work."
+      "note": "#964 has PR #969 up (CI green, awaiting review). Senior should focus on #955 (claude-hook.ts delegates to Go binary) and #957 (TS pre-resolves pack/YAML to flat JSON before handing to Go evaluate)."
     }
   },
   "blockers": [],
   "prQueue": {
     "open": 1,
-    "reviewed": 1,
-    "mergeable": 1,
+    "reviewed": 0,
+    "mergeable": 0,
     "prs": [
       {
-        "number": 1274,
-        "title": "fix(matchers): safe-subshell allowlist — prevent $(date) false positives",
-        "ci": "4/4 green",
-        "mergeStateStatus": "CURRENT",
-        "closesIssue": 1139,
-        "status": "review-ready",
-        "note": "Core fix: stripSafeSubshells() strips 9 read-only subshell families before destructive scan. 20 tests: unit per family, integration (destructive still fires through safe subshells), security (nested subshells NOT stripped), scanner-level integration. ReDoS-safe: [^)(]* argument pattern. Supersedes #1255.",
-        "readyToMerge": true,
-        "blockerRuns": 0
+        "number": 969,
+        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
+        "branch": "agent/kernel-sr-20260325-230535",
+        "status": "awaiting_review",
+        "ciStatus": "passed",
+        "openedAt": "2026-03-25T23:11:08Z",
+        "note": "CI all green (5/5). Needs architect review before merge."
+      },
+      {
+        "number": 966,
+        "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
+        "branch": "agent/kernel-em-20260325-230535",
+        "status": "closed",
+        "ciStatus": null,
+        "openedAt": "2026-03-25T23:08:39Z",
+        "closedAt": "2026-03-26T00:00:00.000Z",
+        "note": "Stale EM report, closed this cycle as superseded"
       }
     ]
   },
   "health": "green",
   "testHealth": {
-    "total": 4442,
-    "passed": 4442,
+    "total": 4129,
+    "passed": 4129,
     "failed": 0,
     "packages": 19,
-    "lastRun": "2026-03-29T02:51:00.000Z",
-    "status": "all_passing",
-    "delta": "+48 vs prior QA run (4394→4442)",
-    "breakdown": {
-      "kernel": 912,
-      "agentguard": 841,
-      "policy": 483,
-      "invariants": 598,
-      "adapters": 281,
-      "storage": 247,
-      "renderers": 105,
-      "plugins": 125,
-      "matchers": 122,
-      "telemetry": 161,
-      "core": 194,
-      "swarm": 72,
-      "invariant-data-protection": 122,
-      "events": 76,
-      "sdk": 18,
-      "mcp": 24,
-      "telemetry-client": 27,
-      "scheduler": 34
-    },
-    "regressions": [],
-    "coverageGaps": [
-      {
-        "issue": 1139,
-        "description": "20 tests in PR #1274 (not yet merged) cover stripSafeSubshells unit + integration + security. Gap closes on merge.",
-        "location": "packages/matchers/tests/command-scanner.test.ts",
-        "status": "addressed-in-pr-1274"
-      }
-    ],
-    "dogfoodNotes": "pnpm node_modules/turbo symlink was dangling (pointed to deleted worktree agentguard-autonomous-sdlc--coder-agent-2117057). Fixed via pnpm install --force from agent-guard root. Turbo cache restored. No governance blocks encountered during this QA run."
+    "lastRun": "2026-03-25T23:05:00.000Z",
+    "status": "all_passing"
   },
-  "completedIssues": [
-    { "issue": 1118, "pr": 1147, "mergedAt": "2026-03-27T23:09:36Z" },
-    { "issue": 1142, "pr": 1147, "mergedAt": "2026-03-27T23:09:36Z" },
-    { "issue": 955, "note": "Closed upstream" },
-    { "issue": 957, "note": "Closed upstream" },
-    { "issue": 964, "pr": 969, "mergedAt": "2026-03-26T00:31:01Z" },
-    { "issue": 1148, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
-    { "issue": 1144, "pr": 1168, "mergedAt": "2026-03-28T03:12:20Z" },
-    { "issue": 1119, "pr": 1153, "mergedAt": "2026-03-28T05:00:00.000Z", "note": "Merged after rebase on main" },
-    { "issue": 1182, "pr": 1212, "mergedAt": "2026-03-28T08:00:00.000Z", "note": "persona.env operational exemption in no-governance-self-modification invariant" },
-    { "issue": 1209, "pr": 1243, "mergedAt": "2026-03-28T19:00:00.000Z", "note": "MCP prefix match: AAB normalizeIntent now uses startsWith() for mcp.call target." },
-    { "issue": 1208, "pr": 1238, "mergedAt": "before 2026-03-28T21:30Z", "note": "stripHeredocBody() isolates command header before invariant scan. 9 tests (+12 invariants total with surrounding work)." },
-    { "issue": 1202, "pr": 1252, "mergedAt": "before 2026-03-28T21:30Z", "note": "stripCommandWrappers() strips rtk/time/timeout prefixes before git/github detection in aab.ts. 13 tests (+23 kernel total with surrounding work). Addresses Gap A of #1202." }
-  ],
-  "lastEmRun": "2026-03-28T23:30:00.000Z",
-  "lastQaRun": "2026-03-29T02:51:00.000Z",
-  "updatedAt": "2026-03-29T02:51:00.000Z"
+  "lastEmRun": "2026-03-26T00:00:00.000Z",
+  "lastQaRun": "2026-03-25T18:50:00.000Z",
+  "updatedAt": "2026-03-26T00:00:00.000Z"
 }

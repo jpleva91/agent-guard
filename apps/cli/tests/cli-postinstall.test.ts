@@ -1,21 +1,14 @@
 // Tests for postinstall script — dual-hook setup (Claude Code + Copilot CLI)
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir, homedir } from 'node:os';
+import { tmpdir } from 'node:os';
 
 import {
   resolveProjectRoot,
   writeClaudeCodeHooks,
   writeCopilotCliHooks,
-  writeCodexHooks,
-  writeGeminiHooks,
   writeStarterPolicy,
-  isTelemetryEnabled,
-  detectCiEnvironment,
-  resolveInstallId,
-  reportInstallTelemetry,
-  detectVersionUpgrade,
 } from '../src/postinstall.js';
 
 /** Create a unique temp directory for each test. */
@@ -342,7 +335,7 @@ describe('writeStarterPolicy', () => {
     expect(existsSync(policyPath)).toBe(true);
 
     const content = readFileSync(policyPath, 'utf8');
-    expect(content).toContain('mode: guide');
+    expect(content).toContain('mode: monitor');
     expect(content).toContain('pack: essentials');
     expect(content).toContain('git.push');
     expect(content).toContain('git.force-push');
@@ -350,13 +343,6 @@ describe('writeStarterPolicy', () => {
     expect(content).toContain('rm -rf');
     expect(content).toContain('deploy.trigger');
     expect(content).toContain('infra.destroy');
-  });
-
-  it('starter policy links to correct GitHub URL', () => {
-    writeStarterPolicy(tempDir);
-    const content = readFileSync(join(tempDir, 'agentguard.yaml'), 'utf8');
-    expect(content).toContain('https://github.com/AgentGuardHQ/agentguard');
-    expect(content).not.toContain('agent-guard');
   });
 
   it('skips when agentguard.yaml already exists', () => {
@@ -427,7 +413,7 @@ describe('postinstall integration', () => {
 
     // Policy file
     const policy = readFileSync(join(tempDir, 'agentguard.yaml'), 'utf8');
-    expect(policy).toContain('mode: guide');
+    expect(policy).toContain('mode: monitor');
     expect(policy).toContain('pack: essentials');
   });
 
@@ -501,6 +487,7 @@ describe('postinstall integration', () => {
 // ---------------------------------------------------------------------------
 // Regression: hook commands must use `npx --no-install` to resolve binaries
 // ---------------------------------------------------------------------------
+// The published package is `@red-codes/agentguard` but registers bin name `agentguard`.
 // Bare `agentguard` fails because node_modules/.bin isn't in PATH for hook subprocesses.
 // `npx agentguard` (without --no-install) falls back to downloading a nonexistent
 // `agentguard` package from npm, producing a 404 error.
@@ -590,367 +577,5 @@ describe('regression: hook commands use npx --no-install', () => {
       // Must NOT use `npx` without `--no-install` (would try to download from registry)
       expect(cmd).not.toMatch(/^npx agentguard /);
     }
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Install telemetry — isTelemetryEnabled, detectCiEnvironment, resolveInstallId
-// ---------------------------------------------------------------------------
-
-describe('isTelemetryEnabled', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it('returns true by default (no opt-out vars set)', () => {
-    vi.stubEnv('AGENTGUARD_TELEMETRY', '');
-    vi.stubEnv('DO_NOT_TRACK', '');
-    expect(isTelemetryEnabled()).toBe(true);
-  });
-
-  it('returns false when AGENTGUARD_TELEMETRY=off', () => {
-    vi.stubEnv('AGENTGUARD_TELEMETRY', 'off');
-    expect(isTelemetryEnabled()).toBe(false);
-  });
-
-  it('returns true when AGENTGUARD_TELEMETRY=anonymous', () => {
-    vi.stubEnv('AGENTGUARD_TELEMETRY', 'anonymous');
-    expect(isTelemetryEnabled()).toBe(true);
-  });
-
-  it('returns false when DO_NOT_TRACK=1', () => {
-    vi.stubEnv('DO_NOT_TRACK', '1');
-    expect(isTelemetryEnabled()).toBe(false);
-  });
-
-  it('returns false when DO_NOT_TRACK=true', () => {
-    vi.stubEnv('DO_NOT_TRACK', 'true');
-    expect(isTelemetryEnabled()).toBe(false);
-  });
-
-  it('returns true when DO_NOT_TRACK is a non-opt-out value', () => {
-    vi.stubEnv('DO_NOT_TRACK', '0');
-    expect(isTelemetryEnabled()).toBe(true);
-  });
-});
-
-describe('detectCiEnvironment', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it('returns null when no CI vars are set', () => {
-    vi.stubEnv('GITHUB_ACTIONS', '');
-    vi.stubEnv('VERCEL', '');
-    vi.stubEnv('GITLAB_CI', '');
-    vi.stubEnv('CI', '');
-    expect(detectCiEnvironment()).toBeNull();
-  });
-
-  it('detects GitHub Actions', () => {
-    vi.stubEnv('GITHUB_ACTIONS', 'true');
-    expect(detectCiEnvironment()).toBe('github-actions');
-  });
-
-  it('detects Vercel', () => {
-    vi.stubEnv('GITHUB_ACTIONS', '');
-    vi.stubEnv('VERCEL', '1');
-    expect(detectCiEnvironment()).toBe('vercel');
-  });
-
-  it('detects GitLab CI', () => {
-    vi.stubEnv('GITHUB_ACTIONS', '');
-    vi.stubEnv('VERCEL', '');
-    vi.stubEnv('GITLAB_CI', 'true');
-    expect(detectCiEnvironment()).toBe('gitlab-ci');
-  });
-
-  it('detects generic CI', () => {
-    vi.stubEnv('GITHUB_ACTIONS', '');
-    vi.stubEnv('VERCEL', '');
-    vi.stubEnv('GITLAB_CI', '');
-    vi.stubEnv('CI', 'true');
-    expect(detectCiEnvironment()).toBe('ci');
-  });
-});
-
-describe('resolveInstallId', () => {
-  let tempDir: string;
-
-  afterEach(() => {
-    if (tempDir) rmSync(tempDir, { recursive: true, force: true });
-  });
-
-  it('returns a valid UUID when no identity file exists', () => {
-    // No file at ~/.agentguard/telemetry.json — returns fresh UUID
-    const id = resolveInstallId();
-    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-  });
-
-  it('returns consistent UUID across calls without file (each call is fresh)', () => {
-    const id1 = resolveInstallId();
-    const id2 = resolveInstallId();
-    // Both are valid UUIDs (may differ since they're freshly generated)
-    expect(id1).toMatch(/^[0-9a-f-]{36}$/i);
-    expect(id2).toMatch(/^[0-9a-f-]{36}$/i);
-  });
-});
-
-describe('reportInstallTelemetry', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it('does not throw when telemetry is disabled', () => {
-    vi.stubEnv('AGENTGUARD_TELEMETRY', 'off');
-    // Should complete without throwing
-    expect(() => reportInstallTelemetry('/tmp/fake-script-dir')).not.toThrow();
-  });
-
-  it('does not throw when DO_NOT_TRACK=1', () => {
-    vi.stubEnv('DO_NOT_TRACK', '1');
-    expect(() => reportInstallTelemetry('/tmp/fake-script-dir')).not.toThrow();
-  });
-
-  it('does not throw even with an invalid script dir (network will fail silently)', () => {
-    vi.stubEnv('AGENTGUARD_TELEMETRY', 'off');
-    expect(() => reportInstallTelemetry('/nonexistent/path/that/does/not/exist')).not.toThrow();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// writeCodexHooks
-// ---------------------------------------------------------------------------
-
-describe('writeCodexHooks', () => {
-  let tempDir: string;
-
-  beforeEach(() => {
-    tempDir = makeTempDir('codex');
-    writeFileSync(join(tempDir, 'package.json'), '{}');
-  });
-
-  afterEach(() => {
-    rmSync(tempDir, { recursive: true, force: true });
-  });
-
-  it('returns not-detected when .codex/ directory does not exist', () => {
-    const result = writeCodexHooks(tempDir);
-    expect(result).toBe('not-detected');
-  });
-
-  it('creates .codex/hooks.json with PreToolUse and PostToolUse when .codex/ exists', () => {
-    const codexDir = join(tempDir, '.codex');
-    mkdirSync(codexDir, { recursive: true });
-
-    const result = writeCodexHooks(tempDir);
-    expect(result).toBe('created');
-
-    const hooksPath = join(codexDir, 'hooks.json');
-    expect(existsSync(hooksPath)).toBe(true);
-
-    const config = JSON.parse(readFileSync(hooksPath, 'utf8'));
-    expect(config.hooks.PreToolUse).toBeDefined();
-    expect(config.hooks.PostToolUse).toBeDefined();
-
-    const preHook = config.hooks.PreToolUse[0];
-    expect(preHook.hooks[0].command).toContain('codex-hook pre');
-    expect(preHook.hooks[0].command).toContain('npx --no-install agentguard');
-
-    const postHook = config.hooks.PostToolUse[0];
-    expect(postHook.hooks[0].command).toContain('codex-hook post');
-  });
-
-  it('merges with existing hooks.json preserving user config', () => {
-    const codexDir = join(tempDir, '.codex');
-    mkdirSync(codexDir, { recursive: true });
-    writeFileSync(
-      join(codexDir, 'hooks.json'),
-      JSON.stringify({ hooks: { SessionStart: [{ type: 'command', command: 'echo start' }] } }),
-      'utf8'
-    );
-
-    writeCodexHooks(tempDir);
-
-    const config = JSON.parse(readFileSync(join(codexDir, 'hooks.json'), 'utf8'));
-    expect(config.hooks.SessionStart).toBeDefined(); // preserved
-    expect(config.hooks.PreToolUse).toBeDefined(); // added
-  });
-
-  it('skips if codex-hook already present in PreToolUse', () => {
-    const codexDir = join(tempDir, '.codex');
-    mkdirSync(codexDir, { recursive: true });
-    writeFileSync(
-      join(codexDir, 'hooks.json'),
-      JSON.stringify({
-        hooks: {
-          PreToolUse: [{ hooks: [{ type: 'command', command: 'agentguard codex-hook pre' }] }],
-        },
-      }),
-      'utf8'
-    );
-
-    const result = writeCodexHooks(tempDir);
-    expect(result).toBe('skipped');
-  });
-
-  it('handles corrupt hooks.json gracefully by creating fresh hooks', () => {
-    const codexDir = join(tempDir, '.codex');
-    mkdirSync(codexDir, { recursive: true });
-    writeFileSync(join(codexDir, 'hooks.json'), 'not valid json{{{', 'utf8');
-
-    const result = writeCodexHooks(tempDir);
-    expect(result).toBe('created');
-
-    const config = JSON.parse(readFileSync(join(codexDir, 'hooks.json'), 'utf8'));
-    expect(config.hooks.PreToolUse).toBeDefined();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// writeGeminiHooks
-// ---------------------------------------------------------------------------
-
-describe('writeGeminiHooks', () => {
-  let tempDir: string;
-
-  beforeEach(() => {
-    tempDir = makeTempDir('gemini');
-    writeFileSync(join(tempDir, 'package.json'), '{}');
-  });
-
-  afterEach(() => {
-    rmSync(tempDir, { recursive: true, force: true });
-  });
-
-  it('returns not-detected when .gemini/ directory does not exist', () => {
-    const result = writeGeminiHooks(tempDir);
-    expect(result).toBe('not-detected');
-  });
-
-  it('creates .gemini/settings.json with BeforeTool and AfterTool when .gemini/ exists', () => {
-    const geminiDir = join(tempDir, '.gemini');
-    mkdirSync(geminiDir, { recursive: true });
-
-    const result = writeGeminiHooks(tempDir);
-    expect(result).toBe('created');
-
-    const settingsPath = join(geminiDir, 'settings.json');
-    expect(existsSync(settingsPath)).toBe(true);
-
-    const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
-    expect(settings.hooks.BeforeTool).toBeDefined();
-    expect(settings.hooks.AfterTool).toBeDefined();
-
-    const beforeHook = settings.hooks.BeforeTool[0];
-    expect(beforeHook.hooks[0].command).toContain('gemini-hook pre');
-    expect(beforeHook.hooks[0].command).toContain('npx --no-install agentguard');
-
-    const afterHook = settings.hooks.AfterTool[0];
-    expect(afterHook.matcher).toBe('Shell');
-    expect(afterHook.hooks[0].command).toContain('gemini-hook post');
-  });
-
-  it('merges with existing settings.json preserving user config', () => {
-    const geminiDir = join(tempDir, '.gemini');
-    mkdirSync(geminiDir, { recursive: true });
-    writeFileSync(
-      join(geminiDir, 'settings.json'),
-      JSON.stringify({ theme: 'dark', contextWindowSize: 1000000 }),
-      'utf8'
-    );
-
-    writeGeminiHooks(tempDir);
-
-    const settings = JSON.parse(readFileSync(join(geminiDir, 'settings.json'), 'utf8'));
-    expect(settings.theme).toBe('dark'); // preserved
-    expect(settings.contextWindowSize).toBe(1000000); // preserved
-    expect(settings.hooks.BeforeTool).toBeDefined(); // added
-  });
-
-  it('skips if gemini-hook already present in BeforeTool', () => {
-    const geminiDir = join(tempDir, '.gemini');
-    mkdirSync(geminiDir, { recursive: true });
-    writeFileSync(
-      join(geminiDir, 'settings.json'),
-      JSON.stringify({
-        hooks: {
-          BeforeTool: [{ hooks: [{ type: 'command', command: 'agentguard gemini-hook pre' }] }],
-        },
-      }),
-      'utf8'
-    );
-
-    const result = writeGeminiHooks(tempDir);
-    expect(result).toBe('skipped');
-  });
-
-  it('handles corrupt settings.json gracefully by creating fresh hooks', () => {
-    const geminiDir = join(tempDir, '.gemini');
-    mkdirSync(geminiDir, { recursive: true });
-    writeFileSync(join(geminiDir, 'settings.json'), '{invalid json', 'utf8');
-
-    const result = writeGeminiHooks(tempDir);
-    expect(result).toBe('created');
-
-    const settings = JSON.parse(readFileSync(join(geminiDir, 'settings.json'), 'utf8'));
-    expect(settings.hooks.BeforeTool).toBeDefined();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// detectVersionUpgrade
-// AGENTGUARD_IDENTITY_PATH is a module-level constant built from homedir() at
-// import time. Tests must write to the same real path (~/.agentguard/telemetry.json).
-// ---------------------------------------------------------------------------
-
-describe('detectVersionUpgrade', () => {
-  // Build the same path the module uses
-  const identityDir = join(homedir(), '.agentguard');
-  const identityPath = join(identityDir, 'telemetry.json');
-  let savedContent: string | null = null;
-
-  beforeEach(() => {
-    // Preserve any real identity file so we can restore it after
-    savedContent = existsSync(identityPath) ? readFileSync(identityPath, 'utf8') : null;
-    mkdirSync(identityDir, { recursive: true });
-  });
-
-  afterEach(() => {
-    if (savedContent !== null) {
-      writeFileSync(identityPath, savedContent, 'utf8');
-    } else if (existsSync(identityPath)) {
-      rmSync(identityPath);
-    }
-  });
-
-  it('returns isUpgrade: false when no identity file exists', () => {
-    if (existsSync(identityPath)) rmSync(identityPath);
-    expect(detectVersionUpgrade('2.9.3').isUpgrade).toBe(false);
-  });
-
-  it('returns isUpgrade: false when version matches stored version', () => {
-    writeFileSync(identityPath, JSON.stringify({ version: '2.9.3' }), 'utf8');
-    expect(detectVersionUpgrade('2.9.3').isUpgrade).toBe(false);
-  });
-
-  it('returns isUpgrade: true with fromVersion/toVersion when version differs', () => {
-    writeFileSync(identityPath, JSON.stringify({ version: '2.8.0' }), 'utf8');
-    const result = detectVersionUpgrade('2.9.3');
-    expect(result.isUpgrade).toBe(true);
-    if (result.isUpgrade) {
-      expect(result.fromVersion).toBe('2.8.0');
-      expect(result.toVersion).toBe('2.9.3');
-    }
-  });
-
-  it('returns isUpgrade: false when identity file has no version field', () => {
-    writeFileSync(identityPath, JSON.stringify({ install_id: 'some-uuid' }), 'utf8');
-    expect(detectVersionUpgrade('2.9.3').isUpgrade).toBe(false);
-  });
-
-  it('returns isUpgrade: false when identity file is corrupt JSON', () => {
-    writeFileSync(identityPath, 'not json{{', 'utf8');
-    expect(detectVersionUpgrade('2.9.3').isUpgrade).toBe(false);
   });
 });

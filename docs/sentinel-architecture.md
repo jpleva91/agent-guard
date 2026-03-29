@@ -207,7 +207,7 @@ A hardware push-button that immediately triggers the escalation state machine to
 - Hardware adapters pass through governance loop identically to software adapters
 - LED feedback matches governance state (White → Yellow → Green/Red)
 - Physical kill switch immediately triggers LOCKDOWN
-- `agentguard init sentinel` scaffolds edge runtime
+- `aguard init sentinel` scaffolds edge runtime
 
 ## References
 

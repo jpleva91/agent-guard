@@ -844,7 +844,7 @@ export async function policy(args: string[]): Promise<number> {
 
     default:
       console.error(`  Unknown policy subcommand: ${subcommand}`);
-      console.error('  Run "agentguard policy help" for usage info.');
+      console.error('  Run "aguard policy help" for usage info.');
       return 1;
   }
 }

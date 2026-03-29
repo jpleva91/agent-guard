@@ -1,21 +1,15 @@
-// AgentGuard postinstall — auto-configure governance hooks for all AI coding drivers.
-// Supports: Claude Code, Copilot CLI, Codex CLI, Gemini CLI.
+// AgentGuard postinstall — auto-configure governance hooks for Claude Code + Copilot CLI.
 // Standalone entry point. Uses ONLY Node.js built-ins (no @red-codes/*, no child_process).
 // Must NEVER fail npm install — all errors caught and silently ignored.
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { join, resolve, parse, sep, dirname } from 'node:path';
+import { join, resolve, parse, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { homedir } from 'node:os';
-import { randomUUID } from 'node:crypto';
-import * as https from 'node:https';
 
 // ── Constants ──
 
 const HOOK_MARKER = 'claude-hook';
 const COPILOT_HOOK_MARKER = 'copilot-hook';
-const CODEX_HOOK_MARKER = 'codex-hook';
-const GEMINI_HOOK_MARKER = 'gemini-hook';
 
 const POLICY_CANDIDATES = [
   'agentguard.yaml',
@@ -27,13 +21,13 @@ const POLICY_CANDIDATES = [
 
 const STARTER_POLICY = `# AgentGuard policy — safety rules for AI coding agents.
 # Customize this file to match your project's security requirements.
-# Docs: https://github.com/AgentGuardHQ/agentguard
+# Docs: https://github.com/AgentGuardHQ/agent-guard
 
 id: default-policy
 name: Default Safety Policy
 description: Baseline safety rules for AI coding agents
 severity: 4
-mode: guide
+mode: monitor
 pack: essentials
 
 rules:
@@ -189,51 +183,6 @@ interface CopilotHooksConfig {
     [key: string]: unknown;
   };
 }
-
-interface CodexHookEntry {
-  type?: string;
-  command?: string;
-  statusMessage?: string;
-  [key: string]: unknown;
-}
-
-interface CodexHookGroup {
-  matcher?: string;
-  hooks: CodexHookEntry[];
-}
-
-interface CodexHooksConfig {
-  hooks: {
-    PreToolUse?: CodexHookGroup[];
-    PostToolUse?: CodexHookGroup[];
-    [key: string]: unknown;
-  };
-}
-
-interface GeminiHookEntry {
-  type?: string;
-  command?: string;
-  [key: string]: unknown;
-}
-
-interface GeminiHookGroup {
-  matcher?: string;
-  hooks: GeminiHookEntry[];
-}
-
-interface GeminiSettings {
-  hooks?: {
-    BeforeTool?: GeminiHookGroup[];
-    AfterTool?: GeminiHookGroup[];
-    [key: string]: unknown;
-  };
-  [key: string]: unknown;
-}
-
-const TELEMETRY_ENDPOINT_HOST = 'agentguard-cloud.vercel.app';
-const TELEMETRY_INSTALL_PATH = '/api/v1/telemetry/install';
-const TELEMETRY_TIMEOUT_MS = 5000;
-const AGENTGUARD_IDENTITY_PATH = join(homedir(), '.agentguard', 'telemetry.json');
 
 // ── Exported functions (for testability) ──
 
@@ -416,114 +365,6 @@ export function writeCopilotCliHooks(projectRoot: string): 'created' | 'skipped'
 }
 
 /**
- * Write Codex CLI hooks to .codex/hooks.json.
- * Codex uses the same PreToolUse/PostToolUse schema as Claude Code.
- * Skips if AgentGuard hooks already present or .codex/ directory does not exist.
- */
-export function writeCodexHooks(projectRoot: string): 'created' | 'skipped' | 'not-detected' {
-  const codexDir = join(projectRoot, '.codex');
-  if (!existsSync(codexDir)) {
-    return 'not-detected';
-  }
-
-  const hooksPath = join(codexDir, 'hooks.json');
-
-  let config: CodexHooksConfig = { hooks: {} };
-  if (existsSync(hooksPath)) {
-    try {
-      config = JSON.parse(readFileSync(hooksPath, 'utf8')) as CodexHooksConfig;
-    } catch {
-      config = { hooks: {} };
-    }
-  }
-
-  if (hasCodexHook(config)) {
-    return 'skipped';
-  }
-
-  if (!config.hooks) config.hooks = {};
-
-  if (!config.hooks.PreToolUse) config.hooks.PreToolUse = [];
-  config.hooks.PreToolUse.push({
-    hooks: [
-      {
-        type: 'command',
-        command: 'npx --no-install agentguard codex-hook pre --store sqlite',
-        statusMessage: 'AgentGuard governance check',
-      },
-    ],
-  });
-
-  if (!config.hooks.PostToolUse) config.hooks.PostToolUse = [];
-  config.hooks.PostToolUse.push({
-    matcher: 'Bash',
-    hooks: [
-      {
-        type: 'command',
-        command: 'npx --no-install agentguard codex-hook post --store sqlite',
-        statusMessage: 'AgentGuard error monitoring',
-      },
-    ],
-  });
-
-  writeFileSync(hooksPath, JSON.stringify(config, null, 2), 'utf8');
-  return 'created';
-}
-
-/**
- * Write Gemini CLI hooks to .gemini/settings.json.
- * Gemini uses BeforeTool/AfterTool (different key names from Claude/Codex).
- * Skips if AgentGuard hooks already present or .gemini/ directory does not exist.
- */
-export function writeGeminiHooks(projectRoot: string): 'created' | 'skipped' | 'not-detected' {
-  const geminiDir = join(projectRoot, '.gemini');
-  if (!existsSync(geminiDir)) {
-    return 'not-detected';
-  }
-
-  const settingsPath = join(geminiDir, 'settings.json');
-
-  let settings: GeminiSettings = {};
-  if (existsSync(settingsPath)) {
-    try {
-      settings = JSON.parse(readFileSync(settingsPath, 'utf8')) as GeminiSettings;
-    } catch {
-      settings = {};
-    }
-  }
-
-  if (hasGeminiHook(settings)) {
-    return 'skipped';
-  }
-
-  if (!settings.hooks) settings.hooks = {};
-
-  if (!settings.hooks.BeforeTool) settings.hooks.BeforeTool = [];
-  settings.hooks.BeforeTool.push({
-    hooks: [
-      {
-        type: 'command',
-        command: 'npx --no-install agentguard gemini-hook pre --store sqlite',
-      },
-    ],
-  });
-
-  if (!settings.hooks.AfterTool) settings.hooks.AfterTool = [];
-  settings.hooks.AfterTool.push({
-    matcher: 'Shell',
-    hooks: [
-      {
-        type: 'command',
-        command: 'npx --no-install agentguard gemini-hook post --store sqlite',
-      },
-    ],
-  });
-
-  writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
-  return 'created';
-}
-
-/**
  * Write a starter agentguard.yaml policy if no policy file exists.
  */
 export function writeStarterPolicy(projectRoot: string): 'created' | 'skipped' {
@@ -537,162 +378,6 @@ export function writeStarterPolicy(projectRoot: string): 'created' | 'skipped' {
   const policyPath = join(projectRoot, 'agentguard.yaml');
   writeFileSync(policyPath, STARTER_POLICY, 'utf8');
   return 'created';
-}
-
-/**
- * Detect if this install is an upgrade from a previously recorded version.
- * Reads the last-recorded version from the identity file and compares with currentVersion.
- * Returns { isUpgrade: true, fromVersion, toVersion } or { isUpgrade: false }.
- */
-export function detectVersionUpgrade(
-  currentVersion: string
-): { isUpgrade: false } | { isUpgrade: true; fromVersion: string; toVersion: string } {
-  try {
-    if (!existsSync(AGENTGUARD_IDENTITY_PATH)) return { isUpgrade: false };
-    const data = JSON.parse(readFileSync(AGENTGUARD_IDENTITY_PATH, 'utf8')) as {
-      install_id?: string;
-      version?: string;
-    };
-    const prevVersion = data.version;
-    if (prevVersion && prevVersion !== currentVersion) {
-      return { isUpgrade: true, fromVersion: prevVersion, toVersion: currentVersion };
-    }
-  } catch {
-    // Unreadable identity file — treat as fresh install
-  }
-  return { isUpgrade: false };
-}
-
-/**
- * Returns true if install telemetry is enabled (checks AGENTGUARD_TELEMETRY and DO_NOT_TRACK).
- */
-export function isTelemetryEnabled(): boolean {
-  const mode = process.env.AGENTGUARD_TELEMETRY;
-  if (mode === 'off') return false;
-  const dnt = process.env.DO_NOT_TRACK;
-  if (dnt === '1' || dnt === 'true') return false;
-  return true;
-}
-
-/**
- * Detect CI environment from well-known environment variables.
- * Returns a short identifier string or null if not running in CI.
- */
-export function detectCiEnvironment(): string | null {
-  if (process.env.GITHUB_ACTIONS === 'true') return 'github-actions';
-  if (process.env.VERCEL) return 'vercel';
-  if (process.env.GITLAB_CI === 'true') return 'gitlab-ci';
-  if (process.env.CI === 'true' || process.env.CI === '1') return 'ci';
-  return null;
-}
-
-/**
- * Resolve the anonymous install ID from the persisted identity file.
- * Falls back to a fresh UUID if no identity exists or the file is unreadable.
- */
-export function resolveInstallId(): string {
-  try {
-    if (existsSync(AGENTGUARD_IDENTITY_PATH)) {
-      const data = JSON.parse(readFileSync(AGENTGUARD_IDENTITY_PATH, 'utf8')) as {
-        install_id?: string;
-      };
-      if (data.install_id) return data.install_id;
-    }
-  } catch {
-    // fall through to fresh UUID
-  }
-  return randomUUID();
-}
-
-/**
- * Send a fire-and-forget install event to the telemetry endpoint.
- * Errors are silently ignored — this must never break npm install.
- */
-function sendInstallEvent(payload: Record<string, unknown>): void {
-  try {
-    const body = JSON.stringify(payload);
-    const req = https.request({
-      hostname: TELEMETRY_ENDPOINT_HOST,
-      path: TELEMETRY_INSTALL_PATH,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(body),
-      },
-      timeout: TELEMETRY_TIMEOUT_MS,
-    });
-    req.on('error', () => {
-      /* ignore */
-    });
-    req.on('timeout', () => {
-      req.destroy();
-    });
-    req.write(body);
-    req.end();
-  } catch {
-    // Telemetry must never break npm install
-  }
-}
-
-/**
- * Report an install event to AgentGuard Cloud telemetry (opt-in, fire-and-forget).
- * Respects AGENTGUARD_TELEMETRY=off and DO_NOT_TRACK=1.
- * Reports: package version, OS, Node version, CI environment, anonymous install ID.
- */
-export function reportInstallTelemetry(scriptDir: string): void {
-  try {
-    if (!isTelemetryEnabled()) return;
-
-    // Resolve package version from the package.json adjacent to the compiled script
-    let packageVersion = 'unknown';
-    try {
-      const pkgPath = join(dirname(scriptDir), 'package.json');
-      const pkgAlt = join(scriptDir, '..', 'package.json');
-      const pkgFile = existsSync(pkgPath) ? pkgPath : pkgAlt;
-      if (existsSync(pkgFile)) {
-        const pkg = JSON.parse(readFileSync(pkgFile, 'utf8')) as { version?: string };
-        packageVersion = pkg.version ?? 'unknown';
-      }
-    } catch {
-      // version stays 'unknown'
-    }
-
-    const payload: Record<string, unknown> = {
-      event: 'install',
-      install_id: resolveInstallId(),
-      version: packageVersion,
-      os: process.platform,
-      node_version: process.version,
-      ci: detectCiEnvironment(),
-      timestamp: Date.now(),
-    };
-
-    sendInstallEvent(payload);
-
-    // Persist the version into the identity file so detectVersionUpgrade works on future installs
-    try {
-      const agentguardDir = join(homedir(), '.agentguard');
-      if (!existsSync(agentguardDir)) mkdirSync(agentguardDir, { recursive: true });
-      let identity: Record<string, unknown> = {};
-      if (existsSync(AGENTGUARD_IDENTITY_PATH)) {
-        try {
-          identity = JSON.parse(readFileSync(AGENTGUARD_IDENTITY_PATH, 'utf8')) as Record<
-            string,
-            unknown
-          >;
-        } catch {
-          identity = {};
-        }
-      }
-      identity.version = packageVersion;
-      if (!identity.install_id) identity.install_id = payload.install_id;
-      writeFileSync(AGENTGUARD_IDENTITY_PATH, JSON.stringify(identity, null, 2), 'utf8');
-    } catch {
-      // Version persistence must never break npm install
-    }
-  } catch {
-    // Never break npm install
-  }
 }
 
 // ── Private helpers ──
@@ -725,91 +410,24 @@ function hasCopilotHook(config: CopilotHooksConfig): boolean {
   return false;
 }
 
-function hasCodexHook(config: CodexHooksConfig): boolean {
-  const hookArrays = [config.hooks?.PreToolUse, config.hooks?.PostToolUse];
-  for (const arr of hookArrays) {
-    if (!arr) continue;
-    for (const group of arr) {
-      for (const hook of group.hooks ?? []) {
-        if (hook.command && hook.command.includes(CODEX_HOOK_MARKER)) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-}
-
-function hasGeminiHook(settings: GeminiSettings): boolean {
-  const hookArrays = [settings.hooks?.BeforeTool, settings.hooks?.AfterTool];
-  for (const arr of hookArrays) {
-    if (!arr) continue;
-    for (const group of arr) {
-      for (const hook of group.hooks ?? []) {
-        if (hook.command && hook.command.includes(GEMINI_HOOK_MARKER)) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-}
-
 type HookResult = 'created' | 'skipped';
-type DriverHookResult = HookResult | 'not-detected';
 
-interface SummaryOptions {
-  claudeResult: HookResult;
-  copilotResult: HookResult;
-  codexResult: DriverHookResult;
-  geminiResult: DriverHookResult;
-  policyResult: HookResult;
-  projectRoot: string;
-  upgradeInfo: ReturnType<typeof detectVersionUpgrade>;
-}
-
-function printSummary(opts: SummaryOptions): void {
-  const {
-    claudeResult,
-    copilotResult,
-    codexResult,
-    geminiResult,
-    policyResult,
-    projectRoot,
-    upgradeInfo,
-  } = opts;
-
-  const tag = (r: DriverHookResult): string => {
-    if (r === 'created') return '[created]';
-    if (r === 'not-detected') return '[not detected]';
-    return '[skipped]';
-  };
-
+function printSummary(
+  claudeResult: HookResult,
+  copilotResult: HookResult,
+  policyResult: HookResult,
+  projectRoot: string
+): void {
+  const tag = (r: HookResult): string => (r === 'created' ? '[created]' : '[skipped]');
   const claudeDetected = existsSync(join(projectRoot, '.claude'));
-  const anyCreated =
-    claudeResult === 'created' ||
-    copilotResult === 'created' ||
-    codexResult === 'created' ||
-    geminiResult === 'created';
 
   process.stderr.write('\n');
   process.stderr.write('  AgentGuard postinstall\n');
   process.stderr.write(`  Project: ${projectRoot}\n\n`);
   process.stderr.write(`  Claude Code hooks:  ${tag(claudeResult)}\n`);
   process.stderr.write(`  Copilot CLI hooks:  ${tag(copilotResult)}\n`);
-  process.stderr.write(`  Codex CLI hooks:    ${tag(codexResult)}\n`);
-  process.stderr.write(`  Gemini CLI hooks:   ${tag(geminiResult)}\n`);
   process.stderr.write(`  Starter policy:     ${tag(policyResult)}\n`);
   process.stderr.write('\n');
-
-  if (upgradeInfo.isUpgrade) {
-    process.stderr.write(
-      `  AgentGuard upgraded ${upgradeInfo.fromVersion} \u2192 ${upgradeInfo.toVersion}\n`
-    );
-    process.stderr.write(
-      '  Run: npx @red-codes/agentguard auto-setup    (reinit all driver hooks)\n\n'
-    );
-  }
 
   if (!claudeDetected) {
     process.stderr.write(
@@ -817,16 +435,12 @@ function printSummary(opts: SummaryOptions): void {
     );
   }
 
-  if (anyCreated) {
+  if (claudeResult === 'created' || copilotResult === 'created') {
     process.stderr.write('  Governance is active. Run: agentguard inspect --last\n\n');
   }
 
-  process.stderr.write(
-    '  Customize:  npx @red-codes/agentguard claude-init   (full Claude Code wizard)\n'
-  );
-  process.stderr.write(
-    '              npx @red-codes/agentguard copilot-init  (full Copilot CLI wizard)\n'
-  );
+  process.stderr.write('  Customize:  npx aguard claude-init   (full Claude Code wizard)\n');
+  process.stderr.write('              npx aguard copilot-init  (full Copilot CLI wizard)\n');
   process.stderr.write('  Enforce:    set mode: enforce in agentguard.yaml\n');
   process.stderr.write('\n');
 }
@@ -849,45 +463,27 @@ function main(): void {
     return; // dev repo — skip postinstall
   }
 
-  // Detect upgrade before telemetry writes the new version
-  const upgradeInfo = detectVersionUpgrade(resolveCurrentVersion(scriptDir));
-
   const claudeResult = writeClaudeCodeHooks(projectRoot);
   const copilotResult = writeCopilotCliHooks(projectRoot);
-  const codexResult = writeCodexHooks(projectRoot);
-  const geminiResult = writeGeminiHooks(projectRoot);
   const policyResult = writeStarterPolicy(projectRoot);
 
-  reportInstallTelemetry(scriptDir);
-
-  printSummary({
-    claudeResult,
-    copilotResult,
-    codexResult,
-    geminiResult,
-    policyResult,
-    projectRoot,
-    upgradeInfo,
-  });
-}
-
-/**
- * Resolve the current package version from the package.json adjacent to scriptDir.
- * Returns 'unknown' if not resolvable.
- */
-function resolveCurrentVersion(scriptDir: string): string {
-  try {
-    const pkgPath = join(dirname(scriptDir), 'package.json');
-    const pkgAlt = join(scriptDir, '..', 'package.json');
-    const pkgFile = existsSync(pkgPath) ? pkgPath : pkgAlt;
-    if (existsSync(pkgFile)) {
-      const pkg = JSON.parse(readFileSync(pkgFile, 'utf8')) as { version?: string };
-      return pkg.version ?? 'unknown';
-    }
-  } catch {
-    // version stays 'unknown'
+  // Create default identity so the identity wizard doesn't block first tool call.
+  // Users can customize later with `npx agentguard claude-init`.
+  const identityPath = join(projectRoot, '.agentguard-identity');
+  if (!existsSync(identityPath)) {
+    writeFileSync(identityPath, 'claude-code:unknown:developer\n', 'utf8');
   }
-  return 'unknown';
+
+  // Create .agentguard/ directory tree for governance state
+  const agDir = join(projectRoot, '.agentguard');
+  for (const sub of ['events', 'decisions', 'lessons']) {
+    const dir = join(agDir, sub);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+  }
+
+  printSummary(claudeResult, copilotResult, policyResult, projectRoot);
 }
 
 // ── Entry point — only run when executed directly, not when imported ──

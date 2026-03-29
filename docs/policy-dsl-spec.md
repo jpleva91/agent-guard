@@ -257,9 +257,9 @@ test_deny_deploy_after_hours {
 ### Test Commands
 
 ```bash
-agentguard policy test policies/*.guard       # Run all policy tests
-agentguard policy test --coverage             # Show rule coverage report
-agentguard policy test --regression old.guard  # Compare against baseline
+aguard policy test policies/*.guard       # Run all policy tests
+aguard policy test --coverage             # Show rule coverage report
+aguard policy test --regression old.guard  # Compare against baseline
 ```
 
 ### Coverage Reporting
@@ -274,7 +274,7 @@ agentguard policy test --regression old.guard  # Compare against baseline
 ### Conversion Tool
 
 ```bash
-agentguard policy convert agentguard.yaml --output policies/main.guard
+aguard policy convert agentguard.yaml --output policies/main.guard
 ```
 
 The converter:

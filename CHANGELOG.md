@@ -92,7 +92,7 @@
 
 * **Identity scaffolding (#850)** — `claude-init` now creates `.agentguard-identity` with auto-detected `driver:model:role`. CI/cron agents override via `AGENTGUARD_AGENT_NAME` env var.
 * **Hook validation (#849)** — `claude-init` validates that referenced wrapper scripts and binaries exist before reporting "Already configured". Warns and offers repair when hooks are broken.
-* **Status identity check (#851)** — `agentguard status` now checks for `.agentguard-identity` and wrapper script existence with actionable hints when missing.
+* **Status identity check (#851)** — `aguard status` now checks for `.agentguard-identity` and wrapper script existence with actionable hints when missing.
 * **Wrapper binary resolution (#852)** — Hook wrapper resolves agentguard binary from `node_modules/.bin/` first, then PATH. Fails closed if binary not found.
 * **Hook wrapper fail-closed** — wrapper script outputs block response instead of silently failing when binary is missing.
 
@@ -107,7 +107,7 @@
 ### Features
 
 * **Agent identity system** — session identity prompt, auto-detecting wizard, MCP persona, and worktree enforcement. Agents declare identity (role + driver) for telemetry attribution and persona-scoped policy rules. Set via `--agent-name` flag or interactive prompt (#715, #714, #713, #712, #709, #707, #706)
-* **Pre-push branch protection** — enforce branch protection rules from `agentguard.yaml` via git pre-push hooks, installed automatically by `agentguard claude-init` (#704)
+* **Pre-push branch protection** — enforce branch protection rules from `agentguard.yaml` via git pre-push hooks, installed automatically by `aguard claude-init` (#704)
 * **Capability grants enforcement** — enforce capability grants before adapter execution (#681)
 * **Cloud credential storage** — store cloud credentials in project `.env` instead of global config (#679, #678)
 

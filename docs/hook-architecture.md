@@ -52,7 +52,7 @@ Fires once when a Claude Code session begins. Ensures the CLI is built and displ
 
 ## Hook Configuration
 
-Running `agentguard claude-init` writes this to `.claude/settings.json`:
+Running `aguard claude-init` writes this to `.claude/settings.json`:
 
 ```json
 {
@@ -102,9 +102,9 @@ Running `agentguard claude-init` writes this to `.claude/settings.json`:
 
 Options:
 
-- `agentguard claude-init --global` — install to `~/.claude/settings.json` (all projects)
-- `agentguard claude-init --store sqlite` — use SQLite storage backend
-- `agentguard claude-init --remove` — uninstall hooks
+- `aguard claude-init --global` — install to `~/.claude/settings.json` (all projects)
+- `aguard claude-init --store sqlite` — use SQLite storage backend
+- `aguard claude-init --remove` — uninstall hooks
 
 ## How PreToolUse Governance Works
 
@@ -183,16 +183,16 @@ This fail-open design prioritizes developer experience over strict enforcement. 
 cat .claude/settings.json | jq '.hooks'
 
 # View recent governance decisions
-agentguard inspect --last
+aguard inspect --last
 
 # View raw event stream
-agentguard events --last
+aguard events --last
 
 # View policy evaluation traces
-agentguard traces --last
+aguard traces --last
 
 # Test a specific action against your policy
-echo '{"tool":"Bash","input":{"command":"git push origin main"}}' | agentguard claude-hook pre
+echo '{"tool":"Bash","input":{"command":"git push origin main"}}' | aguard claude-hook pre
 ```
 
 ## Key Source Files

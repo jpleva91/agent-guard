@@ -36,7 +36,7 @@ describe('cloud events — not connected', () => {
 
     await cloud(['events']);
     expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('agentguard cloud connect')
+      expect.stringContaining('aguard cloud connect')
     );
   });
 });
@@ -57,7 +57,7 @@ describe('cloud runs — not connected', () => {
 
     await cloud(['runs']);
     expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('agentguard cloud connect')
+      expect.stringContaining('aguard cloud connect')
     );
   });
 });
@@ -78,7 +78,7 @@ describe('cloud summary — not connected', () => {
 
     await cloud(['summary']);
     expect(process.stderr.write).toHaveBeenCalledWith(
-      expect.stringContaining('agentguard cloud connect')
+      expect.stringContaining('aguard cloud connect')
     );
   });
 });

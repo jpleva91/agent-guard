@@ -8,7 +8,7 @@ This document describes the agent identity model, delegation chain tracking, and
 >
 > **Shipped capabilities:**
 > - Session identity prompt — agents are prompted for role + driver at session start if `--agent-name` is not set
-> - `agentguard guard --agent-name <name>` CLI flag for non-interactive identity declaration
+> - `aguard guard --agent-name <name>` CLI flag for non-interactive identity declaration
 > - MCP persona — identity is surfaced through the MCP governance server
 > - Worktree enforcement — agents operating in git worktrees are correctly identified and isolated
 > - Cloud telemetry attribution — identity flows to cloud dashboard for per-agent grouping and analytics
@@ -29,7 +29,7 @@ The current implementation uses a lightweight session identity model. At session
 - **Role**: one of `developer`, `reviewer`, `ops`, `security`, `planner`
 - **Driver**: one of `human`, `claude-code`, `copilot`, `ci`
 
-This identity is set via `agentguard guard --agent-name <name>` or collected through an interactive prompt (auto-detecting wizard). Identity is attached to all governance events and telemetry payloads for the session.
+This identity is set via `aguard guard --agent-name <name>` or collected through an interactive prompt (auto-detecting wizard). Identity is attached to all governance events and telemetry payloads for the session.
 
 ### AgentIdentity (Aspirational)
 

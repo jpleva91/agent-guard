@@ -136,7 +136,7 @@ export async function init(args: string[]): Promise<number> {
 
   console.log(`    npm install`);
   console.log(`    # Edit src/index.ts to implement your extension`);
-  console.log(`    agentguard plugin install .\n`);
+  console.log(`    aguard plugin install .\n`);
 
   return 0;
 }
@@ -199,7 +199,7 @@ function initTemplate(templateName: string, targetDir?: string): number {
   console.log(`    ${dim(outputPath)}\n`);
   console.log(`  ${bold('Next steps:')}`);
   console.log(`    # Review and customize the policy rules`);
-  console.log(`    agentguard guard --policy agentguard.yaml --dry-run\n`);
+  console.log(`    aguard guard --policy agentguard.yaml --dry-run\n`);
 
   return 0;
 }
@@ -376,7 +376,7 @@ Custom invariant pack for AgentGuard.
 ## Usage
 
 \`\`\`bash
-agentguard plugin install .
+aguard plugin install .
 \`\`\`
 
 ## Invariants
@@ -476,7 +476,7 @@ extends:
 Or install as a plugin:
 
 \`\`\`bash
-agentguard plugin install .
+aguard plugin install .
 \`\`\`
 
 ## Rules
@@ -791,7 +791,7 @@ Custom governance renderer for AgentGuard.
 ## Usage
 
 \`\`\`bash
-agentguard plugin install .
+aguard plugin install .
 \`\`\`
 
 ## Features
@@ -956,7 +956,7 @@ Custom replay processor for AgentGuard.
 ## Usage
 
 \`\`\`bash
-agentguard plugin install .
+aguard plugin install .
 \`\`\`
 
 ## Features
@@ -1165,10 +1165,10 @@ and risk level.
 
 \`\`\`bash
 # Install as an AgentGuard plugin
-agentguard plugin install .
+aguard plugin install .
 
 # The simulator is automatically loaded when running the guard
-agentguard guard --policy agentguard.yaml
+aguard guard --policy agentguard.yaml
 \`\`\`
 
 ## How It Works
@@ -1282,7 +1282,7 @@ AGENTGUARD_STORE=firestore
   console.log(`    firebase deploy --only firestore:rules`);
   console.log();
   console.log(`    ${dim('# 5. Run AgentGuard with Firestore')}`);
-  console.log(`    agentguard guard --store firestore --policy agentguard.yaml\n`);
+  console.log(`    aguard guard --store firestore --policy agentguard.yaml\n`);
 
   return 0;
 }

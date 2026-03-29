@@ -3,7 +3,7 @@
 Pre-built policy sets for common governance scenarios. Load a pack with:
 
 ```bash
-agentguard guard --policy policies/<pack>/agentguard-pack.yaml
+aguard guard --policy policies/<pack>/agentguard-pack.yaml
 ```
 
 ## Choosing a Pack
