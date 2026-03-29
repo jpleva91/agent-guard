@@ -6,35 +6,38 @@
   },
   "assignments": {
     "marketing-launch-agent": ["#1387", "#1382", "#1260"],
-    "em-direct": []
+    "em-direct": ["#1409"]
   },
   "blockers": [
-    "OWASP blog post complete 4+ cycles — waiting on human LinkedIn publish (docs/blog/owasp-agentic-top10-agentguard.md)",
-    "#1387 containment post: no draft PR from marketing-launch-agent after 1 cycle assigned — narrative window closing"
+    "OWASP blog post complete 5+ cycles — waiting on human LinkedIn publish (docs/blog/owasp-agentic-top10-agentguard.md)",
+    "#1387 containment post: 2 cycles assigned to marketing-launch-agent, no draft — P0 escalating. Next cycle with no draft → health RED."
   ],
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
-    "prNumbers": [],
-    "notes": "All marketing PRs merged. PR #1404 merged this cycle (19:23Z EM report). No open marketing PRs. Non-marketing open PRs: #1400 (bootstrap), #1396 (kernel-em) — not marketing."
+    "prNumbers": ["#1409"],
+    "notes": "PR #1409 open: fix(site) swarm section — 139 agents, 5 governed drivers. Awaiting CI. PR #1406 merged this cycle (20:00Z EM report). Non-marketing open: #1400 (bootstrap)."
   },
   "recentlyCompleted": [
-    { "pr": "#1404", "title": "chore(marketing-em): EM cycle 2026-03-29T19:23Z", "mergedDate": "2026-03-29", "note": "Merged this cycle." },
+    { "pr": "#1406", "title": "chore(marketing-em): EM cycle 2026-03-29T20:00Z — #1382 added, #1387 escalating", "mergedDate": "2026-03-29", "note": "Merged this cycle." },
+    { "pr": "#1404", "title": "chore(marketing-em): EM cycle 2026-03-29T19:23Z", "mergedDate": "2026-03-29", "note": "Prior cycle." },
     { "pr": "#1401", "title": "feat(site): add check-site-stats.sh to prevent recurring stat drift", "mergedDate": "2026-03-29", "note": "Closes 4-cycle systemic stat drift issue." },
-    { "pr": "#1394", "title": "fix(site): correct remaining stat drift — 24 invariants card, 93 patterns card, 35 CLI counter", "mergedDate": "2026-03-29", "note": "Final residual stat fix." },
+    { "pr": "#1394", "title": "fix(site): correct remaining stat drift", "mergedDate": "2026-03-29", "note": "Final residual stat fix." },
     { "pr": "#1388", "title": "Capture funnel Phase 1 — GitHub Stars badge, Get Started, cloud+Discussions CTAs", "mergedDate": "2026-03-29", "note": "Conference P0 DONE." },
-    { "issue": "#925", "title": "OWASP blog post", "closedDate": "2026-03-28", "note": "Draft at docs/blog/owasp-agentic-top10-agentguard.md — awaiting human LinkedIn publish" }
+    { "issue": "#925", "title": "OWASP blog post", "closedDate": "2026-03-28", "note": "Draft at docs/blog/owasp-agentic-top10-agentguard.md — awaiting human LinkedIn publish." }
   ],
   "keyContext": {
     "currentVersion": "2.10.3",
-    "sprintPriority": "#1387 containment post is P0 — no marketing-launch-agent draft after 1 assigned cycle. Escalating urgency. Narrative hook (Anthropic computer-use) is closing.",
-    "newIssuesThisCycle": "#1382 (conference narrative 'Three Levels of Agent Governance') added to sprint — defines talk framework needed for all May 6 deliverables. #1380 (OpenClaw article response) folds into #1387 work.",
-    "issueScope": "#1260 covers v2.9→v2.10.3 arc: default mode guide→monitor, wildcard fix, 5 governed drivers.",
-    "conferenceStatus": "Phase 1 COMPLETE. Phase 2 deadline: 2026-04-15. May 6 conference: AT RISK (38 days). #1382 provides narrative framework — now need execution. #1379 Meta demo not started.",
-    "siteStatus": "Fully aligned. check-site-stats.sh passed clean this cycle (all 13 checks green).",
-    "backlog": "#1378 CLAW-10 scorecard (HIGH, good #1387 follow-on), #1379 Meta incident demo (HIGH, May 6 hard deadline, 38 days)",
-    "linkedIssues": "#1380 and #1387 share framing — can be delivered together (post + LinkedIn comment on OpenClaw article)"
+    "sprintPriority": "#1387 containment post is P0 — 2 cycles assigned with no draft. Escalating. Next cycle with no draft → health RED. marketing-launch-agent must deliver draft this cycle.",
+    "conferenceNarrative": "#1382 'Three Levels of Agent Governance' defines May 6 talk: Sandbox → Intercept → Governed Runtime. talk outline needed before April 15 deadline.",
+    "issueScope": "#1260 covers v2.9→v2.10.3 arc: wildcard fix, default mode guide→monitor, 5 governed drivers.",
+    "conferenceStatus": "Phase 1 COMPLETE. Phase 2 deadline: 2026-04-15 (17 days). May 6 conference: AT RISK (37 days). #1382 outline not started. #1379 Meta demo not started — red line: 2026-04-05.",
+    "siteStatus": "Fully aligned. check-site-stats.sh: all 13 checks pass. Swarm section drift found this cycle (120→139 agents, 4→5 drivers) — PR #1409 open.",
+    "coverageGap": "check-site-stats.sh does not cover swarm section inline stats — future improvement",
+    "drivenDrivers": "5 governed drivers: Claude Code, Copilot CLI, Codex CLI, Gemini CLI, Goose (MCP). Goose uses MCP vs hook-based.",
+    "linkedIssues": "#1380 and #1387 share Level 3 framing — can be delivered together.",
+    "backlog": "#1378 CLAW-10 scorecard (HIGH), #1379 Meta incident demo (HIGH, May 6 hard deadline)"
   },
-  "updatedAt": "2026-03-29T20:00:00.000Z"
+  "updatedAt": "2026-03-29T21:45:00.000Z"
 }

@@ -1,13 +1,13 @@
 {
   "squad": "marketing",
-  "timestamp": "2026-03-29T20:00:00.000Z",
+  "timestamp": "2026-03-29T21:45:00.000Z",
   "health": "yellow",
-  "summary": "PR #1404 (19:23Z cycle) merged. Site stats re-verified clean via check-site-stats.sh — all 13 checks green. Two new issues triaged: #1382 (conference narrative framework 'Three Levels') and #1380 (OpenClaw article response). #1382 added to sprint — it defines the talk structure needed for all May 6 deliverables. #1387 P0 containment post has been assigned for one cycle with no draft PR from marketing-launch-agent; urgency escalating. Conference health: YELLOW, 38 days to May 6.",
+  "summary": "PR #1406 merged (previous EM cycle report). PR #1409 opened: fix(site) swarm section — 139 agents, 5 governed drivers (content alignment drift found this cycle). Site stats clean: all 13 checks pass. #1387 P0 containment post now in its 3rd cycle with no draft — status escalating. Conference: 37 days to May 6, #1382 talk outline not started, #1379 Meta demo not started. Phase 2 deadline (April 15) is 17 days away.",
   "contentPipeline": {
     "drafts": 1,
     "published": 0,
     "scheduled": 2,
-    "notes": "OWASP blog post at docs/blog/owasp-agentic-top10-agentguard.md — complete, 5+ cycles awaiting LinkedIn publish. #1387 containment post P0 — no draft after 1 assigned cycle. Narrative window closing. #1382 conference narrative now in sprint."
+    "notes": "OWASP blog post at docs/blog/owasp-agentic-top10-agentguard.md — complete, 5+ cycles awaiting LinkedIn publish. #1387 containment post P0 — 2 full cycles assigned to marketing-launch-agent, no draft yet. #1382 conference narrative in sprint, no work started. #1260 queued."
   },
   "siteAlignment": {
     "status": "green",
@@ -18,45 +18,41 @@
       "destructivePatterns": "93 ✓",
       "actionTypes": "41 ✓",
       "cliCommands": "35 ✓",
+      "tests": "4614 ✓ (synced by site-em at 21:30Z)",
       "metaTags": "3 of 3 invariant counts in meta/og/JSON-LD correct ✓",
       "heroParagraph": "24 ✓",
       "featureCards": "2 of 2 headings correct ✓",
       "pipelineEmit": "48 ✓",
       "architectureDetail": "41 ✓"
+    },
+    "driftFoundThisCycle": {
+      "location": "Agent Swarm section (site/index.html:1688, 1694, 1698) — outside check-site-stats.sh scope",
+      "issue1": "'120 agents' was stale — updated to 139 (current production count per issue #1387)",
+      "issue2": "'4 Drivers' was stale — updated to 5 (Goose/Block shipped as 5th governed driver via MCP)",
+      "pr": "#1409 opened — fix(site): sync swarm section — 139 agents, 5 governed drivers",
+      "coverageGap": "check-site-stats.sh covers data-target counters but not inline <span> stats in swarm section"
     }
   },
   "sprintIssues": {
     "closedThisCycle": [],
-    "newThisCycle": [
-      {
-        "issue": "#1382",
-        "title": "Conference narrative — 'Three Levels of Agent Governance'",
-        "action": "ADDED TO SPRINT — this defines the May 6 talk structure. Assigns to marketing-launch-agent. Deliverables: talk outline (15-20min), slide framework, demo script. #1379 Meta demo builds toward this narrative."
-      },
-      {
-        "issue": "#1380",
-        "title": "Respond to 'Scaling OpenClaw for Enterprise' article",
-        "action": "TRACKED — folds into #1387 work. Same Level 3 framing. Can ship as LinkedIn comment/response alongside the containment post."
-      }
-    ],
     "active": [
       {
         "issue": "#1387",
         "title": "Containment engineering post — own the computer-use governance narrative",
-        "status": "P0 — ESCALATING. 1 cycle assigned, no draft PR. Anthropic computer-use announcement hook is time-bounded.",
-        "note": "Framing: 139 agents, 1,170 PRs governed, 24 invariants, Apache 2.0. Three Levels narrative (#1382) provides the structure. #1380 (OpenClaw article response) can ship simultaneously."
+        "status": "P0 — 2 cycles assigned, NO DRAFT. Narrative window shrinking.",
+        "note": "Framing ready: 139 agents, 1,170 PRs governed, 24 invariants, Apache 2.0. Three Levels (#1382) provides the structure. Assigned to marketing-launch-agent. Must ship draft this cycle or escalate to RED."
       },
       {
         "issue": "#1382",
         "title": "Conference narrative — Three Levels of Agent Governance",
-        "status": "NEW, HIGH — added this cycle. Defines May 6 talk framework. Blocking: slides, demo script, #1379.",
-        "note": "Sandbox (Level 1) → Intercept (Level 2) → Governed Runtime (Level 3 = AgentGuard). Talk outline needed before April 15 phase 2 deadline."
+        "status": "HIGH — in sprint since last cycle, zero progress",
+        "note": "Talk outline needed before April 15 phase 2 deadline (17 days). Sandbox → Intercept → Governed Runtime. marketing-launch-agent: start talk outline this cycle."
       },
       {
         "issue": "#1260",
         "title": "v2.9→v2.10.3 announcement content",
         "status": "open — unblocked, queued after #1387",
-        "note": "Key messages: wildcard policy fix (security CTA), default mode guide→monitor, 5 governed drivers. v2.10.3 scope extended."
+        "note": "Key messages: wildcard policy fix (security CTA), default mode guide→monitor, 5 governed drivers. v2.10.3 arc complete."
       }
     ],
     "backlog": [
@@ -64,74 +60,69 @@
         "issue": "#1378",
         "title": "CLAW-10 scorecard — AgentGuard vs raw OpenClaw",
         "priority": "HIGH",
-        "note": "8.9/10 scorecard ready. Strong credibility play. Good follow-on to #1387 / supports #1382 CLAW-10 slide."
+        "note": "8.9/10 scorecard, all evidence ready. CLAW-10 slide needed for #1382 talk. Good follow-on to #1387."
       },
       {
         "issue": "#1379",
         "title": "Meta incident demo — governance survives context compaction",
-        "priority": "HIGH (May 6 hard deadline — 38 days)",
-        "note": "Demo script defined in issue. Now has narrative home in #1382. Needs demo engineering — still not started. Must start within 7 days or conference goes red."
+        "priority": "HIGH (May 6 hard deadline — 37 days)",
+        "note": "Demo script defined in issue. Not started. Needs demo engineering. Red line: if no start by 2026-04-05 (7 days), conference → RED."
       },
       {
         "issue": "#1380",
         "title": "Respond to 'Scaling OpenClaw for Enterprise' article",
         "priority": "MEDIUM — folds into #1387",
-        "note": "LinkedIn comment/post. Can ship same day as #1387."
+        "note": "LinkedIn post, can ship same day as #1387. Same Level 3 framing."
       }
     ]
   },
   "prQueue": {
     "merged": [
-      "#1404 (19:23Z EM cycle report — 2026-03-29, this cycle)",
-      "#1401 (check-site-stats.sh — 2026-03-29)",
-      "#1394 (3 residual stat fixes — 2026-03-29)",
-      "#1393 (stat bar + card sync — 2026-03-29)",
-      "#1390 (site stats 8 fixes — 2026-03-29)",
-      "#1388 (capture funnel Phase 1 — 2026-03-29)"
+      "#1406 (20:00Z EM cycle report — 2026-03-29, this cycle)"
     ],
-    "open": 0,
-    "prNumbers": [],
-    "notes": "No open marketing PRs. Queue clear. Non-marketing open: #1400 (bootstrap), #1396 (kernel-em)."
+    "open": 1,
+    "prNumbers": ["#1409"],
+    "notes": "#1409 (fix/site-swarm-5drivers-139agents) — swarm section stat fix, awaiting CI. Non-marketing open: #1400 (bootstrap). Stale PRs: #1396 (kernel-em, not mine)."
   },
   "blockers": [
     "OWASP blog post (docs/blog/owasp-agentic-top10-agentguard.md) complete 5+ cycles — requires human LinkedIn publish. Direct escalation to Jared.",
-    "#1387 containment post: 1 cycle assigned to marketing-launch-agent, no draft PR. Escalating to HIGH blocker — time-bounded narrative window."
+    "#1387 containment post: 2 cycles assigned to marketing-launch-agent, still no draft. Time-bounded narrative window. Must produce draft next cycle."
   ],
   "escalations": [
-    "HIGH: #1387 containment engineering post — 1 cycle assigned, no draft. Anthropic computer-use is the narrative hook. Window closing. Requires marketing-launch-agent action this cycle.",
-    "HIGH: May 6 conference at risk — #1379 Meta demo not started (38 days). If no demo start within 7 days (by 2026-04-05), conference health → RED.",
-    "MEDIUM: OWASP blog post complete 5+ cycles — awaiting LinkedIn publish. Ping Jared directly.",
-    "LOW: OpenCode not mentioned in site Supported Frameworks — OPENCODE_HOME exists in code. Content gap, no factual error."
+    "HIGH: #1387 containment engineering post — 2 cycles assigned, no draft. If no draft by next cycle (2026-03-30), health → RED.",
+    "HIGH: May 6 conference — #1382 talk outline not started, #1379 Meta demo not started (37 days out). Phase 2 deadline in 17 days.",
+    "MEDIUM: OWASP blog post complete 5+ cycles — awaiting LinkedIn publish. Direct ping to Jared recommended.",
+    "WATCH: check-site-stats.sh coverage gap — does not cover swarm section inline stats (agents, drivers). Future PR to extend script."
   ],
   "conferenceReadiness": {
     "phase1": "COMPLETE — capture funnel (PR #1388, stars badge, Get Started, CTAs)",
-    "phase2Deadline": "2026-04-15 — onboarding wizard demo walk-through",
+    "phase2Deadline": "2026-04-15 — onboarding wizard demo walk-through (17 days)",
     "may6Conference": {
       "status": "AT RISK",
-      "daysUntil": 38,
+      "daysUntil": 37,
       "redLine": "If #1379 demo not started by 2026-04-05 (7 days), status → RED",
-      "positiveSignal": "#1382 conference narrative framework now defined — Three Levels structure organizes entire talk",
       "needed": [
-        "#1382 talk outline + slides (marketing-launch-agent, this cycle)",
-        "#1379 Meta incident demo — engineering effort, not started (URGENT)",
-        "Demo path confirmed (live swarm vs. video recording)",
+        "#1382 talk outline + slide framework — start this cycle (phase 2 deadline: April 15)",
+        "#1379 Meta incident demo — demo engineering, not started, URGENT",
+        "Demo path confirmed (live swarm vs recorded video)",
         "Onboarding QR code / short URL"
       ],
       "healthColor": "yellow"
     }
   },
   "productInsights": [
-    "Default enforcement mode guide→monitor (v2.10.x) — 'monitor first, enforce when ready' is the key #1260 adoption angle.",
-    "Three Levels narrative (#1382): Sandbox (NemoClaw) → Intercept (Zenity) → Governed Runtime (AgentGuard). Level 3 is the conference positioning.",
-    "5 governed drivers: Claude Code, Codex CLI, Copilot CLI, Gemini CLI, Goose (MCP). Goose is differentiated — MCP protocol vs hook-based.",
-    "check-site-stats.sh CI wiring candidate: add to size-check.yml or dedicated site workflow for site/** PRs.",
-    "v2.10.3 latest. Arc for #1260: v2.9 wildcard fix → v2.10 default mode → v2.10.3 cloud tenant fix."
+    "5 governed drivers now: Claude Code, Copilot CLI, Codex CLI, Gemini CLI, Goose (MCP). Goose is differentiated — MCP extension model vs hook-based for others.",
+    "Default enforcement mode guide→monitor (v2.10.x) — 'monitor first, enforce when ready' is the #1260 adoption narrative.",
+    "Three Levels framework (#1382): Sandbox (NemoClaw) → Intercept (Zenity) → Governed Runtime (AgentGuard Level 3). Nobody else at Level 3.",
+    "check-site-stats.sh coverage gap: inline swarm <span> stats not covered. Found 120→139 and 4→5 driver drift via manual review.",
+    "v2.10.3 is latest. Full announcement arc for #1260: v2.9 wildcard fix → v2.10 default mode change → v2.10.3 cloud tenant fix."
   ],
   "dogfoodReport": {
     "governanceDenialsThisRun": 0,
     "unexpectedBlocks": [],
     "unexpectedAllows": [],
-    "status": "clean — gh pr merge, git fetch/rebase, file writes, gh issue view all executed without denial."
+    "status": "clean — gh pr operations, git operations, file reads/writes all executed without denial. Note: #1408 (ongoing) — no-governance-self-modification blocks read-only SQLite analytics probe; not a marketing blocker.",
+    "openDogfoodIssues": ["#1408 — read-only SQLite probe blocked by no-governance-self-modification invariant (analytics agent, not marketing)"]
   },
   "agentIdentity": "claude-code:unknown:planner",
   "canonicalIdentity": "claude-code:opus:marketing:em"
