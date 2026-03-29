@@ -2,17 +2,20 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { tmpdir, homedir } from 'node:os';
 
 import {
   resolveProjectRoot,
   writeClaudeCodeHooks,
   writeCopilotCliHooks,
+  writeCodexHooks,
+  writeGeminiHooks,
   writeStarterPolicy,
   isTelemetryEnabled,
   detectCiEnvironment,
   resolveInstallId,
   reportInstallTelemetry,
+  detectVersionUpgrade,
 } from '../src/postinstall.js';
 
 /** Create a unique temp directory for each test. */
@@ -712,5 +715,242 @@ describe('reportInstallTelemetry', () => {
   it('does not throw even with an invalid script dir (network will fail silently)', () => {
     vi.stubEnv('AGENTGUARD_TELEMETRY', 'off');
     expect(() => reportInstallTelemetry('/nonexistent/path/that/does/not/exist')).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// writeCodexHooks
+// ---------------------------------------------------------------------------
+
+describe('writeCodexHooks', () => {
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = makeTempDir('codex');
+    writeFileSync(join(tempDir, 'package.json'), '{}');
+  });
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('returns not-detected when .codex/ directory does not exist', () => {
+    const result = writeCodexHooks(tempDir);
+    expect(result).toBe('not-detected');
+  });
+
+  it('creates .codex/hooks.json with PreToolUse and PostToolUse when .codex/ exists', () => {
+    const codexDir = join(tempDir, '.codex');
+    mkdirSync(codexDir, { recursive: true });
+
+    const result = writeCodexHooks(tempDir);
+    expect(result).toBe('created');
+
+    const hooksPath = join(codexDir, 'hooks.json');
+    expect(existsSync(hooksPath)).toBe(true);
+
+    const config = JSON.parse(readFileSync(hooksPath, 'utf8'));
+    expect(config.hooks.PreToolUse).toBeDefined();
+    expect(config.hooks.PostToolUse).toBeDefined();
+
+    const preHook = config.hooks.PreToolUse[0];
+    expect(preHook.hooks[0].command).toContain('codex-hook pre');
+    expect(preHook.hooks[0].command).toContain('npx --no-install agentguard');
+
+    const postHook = config.hooks.PostToolUse[0];
+    expect(postHook.hooks[0].command).toContain('codex-hook post');
+  });
+
+  it('merges with existing hooks.json preserving user config', () => {
+    const codexDir = join(tempDir, '.codex');
+    mkdirSync(codexDir, { recursive: true });
+    writeFileSync(
+      join(codexDir, 'hooks.json'),
+      JSON.stringify({ hooks: { SessionStart: [{ type: 'command', command: 'echo start' }] } }),
+      'utf8'
+    );
+
+    writeCodexHooks(tempDir);
+
+    const config = JSON.parse(readFileSync(join(codexDir, 'hooks.json'), 'utf8'));
+    expect(config.hooks.SessionStart).toBeDefined(); // preserved
+    expect(config.hooks.PreToolUse).toBeDefined(); // added
+  });
+
+  it('skips if codex-hook already present in PreToolUse', () => {
+    const codexDir = join(tempDir, '.codex');
+    mkdirSync(codexDir, { recursive: true });
+    writeFileSync(
+      join(codexDir, 'hooks.json'),
+      JSON.stringify({
+        hooks: {
+          PreToolUse: [{ hooks: [{ type: 'command', command: 'agentguard codex-hook pre' }] }],
+        },
+      }),
+      'utf8'
+    );
+
+    const result = writeCodexHooks(tempDir);
+    expect(result).toBe('skipped');
+  });
+
+  it('handles corrupt hooks.json gracefully by creating fresh hooks', () => {
+    const codexDir = join(tempDir, '.codex');
+    mkdirSync(codexDir, { recursive: true });
+    writeFileSync(join(codexDir, 'hooks.json'), 'not valid json{{{', 'utf8');
+
+    const result = writeCodexHooks(tempDir);
+    expect(result).toBe('created');
+
+    const config = JSON.parse(readFileSync(join(codexDir, 'hooks.json'), 'utf8'));
+    expect(config.hooks.PreToolUse).toBeDefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// writeGeminiHooks
+// ---------------------------------------------------------------------------
+
+describe('writeGeminiHooks', () => {
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = makeTempDir('gemini');
+    writeFileSync(join(tempDir, 'package.json'), '{}');
+  });
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('returns not-detected when .gemini/ directory does not exist', () => {
+    const result = writeGeminiHooks(tempDir);
+    expect(result).toBe('not-detected');
+  });
+
+  it('creates .gemini/settings.json with BeforeTool and AfterTool when .gemini/ exists', () => {
+    const geminiDir = join(tempDir, '.gemini');
+    mkdirSync(geminiDir, { recursive: true });
+
+    const result = writeGeminiHooks(tempDir);
+    expect(result).toBe('created');
+
+    const settingsPath = join(geminiDir, 'settings.json');
+    expect(existsSync(settingsPath)).toBe(true);
+
+    const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+    expect(settings.hooks.BeforeTool).toBeDefined();
+    expect(settings.hooks.AfterTool).toBeDefined();
+
+    const beforeHook = settings.hooks.BeforeTool[0];
+    expect(beforeHook.hooks[0].command).toContain('gemini-hook pre');
+    expect(beforeHook.hooks[0].command).toContain('npx --no-install agentguard');
+
+    const afterHook = settings.hooks.AfterTool[0];
+    expect(afterHook.matcher).toBe('Shell');
+    expect(afterHook.hooks[0].command).toContain('gemini-hook post');
+  });
+
+  it('merges with existing settings.json preserving user config', () => {
+    const geminiDir = join(tempDir, '.gemini');
+    mkdirSync(geminiDir, { recursive: true });
+    writeFileSync(
+      join(geminiDir, 'settings.json'),
+      JSON.stringify({ theme: 'dark', contextWindowSize: 1000000 }),
+      'utf8'
+    );
+
+    writeGeminiHooks(tempDir);
+
+    const settings = JSON.parse(readFileSync(join(geminiDir, 'settings.json'), 'utf8'));
+    expect(settings.theme).toBe('dark'); // preserved
+    expect(settings.contextWindowSize).toBe(1000000); // preserved
+    expect(settings.hooks.BeforeTool).toBeDefined(); // added
+  });
+
+  it('skips if gemini-hook already present in BeforeTool', () => {
+    const geminiDir = join(tempDir, '.gemini');
+    mkdirSync(geminiDir, { recursive: true });
+    writeFileSync(
+      join(geminiDir, 'settings.json'),
+      JSON.stringify({
+        hooks: {
+          BeforeTool: [{ hooks: [{ type: 'command', command: 'agentguard gemini-hook pre' }] }],
+        },
+      }),
+      'utf8'
+    );
+
+    const result = writeGeminiHooks(tempDir);
+    expect(result).toBe('skipped');
+  });
+
+  it('handles corrupt settings.json gracefully by creating fresh hooks', () => {
+    const geminiDir = join(tempDir, '.gemini');
+    mkdirSync(geminiDir, { recursive: true });
+    writeFileSync(join(geminiDir, 'settings.json'), '{invalid json', 'utf8');
+
+    const result = writeGeminiHooks(tempDir);
+    expect(result).toBe('created');
+
+    const settings = JSON.parse(readFileSync(join(geminiDir, 'settings.json'), 'utf8'));
+    expect(settings.hooks.BeforeTool).toBeDefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// detectVersionUpgrade
+// AGENTGUARD_IDENTITY_PATH is a module-level constant built from homedir() at
+// import time. Tests must write to the same real path (~/.agentguard/telemetry.json).
+// ---------------------------------------------------------------------------
+
+describe('detectVersionUpgrade', () => {
+  // Build the same path the module uses
+  const identityDir = join(homedir(), '.agentguard');
+  const identityPath = join(identityDir, 'telemetry.json');
+  let savedContent: string | null = null;
+
+  beforeEach(() => {
+    // Preserve any real identity file so we can restore it after
+    savedContent = existsSync(identityPath) ? readFileSync(identityPath, 'utf8') : null;
+    mkdirSync(identityDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    if (savedContent !== null) {
+      writeFileSync(identityPath, savedContent, 'utf8');
+    } else if (existsSync(identityPath)) {
+      rmSync(identityPath);
+    }
+  });
+
+  it('returns isUpgrade: false when no identity file exists', () => {
+    if (existsSync(identityPath)) rmSync(identityPath);
+    expect(detectVersionUpgrade('2.9.3').isUpgrade).toBe(false);
+  });
+
+  it('returns isUpgrade: false when version matches stored version', () => {
+    writeFileSync(identityPath, JSON.stringify({ version: '2.9.3' }), 'utf8');
+    expect(detectVersionUpgrade('2.9.3').isUpgrade).toBe(false);
+  });
+
+  it('returns isUpgrade: true with fromVersion/toVersion when version differs', () => {
+    writeFileSync(identityPath, JSON.stringify({ version: '2.8.0' }), 'utf8');
+    const result = detectVersionUpgrade('2.9.3');
+    expect(result.isUpgrade).toBe(true);
+    if (result.isUpgrade) {
+      expect(result.fromVersion).toBe('2.8.0');
+      expect(result.toVersion).toBe('2.9.3');
+    }
+  });
+
+  it('returns isUpgrade: false when identity file has no version field', () => {
+    writeFileSync(identityPath, JSON.stringify({ install_id: 'some-uuid' }), 'utf8');
+    expect(detectVersionUpgrade('2.9.3').isUpgrade).toBe(false);
+  });
+
+  it('returns isUpgrade: false when identity file is corrupt JSON', () => {
+    writeFileSync(identityPath, 'not json{{', 'utf8');
+    expect(detectVersionUpgrade('2.9.3').isUpgrade).toBe(false);
   });
 });
