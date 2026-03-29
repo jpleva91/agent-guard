@@ -243,6 +243,9 @@ ${bootstrapToolPatterns}
   # Not a bootstrap command — fail closed
   echo '{"decision":"block","reason":"AgentGuard kernel binary not found — governance cannot evaluate this action. Run: pnpm install && pnpm build"}'
   exit 0
+else
+  # Binary found — save stdin for the hook (consumed by bootstrap check above only when binary missing)
+  _AG_STDIN="\$(cat)"
 fi`;
 
   return `#!/usr/bin/env bash
@@ -264,7 +267,7 @@ fi
 
 ${resolveBlock}
 
-# Pass through to the actual hook
-exec \$AGENTGUARD_BIN claude-hook pre${storeSuffix}${dbPathSuffix}
+# Pass through to the actual hook — pipe saved stdin from the else branch above
+printf '%s' "\$_AG_STDIN" | exec \$AGENTGUARD_BIN claude-hook pre${storeSuffix}${dbPathSuffix}
 `;
 }

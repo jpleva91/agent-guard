@@ -467,6 +467,22 @@ function main(): void {
   const copilotResult = writeCopilotCliHooks(projectRoot);
   const policyResult = writeStarterPolicy(projectRoot);
 
+  // Create default identity so the identity wizard doesn't block first tool call.
+  // Users can customize later with `npx agentguard claude-init`.
+  const identityPath = join(projectRoot, '.agentguard-identity');
+  if (!existsSync(identityPath)) {
+    writeFileSync(identityPath, 'claude-code:unknown:developer\n', 'utf8');
+  }
+
+  // Create .agentguard/ directory tree for governance state
+  const agDir = join(projectRoot, '.agentguard');
+  for (const sub of ['events', 'decisions', 'lessons']) {
+    const dir = join(agDir, sub);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+  }
+
   printSummary(claudeResult, copilotResult, policyResult, projectRoot);
 }
 

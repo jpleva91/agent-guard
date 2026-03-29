@@ -88,14 +88,28 @@ async function main() {
     return;
   }
 
-  const binaryName = `agentguard-${suffix}`;
-  const url = `https://github.com/${REPO}/releases/download/${version}/${binaryName}`;
-  const dest = join(BIN_DIR, process.platform === 'win32' ? 'agentguard-go.exe' : 'agentguard-go');
+  const destName = process.platform === 'win32' ? 'agentguard-go.exe' : 'agentguard-go';
+  const dest = join(BIN_DIR, destName);
 
   if (existsSync(dest)) {
     console.log('[agentguard] Go kernel binary already exists');
     return;
   }
+
+  // Check for platform-specific binary shipped in npm package (built by CI)
+  const shippedName = `agentguard-go-${suffix}`;
+  const shippedPath = join(BIN_DIR, shippedName);
+  if (existsSync(shippedPath)) {
+    // Rename shipped binary to the expected name
+    const { renameSync } = await import('node:fs');
+    renameSync(shippedPath, dest);
+    if (process.platform !== 'win32') chmodSync(dest, 0o755);
+    console.log(`[agentguard] Go kernel installed (${suffix}) — ~100x faster hook evaluation`);
+    return;
+  }
+
+  const binaryName = `agentguard-${suffix}`;
+  const url = `https://github.com/${REPO}/releases/download/${version}/${binaryName}`;
 
   console.log(`[agentguard] Downloading Go kernel (${suffix})...`);
 
