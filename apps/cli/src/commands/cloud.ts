@@ -207,12 +207,8 @@ function cloudConnect(args: string[]): number {
 
   // API key-based auth (original path)
   if (!apiKey) {
-    process.stderr.write(
-      `  ${FG.red}Error:${RESET} Missing API key or tenant ID.\n`
-    );
-    process.stderr.write(
-      `  ${DIM}Usage: agentguard cloud connect <api-key>${RESET}\n`
-    );
+    process.stderr.write(`  ${FG.red}Error:${RESET} Missing API key or tenant ID.\n`);
+    process.stderr.write(`  ${DIM}Usage: agentguard cloud connect <api-key>${RESET}\n`);
     process.stderr.write(
       `  ${DIM}   or: agentguard cloud connect --api <url> --tenant <id>${RESET}\n`
     );
