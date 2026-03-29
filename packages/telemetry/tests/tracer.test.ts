@@ -342,6 +342,9 @@ describe('resetSpanCounter', () => {
     tracer2.startSpan('aab.normalize', 't2').end();
     const secondId = b2.ended[0].spanId;
 
-    expect(firstId).toBe(secondId);
+    // Both IDs should have counter suffix _1 after reset — don't compare timestamps
+    // since Date.now() may differ by 1ms between the two calls on loaded CI runners.
+    expect(firstId).toMatch(/_1$/);
+    expect(secondId).toMatch(/_1$/);
   });
 });
