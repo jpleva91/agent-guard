@@ -1,21 +1,21 @@
 {
   "squad": "hq",
-  "generatedAt": "2026-03-28T21:30:00.000Z",
+  "generatedAt": "2026-03-29T14:18:00.000Z",
   "identity": "claude-code:opus:hq:em",
   "health": "yellow",
-  "summary": "Evening cycle. Wins: v2.9.1 published (run 23693110658 success), #1229 closed, #1182 closed (identity bridge), kernel sprint near-complete (#1202 merged, #1208 merged). Blockers: PR #1255 CodeQL fail (safe-subshell/closes #1139), PR #1258 needs review (all green), new P1 dogfood #1254 (No-Governance-Self-Modification false positive on gh issue --body), cross-repo version drift (cloud+analytics on 2.9.0 vs 2.9.1), swarm P0 #1186 4th cycle, KE-2 #917 unstarted 4th cycle.",
+  "summary": "Morning cycle 2026-03-29. Major wins since last cycle: KE-2 (#917) SHIPPED — v3.0 critical blocker eliminated. Swarm P0 (#1186) CLOSED. No-Governance-Self-Modification false positive (#1254) CLOSED (fix in #1351). CI main all green. v2.10.3 published. HQ action this cycle: fixed 3 cron collisions in server/schedule.json (closed #1327). Remaining: PR #1349 merge conflict (human rebase needed). New P1 dogfood: #1347 rtk prefix breaks bootstrap exemption. Version drift: cloud 2.10.1, analytics 2.10.2 vs kernel 2.10.3. New ShellForge initiative: 6 issues (#1362–#1367), no squad assigned yet.",
   "ciStatus": {
     "agentGuard": "green",
     "agentguardCloud": "unknown",
-    "agentguardAnalytics": "no_recent_runs"
+    "agentguardAnalytics": "unknown"
   },
   "versionMatrix": {
-    "latest": "2.9.1",
-    "agentGuard": "2.9.1",
-    "agentguardCloud": "2.9.0",
-    "agentguardAnalytics": "2.9.0",
+    "latest": "2.10.3",
+    "agentGuard": "2.10.3",
+    "agentguardCloud": "2.10.1",
+    "agentguardAnalytics": "2.10.2",
     "drift": {
-      "agentguardCloud": "1 patch behind",
+      "agentguardCloud": "2 patches behind",
       "agentguardAnalytics": "1 patch behind"
     }
   },
@@ -24,140 +24,174 @@
       "open": 3,
       "details": [
         {
-          "number": 1261,
-          "title": "chore(marketing-em): EM report",
-          "status": "CI_IN_PROGRESS",
-          "checks": "in_progress",
-          "age": "<1h"
-        },
-        {
-          "number": 1258,
-          "title": "fix(site): sync stats to v2.9.0",
+          "number": 1361,
+          "title": "fix(bootstrap): harden SessionStart install + build detection (#1341, #1322)",
           "status": "AWAITING_REVIEW",
-          "checks": "all_green",
-          "age": "<2h",
-          "note": "MERGEABLE. Branch protection requires review."
+          "checks": "4/4 passed",
+          "mergeable": true,
+          "note": "All green. MERGEABLE. No reviews. Fixes dogfoods #1341 and #1322."
         },
         {
-          "number": 1255,
-          "title": "fix(matchers): safe-subshell allowlist",
-          "status": "BLOCKED_CODEQL",
-          "checks": "codeql_fail",
-          "age": "~2h",
-          "note": "lint/test-and-build/analyze PASS. CodeQL FAIL."
+          "number": 1349,
+          "title": "fix(site): sync stats — event kinds 47→48, invariants 22→24",
+          "status": "CONFLICTING",
+          "checks": "none (no CI run due to conflict)",
+          "mergeable": false,
+          "note": "Merge conflict. Human PR (jpleva91). Needs rebase by author."
+        },
+        {
+          "number": 1320,
+          "title": "docs: sync documentation with codebase state (v2.10.2)",
+          "status": "AWAITING_REVIEW",
+          "checks": "2/2 passed",
+          "mergeable": true,
+          "note": "All green. MERGEABLE. Auto-generated docs sync (deepagents removal, event/invariant counts)."
         }
       ]
     }
   },
   "dogfoodPatterns": [
     {
-      "pattern": "No-Governance-Self-Modification false positive: gh issue create --body + EM squad state writes",
-      "issues": [
-        1254
-      ],
+      "pattern": "rtk prefix breaks bootstrap exemption pattern matching",
+      "issue": 1347,
       "severity": "P1",
-      "description": "Two manifestations: (1) analytics agent blocked writing governance issue body via --body arg. (2) HQ EM agent blocked writing .agentguard/squads/hq/em-report.json \u2014 squad state is not governance self-modification. The invariant needs to distinguish policy/config files from agent operational state.",
-      "recommendation": "Scope invariant to .agentguard/{config,policy,hooks} paths. Exclude .agentguard/squads/ (squad state, EM reports) and .agentguard/persona.env."
+      "description": "claude-hook-wrapper.sh uses exact string matching for bootstrap exemptions. Global CLAUDE.md instructs all agents to prefix commands with rtk, so 'rtk pnpm install --force' doesn't match the 'pnpm install --force' allowlist pattern. Chicken-and-egg bootstrap failure.",
+      "recommendation": "Patch claude-hook-wrapper.sh to strip rtk prefix before bootstrap exemption pattern matching, or add rtk-prefixed variants to the allowlist."
+    },
+    {
+      "pattern": "docker stop/rm blocked for named ephemeral test containers",
+      "issue": 1346,
+      "severity": "P2",
+      "description": "Destructive command guard blocks docker stop/rm on named ephemeral test containers (bench-devs-test-db). No distinction between production and test containers.",
+      "recommendation": "Add policy allowlist for known test container name patterns or expose a test-scope context."
     },
     {
       "pattern": "Agent version reported as vunknown",
-      "issues": [
-        1167,
-        1165,
-        1159
-      ],
+      "issues": [1167, 1165, 1159],
       "severity": "P2",
       "description": "Multiple copilot-driver agents report version as unknown."
     }
   ],
   "crossCuttingIssues": [
     {
-      "issue": 1186,
-      "title": "Swarm Health P0 \u2014 4th cycle",
-      "severity": "P0",
-      "description": "85.7% stuck, 133 agents vs 32 max_workers, 18 dead PIDs, 2 cron collision groups.",
-      "action": "Human: git worktree prune, PID cleanup, cron fix"
+      "issue": 1347,
+      "title": "rtk prefix breaks bootstrap exemption — P1 dogfood",
+      "severity": "P1",
+      "description": "Bootstrap allowlist in claude-hook-wrapper.sh doesn't account for rtk prefix. Affects all agents following global CLAUDE.md.",
+      "action": "Kernel/adapters squad: patch hook wrapper bootstrap exemption"
     },
     {
+      "issue": 1335,
+      "title": "[studio-qa] Codex + Copilot circuit breakers OPEN — 68/138 events lost",
+      "severity": "P1",
+      "description": "Circuit breakers open, significant event loss in studio.",
+      "action": "Studio squad: investigate and reset circuit breakers, audit event pipeline"
+    },
+    {
+      "issue": 1342,
+      "title": "[studio-qa] Copilot event pipeline producing 0 events",
+      "severity": "P1",
+      "description": "Copilot hook adapter not emitting events.",
+      "action": "Studio/kernel squad: investigate Copilot hook adapter"
+    },
+    {
+      "title": "ShellForge initiative: 6 issues filed (#1362–#1367)",
+      "severity": "P2",
+      "description": "New major initiative: single-binary distribution, secret injection, artifact registry, composable stacks. No squad assigned.",
+      "action": "Director/HQ: assign ShellForge squad ownership and triage priority"
+    },
+    {
+      "title": "Version drift: cloud 2.10.1, analytics 2.10.2 vs kernel 2.10.3",
+      "severity": "P2",
+      "action": "Cloud squad: upgrade both to 2.10.3"
+    },
+    {
+      "issue": 1349,
+      "title": "PR #1349 merge conflict — site stats sync stale",
+      "severity": "P2",
+      "description": "Human PR with merge conflict. Site stats (47→48 event kinds, 22→24 invariants) remain stale in production.",
+      "action": "Human (jpleva91): rebase PR #1349 against main"
+    }
+  ],
+  "resolvedSinceLastCycle": [
+    {
       "issue": 917,
-      "title": "KE-2 ActionContext \u2014 unstarted 4th cycle",
-      "severity": "P0",
-      "description": "0/4 checkboxes, no assignee, no PR.",
-      "action": "Escalate to director"
+      "title": "KE-2 ActionContext — SHIPPED",
+      "note": "v3.0 item 1 checked (now 2/9). Phase 7 (Capability-Scoped Sessions) unblocked. p50 < 100µs verified."
+    },
+    {
+      "issue": 1186,
+      "title": "Swarm Health P0 — CLOSED",
+      "note": "Recovery controller confirmed swarm health restored, mode: normal, risk score 14→9."
     },
     {
       "issue": 1254,
-      "title": "Governance false positive blocks EM state writes",
-      "severity": "P1"
+      "title": "No-Governance-Self-Modification false positive — CLOSED",
+      "note": "Fixed in PR #1351: scope narrowed to .agentguard/ config paths only, not squad state or gh --body args."
     },
     {
-      "issue": 1259,
-      "title": "Site swarm section stale \u2014 26 agents/5 tiers",
-      "severity": "P2",
-      "action": "Marketing squad audit"
-    },
-    {
-      "title": "Version drift: cloud+analytics 2.9.0 vs kernel 2.9.1",
-      "severity": "P2",
-      "action": "Cloud squad upgrade"
+      "issue": 1327,
+      "title": "Cron collision: 3 pairs in server/schedule.json — CLOSED THIS CYCLE",
+      "note": "HQ EM applied fix: analytics-reporter 5→6 19, analytics-invariant-researcher 35→36 19, shellforge-ollama-integration 0→1 8,20."
     }
   ],
   "escalations": [
     {
-      "priority": "P0",
-      "target": "director/human",
-      "reason": "Swarm health #1186: 4th+ cycle, no resolution, human action required"
-    },
-    {
-      "priority": "P0",
-      "target": "director/kernel-sr",
-      "reason": "KE-2 #917: 4th cycle unstarted, sprint goal at serious risk"
+      "priority": "P1",
+      "target": "kernel/adapters squad",
+      "reason": "#1347: rtk prefix breaks bootstrap exemption in claude-hook-wrapper.sh — all agents affected"
     },
     {
       "priority": "P1",
-      "target": "kernel squad",
-      "reason": "#1254: invariant checker fix needed \u2014 scope to .agentguard/ config paths only"
+      "target": "studio squad",
+      "reason": "#1335 + #1342: Codex + Copilot circuit breakers OPEN, Copilot event pipeline producing 0 events"
     },
     {
       "priority": "P2",
-      "target": "kernel-sr",
-      "reason": "PR #1255 CodeQL failure \u2014 investigate and fix before merge"
+      "target": "human reviewer (jpleva91)",
+      "reason": "PR #1361: 4/4 green, MERGEABLE, needs 1 approval (bootstrap hardening, closes #1341 #1322)"
     },
     {
       "priority": "P2",
-      "target": "human reviewer",
-      "reason": "PR #1258: all green, MERGEABLE, needs 1 approval"
+      "target": "human reviewer (jpleva91)",
+      "reason": "PR #1320: 2/2 green, MERGEABLE, needs 1 approval (docs sync v2.10.2)"
+    },
+    {
+      "priority": "P2",
+      "target": "human (jpleva91)",
+      "reason": "PR #1349: merge conflict — needs rebase to unblock site stats update"
     },
     {
       "priority": "P2",
       "target": "cloud squad",
-      "reason": "Upgrade cloud+analytics from 2.9.0 to 2.9.1"
+      "reason": "Upgrade agentguard-cloud (2.10.1) and agentguard-analytics (2.10.2) to 2.10.3"
+    },
+    {
+      "priority": "P2",
+      "target": "director",
+      "reason": "ShellForge initiative (#1362–#1367): 6 issues filed, needs squad assignment and priority triage"
     }
   ],
   "sprintStatus": {
-    "goal": "Validate Go kernel\u2192Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 unblock. Swarm health resolution.",
-    "progress": "Kernel sprint near-complete: #1202 merged, #1208 merged, #1139 \u2192 PR #1255 pending CodeQL fix. KE-2 #917 still unstarted 4th cycle. v2.9.1 published.",
+    "goal": "Validate Go kernel→Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 SHIPPED. Swarm health RESOLVED.",
+    "progress": "Sprint major milestones hit: KE-2 #917 CLOSED, Swarm P0 #1186 CLOSED, v2.10.3 published. Bootstrap hardening PR (#1361) and docs sync PR (#1320) ready for merge. New focus: ShellForge initiative coordination, rtk bootstrap exemption fix (#1347), studio circuit breaker investigation (#1335, #1342).",
     "blockers": [
-      "Swarm P0 #1186 \u2014 human required 4th cycle",
-      "KE-2 #917 \u2014 4th cycle unstarted, sprint at risk",
-      "PR #1255 CodeQL \u2014 blocks #1139 kernel sprint closure"
+      "#1347 P1 — rtk prefix breaks bootstrap exemption (kernel/adapters squad)",
+      "#1335 + #1342 P1 — Copilot/Codex circuit breakers + event pipeline (studio squad)",
+      "PR #1349 — merge conflict, human rebase needed",
+      "Version drift — cloud+analytics 1-2 patches behind"
     ]
   },
   "actionsThisCycle": [
     {
-      "action": "CLOSED_ISSUE",
-      "issue": 1229,
-      "reason": "v2.9.1 published, race condition resolved"
-    },
-    {
-      "action": "PR_MERGE_ATTEMPTED",
-      "pr": 1258,
-      "result": "BLOCKED by branch protection \u2014 needs human review"
+      "action": "CRON_COLLISION_FIX",
+      "detail": "Fixed 3 cron collisions in server/schedule.json: analytics-reporter (5→6 19), analytics-invariant-researcher (35→36 19), shellforge-ollama-integration (0→1 8,20). Zero collisions remain.",
+      "closedIssue": 1327
     },
     {
       "action": "DOGFOOD_IDENTIFIED",
-      "issue": 1254,
-      "note": "EM state writes to .agentguard/squads/ also blocked \u2014 broader invariant scope issue"
+      "issue": 1347,
+      "note": "rtk prefix breaks bootstrap exemption — P1, affects all agents following global CLAUDE.md"
     }
   ]
 }
