@@ -65,14 +65,17 @@ func TestFromEnvMissingToolName(t *testing.T) {
 	}
 }
 
-func TestFromEnvMissingEventName(t *testing.T) {
+func TestFromEnvMissingEventNameDefaultsToPreToolUse(t *testing.T) {
 	os.Setenv("CLAUDE_TOOL_NAME", "Bash")
 	os.Unsetenv("CLAUDE_HOOK_EVENT_NAME")
 	defer os.Unsetenv("CLAUDE_TOOL_NAME")
 
-	_, err := FromEnv()
-	if err == nil {
-		t.Error("expected error when CLAUDE_HOOK_EVENT_NAME is missing")
+	input, err := FromEnv()
+	if err != nil {
+		t.Errorf("expected no error, got: %v", err)
+	}
+	if input.Event != PreToolUse {
+		t.Errorf("expected PreToolUse default, got: %v", input.Event)
 	}
 }
 

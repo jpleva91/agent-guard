@@ -1,19 +1,36 @@
 package hook
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/AgentGuardHQ/agent-guard/go/internal/action"
 	"github.com/AgentGuardHQ/agent-guard/go/internal/config"
 	"github.com/AgentGuardHQ/agent-guard/go/internal/engine"
+	"github.com/AgentGuardHQ/agent-guard/go/internal/invariant"
 )
 
-// Handler evaluates hook requests against loaded policies.
-// It owns a Normalizer (for RawAction -> ActionContext) and the set of
-// policies to evaluate against.
+// readOnlyTools are tools that cannot mutate state.
+// These get fail-open (DefaultDeny=false) so they aren't blocked by default-deny.
+var readOnlyTools = map[string]bool{
+	"Read":        true,
+	"Glob":        true,
+	"Grep":        true,
+	"LS":          true,
+	"NotebookRead": true,
+	"WebSearch":   true,
+	"WebFetch":    true,
+}
+
+// Handler evaluates hook requests against loaded policies and invariants.
 type Handler struct {
-	normalizer *action.Normalizer
-	policies   []*action.LoadedPolicy
+	normalizer   *action.Normalizer
+	policies     []*action.LoadedPolicy
+	checker      *invariant.Checker
+	mode         string // enforcement mode: enforce, monitor, guide, educate
+	sessionState *SessionState
+	identity     string
+	workspace    string
 }
 
 // NewHandler creates a Handler by loading policies from the given file paths.
@@ -21,6 +38,8 @@ type Handler struct {
 func NewHandler(policyPaths []string) (*Handler, error) {
 	normalizer := config.NewDefaultNormalizer()
 	var policies []*action.LoadedPolicy
+	mode := "enforce" // default
+	var disabledInvariants []invariant.InvariantID
 
 	for _, p := range policyPaths {
 		data, err := os.ReadFile(p)
@@ -32,23 +51,36 @@ func NewHandler(policyPaths []string) (*Handler, error) {
 			return nil, err
 		}
 		policies = append(policies, policy)
+		// Read mode from first policy that has one
+		if policy.Mode != "" && mode == "enforce" {
+			mode = policy.Mode
+		}
+		for _, id := range policy.DisabledInvariants {
+			disabledInvariants = append(disabledInvariants, invariant.InvariantID(id))
+		}
 	}
+
+	checker := invariant.NewChecker(disabledInvariants)
 
 	return &Handler{
 		normalizer: normalizer,
 		policies:   policies,
+		checker:    checker,
+		mode:       mode,
 	}, nil
 }
 
-// Handle evaluates a hook input against loaded policies and returns a response.
+// Handle evaluates a hook input against loaded policies and invariants.
 //
-// For PreToolUse events, the handler:
+// For PreToolUse events:
 //  1. Builds a RawAction from the HookInput.
 //  2. Normalizes via the Normalizer (tool -> canonical action type).
-//  3. Evaluates via engine.Evaluate (deny-first, then allow, then default).
-//  4. Converts the EvalResult into a HookResponse.
+//  3. Checks invariants (hard safety boundaries).
+//  4. Evaluates via engine.Evaluate (deny-first, then allow, then default).
+//  5. Routes through enforcement mode (enforce blocks, monitor warns).
+//  6. Converts the result into a HookResponse.
 //
-// For PostToolUse events, the handler returns an allow response (audit only).
+// For PostToolUse events, returns an allow response (audit only).
 func (h *Handler) Handle(input HookInput) HookResponse {
 	// PostToolUse: always allow (audit/logging phase, no enforcement).
 	if input.Event == PostToolUse {
@@ -61,10 +93,84 @@ func (h *Handler) Handle(input HookInput) HookResponse {
 	// Normalize to ActionContext
 	ctx := h.normalizer.Normalize(raw, sourceFromInput(input))
 
-	// Evaluate against policies (default-deny for hook enforcement)
-	result := engine.Evaluate(ctx, h.policies, &engine.EvalOptions{DefaultDeny: true})
+	// Check invariants (hard safety boundaries — always enforced, even in monitor mode)
+	invCtx := invariant.CheckContext{
+		Action:    ctx,
+		GitBranch: ctx.Branch,
+	}
+	if ctx.Args.FilePath != "" {
+		invCtx.ModifiedFiles = []string{ctx.Args.FilePath}
+	}
+	failures := h.checker.Check(invCtx)
+	if len(failures) > 0 {
+		// Invariant violations are always enforced (no monitor mode bypass)
+		reason := fmt.Sprintf("Invariant violation: %s — %s", failures[0].ID, failures[0].Message)
+		return HookResponse{Decision: "deny", Reason: reason}
+	}
 
-	// Convert EvalResult to HookResponse
+	// Read-only tools get fail-open (DefaultDeny=false) to avoid blocking
+	// harmless operations like reading files when no allow rule matches.
+	isReadOnly := readOnlyTools[input.Tool]
+	defaultDeny := len(h.policies) > 0 && !isReadOnly
+
+	// Evaluate against policies
+	result := engine.Evaluate(ctx, h.policies, &engine.EvalOptions{DefaultDeny: defaultDeny})
+
+	// Enforcement mode routing
+	if !result.Allowed {
+		switch h.mode {
+		case "monitor":
+			// Monitor mode: warn to stderr but allow the action through
+			fmt.Fprintf(os.Stderr, "⚠ agentguard: %s (monitor mode)\n", result.Reason)
+			return HookResponse{Decision: "allow", Reason: result.Reason}
+
+		case "educate":
+			// Educate mode: allow + capture lesson for agent learning
+			fmt.Fprintf(os.Stderr, "⚠ agentguard: %s (educate mode)\n", result.Reason)
+			if h.workspace != "" {
+				CaptureLesson(h.workspace, Lesson{
+					Action:           ctx.Action,
+					Tool:             input.Tool,
+					Target:           ctx.Target,
+					Rule:             result.Reason,
+					Reason:           result.Reason,
+					Suggestion:       result.Suggestion,
+					CorrectedCommand: result.CorrectedCommand,
+					AgentID:          h.identity,
+					Squad:            SquadFromIdentity(h.identity),
+				})
+			}
+			return HookResponse{Decision: "allow", Reason: result.Reason}
+
+		case "guide":
+			// Guide mode: block with retry tracking (max 3 attempts)
+			retryKey := fmt.Sprintf("%s:%s", ctx.Action, result.Reason)
+			count := IncrementRetry(input.SessionID, retryKey)
+			const maxRetries = 3
+
+			resp := HookResponse{
+				Decision: "deny",
+				Reason:   fmt.Sprintf("%s (attempt %d/%d)", result.Reason, count, maxRetries),
+			}
+			if result.Suggestion != "" {
+				resp.Suggestion = result.Suggestion
+			}
+			if result.CorrectedCommand != "" {
+				resp.CorrectedCommand = result.CorrectedCommand
+			}
+
+			if count >= maxRetries {
+				resp.Reason = fmt.Sprintf("%s — max retries reached, hard block", result.Reason)
+			}
+
+			fmt.Fprintf(os.Stderr, "⚠ agentguard: %s (guide mode, attempt %d/%d)\n", result.Reason, count, maxRetries)
+			return resp
+
+		default:
+			// Enforce mode (default): hard block
+		}
+	}
+
 	return resultToResponse(result)
 }
 
