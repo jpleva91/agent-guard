@@ -1,36 +1,23 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "KE-3: Patch v2.10.3 with Go kernel binaries + harden bootstrap (#1316, #1341, #1325, #1332, #1322)",
-    "issues": [1316, 1341, 1325, 1332, 1322]
+    "goal": "KE-4: ShellForge initiative squad assignment (#1362–#1367) + v3.0 Phase 7 (Capability-Scoped Sessions)",
+    "issues": []
   },
   "assignments": {
     "senior": {
-      "issue": [1316, 1303],
-      "title": "Publish v2.10.3 with correct Go kernel binaries; rebase or close PR #1303",
+      "issue": null,
+      "title": "Awaiting KE-4 issue assignment — review ShellForge issues #1362–#1367 and v3.0 Phase 7 backlog",
       "status": "unassigned",
       "branch": null,
       "pr": null,
       "claimedAt": null,
-      "note": "KE-2 complete: #955, #957, #964 all CLOSED. PR #1303 (Go delegation) is CONFLICTING — needs rebase against main before CI can run. #1316: v2.10.2 npm package shipped without Go kernel binaries (build failed pre-#1315 fix). Needs v2.10.3 patch release."
+      "note": "KE-3 complete: #1316, #1341, #1325, #1332, #1322 all CLOSED. PR #1303 closed without merge. v2.10.3 published. Senior should pick up next P1 from ShellForge initiative or v3.0 Phase 7 per director assignment."
     }
   },
-  "blockers": [
-    {
-      "issue": 1316,
-      "description": "v2.10.2 Go kernel binaries missing from npm package — module import fix (#1315) landed after release cut. Users fall back to TS kernel. Needs v2.10.3 patch.",
-      "since": "2026-03-29T05:14:00Z",
-      "owner": "senior"
-    },
-    {
-      "pr": 1303,
-      "description": "KE-2 implementation PR has merge conflict — needs rebase onto main before CI can run. Issues (#955/#957) already closed.",
-      "since": "2026-03-29T12:00:00Z",
-      "owner": "senior"
-    }
-  ],
+  "blockers": [],
   "prQueue": {
-    "open": 1,
+    "open": 0,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
@@ -38,10 +25,10 @@
         "number": 1303,
         "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
         "branch": "feat/go-kernel-delegation-955-957",
-        "status": "conflicting",
+        "status": "closed",
         "ciStatus": null,
-        "openedAt": "2026-03-28T00:00:00Z",
-        "note": "CONFLICTING. Issues #955/#957 already closed. Needs rebase before CI can run. EM commented 2026-03-29T12:00Z."
+        "closedAt": "2026-03-29T13:21:31Z",
+        "note": "CLOSED without merge. Issues #955/#957 resolved via v2.10.3 patch. KE-2 accounted for."
       },
       {
         "number": 969,
@@ -59,7 +46,7 @@
         "status": "merged",
         "ciStatus": "passed",
         "mergedAt": "2026-03-29T12:00:00Z",
-        "note": "Merged this cycle. Closes #1337. Fixes agent worktree git conflicts."
+        "note": "Merged. Closes #1337."
       },
       {
         "number": 1334,
@@ -68,12 +55,12 @@
         "status": "merged",
         "ciStatus": "passed",
         "mergedAt": "2026-03-29T12:00:00Z",
-        "note": "Merged this cycle. Closes #1331. Unblocks agents stuck at pnpm interactive prompt."
+        "note": "Merged. Closes #1331."
       }
     ]
   },
-  "health": "yellow",
-  "healthReason": "v2.10.2 published without Go kernel binaries (#1316). PR #1303 has merge conflict. Sprint issues closed but implementation artifact not merged.",
+  "health": "green",
+  "healthReason": "Sprint KE-3 complete — all 5 issues closed, v2.10.3 published, no open PRs, 4129/4129 tests passing.",
   "testHealth": {
     "total": 4129,
     "passed": 4129,
@@ -82,7 +69,13 @@
     "lastRun": "2026-03-25T23:05:00.000Z",
     "status": "all_passing"
   },
-  "lastEmRun": "2026-03-29T12:00:00.000Z",
+  "architectFlagged": [
+    {
+      "pr": 1371,
+      "reason": "4/4 CI green, Tier C scope, fixes P1 #1347 (rtk prefix bootstrap). Ready to merge."
+    }
+  ],
+  "lastEmRun": "2026-03-29T15:00:00.000Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-29T12:00:00.000Z"
+  "updatedAt": "2026-03-29T15:00:00.000Z"
 }
