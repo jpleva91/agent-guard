@@ -58,13 +58,14 @@ Future planned adapters (MCP generic adapter, OpenAI Codex CLI, Google Gemini CL
 
 ## Adapter Priority & Complexity
 
-| Framework | Priority | Complexity | Integration Mechanism |
-|-----------|----------|------------|----------------------|
-| MCP (Model Context Protocol) | P0 | Medium | Intercept `call_tool` requests; MCP tools map naturally to `RawAgentAction` |
-| LangChain / LangGraph | P0 | Medium | Wrap `BaseTool.invoke()` with governance middleware |
-| OpenAI Agents SDK | P1 | Medium | Function calling interception via middleware |
-| AutoGen | P1 | Medium | Agent message interception |
-| Copilot CLI | P2 | Low | Hook-based pattern similar to Claude Code |
+| Framework | Priority | Complexity | Integration Mechanism | Status |
+|-----------|----------|------------|----------------------|--------|
+| MCP (Model Context Protocol) | P0 | Medium | Intercept `call_tool` requests; MCP tools map naturally to `RawAgentAction` | Planned |
+| LangChain / LangGraph | P0 | Medium | Wrap `BaseTool.invoke()` with governance middleware | Planned |
+| OpenAI Agents SDK | P1 | Medium | Function calling interception via middleware | Planned |
+| AutoGen | P1 | Medium | Agent message interception | Planned |
+| Copilot CLI | P2 | Low | Hook-based pattern similar to Claude Code | Live |
+| Goose (Block) | P2 | Low | ShellForge orchestration layer wraps Goose sessions with governance | Live |
 
 ## Adapter Details
 
