@@ -1,39 +1,56 @@
 {
-  "generatedAt": "2026-03-26T00:00:00.000Z",
+  "generatedAt": "2026-03-29T09:00:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
-  "health": "green",
-  "summary": "Steady-state cycle. PR #969 (fix claude-init binary path, closes #964 priority:critical) is CI-green (5/5 checks) — flagged for architect review. Closed stale EM report PR #966 (superseded). Sprint issues #955 (Go kernel hook delegation) and #957 (Go pack resolution) remain open with no PR; senior coder still assigned. PR budget: 1 open / 3 max. 4129 tests passing.",
+  "health": "yellow",
+  "healthReason": "Blocker B1 (PR #1303 merge conflict) persists for 2nd consecutive EM cycle — escalation rule triggered.",
+  "summary": "Sprint PR #1303 (closes #955/#957) remains CONFLICTING for the 2nd cycle. Root cause is the Go module rename in #1315 (agent-guard → agentguard) which landed on main after the branch was cut. CI cannot run until senior coder rebases. Architecture was PASS-reviewed by workspace-pr-review-agent. Escalating to director per rule: blocker persists 2+ cycles. Separately: two duplicate PRs (#1328, #1330) both fix CLI publish E403 — human must pick one. Stale EM report PR #1324 flagged for closure. PR budget: 1 active / 3 max. 4129 tests passing (no regressions).",
   "prQueue": {
     "open": 1,
     "prs": [
       {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "branch": "agent/kernel-sr-20260325-230535",
-        "status": "awaiting_review",
-        "ciStatus": "passed",
+        "number": 1303,
+        "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
+        "branch": "feat/go-kernel-delegation-955-957",
+        "status": "conflicting",
+        "ciStatus": "blocked_by_conflicts",
         "checks": {
-          "total": 5,
-          "passed": 5,
+          "total": 0,
+          "passed": 0,
           "failed": 0,
-          "names": ["CodeQL", "test-and-build", "lint", "rust-kernel", "analyze"]
+          "names": []
         },
-        "closesIssue": 964,
-        "openedAt": "2026-03-25T23:11:08Z",
-        "note": "CI all green. No reviews yet. Flagging for architect attention."
+        "closesIssues": [955, 957],
+        "openedAt": "2026-03-29T03:44:52Z",
+        "note": "DIRTY — 0 CI runs. Conflict from Go module rename (#1315). workspace-pr-review-agent: PASS. Needs rebase. 2nd blocked cycle."
+      },
+      {
+        "number": 1324,
+        "title": "chore(kernel-em): EM cycle report 2026-03-29T06:10Z",
+        "status": "stale",
+        "note": "Prior EM report — superseded. Flag for closure."
       }
     ]
   },
   "mergedThisCycle": [],
-  "closedThisCycle": [
+  "closedThisCycle": [],
+  "flaggedForClosure": [
     {
-      "number": 966,
-      "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
-      "note": "Stale EM report from prior cycle — superseded by current run"
+      "number": 1324,
+      "title": "chore(kernel-em): EM cycle report 2026-03-29T06:10Z",
+      "reason": "Superseded by this cycle's report"
     }
   ],
-  "newIssues": [],
+  "humanActionRequired": [
+    {
+      "priority": "high",
+      "action": "Close PR #1324 (stale EM report) — superseded by this cycle's report (PR from this run)"
+    },
+    {
+      "priority": "high",
+      "action": "Resolve duplicate CI fix PRs: #1328 and #1330 both fix CLI publish E403 idempotency — both CI green, pick one and close the other"
+    }
+  ],
   "loopGuards": {
     "prBudget": {
       "open": 1,
@@ -41,8 +58,9 @@
       "pass": true
     },
     "retryLoops": {
-      "stuckAgents": 0,
-      "pass": true
+      "stuckAgents": 1,
+      "note": "Senior coder blocked on #1303 conflict (2nd cycle)",
+      "pass": false
     },
     "blastRadius": {
       "withinLimits": true,
@@ -50,42 +68,62 @@
     }
   },
   "triage": {
-    "p0Issues": 0,
+    "p0Issues": 2,
     "p1Issues": 0,
     "newAssignments": [],
     "notableIssues": [
       {
-        "number": 964,
-        "title": "fix(claude-init): write hooks with full binary path",
-        "label": "priority:critical",
-        "status": "pr_open",
-        "pr": 969,
-        "note": "PR #969 CI green, awaiting architect review"
+        "number": 1319,
+        "title": "Swarm Health Alert — 2026-03-29 (5th+ cycle)",
+        "label": "priority:P0",
+        "scope": "cross-squad",
+        "note": "P0 swarm health: 85.7% agents stuck, 18 dead PIDs, cron collisions. Human action required. Not kernel-owned."
+      },
+      {
+        "number": 1289,
+        "title": "Swarm Health Alert — credit exhaustion wave",
+        "label": "priority:P0",
+        "scope": "cross-squad",
+        "note": "26.5% agent failures from credit exhaustion. Root cause partially resolved as of 2026-03-29T00:00Z."
       },
       {
         "number": 955,
         "title": "Go kernel not invoked by claude-hook",
-        "label": "priority:high",
-        "status": "in_progress",
-        "pr": null,
-        "note": "Senior assigned, no PR yet — main sprint work"
+        "status": "pr_conflicting",
+        "pr": 1303,
+        "note": "PR #1303 exists but CONFLICTING. Senior must rebase."
       },
       {
         "number": 957,
         "title": "Go kernel evaluate does not resolve pack: or YAML",
-        "label": "priority:high",
-        "status": "in_progress",
-        "pr": null,
-        "note": "Senior assigned as sub-task of #955"
+        "status": "pr_conflicting",
+        "pr": 1303,
+        "note": "Same PR — blocked on same conflict."
       }
     ]
   },
-  "blockers": [],
-  "escalations": [],
+  "blockers": [
+    {
+      "id": "B1",
+      "pr": 1303,
+      "description": "Merge conflict from Go module rename (#1315). Senior must: git fetch origin && git rebase origin/main, resolve conflicts in go/ directory, push to trigger CI.",
+      "firstSeen": "2026-03-29T06:10:00Z",
+      "cycles": 2,
+      "escalated": true
+    }
+  ],
+  "escalations": [
+    {
+      "rule": "persistentBlocker",
+      "description": "B1 (PR #1303 conflict) persists across 2 EM cycles. Escalating to director.",
+      "target": "director",
+      "action": "Assign human or architect to unblock senior coder rebase on #1303"
+    }
+  ],
   "metrics": {
     "prsOpened": 1,
     "prsMerged": 0,
-    "prsClosed": 1,
+    "prsClosed": 0,
     "issuesClosed": 0,
     "governanceDenials": 0,
     "retries": 0
@@ -100,9 +138,9 @@
   "escalationRules": {
     "triggered": {
       "twoPlusFailingCI": false,
-      "persistentBlocker": false,
+      "persistentBlocker": true,
       "governanceDenialsExceeded": false
     },
-    "notes": "No escalation triggers. PR #969 needs architect review — not a blocker yet."
+    "notes": "Persistent blocker rule fired: B1 across 2 cycles. Director escalation logged."
   }
 }

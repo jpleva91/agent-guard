@@ -8,41 +8,50 @@
     "senior": {
       "issue": [955, 957],
       "title": "Wire Go kernel into claude-hook.ts — delegate evaluation to Go binary + resolve pack/YAML",
-      "status": "in_progress",
-      "branch": null,
-      "pr": null,
-      "claimedAt": null,
-      "note": "#964 has PR #969 up (CI green, awaiting review). Senior should focus on #955 (claude-hook.ts delegates to Go binary) and #957 (TS pre-resolves pack/YAML to flat JSON before handing to Go evaluate)."
+      "status": "blocked_conflict",
+      "branch": "feat/go-kernel-delegation-955-957",
+      "pr": 1303,
+      "claimedAt": "2026-03-29T03:44:52Z",
+      "note": "PR #1303 has merge conflicts (DIRTY). Root cause: PR #1315 landed after branch creation, renaming Go module imports (agent-guard → agentguard). Senior must rebase: git fetch origin && git rebase origin/main, resolve Go module conflicts in go/ directory, then push to trigger CI. Workspace-pr-review-agent PASS verdict — architecture is sound. 2nd consecutive EM cycle with conflict unresolved → escalated to director."
     }
   },
-  "blockers": [],
+  "blockers": [
+    {
+      "id": "B1",
+      "pr": 1303,
+      "description": "PR #1303 has merge conflicts from Go module rename in #1315. CI cannot run. Senior must rebase against main.",
+      "firstSeen": "2026-03-29T06:10:00Z",
+      "cycles": 2,
+      "escalated": true
+    }
+  ],
   "prQueue": {
     "open": 1,
     "reviewed": 0,
     "mergeable": 0,
     "prs": [
       {
-        "number": 969,
-        "title": "fix(claude-init): write hooks with full binary path (closes #964)",
-        "branch": "agent/kernel-sr-20260325-230535",
-        "status": "awaiting_review",
-        "ciStatus": "passed",
-        "openedAt": "2026-03-25T23:11:08Z",
-        "note": "CI all green (5/5). Needs architect review before merge."
+        "number": 1303,
+        "title": "feat(ke-2): wire Go kernel into claude-hook + TS pre-resolves packs/YAML",
+        "branch": "feat/go-kernel-delegation-955-957",
+        "status": "conflicting",
+        "ciStatus": "blocked_by_conflicts",
+        "openedAt": "2026-03-29T03:44:52Z",
+        "closesIssues": [955, 957],
+        "note": "DIRTY/CONFLICTING — 0 CI runs. Go module rename (#1315) caused conflicts. Workspace-pr-review-agent: PASS. Senior must rebase to unblock CI."
       },
       {
-        "number": 966,
-        "title": "chore(kernel-em): EM cycle report 2026-03-26T07:10Z",
-        "branch": "agent/kernel-em-20260325-230535",
-        "status": "closed",
+        "number": 1324,
+        "title": "chore(kernel-em): EM cycle report 2026-03-29T06:10Z",
+        "branch": "agent/kernel-em-20260329-061003",
+        "status": "stale",
         "ciStatus": null,
-        "openedAt": "2026-03-25T23:08:39Z",
-        "closedAt": "2026-03-26T00:00:00.000Z",
-        "note": "Stale EM report, closed this cycle as superseded"
+        "openedAt": "2026-03-29T06:22:06Z",
+        "note": "Prior EM report PR — superseded by current cycle. Flag for closure."
       }
     ]
   },
-  "health": "green",
+  "health": "yellow",
   "testHealth": {
     "total": 4129,
     "passed": 4129,
@@ -51,7 +60,7 @@
     "lastRun": "2026-03-25T23:05:00.000Z",
     "status": "all_passing"
   },
-  "lastEmRun": "2026-03-26T00:00:00.000Z",
+  "lastEmRun": "2026-03-29T09:00:00.000Z",
   "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-26T00:00:00.000Z"
+  "updatedAt": "2026-03-29T09:00:00.000Z"
 }
