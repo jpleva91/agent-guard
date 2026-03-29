@@ -46,6 +46,9 @@ if [ -z "$AGENTGUARD_BIN" ]; then
     *'"command":"yarn build'* ) BOOTSTRAP_SAFE=1 ;;
     *'"command":"npx turbo build'* ) BOOTSTRAP_SAFE=1 ;;
     *'"command":"pnpm turbo build'* ) BOOTSTRAP_SAFE=1 ;;
+    # pnpm install --force bypasses the interactive "remove modules?" prompt that
+    # appears when node_modules exists but the lockfile has changed (AgentGuardHQ/agent-guard#1331)
+    *'"command":"pnpm install --force'* ) BOOTSTRAP_SAFE=1 ;;
   esac
 
   # Check if this is a read-only tool (safe regardless of kernel state)
@@ -69,12 +72,12 @@ if [ -z "$AGENTGUARD_BIN" ]; then
 
   if [ "$BOOTSTRAP_SAFE" -eq 1 ]; then
     # Allow through — emit a warning so the agent knows governance is not active
-    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"[AgentGuard bootstrap] Kernel binary not found — allowing bootstrap/read-only action. Run pnpm install && pnpm build to enable full governance."}}'
+    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"[AgentGuard bootstrap] Kernel binary not found — allowing bootstrap/read-only action. Run: (1) pnpm install --force  (2) pnpm build  to enable full governance. Use --force to skip the interactive Y/n prompt."}}'
     exit 0
   fi
 
   # Not a bootstrap command — fail closed
-  echo '{"decision":"block","reason":"AgentGuard kernel binary not found — governance cannot evaluate this action. Run: pnpm install && pnpm build"}'
+  echo '{"decision":"block","reason":"AgentGuard kernel binary not found — governance cannot evaluate this action. Bootstrap steps: (1) pnpm install --force  (2) pnpm build"}'
   exit 0
 fi
 
