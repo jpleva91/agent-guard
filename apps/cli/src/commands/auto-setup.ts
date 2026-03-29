@@ -1,4 +1,6 @@
-// agentguard auto-setup — detect AgentGuard in project and auto-configure Claude Code and Copilot CLI hooks
+// agentguard auto-setup — detect AgentGuard in project and auto-configure hooks for all drivers.
+// Supports: Claude Code, Copilot CLI, Codex CLI, Gemini CLI.
+// Use --driver <name> to target a specific driver.
 
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -7,9 +9,13 @@ import { RESET, BOLD, DIM, FG } from '../colors.js';
 import { claudeInit } from './claude-init.js';
 import { copilotInit } from './copilot-init.js';
 import gooseInit from './goose-init.js';
+import { writeCodexHooks, writeGeminiHooks } from '../postinstall.js';
 import { resolveMainRepoRoot } from '@red-codes/core';
 
 const HOOK_MARKER = 'claude-hook';
+
+const VALID_DRIVERS = ['claude', 'copilot', 'codex', 'gemini'] as const;
+type Driver = (typeof VALID_DRIVERS)[number];
 
 interface PackageJson {
   name?: string;
@@ -106,23 +112,76 @@ export function detectExistingHooks(cwd: string = process.cwd()): boolean {
     }
   }
 
+  // Check Codex CLI hooks
+  const codexHooksPath = join(cwd, '.codex', 'hooks.json');
+  if (existsSync(codexHooksPath)) {
+    try {
+      const config = JSON.parse(readFileSync(codexHooksPath, 'utf8')) as {
+        hooks?: { PreToolUse?: Array<{ hooks?: Array<{ command?: string }> }> };
+      };
+      const preToolUse = config?.hooks?.PreToolUse ?? [];
+      const hasCodexHook = preToolUse.some((group) =>
+        (group.hooks ?? []).some((h) => h.command?.includes('codex-hook'))
+      );
+      if (hasCodexHook) return true;
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Check Gemini CLI hooks
+  const geminiSettingsPath = join(cwd, '.gemini', 'settings.json');
+  if (existsSync(geminiSettingsPath)) {
+    try {
+      const settings = JSON.parse(readFileSync(geminiSettingsPath, 'utf8')) as {
+        hooks?: { BeforeTool?: Array<{ hooks?: Array<{ command?: string }> }> };
+      };
+      const beforeTool = settings?.hooks?.BeforeTool ?? [];
+      const hasGeminiHook = beforeTool.some((group) =>
+        (group.hooks ?? []).some((h) => h.command?.includes('gemini-hook'))
+      );
+      if (hasGeminiHook) return true;
+    } catch {
+      /* ignore */
+    }
+  }
+
   return false;
 }
 
 /**
- * Auto-detect AgentGuard in the project and configure Claude Code and Copilot CLI hooks if needed.
+ * Auto-detect AgentGuard in the project and configure hooks for all detected drivers.
+ * Supports: Claude Code, Copilot CLI, Codex CLI, Gemini CLI.
+ *
+ * Use --driver <name> to target a specific driver (claude | copilot | codex | gemini).
  *
  * Detection checks (in order):
  * 1. Is agentguard listed in package.json dependencies?
  * 2. Does .claude/ directory exist (Claude Code environment)?
- * 3. Are hooks already installed (Claude Code settings.json or Copilot CLI hooks.json)?
+ * 3. Are hooks already installed across all driver config dirs?
  *
- * If agentguard is a dependency and hooks are missing, runs claude-init and copilot-init automatically.
+ * If agentguard is a dependency and hooks are missing, installs for all detected drivers.
  */
 export async function autoSetup(args: string[] = []): Promise<AutoSetupResult> {
   const quiet = args.includes('--quiet') || args.includes('-q');
   const dryRun = args.includes('--dry-run');
   const cwd = resolveMainRepoRoot();
+
+  // Parse --driver flag
+  const driverIdx = args.findIndex((a) => a === '--driver');
+  const driverArg = driverIdx !== -1 ? (args[driverIdx + 1] as Driver | undefined) : undefined;
+  if (driverArg && !(VALID_DRIVERS as readonly string[]).includes(driverArg)) {
+    process.stderr.write(
+      `  ${FG.red}✗${RESET}  Unknown driver: ${driverArg}. Valid: ${VALID_DRIVERS.join(', ')}\n\n`
+    );
+    return {
+      detected: false,
+      hooksMissing: false,
+      installed: false,
+      source: null,
+      skipped: `Unknown driver: ${driverArg}`,
+    };
+  }
 
   const result: AutoSetupResult = {
     detected: false,
@@ -205,25 +264,40 @@ export async function autoSetup(args: string[] = []): Promise<AutoSetupResult> {
     forwardArgs.push('--db-path', args[dbPathIdx + 1]);
   }
 
-  // Step 4: Auto-install (delegate to claude-init)
+  // Determine which drivers to install
+  const runDriver = (d: Driver): boolean => !driverArg || driverArg === d;
+
+  // Step 4: Auto-install
   if (dryRun) {
     result.skipped = 'Dry run — skipped installation';
     if (!quiet) {
+      const targets = driverArg ?? 'all drivers';
       process.stderr.write(
-        `  ${DIM}[dry-run] Would run: agentguard claude-init --store ${storeBackend}${RESET}\n\n`
+        `  ${DIM}[dry-run] Would run: agentguard auto-setup --store ${storeBackend} (${targets})${RESET}\n\n`
       );
     }
     return result;
   }
 
-  await claudeInit(forwardArgs);
-  // Also configure Copilot CLI hooks
-  await copilotInit(forwardArgs);
-  // Also configure Goose hooks (if Goose config dir exists or goose is installed)
-  try {
-    await gooseInit(forwardArgs);
-  } catch {
-    // Goose not installed — skip silently
+  if (runDriver('claude')) {
+    await claudeInit(forwardArgs);
+  }
+  if (runDriver('copilot')) {
+    await copilotInit(forwardArgs);
+  }
+  if (runDriver('codex')) {
+    writeCodexHooks(cwd);
+  }
+  if (runDriver('gemini')) {
+    writeGeminiHooks(cwd);
+  }
+  // Goose always runs when no specific driver is targeted
+  if (!driverArg) {
+    try {
+      await gooseInit(forwardArgs);
+    } catch {
+      // Goose not installed — skip silently
+    }
   }
   result.installed = true;
 
