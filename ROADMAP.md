@@ -125,14 +125,14 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 - [x] ~~Produce machine-readable reason codes for all match results~~ — `packages/matchers/src/reason-codes.ts`
 - [x] ~~Benchmark: total evaluation p50 < 0.25ms~~ — benchmark suite in CI
 
-#### KE-2: Canonical Action Normalization (ActionContext)
+#### KE-2: Canonical Action Normalization (ActionContext) ✅ Done 2026-03-29
 
 > Formalize a vendor-neutral action representation that decouples the policy engine from provider-specific payloads.
 
-- [ ] Design `ActionContext` contract: actor identity (agent/session/worktree), action category, structured arguments
-- [ ] Build specialized adapter for Claude tool-calls → `ActionContext` mapping
-- [ ] Ensure policy engine consumes only normalized `ActionContext` (no provider-specific logic)
-- [ ] Benchmark: context normalization in 50–100µs
+- [x] ~~Design `ActionContext` contract: actor identity (agent/session/worktree), action category, structured arguments~~ — `packages/core/src/types.ts` (`ActionContext`, `ActorIdentity`, `ActionArguments`)
+- [x] ~~Build specialized adapter for Claude tool-calls → `ActionContext` mapping~~ — `packages/adapters/src/claude-code.ts` (`toActionContext`); Copilot CLI (`copilotToActionContext`); DeepAgents (`deepAgentsToActionContext`)
+- [x] ~~Ensure policy engine consumes only normalized `ActionContext` (no provider-specific logic)~~ — `packages/kernel/src/aab.ts` (`authorizeContext`, `normalizeToActionContext`); `packages/policy/src/evaluator.ts` accepts `ActionContext` directly
+- [x] ~~Benchmark: context normalization in 50–100µs~~ — p50 < 100µs verified in `packages/kernel/tests/action-context.test.ts`
 
 #### KE-3: Governance Event Envelope ✅ Done 2026-03-24
 
@@ -181,7 +181,8 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 
 > Ship the governance kernel to the world. Default-deny + KE-2 = production-grade enforcement.
 
-- [ ] Default-deny finalized + KE-2 ActionContext shipped
+- [x] ~~KE-2 ActionContext shipped~~ — ✅ Done 2026-03-29 — vendor-neutral normalization pipeline operational across Claude Code, Copilot CLI, and DeepAgents adapters
+- [ ] Default-deny finalized
 - [ ] **Stranger test validation** — Have someone with zero context install and configure AgentGuard from the README alone. Every friction point found is a v3.0 blocker. The individual governance experience (`npm install → agentguard claude-init → governance active`) must work flawlessly before anything else is promoted.
 - [ ] **User capture funnel** — Without this, installs vanish into the void:
   - README call-to-action: "Join early access / updates" link

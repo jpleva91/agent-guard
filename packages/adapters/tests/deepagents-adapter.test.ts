@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   normalizeDeepAgentsAction,
+  deepAgentsToActionContext,
   formatDeepAgentsHookResponse,
   resolveDeepAgentsIdentity,
 } from '@red-codes/adapters';
@@ -323,5 +324,100 @@ describe('DeepAgents adapter integration', () => {
     const envelope = deepAgentsToEnvelope(event);
     expect(envelope.source).toBe('deepagents');
     expect(envelope.event).toBe(event);
+  });
+});
+
+describe('deepAgentsToActionContext — KE-2 adapter mapping', () => {
+  it('converts a write_file payload to ActionContext', () => {
+    const payload: DeepAgentsHookPayload = {
+      tool: 'write_file',
+      input: { path: 'src/index.ts', content: 'hello' },
+      sessionId: 'session-abc',
+    };
+
+    const ctx = deepAgentsToActionContext(payload);
+
+    expect(ctx.action).toBe('file.write');
+    expect(ctx.actionClass).toBe('file');
+    expect(ctx.target).toBe('src/index.ts');
+    expect(ctx.source).toBe('deepagents');
+    expect(ctx.args.filePath).toBe('src/index.ts');
+    expect(ctx.args.content).toBe('hello');
+    expect(ctx.actor.agentId).toMatch(/^deepagents/);
+    expect(ctx.destructive).toBe(false);
+    expect(typeof ctx.normalizedAt).toBe('number');
+  });
+
+  it('converts a run_shell payload with git push to ActionContext', () => {
+    const payload: DeepAgentsHookPayload = {
+      tool: 'run_shell',
+      input: { command: 'git push origin feature-branch' },
+    };
+
+    const ctx = deepAgentsToActionContext(payload);
+
+    expect(ctx.action).toBe('git.push');
+    expect(ctx.actionClass).toBe('git');
+    expect(ctx.branch).toBe('feature-branch');
+    expect(ctx.args.branch).toBe('feature-branch');
+    expect(ctx.source).toBe('deepagents');
+  });
+
+  it('converts a destructive shell command to ActionContext', () => {
+    const payload: DeepAgentsHookPayload = {
+      tool: 'run_shell',
+      input: { command: 'rm -rf /tmp/data' },
+    };
+
+    const ctx = deepAgentsToActionContext(payload);
+
+    expect(ctx.destructive).toBe(true);
+    expect(ctx.actionClass).toBe('shell');
+    expect(ctx.source).toBe('deepagents');
+  });
+
+  it('converts a read_file payload (file.read)', () => {
+    const payload: DeepAgentsHookPayload = {
+      tool: 'read_file',
+      input: { path: 'README.md' },
+    };
+
+    const ctx = deepAgentsToActionContext(payload);
+
+    expect(ctx.action).toBe('file.read');
+    expect(ctx.actionClass).toBe('file');
+    expect(ctx.target).toBe('README.md');
+    expect(ctx.source).toBe('deepagents');
+  });
+
+  it('passes persona through to ActionContext', () => {
+    const payload: DeepAgentsHookPayload = {
+      tool: 'run_shell',
+      input: { command: 'npm test' },
+    };
+
+    const ctx = deepAgentsToActionContext(payload, { trustTier: 'standard', role: 'developer' });
+
+    expect(ctx.persona).toEqual({ trustTier: 'standard', role: 'developer' });
+    expect(ctx.actor.persona).toEqual({ trustTier: 'standard', role: 'developer' });
+  });
+
+  it('produces NormalizedIntent-compatible output', () => {
+    const payload: DeepAgentsHookPayload = {
+      tool: 'write_file',
+      input: { path: 'test.ts', content: 'data' },
+    };
+
+    const ctx = deepAgentsToActionContext(payload);
+
+    expect(ctx).toHaveProperty('action');
+    expect(ctx).toHaveProperty('target');
+    expect(ctx).toHaveProperty('agent');
+    expect(ctx).toHaveProperty('destructive');
+    expect(ctx).toHaveProperty('actionClass');
+    expect(ctx).toHaveProperty('actor');
+    expect(ctx).toHaveProperty('args');
+    expect(ctx).toHaveProperty('source');
+    expect(ctx).toHaveProperty('normalizedAt');
   });
 });

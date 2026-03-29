@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   normalizeCopilotCliAction,
+  copilotToActionContext,
   formatCopilotHookResponse,
   resolveCopilotAgentIdentity,
 } from '@red-codes/adapters';
@@ -337,6 +338,101 @@ describe('Integration: Copilot CLI → Kernel', () => {
     const result = await kernel.propose(rawAction);
     expect(result.allowed).toBe(true);
     expect(result.decisionRecord?.action.agent).toMatch(/^copilot-cli:[a-z0-9]+$/);
+  });
+});
+
+describe('copilotToActionContext — KE-2 adapter mapping', () => {
+  it('converts a create tool payload to ActionContext', () => {
+    const payload: CopilotCliHookPayload = {
+      toolName: 'create',
+      toolArgs: JSON.stringify({ file_path: 'src/index.ts', content: 'hello' }),
+      sessionId: 'session-abc',
+    };
+
+    const ctx = copilotToActionContext(payload);
+
+    expect(ctx.action).toBe('file.write');
+    expect(ctx.actionClass).toBe('file');
+    expect(ctx.target).toBe('src/index.ts');
+    expect(ctx.source).toBe('copilot-cli');
+    expect(ctx.args.filePath).toBe('src/index.ts');
+    expect(ctx.args.content).toBe('hello');
+    expect(ctx.actor.agentId).toMatch(/^copilot-cli/);
+    expect(ctx.destructive).toBe(false);
+    expect(typeof ctx.normalizedAt).toBe('number');
+  });
+
+  it('converts a bash tool with git push to ActionContext', () => {
+    const payload: CopilotCliHookPayload = {
+      toolName: 'bash',
+      toolArgs: JSON.stringify({ command: 'git push origin feature-branch' }),
+    };
+
+    const ctx = copilotToActionContext(payload);
+
+    expect(ctx.action).toBe('git.push');
+    expect(ctx.actionClass).toBe('git');
+    expect(ctx.branch).toBe('feature-branch');
+    expect(ctx.args.branch).toBe('feature-branch');
+    expect(ctx.source).toBe('copilot-cli');
+  });
+
+  it('converts a destructive bash command to ActionContext', () => {
+    const payload: CopilotCliHookPayload = {
+      toolName: 'bash',
+      toolArgs: JSON.stringify({ command: 'rm -rf /tmp/data' }),
+    };
+
+    const ctx = copilotToActionContext(payload);
+
+    expect(ctx.destructive).toBe(true);
+    expect(ctx.actionClass).toBe('shell');
+    expect(ctx.source).toBe('copilot-cli');
+  });
+
+  it('converts a view tool payload (file.read)', () => {
+    const payload: CopilotCliHookPayload = {
+      toolName: 'view',
+      toolArgs: JSON.stringify({ file_path: 'README.md' }),
+    };
+
+    const ctx = copilotToActionContext(payload);
+
+    expect(ctx.action).toBe('file.read');
+    expect(ctx.actionClass).toBe('file');
+    expect(ctx.target).toBe('README.md');
+    expect(ctx.source).toBe('copilot-cli');
+  });
+
+  it('passes persona through to ActionContext', () => {
+    const payload: CopilotCliHookPayload = {
+      toolName: 'bash',
+      toolArgs: JSON.stringify({ command: 'npm test' }),
+    };
+
+    const ctx = copilotToActionContext(payload, { trustTier: 'elevated', role: 'ops' });
+
+    expect(ctx.persona).toEqual({ trustTier: 'elevated', role: 'ops' });
+    expect(ctx.actor.persona).toEqual({ trustTier: 'elevated', role: 'ops' });
+  });
+
+  it('produces NormalizedIntent-compatible output', () => {
+    const payload: CopilotCliHookPayload = {
+      toolName: 'create',
+      toolArgs: JSON.stringify({ file_path: 'test.ts', content: 'data' }),
+    };
+
+    const ctx = copilotToActionContext(payload);
+
+    expect(ctx).toHaveProperty('action');
+    expect(ctx).toHaveProperty('target');
+    expect(ctx).toHaveProperty('agent');
+    expect(ctx).toHaveProperty('destructive');
+    expect(ctx).toHaveProperty('actionClass');
+    expect(ctx).toHaveProperty('actor');
+    expect(ctx).toHaveProperty('args');
+    expect(ctx).toHaveProperty('source');
+    expect(ctx).toHaveProperty('normalizedAt');
   });
 });
 
