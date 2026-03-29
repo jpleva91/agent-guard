@@ -356,10 +356,17 @@ describe('claudeHookWrapper template', () => {
   });
 
   describe('local dev mode', () => {
-    it('uses direct binary path without bootstrap detection', () => {
+    it('uses direct binary path', () => {
       const wrapper = claudeHookWrapper('node apps/cli/dist/bin.js', ' --store sqlite', '');
       expect(wrapper).toContain('AGENTGUARD_BIN="node apps/cli/dist/bin.js"');
       expect(wrapper).not.toContain('node_modules/.bin/agentguard');
+    });
+
+    it('includes worktree binary probe for ERR_MODULE_NOT_FOUND resilience (#1376)', () => {
+      const wrapper = claudeHookWrapper('node apps/cli/dist/bin.js', ' --store sqlite', '');
+      expect(wrapper).toContain('--version >/dev/null 2>&1');
+      expect(wrapper).toContain('git worktree list --porcelain');
+      expect(wrapper).toContain('_MAIN_ROOT/apps/cli/dist/bin.js');
     });
   });
 });

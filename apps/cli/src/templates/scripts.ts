@@ -200,7 +200,17 @@ export function claudeHookWrapper(
   ).join('\n');
 
   const resolveBlock = isLocal
-    ? `AGENTGUARD_BIN="${cliPrefix}"`
+    ? `AGENTGUARD_BIN="${cliPrefix}"
+
+# Probe the binary — in git worktrees, ${cliPrefix} exists but may crash at startup
+# with ERR_MODULE_NOT_FOUND because node_modules only lives in the main workspace.
+# Fall back to the main worktree binary if the probe fails (AgentGuardHQ/agentguard#1376).
+if ! \$AGENTGUARD_BIN --version >/dev/null 2>&1; then
+  _MAIN_ROOT="\$(git worktree list --porcelain 2>/dev/null | sed -n '1s/^worktree //p')"
+  if [ -n "\$_MAIN_ROOT" ] && [ -f "\$_MAIN_ROOT/apps/cli/dist/bin.js" ]; then
+    AGENTGUARD_BIN="node \$_MAIN_ROOT/apps/cli/dist/bin.js"
+  fi
+fi`
     : `# Resolve the agentguard binary: local node_modules first, then PATH
 AGENTGUARD_BIN=""
 if [ -x "\$AGENTGUARD_WORKSPACE/node_modules/.bin/agentguard" ]; then
