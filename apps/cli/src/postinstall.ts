@@ -769,7 +769,15 @@ interface SummaryOptions {
 }
 
 function printSummary(opts: SummaryOptions): void {
-  const { claudeResult, copilotResult, codexResult, geminiResult, policyResult, projectRoot, upgradeInfo } = opts;
+  const {
+    claudeResult,
+    copilotResult,
+    codexResult,
+    geminiResult,
+    policyResult,
+    projectRoot,
+    upgradeInfo,
+  } = opts;
 
   const tag = (r: DriverHookResult): string => {
     if (r === 'created') return '[created]';
@@ -852,7 +860,15 @@ function main(): void {
 
   reportInstallTelemetry(scriptDir);
 
-  printSummary({ claudeResult, copilotResult, codexResult, geminiResult, policyResult, projectRoot, upgradeInfo });
+  printSummary({
+    claudeResult,
+    copilotResult,
+    codexResult,
+    geminiResult,
+    policyResult,
+    projectRoot,
+    upgradeInfo,
+  });
 }
 
 /**

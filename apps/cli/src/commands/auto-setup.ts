@@ -174,7 +174,13 @@ export async function autoSetup(args: string[] = []): Promise<AutoSetupResult> {
     process.stderr.write(
       `  ${FG.red}✗${RESET}  Unknown driver: ${driverArg}. Valid: ${VALID_DRIVERS.join(', ')}\n\n`
     );
-    return { detected: false, hooksMissing: false, installed: false, source: null, skipped: `Unknown driver: ${driverArg}` };
+    return {
+      detected: false,
+      hooksMissing: false,
+      installed: false,
+      source: null,
+      skipped: `Unknown driver: ${driverArg}`,
+    };
   }
 
   const result: AutoSetupResult = {
