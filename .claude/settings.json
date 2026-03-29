@@ -32,13 +32,13 @@
           },
           {
             "type": "command",
-            "command": "test -d node_modules || pnpm install --frozen-lockfile",
+            "command": "test -f node_modules/.modules.yaml || pnpm install --force",
             "timeout": 120000,
             "blocking": true
           },
           {
             "type": "command",
-            "command": "test -f apps/cli/dist/bin.js || pnpm build",
+            "command": "test -f apps/cli/dist/bin.js || pnpm build; test -f apps/cli/dist/bin.js",
             "timeout": 120000,
             "blocking": true
           },

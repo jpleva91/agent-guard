@@ -299,10 +299,22 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     blocking: boolean;
   }> = [];
   if (isLocal) {
-    // In the agentguard dev repo, auto-build if dist is missing
+    // In the agentguard dev repo, ensure deps are linked and CLI is built.
+    // Use .modules.yaml as the pnpm install sentinel — written only after both
+    // the content-addressed store AND the symlink phase succeed (#1341).
+    // --force avoids the interactive "remove & reinstall" prompt in non-TTY envs.
     sessionStartHooks.push({
       type: 'command',
-      command: `test -f apps/cli/dist/bin.js || pnpm build`,
+      command: `test -f node_modules/.modules.yaml || pnpm install --force`,
+      timeout: 120000,
+      blocking: true,
+    });
+    // Verify the binary actually landed in THIS worktree after build.
+    // Turbo cache hits can replay to a different worktree path; the trailing
+    // `; test -f` turns that silent pass into a visible failure (#1322).
+    sessionStartHooks.push({
+      type: 'command',
+      command: `test -f apps/cli/dist/bin.js || pnpm build; test -f apps/cli/dist/bin.js`,
       timeout: 120000,
       blocking: true,
     });

@@ -127,7 +127,7 @@ describe('claudeInit', () => {
     expect(written.hooks.SessionStart[0].hooks[1].command).toContain('status');
   });
 
-  it('installs SessionStart build + persona check + status hooks in local dev repo', async () => {
+  it('installs SessionStart install + build + persona check + status hooks in local dev repo', async () => {
     // Simulate being in the agentguard dev repo (apps/cli/src/bin.ts exists)
     vi.mocked(existsSync).mockImplementation((p: unknown) => {
       const path = String(p);
@@ -139,16 +139,22 @@ describe('claudeInit', () => {
 
     const written = writtenSettings();
     expect(written.hooks.SessionStart).toHaveLength(1);
-    expect(written.hooks.SessionStart[0].hooks).toHaveLength(3);
-    // Build hook first
-    expect(written.hooks.SessionStart[0].hooks[0].command).toContain('pnpm build');
+    expect(written.hooks.SessionStart[0].hooks).toHaveLength(4);
+    // Install check first — uses .modules.yaml sentinel (#1341)
+    expect(written.hooks.SessionStart[0].hooks[0].command).toContain('.modules.yaml');
+    expect(written.hooks.SessionStart[0].hooks[0].command).toContain('pnpm install');
     expect(written.hooks.SessionStart[0].hooks[0].blocking).toBe(true);
     expect(written.hooks.SessionStart[0].hooks[0].timeout).toBe(120000);
-    // Persona check second
-    expect(written.hooks.SessionStart[0].hooks[1].command).toContain('session-persona-check');
-    // Status hook third — in dev repo, uses local binary directly (no bash wrapper)
-    expect(written.hooks.SessionStart[0].hooks[2].command).toContain('status');
-    expect(written.hooks.SessionStart[0].hooks[2].command).toContain('apps/cli/dist/bin.js');
+    // Build hook second — trailing test verifies binary landed here (#1322)
+    expect(written.hooks.SessionStart[0].hooks[1].command).toContain('pnpm build');
+    expect(written.hooks.SessionStart[0].hooks[1].command).toContain('apps/cli/dist/bin.js');
+    expect(written.hooks.SessionStart[0].hooks[1].blocking).toBe(true);
+    expect(written.hooks.SessionStart[0].hooks[1].timeout).toBe(120000);
+    // Persona check third
+    expect(written.hooks.SessionStart[0].hooks[2].command).toContain('session-persona-check');
+    // Status hook fourth — in dev repo, uses local binary directly (no bash wrapper)
+    expect(written.hooks.SessionStart[0].hooks[3].command).toContain('status');
+    expect(written.hooks.SessionStart[0].hooks[3].command).toContain('apps/cli/dist/bin.js');
   });
 
   it('detects already-configured hook in PreToolUse and warns', async () => {
