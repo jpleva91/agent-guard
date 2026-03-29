@@ -32,8 +32,9 @@ logs/*
 **/bench-results.json
 .claude/worktrees/
 
-# Agent identity (session-scoped, never committed)
+# Agent identity and session state (session-scoped, never committed)
 .agentguard-identity
+.agentguard-root-session
 
 # Environment
 .env
