@@ -8,25 +8,32 @@
     "marketing-launch-agent": ["#1387", "#1260"],
     "em-direct": []
   },
-  "blockers": [],
+  "blockers": [
+    "OWASP blog post complete 4 cycles — waiting on human LinkedIn publish (docs/blog/owasp-agentic-top10-agentguard.md)"
+  ],
   "prQueue": {
-    "open": 1,
-    "reviewed": 1,
-    "mergeable": 1,
-    "prNumbers": ["#1394"],
-    "notes": "#1394 residual site stat fixes (21→24 invariants card, 87→93 patterns card, 36→35 CLI counter — filed this cycle, awaiting CI merge)"
+    "open": 0,
+    "reviewed": 0,
+    "mergeable": 0,
+    "prNumbers": [],
+    "notes": "All marketing PRs merged. PR #1394 merged (3 residual stat fixes). PR #1401 merged (check-site-stats.sh automated drift prevention). No open marketing PRs."
   },
   "recentlyCompleted": [
-    { "pr": "#1390", "title": "Site stats sync (8 fixes: og, JSON-LD, hero, kernel card, policy bullet, event kinds, pipeline, CLI heading)", "mergedDate": "2026-03-29", "note": "Merged this cycle" },
+    { "pr": "#1401", "title": "feat(site): add check-site-stats.sh to prevent recurring stat drift", "mergedDate": "2026-03-29", "note": "Merged this cycle — closes 4-cycle systemic stat drift issue. Script in scripts/ — wirable to CI." },
+    { "pr": "#1394", "title": "fix(site): correct remaining stat drift — 24 invariants card, 93 patterns card, 35 CLI counter", "mergedDate": "2026-03-29", "note": "Final residual stat fix. Site now fully aligned." },
+    { "pr": "#1393", "title": "fix(site): sync stat bar counters and feature card headings — missed by #1390", "mergedDate": "2026-03-29", "note": "Stat bar + card sync pass" },
+    { "pr": "#1390", "title": "Site stats sync (8 fixes: og, JSON-LD, hero, kernel card, policy bullet, event kinds, pipeline, CLI heading)", "mergedDate": "2026-03-29", "note": "Primary stats sync" },
     { "pr": "#1388", "title": "Capture funnel Phase 1 — GitHub Stars badge, Get Started, cloud+Discussions CTAs", "mergedDate": "2026-03-29", "note": "Conference P0 DONE. April 10 deadline met." },
-    { "pr": "#1338", "title": "Live Office README promotion (hero marketing asset)", "mergedDate": "2026-03-29", "note": "Confirmed via git log (commit 5f874b5)" },
+    { "pr": "#1338", "title": "Live Office README promotion (hero marketing asset)", "mergedDate": "2026-03-29", "note": "Merged" },
     { "issue": "#925", "title": "OWASP blog post", "closedDate": "2026-03-28", "note": "Draft at docs/blog/owasp-agentic-top10-agentguard.md — awaiting human LinkedIn publish" }
   ],
   "keyContext": {
     "currentVersion": "2.10.3",
-    "sprintPriority": "#1387 containment engineering post is NOW P0 — Anthropic computer-use announcement creates a closing narrative window. marketing-launch-agent should prioritize this over #1260.",
-    "issueScope": "#1260 covers v2.9→v2.10 arc: default mode guide→monitor, wildcard fix, 5 governed drivers",
-    "conferenceStatus": "Phase 1 COMPLETE. Phase 2 deadline: 2026-04-15. May 6 conference: at risk — #1379 Meta demo not yet built."
+    "sprintPriority": "#1387 containment engineering post is P0 — Anthropic computer-use announcement creates closing narrative window. marketing-launch-agent: prioritize #1387 over #1260.",
+    "issueScope": "#1260 covers v2.9→v2.10 arc: default mode guide→monitor, wildcard fix, 5 governed drivers. Scope extended to v2.10.3.",
+    "conferenceStatus": "Phase 1 COMPLETE. Phase 2 deadline: 2026-04-15. May 6 conference: AT RISK (38 days) — #1379 Meta demo not started.",
+    "siteStatus": "Fully aligned as of 2026-03-29. check-site-stats.sh now in scripts/ for CI wiring.",
+    "backlog": "#1378 CLAW-10 scorecard (HIGH), #1379 Meta incident demo (HIGH, May 6 hard deadline)"
   },
-  "updatedAt": "2026-03-29T21:00:00.000Z"
+  "updatedAt": "2026-03-29T19:23:00.000Z"
 }

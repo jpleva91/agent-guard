@@ -10,32 +10,60 @@
     "senior": {
       "issue": 1376,
       "title": "Fix worktree CLI binary crash — fall back to main worktree binary when local fails (#1376)",
-      "status": "ready",
-      "branch": null,
-      "pr": null,
+      "status": "done",
+      "branch": "fix/template-worktree-probe-1376",
+      "pr": 1400,
       "claimedAt": "2026-03-29T17:22:00Z",
-      "note": "KE-4 complete. PR #1374 merged (closes #1359). KE-5: modify scripts/claude-hook-wrapper.sh to validate binary with --version probe before using it; if local bin fails ERR_MODULE_NOT_FOUND, fall back to `git worktree list` main worktree binary. Main worktree binary always works (confirmed: /home/jared/agentguard-workspace/agent-guard/apps/cli/dist/bin.js v2.10.3). Fix must be silent — no new output on fallback, just governance continuity. Related: #1323, #1321 (pnpm interactive prompt hangs) may be separate follow-on."
+      "note": "KE-5 shell script fix merged via PR #1391. QA found template parity gap: claudeHookWrapper local-dev template lacked the same probe. PR #1400 adds probe + test to template. Both vectors now covered."
     }
   },
   "blockers": [],
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
-    "prs": []
+    "prs": [
+      {
+        "number": 1400,
+        "title": "fix(bootstrap): add worktree binary probe to claudeHookWrapper template (#1376)",
+        "author": "kernel-qa",
+        "status": "open",
+        "note": "Template parity fix for KE-5. 1 new test, 950/950 passing."
+      }
+    ]
   },
   "health": "green",
-  "healthReason": "KE-4 sprint complete. PR #1374 merged (closes #1359). No squad PRs open. No blockers. KE-5 sprint assigned: #1376 (worktree binary resilience). First-party dogfood confirmed: this EM run experienced the #1376 bug — governance was silently broken during this cycle.",
+  "healthReason": "KE-5 complete. PR #1391 merged (shell script probe). PR #1400 open (template parity). Zero regressions. +485 new tests vs last QA run.",
   "testHealth": {
-    "total": 4129,
-    "passed": 4129,
+    "total": 4614,
+    "passed": 4614,
     "failed": 0,
-    "packages": 19,
-    "lastRun": "2026-03-25T23:05:00.000Z",
+    "packages": 18,
+    "lastRun": "2026-03-29T18:55:00.000Z",
     "status": "all_passing",
-    "note": "Last full run 2026-03-25. QA squad overdue. PR #1374 CI verified passing."
+    "breakdown": {
+      "kernel": 935,
+      "agentguard-cli": 950,
+      "invariants": 602,
+      "policy": 483,
+      "adapters": 299,
+      "storage": 247,
+      "core": 194,
+      "telemetry": 161,
+      "matchers": 141,
+      "invariant-data-protection": 122,
+      "plugins": 125,
+      "renderers": 105,
+      "events": 76,
+      "swarm": 72,
+      "sdk": 18,
+      "telemetry-client": 27,
+      "agentguard-mcp": 24,
+      "scheduler": 34
+    },
+    "note": "Full run 2026-03-29. +485 tests vs 2026-03-25 (4129→4614). Zero regressions. PR #1400 adds +1 (now 950 CLI)."
   },
   "lastEmRun": "2026-03-29T17:22:00.000Z",
-  "lastQaRun": "2026-03-25T18:50:00.000Z",
-  "updatedAt": "2026-03-29T17:22:00Z"
+  "lastQaRun": "2026-03-29T18:55:00.000Z",
+  "updatedAt": "2026-03-29T18:55:00Z"
 }
