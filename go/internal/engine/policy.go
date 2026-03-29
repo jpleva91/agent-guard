@@ -132,10 +132,21 @@ func matchesRule(ctx action.ActionContext, rule *action.PolicyRule) bool {
 }
 
 // matchesAction checks if an action type matches any of the rule's action patterns.
+// Supports:
+//   - "*" wildcard (matches any action type)
+//   - Exact match: "git.push" matches "git.push"
+//   - Namespace wildcard: "git.*" matches "git.push", "git.commit" (but not "file.write")
 func matchesAction(actionType string, patterns action.StringOrSlice) bool {
 	for _, p := range patterns {
-		if p == actionType {
+		if p == "*" || p == actionType {
 			return true
+		}
+		// Namespace wildcard: e.g. "git.*" matches "git.push"
+		if strings.HasSuffix(p, ".*") {
+			namespace := p[:len(p)-2] // strip ".*"
+			if strings.HasPrefix(actionType, namespace+".") {
+				return true
+			}
 		}
 	}
 	return false

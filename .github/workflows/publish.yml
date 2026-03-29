@@ -27,6 +27,20 @@ jobs:
 
       - run: pnpm turbo test
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build Go kernel binaries (shipped in npm package)
+        working-directory: go
+        run: |
+          mkdir -p ../apps/cli/dist/go-bin
+          GOOS=linux GOARCH=amd64 go build -o ../apps/cli/dist/go-bin/agentguard-go-linux-amd64 ./cmd/agentguard/
+          GOOS=darwin GOARCH=arm64 go build -o ../apps/cli/dist/go-bin/agentguard-go-darwin-arm64 ./cmd/agentguard/
+          GOOS=darwin GOARCH=amd64 go build -o ../apps/cli/dist/go-bin/agentguard-go-darwin-amd64 ./cmd/agentguard/
+          GOOS=windows GOARCH=amd64 go build -o ../apps/cli/dist/go-bin/agentguard-go-windows-amd64.exe ./cmd/agentguard/
+          ls -la ../apps/cli/dist/go-bin/
+
       - name: Verify CLI version matches tag
         working-directory: apps/cli
         run: |
