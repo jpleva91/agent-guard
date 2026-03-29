@@ -1,5 +1,6 @@
 // Tests for copilot-init CLI command
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { join } from 'node:path';
 
 vi.mock('node:fs', () => ({
   readFileSync: vi.fn(),
@@ -173,5 +174,46 @@ describe('copilotInit', () => {
     const config = writtenHooksConfig();
     const preHook = config.hooks.preToolUse[0];
     expect(preHook.bash).toContain('--store sqlite');
+  });
+
+  // --- Binary path resolution (#964) ---
+
+  it('resolves ./node_modules/.bin/agentguard for project-level npm installs', async () => {
+    vi.mocked(existsSync).mockImplementation((p: unknown) => {
+      const path = String(p);
+      // npm-installed: node_modules/.bin/agentguard exists, but NOT the dev marker
+      if (path.includes(join('node_modules', '.bin', 'agentguard'))) return true;
+      return false;
+    });
+
+    await copilotInit([]);
+
+    const config = writtenHooksConfig();
+    expect(config.hooks.preToolUse[0].bash).toContain('./node_modules/.bin/agentguard');
+    expect(config.hooks.preToolUse[0].bash).toContain('copilot-hook pre');
+  });
+
+  it('uses bare agentguard for --global even when node_modules/.bin exists', async () => {
+    vi.mocked(existsSync).mockImplementation((p: unknown) => {
+      const path = String(p);
+      if (path.includes(join('node_modules', '.bin', 'agentguard'))) return true;
+      return false;
+    });
+
+    await copilotInit(['--global']);
+
+    const config = writtenHooksConfig();
+    expect(config.hooks.preToolUse[0].bash).not.toContain('node_modules');
+    expect(config.hooks.preToolUse[0].bash).toContain('agentguard copilot-hook pre');
+  });
+
+  it('falls back to bare agentguard when node_modules/.bin does not exist', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await copilotInit([]);
+
+    const config = writtenHooksConfig();
+    expect(config.hooks.preToolUse[0].bash).not.toContain('node_modules');
+    expect(config.hooks.preToolUse[0].bash).toContain('agentguard copilot-hook pre');
   });
 });
