@@ -173,7 +173,7 @@ apps/
 │   ├── session-store.ts        # Session management
 │   ├── file-event-store.ts     # File-based event persistence
 │   ├── evidence-summary.ts     # Evidence summary generator for PR reports
-│   └── commands/               # guard, inspect, replay, export, import, simulate, ci-check, plugin, policy (validate, suggest, verify), claude-hook, claude-init, copilot-hook, copilot-init, deepagents-hook, deepagents-init, cloud, init, diff, evidence-pr, traces, session-viewer, status, analytics, auto-setup, config, audit-verify, demo, adoption, learn, migrate, trust, team-report
+│   └── commands/               # guard, inspect, replay, export, import, simulate, ci-check, plugin, policy (validate, suggest, verify), claude-hook, claude-init, copilot-hook, copilot-init, goose-init, cloud, init, diff, evidence-pr, traces, session-viewer, status, analytics, auto-setup, config, audit-verify, demo, adoption, learn, migrate, trust, team-report
 ├── mcp-server/src/             # @red-codes/mcp-server — MCP governance server
 │   ├── index.ts                # Entry point
 │   ├── server.ts               # MCP server implementation
@@ -187,7 +187,7 @@ apps/
 
 # TS test files (vitest) distributed across packages/ and apps/ directories
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
-policies/                   # Policy packs (YAML: ci-safe, engineering-standards, enterprise, hipaa, open-source, soc2, strict)
+policies/                   # Policy packs (YAML: ci-safe, engineering-standards, enterprise, essentials, hipaa, open-source, soc2, strict)
 docs/                       # System documentation (architecture, event model, specs)
 hooks/                      # Git hooks (post-commit, post-merge)
 examples/                   # Example governance scenarios and error demos
@@ -229,7 +229,7 @@ The kernel loop is the core of AgentGuard. Every agent action passes through it:
 1. Agent proposes action (Claude Code tool call → `RawAgentAction`)
 2. AAB normalizes intent (tool → action type, detect git/destructive commands)
 3. Policy evaluator matches rules (deny/allow with scopes, branches, limits)
-4. Invariant checker verifies system state (21 defaults)
+4. Invariant checker verifies system state (24 invariants)
 5. If allowed: execute via adapter (file/shell/git handlers)
 6. Emit lifecycle events: `ACTION_REQUESTED` → `ACTION_ALLOWED/DENIED` → `ACTION_EXECUTED/FAILED`
 7. Sink all events to SQLite for audit trail
@@ -293,8 +293,7 @@ Each workspace package maps to a single architectural concept:
 - `agentguard cloud login|signup|connect|status|events|runs|summary|disconnect` — Cloud governance analytics
 - `agentguard copilot-hook` — Handle GitHub Copilot PreToolUse/PostToolUse hook events
 - `agentguard copilot-init` — Set up GitHub Copilot hook integration
-- `agentguard deepagents-hook` — Handle DeepAgents (LangChain) PreToolUse/PostToolUse hook events
-- `agentguard deepagents-init` — Set up DeepAgents hook integration (generates Python middleware)
+- `agentguard goose-init` — Set up Goose hook integration
 - `agentguard team-report` — Team-level governance observability across agents
 - `agentguard telemetry [on|off|status]` — Manage anonymous telemetry settings
 

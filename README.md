@@ -111,7 +111,7 @@ Identity consists of a **role** (`developer`, `reviewer`, `ops`, `security`, `ci
 |------------|---------|
 | **Policy enforcement** | YAML rules with deny / allow / escalate — drop `agentguard.yaml` in your repo |
 | **24 built-in invariants** | Secret exposure, protected branches, blast radius, path traversal, CI/CD config, package script injection, and more |
-| **47 event kinds** | Full lifecycle telemetry: `ActionRequested → ActionAllowed/Denied → ActionExecuted` |
+| **48 event kinds** | Full lifecycle telemetry: `ActionRequested → ActionAllowed/Denied → ActionExecuted` |
 | **Real-time cloud dashboard** | Telemetry streams to your team dashboard; opt-in, anonymous by default |
 | **Multi-tenant** | Team workspaces, GitHub/Google OAuth, SSO-ready |
 | **Live Office visualization** | 2D view of agents working in real time — share a link with your team |
@@ -403,7 +403,6 @@ agentguard claude-init                    # Interactive wizard: mode + pack → 
 agentguard claude-init --global           # Install hooks globally (~/.claude/settings.json)
 agentguard claude-init --mode guide --pack essentials  # Non-interactive setup
 agentguard copilot-init                   # Set up GitHub Copilot CLI hook integration
-agentguard deepagents-init                # Set up DeepAgents (.deepagents/agentguard_middleware.py) middleware
 agentguard init --template strict         # Scaffold policy from a template
 agentguard status                         # Show governance status
 
