@@ -286,4 +286,60 @@ describe('claudeHook', () => {
       restore();
     }
   });
+
+  // --- Allow-path zero-stderr (#1430) ---
+  // Any stderr output from a PreToolUse hook causes Claude Code to surface a blocking
+  // error even when the hook exits 0. These tests guard the allow path for the three
+  // action classes most commonly blocked by spurious stderr noise.
+
+  it('emits zero stderr when git commit is allowed (no policy loaded)', async () => {
+    const input = JSON.stringify({
+      hook: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: 'git commit -m "feat: add feature"' },
+      session_id: 'test-session-1430a',
+    });
+    const restore = mockStdin(input);
+    try {
+      await claudeHook('pre');
+      expect(process.exit).toHaveBeenCalledWith(0);
+      expect(process.stderr.write).not.toHaveBeenCalled();
+    } finally {
+      restore();
+    }
+  });
+
+  it('emits zero stderr when git push is allowed (no policy loaded)', async () => {
+    const input = JSON.stringify({
+      hook: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: 'git push origin feature/my-branch' },
+      session_id: 'test-session-1430b',
+    });
+    const restore = mockStdin(input);
+    try {
+      await claudeHook('pre');
+      expect(process.exit).toHaveBeenCalledWith(0);
+      expect(process.stderr.write).not.toHaveBeenCalled();
+    } finally {
+      restore();
+    }
+  });
+
+  it('emits zero stderr when gh CLI call is allowed (no policy loaded)', async () => {
+    const input = JSON.stringify({
+      hook: 'PreToolUse',
+      tool_name: 'Bash',
+      tool_input: { command: 'gh pr create --title "Test PR" --body "fixes #1430"' },
+      session_id: 'test-session-1430c',
+    });
+    const restore = mockStdin(input);
+    try {
+      await claudeHook('pre');
+      expect(process.exit).toHaveBeenCalledWith(0);
+      expect(process.stderr.write).not.toHaveBeenCalled();
+    } finally {
+      restore();
+    }
+  });
 });
