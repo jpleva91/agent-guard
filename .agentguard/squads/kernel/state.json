@@ -17,17 +17,34 @@
       "title": "feat: browser governance invariants — scope, state, and pacing for browser agents",
       "status": "unassigned",
       "note": "Sprint-labeled feature. Design work: what invariant violations fire for browser agent over-reach (scope), stateful navigation (state), and timing (pacing). Coordinate with kernel architect."
+    },
+    "tertiary": {
+      "issue": 1385,
+      "title": "feat: irreversible action detection — human confirmation gates for one-way operations",
+      "status": "unassigned",
+      "note": "Design work: first-class irreversibility property on canonical action model. Extends blast radius scoring. Pauses kernel execution and emits ConfirmationRequired event."
     }
   },
   "blockers": [],
   "prQueue": {
-    "open": 0,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
-    "prs": []
+    "prs": [
+      {
+        "number": 1466,
+        "title": "feat: display enforcement posture in guard banner and policy validate",
+        "closes": 1306,
+        "ci": "4/4 green",
+        "mergeableState": "clean",
+        "reviews": 0,
+        "status": "awaiting-architect-review",
+        "createdAt": "2026-03-30T09:01:59Z"
+      }
+    ]
   },
   "health": "green",
-  "healthReason": "KE-9 sprint. 0 open kernel PRs. 4693/4693 tests passing. +44 new tests vs prior baseline (adapters: 299→343 from #1451, invariants: 624→633 from #1436). No regressions. No escalations.",
+  "healthReason": "KE-9 sprint. 1 kernel PR open (#1466, CI 4/4 green, awaiting architect review). 4693/4693 tests passing. No escalations. No governance denials.",
   "testHealth": {
     "total": 4693,
     "passed": 4693,
@@ -55,22 +72,11 @@
       "agentguard-mcp": 24,
       "scheduler": 34
     },
-    "note": "Baseline count updated: adapters 299→343 (+44, from #1451 codex-cli adapter tests), invariants 624→633 (+9, from #1436 persona.env protection). node_modules/turbo symlink was broken (pointed to deleted worktree copilot-test-writer-oss-3125169) — repaired via pnpm install before run."
+    "note": "Baseline count updated: adapters 299→343 (+44, from #1451 codex-cli adapter tests), invariants 624→633 (+9, from #1436 persona.env protection)."
   },
   "coverageGaps": [],
-  "mergedThisCycle": [
-    {
-      "number": 1448,
-      "title": "fix(claude-hook): allow-path must not write to stderr (#1430)",
-      "note": "KE-8 primary goal. 3 new tests. CI 4/4 green (post-rebase). Rebased by kernel EM — branch was 5 commits behind main. Closes #1430. Merged 2026-03-30T12:10Z."
-    },
-    {
-      "number": 1453,
-      "title": "docs: sync invariant count to 26 across all documentation",
-      "note": "Documentation only. 12 files updated. CI 4/4 green. Merged 2026-03-30T12:10Z."
-    }
-  ],
-  "lastEmRun": "2026-03-30T12:10:00Z",
+  "mergedThisCycle": [],
+  "lastEmRun": "2026-03-30T21:00:00.000Z",
   "lastQaRun": "2026-03-30T18:52:00.000Z",
-  "updatedAt": "2026-03-30T18:52:00.000Z"
+  "updatedAt": "2026-03-30T21:00:00.000Z"
 }

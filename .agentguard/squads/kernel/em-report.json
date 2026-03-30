@@ -1,100 +1,80 @@
 {
-  "generatedAt": "2026-03-30T12:10:00.000Z",
+  "generatedAt": "2026-03-30T21:00:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
   "health": "green",
-  "healthReason": "KE-8 COMPLETE: #1430 closed via PR #1448 (merged this cycle). #1427 closed (prior cycle). 0 kernel PRs open. Tests 4649/4649 passing. No escalations active.",
-  "summary": "Cycle 2026-03-30T12:10Z. KE-8 sprint complete. PR #1448 (fix: claude-hook allow-path must not write to stderr) was 5 commits behind main — rebased by kernel EM, CI re-triggered (4/4 green), merged. Closes #1430 (ageRuns was 2, director escalation cleared). PR #1453 (docs: sync invariant count to 26 across all documentation) also merged — CI was 4/4 green from earlier run. New P0 swarm health alert #1452 (69.5% failure rate, zombie vitest processes, stuck worktrees) is infra/human scope — no kernel action available. Security issue #1449 (path-to-regexp ReDoS HIGH, brace-expansion MEDIUM) triaged as P2 kernel maintenance for KE-9. #1177 (github.pr.* policy gap) confirmed CLOSED. Issue #1431 (codex budget) remains infra scope.",
+  "healthReason": "KE-9 sprint active. 1 kernel PR open (#1466, CI 4/4 green, awaiting architect review). 4693/4693 tests passing. No governance denials. No escalations. Sprint issues unassigned but no blockers.",
+  "summary": "Cycle 2026-03-30T21:00Z. KE-9 sprint in progress. PR #1466 (feat: enforcement posture display, closes #1306) is CI-clean (4/4 green, mergeable_state:clean) but has 0 reviews — flagged for architect attention. Sprint issues #1449 (security deps P2), #1384 (browser governance design), #1385 (irreversible action detection design) remain unassigned. P0 swarm health issues #1452 and #1431 are infra/human scope — no kernel action. No PRs merged this cycle. No governance denials detected.",
   "sprintStatus": {
-    "current": "KE-8",
-    "goal": "Dogfood correctness — hook stderr blocking + persona.env identity protection",
-    "status": "COMPLETE",
+    "current": "KE-9",
+    "goal": "Security maintenance + new governance invariant design (#1449, #1384, #1385)",
+    "status": "IN_PROGRESS",
     "issues": [
-      {
-        "number": 1430,
-        "title": "[dogfood] git commit Bash tool calls blocked by hook even when decision is 'allowed'",
-        "priority": "P1",
-        "status": "closed",
-        "fixTarget": "apps/cli/src/commands/claude-hook.ts",
-        "closedVia": "PR #1448 merged 2026-03-30T12:10Z",
-        "note": "Rule: only denials use stderr. Allow paths produce zero stderr. 3 new tests added (git commit, git push, gh CLI allowed with no policy loaded — all assert process.stderr.write never called). Rebase by kernel EM (5 commits behind main, state.json conflict resolved by keeping main's version)."
-      },
-      {
-        "number": 1427,
-        "title": "persona.env not protected by no-governance-self-modification",
-        "priority": "P1",
-        "status": "closed",
-        "fixTarget": "packages/invariants/src/definitions.ts",
-        "closedVia": "PR #1436 merged 2026-03-30T02:22:29Z",
-        "note": "Prior cycle. Removed persona.env from OPERATIONAL_STATE_PATTERNS. 4 tests updated (holds:true→false). Coverage gap closed."
-      }
-    ]
-  },
-  "nextSprint": {
-    "proposed": "KE-9",
-    "goal": "Security maintenance + new governance invariant design",
-    "candidates": [
       {
         "number": 1449,
         "title": "chore: triage Dependabot security alerts (path-to-regexp x2, brace-expansion)",
         "priority": "P2",
-        "note": "path-to-regexp ReDoS HIGH (transitive via commander). brace-expansion DoS MEDIUM. Address within this sprint cycle."
+        "status": "open",
+        "assignment": "unassigned → assign to senior coder next cycle",
+        "note": "path-to-regexp ReDoS HIGH (transitive via commander/express). brace-expansion DoS MEDIUM. pnpm overrides or direct dep upgrades needed. Address within sprint."
       },
       {
         "number": 1384,
         "title": "feat: browser governance invariants — scope, state, and pacing for browser agents",
         "priority": "sprint",
-        "note": "New invariant class for browser agents. Design work this cycle."
+        "status": "open",
+        "assignment": "unassigned — design work pending",
+        "note": "New invariant class for browser agents (tab/URL scope, irreversible action gate, behavioral pacing). Coordinate with kernel architect on action class design (browser.navigate, browser.click, browser.submit vs shell.exec extension)."
       },
       {
         "number": 1385,
         "title": "feat: irreversible action detection — human confirmation gates for one-way operations",
         "priority": "sprint",
-        "note": "Kernel-scope feature. Design + prototype."
+        "status": "open",
+        "assignment": "unassigned — design work pending",
+        "note": "First-class irreversibility property on canonical action model. Extends blast radius scoring. ConfirmationRequired event + kernel pause/resume. Design questions: boolean vs score, headless timeout behavior, Octi Pulpo coord_signal integration."
       }
     ]
   },
   "prQueue": {
-    "open": 0,
-    "kernelPRsMergedThisCycle": [
+    "open": 1,
+    "kernelPRsOpenThisCycle": [
       {
-        "number": 1448,
-        "title": "fix(claude-hook): allow-path must not write to stderr (#1430)",
-        "ci": "4/4 green (post-rebase)",
-        "mergedAt": "2026-03-30T12:10Z",
-        "closes": 1430,
-        "note": "Rebased by kernel EM (branch was 5 commits behind main). State.json conflict from QA cycle commit resolved by keeping main version. CI re-ran and passed."
-      },
-      {
-        "number": 1453,
-        "title": "docs: sync invariant count to 26 across all documentation",
-        "ci": "4/4 green",
-        "mergedAt": "2026-03-30T12:10Z",
-        "closes": null,
-        "note": "Documentation-only. Synced invariant count from 24/25/6 (various stale values) to 26 (source of truth: definitions.ts). 12 files updated."
+        "number": 1466,
+        "title": "feat: display enforcement posture in guard banner and policy validate",
+        "closes": 1306,
+        "ci": "4/4 green (CodeQL ✓, lint ✓, test-and-build ✓, analyze ✓)",
+        "mergeableState": "clean",
+        "reviews": 0,
+        "additions": 16,
+        "files": 5,
+        "createdAt": "2026-03-30T09:01:59Z",
+        "status": "awaiting-architect-review",
+        "note": "Tier C implementation by copilot-cli. Renders posture: default-deny (green) or fail-open (yellow) in guard banner and policy validate output. All acceptance criteria met per PR description. No reviews yet — flagged for architect attention."
       }
     ],
+    "kernelPRsMergedThisCycle": [],
     "repoPRsNeedingAttention": [
       {
-        "number": 1454,
-        "title": "chore(site-em): EM cycle 2026-03-30T06:09Z — 3 drifts fixed, #1451 #1450 merged",
-        "squad": "site-em",
-        "ci": "IN_PROGRESS at read time",
-        "note": "Site EM scope — not kernel. HQ EM manages merge."
+        "number": 1455,
+        "title": "chore(marketing-em): EM cycle 2026-03-30T20:00Z — #1387 ESCALATED, site+blog drift fixed, #1444 added",
+        "squad": "marketing-em",
+        "labels": ["conflict:needs-human"],
+        "note": "Marketing squad scope. Labeled conflict:needs-human — requires human (Jared) to action #1387 and OWASP blog LinkedIn post. Not kernel scope."
       }
     ]
   },
   "loopGuards": {
     "prBudget": {
-      "kernelOpen": 0,
+      "kernelOpen": 1,
       "max": 3,
       "pass": true,
-      "note": "PRs #1448 and #1453 merged this cycle. 0 kernel PRs open."
+      "note": "1 kernel PR open (#1466). Under max of 3."
     },
     "retryLoops": {
       "stuckAgents": 0,
       "pass": true,
-      "note": "Previous escalation (#1430/director) cleared — PR was filed and merged."
+      "note": "No kernel squad agents detected in retry loops."
     },
     "blastRadius": {
       "withinLimits": true,
@@ -102,45 +82,53 @@
     }
   },
   "blockers": [],
-  "escalations": [],
+  "escalations": [
+    {
+      "severity": "info",
+      "to": "architect",
+      "subject": "PR #1466 needs review",
+      "detail": "PR #1466 (feat: enforcement posture display) is CI-green and mergeable but has 0 reviews. Tier C scope (5 files, 16 additions). Closes #1306. Ready for architect approval."
+    },
+    {
+      "severity": "info",
+      "to": "human",
+      "subject": "P0 swarm health issues require human action",
+      "detail": "Issues #1452 and #1431 (zombie vitest processes, codex budget exhaustion, stuck worktrees) require human intervention. Commands documented in issue bodies. Not kernel squad scope."
+    }
+  ],
   "escalationRules": {
     "triggered": {
       "twoPlusFailingCI": false,
       "persistentBlocker": false,
       "governanceDenialsExceeded": false
     },
-    "notes": "All escalation rules clear. Prior persistentBlocker (#1430 ageRuns=2) resolved — PR merged. Director escalation cleared."
+    "notes": "All escalation rules clear. No failing CI PRs. No persistent blockers (0 blockers carried from last cycle). No governance denials."
   },
   "metrics": {
     "prsOpened": 0,
-    "prsMerged": 2,
+    "prsMerged": 0,
     "prsClosed": 0,
-    "issuesClosed": 1,
+    "issuesClosed": 0,
     "governanceDenials": 0,
     "retries": 0,
-    "note": "Merged: #1448 (claude-hook stderr fix, closes #1430), #1453 (docs: invariant count sync). #1430 closed. #1177 confirmed already closed."
+    "note": "No kernel PRs merged this cycle. PR #1466 awaiting architect review. Sprint issues unassigned."
   },
   "dogfoodObservations": [
     {
-      "severity": "resolved",
-      "issue": 1430,
-      "description": "FIRST-PARTY: claude-hook PreToolUse output on stderr blocked allowed actions in Claude Code. PR #1448 merged — allow paths now produce zero stderr. Rule enforced via 3 new test assertions.",
-      "status": "CLOSED via PR #1448 (merged 2026-03-30T12:10Z)"
-    },
-    {
-      "severity": "info",
-      "description": "PROCESS: PR #1448 branch had stale EM/QA state.json commits mixed with the code fix. This caused a rebase conflict when the branch fell 5 commits behind main. Consider having fix PRs contain only the code change — separate state management from fix commits."
-    },
-    {
       "severity": "info",
       "description": "0 governance denials this cycle. No LOCKDOWN triggers. All governed operations clean."
+    },
+    {
+      "severity": "observation",
+      "description": "Sprint design issues (#1384, #1385) have been open for ~1 cycle unassigned. Senior and secondary coders should be explicitly assigned by next EM cycle to begin design work."
     }
   ],
   "testHealth": {
-    "total": 4649,
-    "passed": 4649,
+    "total": 4693,
+    "passed": 4693,
     "failed": 0,
     "status": "all_passing",
-    "note": "4649/4649 passing across 18 packages (QA-verified on PR #1448 branch before merge). Includes 3 new zero-stderr assertions from #1448 fix. Count corrected this cycle from prior stale 4636 (breakdown always summed to 4649)."
+    "lastRun": "2026-03-30T18:52:00.000Z",
+    "note": "4693/4693 passing across 19 packages (kernel-qa verified). +44 vs prior baseline from #1451 (adapters 299→343) and #1436 (invariants 624→633)."
   }
 }
