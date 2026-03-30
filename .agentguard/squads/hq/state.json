@@ -2,31 +2,28 @@
   "squad": "hq",
   "sprint": {
     "goal": "Validate Go kernel→Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 SHIPPED. Version sync. ShellForge coordination.",
-    "issues": [1335, 1402, 1403, 1430, 1427]
+    "issues": [1335, 1402, 1403, 1430, 1431]
   },
   "assignments": {
     "human-jpleva91": {
-      "task": "P0 URGENT (cycle 7): (1) Run server/deploy.sh on jared box — worker pool dead (#1402). (2) Kill zombie vitest PIDs: kill 1183028 1183035 1183037. (3) Prune orphaned worktrees: git worktree prune && rm -rf .worktrees/fix-kernel-false-positives .worktrees/feat-postinstall-dual-hook .worktrees/strategy-update.",
+      "task": "P0: Run server/deploy.sh on jared box — worker pool dead 8+ cycles, swarm frozen (#1402). Also: kill zombie vitest PIDs 1183028/1183035/1183037, prune orphaned worktrees (git worktree prune). Decision: codex credits or disable codex agents until Apr 3.",
       "priority": "P0"
     },
     "director": {
-      "task": "P0: #1431 codex budget exhausted until Apr 3 — 25 agents offline (cycle 2). Decide NOW: purchase credits OR disable codex agents in schedule.json until Apr 3. Also: assign squad ownership for ShellForge initiative (#1362–#1367, 5th cycle unassigned).",
+      "task": "P0: #1431 codex budget exhausted until Apr 3 — 25 agents offline. Decide: purchase credits OR disable codex agents in schedule.json. P1-NEW: #1430 hook stderr escalated after 2 cycles without PR — assign kernel-sr directly. P2: assign ShellForge squad owner (#1362–#1367). Triage 3 dependabot security alerts (1 high, 2 moderate).",
       "priority": "P0"
     },
     "cloud-squad": {
-      "task": "P1: Upgrade agentguard-cloud to 2.10.3. Add octi-pulpo allow rule to agentguard-cloud/agentguard.yaml (mcp.call:octi-pulpo). Note: analytics version corrected to 2.10.2 (was misread as 2.7.3 — only 1 patch behind, P2).",
+      "task": "P1: Upgrade agentguard-cloud to 2.10.3 (6th cycle behind — 2 patches). Add octi-pulpo allow rule to agentguard-cloud/agentguard.yaml (mcp.call:octi-pulpo).",
       "priority": "P1"
     },
     "kernel-adapters-squad": {
-      "task": "P1: #1430 — hook stdout/stderr bug: allowed decisions must not output to stderr (causes Claude Code to block the action). Fix claude-hook-wrapper.sh: exit 0 with no stderr for allow decisions. Suppress or move (attempt N/3) counter to stdout. ageRuns=1 — PR expected this cycle or director escalation.",
-      "priority": "P1"
-    },
-    "kernel-squad": {
-      "task": "P1: #1427 — Add no-persona-self-modification invariant: block file.write to .agentguard/persona.env from non-human drivers. Also make write-persona.sh idempotent (skip if persona.env already exists). #1432 merged. ageRuns=1 — PR expected this cycle or director escalation.",
-      "priority": "P1"
+      "task": "P1: #1430 — hook stdout/stderr bug: allowed decisions must not output to stderr. Fix apps/cli/src/commands/claude-hook.ts: route allow-path messages to stdout; reserve stderr for deny/violation/errors. ESCALATED to director after ageRuns=2. WIP stash in agent-guard on studio-em branch (claude-hook-wrapper.sh simplification) available for reference.",
+      "priority": "P1",
+      "ageRuns": 2
     },
     "ops": {
-      "task": "#1403: readybench QA swarm non-operational 5+ days — wrong queue routing, bench-devs-platform not found on jared host. Depends on #1402 + box routing fix.",
+      "task": "#1403: readybench QA swarm non-operational 5+ days — wrong queue routing. Depends on #1402 resolution.",
       "priority": "P1"
     }
   },
@@ -47,60 +44,62 @@
       "task": "no-governance-self-modification blocks read-only SQLite analytics queries (#1408)",
       "priority": "P1",
       "resolvedAt": "2026-03-29T20:40:00.000Z",
-      "note": "PR #1418 merged by kernel squad (KE-6). LOCKDOWN risk eliminated."
+      "note": "PR #1418 merged by kernel squad (KE-6)."
     },
     "ke6-no-self-approve": {
       "task": "KE-6: no-self-approve-pr invariant (#909)",
       "priority": "P1",
       "resolvedAt": "2026-03-29T22:40:00.000Z",
-      "note": "PR #1414 merged. Kernel squad KE-6 complete. KE-7 started."
+      "note": "PR #1414 merged. KE-7 started."
     },
     "copilot-event-pipeline-1342": {
       "task": "Copilot event pipeline 0 events — conference demo gap (#1342)",
       "priority": "P1",
       "resolvedAt": "2026-03-30T02:40:00.000Z",
-      "note": "PR #1429 merged (studio-sr). Root cause: Copilot quota exhaustion tripped circuit breaker. Agents fail over to claude-code with wrong driver tag. Issue #1342 closed. Auto-resolves Apr 1 on budget reset."
+      "note": "PR #1429 merged (studio-sr). Root cause: Copilot quota exhaustion tripped circuit breaker. Auto-resolves Apr 1."
     },
     "cross-repo-blast-radius-1425": {
-      "task": "PR #1425 (cross-repo-blast-radius, broken vitest symlink — kernel squad to fix)",
+      "task": "PR #1425 (cross-repo-blast-radius — session-level aggregate file cap)",
       "priority": "P1",
       "resolvedAt": "2026-03-30T00:00:00.000Z",
-      "note": "PR #1425 merged (feat(invariants): cross-repo-blast-radius — session-level aggregate file cap). KE-7 item complete."
-    },
-    "site-em-1421": {
-      "task": "PR #1421 CONFLICTING (site EM — needs rebase)",
-      "priority": "P2",
-      "resolvedAt": "2026-03-30T00:40:00.000Z",
-      "note": "PR #1421 merged: chore(site-em): EM cycle 2026-03-30T00:40Z — stat drift fixed, --tests-count flag added."
+      "note": "PR #1425 merged. KE-7 item complete."
     },
     "analytics-version-drift-severe": {
       "task": "Analytics version drift SEVERE 2.7.3 (cloud squad)",
       "priority": "P1",
       "resolvedAt": "2026-03-30T02:40:00.000Z",
-      "note": "CORRECTION: analytics package.json pin is 2.10.2, not 2.7.3. Prior state misread pnpm store (.pnpm subdirectory contains old cached versions). Only 1 patch behind — downgraded to P2. Cloud squad: only agentguard-cloud upgrade (2.10.1→2.10.3) remains P1."
+      "note": "CORRECTION: analytics package.json pin is 2.10.2, not 2.7.3. Prior state misread pnpm store. Only 1 patch behind — downgraded to P2."
     },
-    "swarm-health-alert-1392": {
-      "task": "Swarm Health Alert — 2026-03-29 (Evening) (#1392)",
-      "priority": "P2",
-      "resolvedAt": "2026-03-30T05:30:00.000Z",
-      "note": "Closed this cycle — superseded by #1431 (midnight alert). All P0/P1 items from evening alert addressed or tracked in active blockers."
+    "persona-env-protection-1427": {
+      "task": "#1427 — persona.env not protected by no-governance-self-modification invariant",
+      "priority": "P1",
+      "resolvedAt": "2026-03-30T09:00:00.000Z",
+      "note": "PR #1436 merged (fix(invariants): protect persona.env from agent identity tampering). 5/5 CI green. KE-8 item 1 of 2 complete."
     }
   },
   "blockers": [
     {
       "issue": 1402,
-      "description": "P0: Worker pool dead on jared box. 7+ cycles, swarm frozen. All 32 PIDs dead. Human must run server/deploy.sh.",
+      "description": "P0: Worker pool dead on jared box. 8+ cycles, swarm frozen. All 32 PIDs dead. Human must run server/deploy.sh.",
       "escalatedTo": "human (jpleva91)",
       "firstSeen": "2026-03-29T19:00:00.000Z",
-      "escalatedAt": "2026-03-30T05:30:00.000Z",
-      "escalationCount": 7
+      "escalatedAt": "2026-03-30T09:00:00.000Z",
+      "escalationCount": 8
     },
     {
       "issue": 1431,
-      "description": "P0: Codex budget exhausted until Apr 3. 25 agents offline. 53.7% failure rate. Director must decide: buy credits OR disable codex agents until Apr 3.",
-      "escalatedTo": "director + human (jpleva91)",
+      "description": "P0: Codex budget exhausted until Apr 3. 25 agents offline. All-driver circuit cascade at midnight: 53.7% failure rate. Also: 3 zombie vitest PIDs + orphaned worktrees need human cleanup.",
+      "escalatedTo": "human + director",
       "firstSeen": "2026-03-30T00:02:00.000Z",
-      "escalatedAt": "2026-03-30T05:30:00.000Z",
+      "escalatedAt": "2026-03-30T09:00:00.000Z",
+      "escalationCount": 3
+    },
+    {
+      "issue": 1430,
+      "description": "P1 dogfood: git commit Bash hook false-blocks allowed decisions on readybench. Hook stderr triggers Claude Code review mode. ageRuns=2 — ESCALATED TO DIRECTOR. WIP stash available (claude-hook-wrapper.sh simplification, studio-em branch).",
+      "escalatedTo": "director (kernel-adapters had 2 cycles, no PR)",
+      "firstSeen": "2026-03-29T23:03:00.000Z",
+      "escalatedAt": "2026-03-30T09:00:00.000Z",
       "escalationCount": 2
     },
     {
@@ -108,20 +107,6 @@
       "description": "P1: readybench QA swarm non-operational 5+ days. All 19 agents skipping. Depends on #1402.",
       "escalatedTo": "ops",
       "firstSeen": "2026-03-25T00:00:00.000Z"
-    },
-    {
-      "issue": 1430,
-      "description": "P1 dogfood: git commit Bash hook false-blocks allowed decisions on readybench. Hook stderr triggers Claude Code review mode.",
-      "escalatedTo": "kernel-adapters-squad",
-      "firstSeen": "2026-03-29T23:03:00.000Z",
-      "escalatedAt": "2026-03-30T02:40:00.000Z"
-    },
-    {
-      "issue": 1427,
-      "description": "P1 dogfood: agents can self-modify .agentguard/persona.env via write-persona.sh re-run. Corrupts driver attribution and audit identity.",
-      "escalatedTo": "kernel-squad",
-      "firstSeen": "2026-03-29T21:16:00.000Z",
-      "escalatedAt": "2026-03-30T02:40:00.000Z"
     },
     {
       "issue": 1335,
@@ -132,11 +117,11 @@
     }
   ],
   "prQueue": {
-    "open": 2,
-    "reviewed": 2,
+    "open": 0,
+    "reviewed": 0,
     "mergeable": 0,
-    "mergedThisCycle": 0,
-    "notes": "PR #1434 (kernel EM 03:00Z) CONFLICTING — commented requesting rebase. PR #1433 (studio EM 05:00Z) CONFLICTING — commented requesting rebase. Note: studio EM confirmed #1342 closed, April 1 dispatch queue ready (7 tasks)."
+    "mergedThisCycle": 2,
+    "notes": "Queue CLEAR. PR #1437 (HQ EM 05:30Z) merged. PR #1434 (kernel EM 03:00Z) rebased to resolve kernel/state.json conflict, then merged. PRs #1436 and #1433 already merged before this cycle."
   },
-  "updatedAt": "2026-03-30T05:30:00.000Z"
+  "updatedAt": "2026-03-30T09:00:00.000Z"
 }
