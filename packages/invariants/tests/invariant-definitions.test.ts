@@ -1410,32 +1410,33 @@ describe('no-governance-self-modification', () => {
     expect(result.actual).toContain('modified');
   });
 
-  // Acceptance tests for #1182: agent-identity-bridge chicken-and-egg
-  // persona.env is the identity bootstrap file written by scripts/agent-identity-bridge.sh.
-  // It lives under .agentguard/ but is NOT a governance config file — it's a runtime identity
-  // file required for governance telemetry enrichment. Blocking it creates a chicken-and-egg
-  // where governance requires identity, but governance blocks setting identity.
-  it('holds when writing .agentguard/persona.env (identity bootstrap — not governance config)', () => {
+  // Regression tests for #1427: agents must not self-modify governance identity
+  // persona.env defines driver, autonomy level, and agent name used in audit logs.
+  // An agent changing DRIVER from 'claude' to 'human' can bypass AI-specific restrictions.
+  // Fix: removed persona.env from OPERATIONAL_STATE_PATTERNS so the invariant protects it.
+  // The identity bootstrap script (scripts/write-persona.sh) runs before governed sessions start.
+  it('does not hold when writing .agentguard/persona.env (identity tampering)', () => {
     const result = inv.check({ currentTarget: '.agentguard/persona.env' });
-    expect(result.holds).toBe(true);
+    expect(result.holds).toBe(false);
   });
 
-  it('holds when shell command writes .agentguard/persona.env via redirect', () => {
+  it('does not hold when shell command writes .agentguard/persona.env via redirect', () => {
     const result = inv.check({
       currentCommand: 'echo "AGENTGUARD_AGENT_ROLE=developer" > .agentguard/persona.env',
     });
-    expect(result.holds).toBe(true);
+    expect(result.holds).toBe(false);
   });
 
-  it('holds when modifiedFiles contains only .agentguard/persona.env', () => {
+  it('does not hold when modifiedFiles contains .agentguard/persona.env', () => {
     const result = inv.check({ modifiedFiles: ['.agentguard/persona.env'] });
-    expect(result.holds).toBe(true);
+    expect(result.holds).toBe(false);
   });
 
-  // Verify current (pre-fix) behavior so regressions in the fix are caught
-  it('allows .agentguard/persona.env writes (operational state, not governance config)', () => {
-    const result = inv.check({ currentTarget: '.agentguard/persona.env' });
-    expect(result.holds).toBe(true);
+  it('does not hold when agent appends driver override to persona.env', () => {
+    const result = inv.check({
+      currentCommand: 'echo "AGENTGUARD_PERSONA_DRIVER=human" >> .agentguard/persona.env',
+    });
+    expect(result.holds).toBe(false);
   });
 
   // Acceptance tests for #1208: heredoc body false-positive

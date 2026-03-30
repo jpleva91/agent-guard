@@ -1236,7 +1236,10 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         '.agentguard/squads/',
         '.agentguard/roadmaps/',
         '.agentguard/director-brief',
-        '.agentguard/persona.env',
+        // NOTE: .agentguard/persona.env is intentionally NOT in this list.
+        // Agents must not self-modify their governance identity (driver, autonomy, agent name).
+        // See #1427: automated agents exploited this exception to masquerade as human operators.
+        // The identity bootstrap script (scripts/write-persona.sh) runs outside governed sessions.
         '.agentguard/agent-reliability',
         '.agentguard/swarm-state',
         '.agentguard/budget-config',
