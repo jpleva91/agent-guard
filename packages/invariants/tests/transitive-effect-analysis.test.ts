@@ -711,4 +711,36 @@ describe('script-execution-tracking', () => {
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('exploit.cjs');
   });
+
+  it('holds for cat on a session-written .py file — read-only, not execution (#1475)', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'cat /path/to/config.py',
+      sessionWrittenFiles: ['config.py'],
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('Read-only shell command');
+  });
+
+  it('holds for head/tail/wc on session-written scripts — read-only (#1475)', () => {
+    for (const cmd of ['head', 'tail', 'wc', 'less', 'grep']) {
+      const result = inv.check({
+        currentActionType: 'shell.exec',
+        currentCommand: `${cmd} exploit.py`,
+        sessionWrittenFiles: ['exploit.py'],
+      });
+      expect(result.holds).toBe(true);
+    }
+  });
+
+  it('does not exempt cat when it has a file redirect (#1475)', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'cat exploit.py > /tmp/out.sh',
+      sessionWrittenFiles: ['exploit.py'],
+    });
+    // cat + output redirect is not read-only — hasFileRedirect returns true,
+    // so the exemption is skipped and the invariant still fires.
+    expect(result.holds).toBe(false);
+  });
 });

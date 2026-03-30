@@ -274,6 +274,7 @@ const READ_ONLY_CMDS: string[] = [
   'cat',
   'head',
   'tail',
+  'less',
   'find',
   'grep',
   'rg',
@@ -1834,6 +1835,16 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
           holds: true,
           expected: 'Shell commands must not execute session-written scripts',
           actual: 'No command available',
+        };
+      }
+
+      // Read-only commands (cat, grep, head, tail, etc.) cannot execute scripts — skip
+      const baseCmd = extractBaseCommand(command);
+      if (READ_ONLY_CMDS.includes(baseCmd) && !hasFileRedirect(command)) {
+        return {
+          holds: true,
+          expected: 'Shell commands must not execute session-written scripts',
+          actual: 'Read-only shell command cannot execute scripts',
         };
       }
 
