@@ -27,20 +27,20 @@
     "prs": []
   },
   "health": "green",
-  "healthReason": "KE-8 COMPLETE. #1430 closed (PR #1448 merged 12:10Z). #1427 closed (prior cycle). 0 open kernel PRs. 4649/4649 tests passing. No escalations. KE-9 sprint starting.",
+  "healthReason": "KE-9 sprint. 0 open kernel PRs. 4693/4693 tests passing. +44 new tests vs prior baseline (adapters: 299→343 from #1451, invariants: 624→633 from #1436). No regressions. No escalations.",
   "testHealth": {
-    "total": 4649,
-    "passed": 4649,
+    "total": 4693,
+    "passed": 4693,
     "failed": 0,
-    "packages": 18,
-    "lastRun": "2026-03-30T06:14:00.000Z",
+    "packages": 19,
+    "lastRun": "2026-03-30T18:52:00.000Z",
     "status": "all_passing",
     "breakdown": {
       "kernel": 935,
       "agentguard-cli": 953,
-      "invariants": 624,
+      "invariants": 633,
       "policy": 483,
-      "adapters": 299,
+      "adapters": 343,
       "storage": 247,
       "core": 194,
       "telemetry": 161,
@@ -55,7 +55,7 @@
       "agentguard-mcp": 24,
       "scheduler": 34
     },
-    "note": "PR #1448 adds 3 new zero-stderr assertions in cli-claude-hook.test.ts (agentguard-cli: 950→953). Count corrected from prior stale 4636 — QA cycle confirmed 4649."
+    "note": "Baseline count updated: adapters 299→343 (+44, from #1451 codex-cli adapter tests), invariants 624→633 (+9, from #1436 persona.env protection). node_modules/turbo symlink was broken (pointed to deleted worktree copilot-test-writer-oss-3125169) — repaired via pnpm install before run."
   },
   "coverageGaps": [],
   "mergedThisCycle": [
@@ -71,6 +71,6 @@
     }
   ],
   "lastEmRun": "2026-03-30T12:10:00Z",
-  "lastQaRun": "2026-03-30T06:14:00.000Z",
-  "updatedAt": "2026-03-30T12:10:00Z"
+  "lastQaRun": "2026-03-30T18:52:00.000Z",
+  "updatedAt": "2026-03-30T18:52:00.000Z"
 }

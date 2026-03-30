@@ -15,10 +15,10 @@
   "assignments": {
     "senior": {
       "agent": "copilot-cli:sonnet:studio:senior",
-      "issue": "workspace#1342-investigation",
+      "issue": "workspace#272-agent-fleet-performance",
       "status": "completed",
-      "completedAt": "2026-03-30T00:00:00Z",
-      "summary": "Diagnosed #1342 (Copilot events = 0) — root cause is circuit breaker from quota exhaustion, not a code bug. Copilot agents fail over to claude-code driver, events emit under wrong tag. Closed #1342 as infra issue. Fixed verify-copilot-events.sh workspace detection (false negatives when run from worktree) — PR #265 merged this cycle."
+      "completedAt": "2026-03-30T07:00:00Z",
+      "summary": "Wired GET /v1/agents/performance to dashboard. Added fetchAgentPerformance() to lib/api.ts, created /agents fleet overview page (pass rate, run counts, violations, avg risk, PRs — sorted by activity), added Agents nav item to sidebar. Closed cloud#412 and cloud#413 (events/runs pages were already wired in prior cycles). PR cloud#532 open targeting main. Addresses workspace#272 agent performance page requirement."
     }
   },
   "blockers": [
@@ -126,7 +126,12 @@
     { "pr": 265, "title": "fix(verify-copilot): fallback workspace when run from worktree — closes #1342" },
     { "pr": 262, "title": "chore(studio-em): EM cycle 2026-03-30T02:00Z — quota fix merged, April 1 queue loaded" }
   ],
-  "closedThisCycle": [],
-  "openPRsThisCycle": [],
-  "updatedAt": "2026-03-30T05:00:00Z"
+  "closedThisCycle": [
+    { "issue": "cloud#412", "repo": "AgentGuardHQ/agentguard-cloud", "reason": "Events page already wired to live API in prior work" },
+    { "issue": "cloud#413", "repo": "AgentGuardHQ/agentguard-cloud", "reason": "Runs page already wired to live API in prior work" }
+  ],
+  "openPRsThisCycle": [
+    { "pr": 532, "repo": "AgentGuardHQ/agentguard-cloud", "title": "feat(dashboard): agent fleet overview page — wires /v1/agents/performance", "closes": "workspace#272" }
+  ],
+  "updatedAt": "2026-03-30T07:00:00Z"
 }

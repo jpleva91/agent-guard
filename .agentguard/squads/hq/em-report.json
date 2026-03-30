@@ -1,20 +1,25 @@
 {
   "squad": "hq",
-  "generatedAt": "2026-03-30T12:00:00.000Z",
+  "generatedAt": "2026-03-30T15:00:00.000Z",
   "identity": "claude-code:opus:hq:em",
   "runCycle": "3h",
   "health": "red",
-  "healthReason": "Two P0 blockers persist: worker pool dead on jared box (#1402, cycle 9) and codex budget exhausted until Apr 3 (#1431, cycle 4). P1 #1430 has a PR (#1448) with all CI green but merge conflict blocking — progress but not yet resolved. Cloud version drift at 7th cycle with no action.",
-  "summary": "Light-action cycle. PR #1448 (fix for #1430 hook stderr) was filed by the team with 4/4 CI + kernel-qa 4649/4649 green — significant progress on the most impactful dogfood issue. However PR is DIRTY (merge conflicts); commented requesting rebase. Filed dependabot triage issue #1449 (3 alerts: path-to-regexp HIGH + MEDIUM, brace-expansion MEDIUM). P0 blockers #1402/#1431 unchanged — human/director action still required. #1335 auto-resolves in 2 days (Apr 1). Cloud version drift now at 7 cycles.",
+  "healthReason": "Two P0 blockers persist: worker pool dead (#1402, cycle 10) and codex budget exhausted until Apr 3 (#1431, cycle 5). New P0: #1452 shows 69.5% swarm failure rate, 26 orphaned vitest processes (~3.3GB RAM), cloud-squad systemic 74.3% exit=1 failures unrelated to codex. Cloud version drift at 8th cycle.",
+  "summary": "Active cycle. Merged 3 PRs: #1456 (docs: 26 invariants/43 actions), #1454 (site-em), #1457 (kernel-em KE-8 complete). Commented rebase request on dirty #1455 (marketing-em). Key win since last cycle: PR #1448 merged resolving P1 dogfood #1430 (hook stderr false-blocks). KE-8 now COMPLETE. New: #1452 swarm health report reveals cloud-squad 74.3% exit=1 failures are systemic (not just codex), needs director investigation. Cloud version drift escalated to P0 at 8th cycle.",
   "sprintStatus": {
-    "goal": "Validate Go kernel→Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 SHIPPED. Version sync. ShellForge coordination.",
-    "issues": [1335, 1402, 1403, 1430, 1431],
-    "resolvedThisSprint": [1427],
+    "goal": "Validate Go kernel->Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 SHIPPED. KE-8 COMPLETE. Version sync. ShellForge coordination.",
+    "issues": [
+      1402,
+      1403,
+      1431,
+      1449,
+      1452
+    ],
+    "resolvedThisSprint": [
+      1427,
+      1430
+    ],
     "nearResolution": [
-      {
-        "issue": 1430,
-        "note": "PR #1448 ready except merge conflict — one rebase away from merge"
-      },
       {
         "issue": 1335,
         "note": "Auto-resolves Apr 1 (2 days)"
@@ -23,14 +28,13 @@
   },
   "ciStatus": {
     "agentGuard": "green",
-    "agentguardCloud": "unknown",
+    "agentguardCloud": "unknown (systemic failures suspected \u2014 74.3% exit=1 per #1452, director investigation needed)",
     "agentguardAnalytics": "unknown",
-    "recentRuns": "Main green. PR #1448 CI 4/4 passing. Kernel-QA at 14:00Z: 4649/4649 green.",
+    "recentRuns": "Main green. PRs #1456/#1454/#1457 all 4/4 CI green on merge.",
     "securityAlerts": {
       "count": 3,
       "breakdown": "1 high (path-to-regexp ReDoS), 2 moderate (path-to-regexp DoS, brace-expansion hang)",
-      "status": "issue #1449 filed this cycle",
-      "url": "https://github.com/AgentGuardHQ/agentguard/security/dependabot"
+      "status": "Issue #1449 open \u2014 pending triage and patch"
     }
   },
   "versionMatrix": {
@@ -39,176 +43,229 @@
     "agentguardCloud": "2.10.1",
     "agentguardAnalytics": "2.10.2",
     "drift": {
-      "agentguardCloud": "2 patches behind (P1, 7th cycle — CRITICAL: no upgrade PR after 7 consecutive cycles)",
+      "agentguardCloud": "2 patches behind (P0 \u2014 8th consecutive cycle, CRITICAL process failure. May explain systemic failures.)",
       "agentguardAnalytics": "1 patch behind (P2)"
     }
   },
   "prQueue": {
     "agentGuard": {
       "open": 1,
-      "details": [
+      "mergedThisCycle": [
         {
-          "number": 1448,
-          "title": "fix(claude-hook): allow-path must not write to stderr (#1430)",
-          "status": "DIRTY — merge conflict",
-          "checks": "4/4 passing, kernel-qa 4649/4649 green",
-          "mergeable": false,
-          "note": "Commented requesting rebase. Will merge next cycle once clean. This is the fix for P1 #1430 (hook stderr blocking allowed git commits on readybench)."
+          "number": 1456,
+          "title": "docs: sync documentation with codebase state (26 invariants, 43 action types)",
+          "mergedAt": "2026-03-30T06:23:50Z"
+        },
+        {
+          "number": 1454,
+          "title": "chore(site-em): EM cycle 2026-03-30T06:09Z \u2014 3 drifts fixed",
+          "mergedAt": "2026-03-30T06:24:04Z"
+        },
+        {
+          "number": 1457,
+          "title": "chore(kernel-em): EM cycle 2026-03-30T12:10Z \u2014 KE-8 COMPLETE, #1430 merged",
+          "mergedAt": "2026-03-30T06:24:38Z"
         }
       ],
-      "mergedThisCycle": []
+      "awaitingRebase": [
+        {
+          "number": 1455,
+          "title": "chore(marketing-em): EM cycle 2026-03-30T20:00Z",
+          "status": "DIRTY \u2014 commented requesting rebase"
+        }
+      ]
     }
   },
   "dogfoodPatterns": [
     {
       "pattern": "Hook stderr false-blocks allowed decisions on Bash tool",
-      "issues": [1430],
+      "issues": [
+        1430
+      ],
       "severity": "P1",
-      "ageRuns": 2,
-      "status": "IN_REVIEW — PR #1448 filed, CI green, pending rebase",
-      "description": "claude-hook outputs to stderr for 'allowed' decisions (attempt N/3 counter, bootstrap mode, monitor mode warnings). Claude Code treats any PreToolUse hook stderr as blocking error. Readybench agents cannot git commit/push. PR #1448 fixes all allow-path stderr writes. Needs rebase to merge.",
-      "recommendation": "Rebase PR #1448 onto main. Merge next cycle."
+      "status": "RESOLVED",
+      "resolvedBy": "PR #1448 merged 2026-03-30T12:10Z \u2014 fix(claude-hook): allow-path must not write to stderr. KE-8 COMPLETE."
     },
     {
       "pattern": "Automated agents can self-modify .agentguard/persona.env",
-      "issues": [1427],
+      "issues": [
+        1427
+      ],
       "severity": "P1",
       "status": "RESOLVED",
-      "resolvedBy": "PR #1436 — no-governance-self-modification invariant now blocks writes to persona.env. Bootstrap script runs before hooks, unaffected."
+      "resolvedBy": "PR #1436 \u2014 no-governance-self-modification invariant now blocks writes to persona.env."
+    },
+    {
+      "pattern": "Cloud squad systemic exit=1 failures (74.3%) beyond codex budget",
+      "issues": [
+        1452
+      ],
+      "severity": "P1",
+      "status": "NEW",
+      "description": "cloud-sr (96.2%), ci-triage-agent-cloud (86.7%), coder-agent-cloud (78.3%), cloud-em (73.7%) all failing at exit=1 post-midnight. NOT codex agents \u2014 likely policy configuration or environment issue in agentguard-cloud repo.",
+      "recommendation": "Director: investigate agentguard-cloud policy/config. Cloud-squad: upgrade to 2.10.3 immediately (may fix policy gap)."
+    },
+    {
+      "pattern": "Orphaned vitest processes from deleted worktrees consuming RAM",
+      "issues": [
+        1452
+      ],
+      "severity": "P2",
+      "status": "NEW",
+      "description": "26 vitest worker processes from 3 deleted worktrees (~3.3GB RAM consumed since March 28). Scheduler spawns new instances while old worktrees leak child processes.",
+      "recommendation": "Kernel squad: implement worktree cleanup that force-kills child processes. Human: kill zombie processes now."
     },
     {
       "pattern": "Worktree node_modules missing turbo binary on fresh worktree",
       "severity": "P2",
       "status": "KNOWN_WORKAROUND",
-      "description": "On EM cycle startup, turbo not found in worktree node_modules. Must run pnpm install --frozen-lockfile.",
       "recommendation": "Add pnpm install --frozen-lockfile as pre-build step in EM startup scripts."
     },
     {
       "pattern": "dogfood-reporting.md missing",
       "severity": "P3",
-      "status": "NEW",
-      "description": "CLAUDE.md references claude/shared/dogfood-reporting.md but file does not exist in agent-guard repo. EM cycle falls back to inline dogfood reporting.",
-      "recommendation": "Create claude/shared/dogfood-reporting.md with dogfood reporting format spec."
+      "status": "KNOWN",
+      "recommendation": "Create claude/shared/dogfood-reporting.md."
     }
   ],
   "crossCuttingIssues": [
     {
       "issue": 1402,
-      "title": "[P0] Worker pool dead — 9th cycle, swarm frozen",
+      "title": "[P0] Worker pool dead \u2014 10th cycle, swarm frozen",
       "severity": "P0",
-      "cycleCount": 9,
-      "description": "All 32 PIDs dead. Queue depth growing. Every squad's scheduled agents blocked. Human must run server/deploy.sh.",
-      "action": "HUMAN REQUIRED: cd ~/agentguard-workspace && server/deploy.sh"
+      "cycleCount": 10,
+      "description": "All PIDs dead. 26 orphaned vitest processes also consuming ~3.3GB RAM. Every squad's scheduled agents blocked.",
+      "action": "HUMAN REQUIRED: cd ~/agentguard-workspace && server/deploy.sh; kill zombie vitests; git worktree prune"
     },
     {
       "issue": 1431,
-      "title": "[P0] Codex budget exhausted + multi-driver circuit cascade",
+      "title": "[P0] Codex budget exhausted \u2014 cycle 5",
       "severity": "P0",
-      "cycleCount": 4,
-      "description": "25 codex-driver agents offline until Apr 3 (~2.5 days). Director decision still pending.",
+      "cycleCount": 5,
+      "description": "25+ codex-driver agents offline until Apr 3. Director decision still pending.",
       "action": "Director: decide credits purchase OR disable codex agents in schedule.json until 2026-04-03."
     },
     {
-      "issue": 1430,
-      "title": "[dogfood P1] Hook stderr blocks allowed git commits — PR filed, needs rebase",
-      "severity": "P1",
-      "cycleCount": 2,
-      "description": "PR #1448 filed by kernel team with full CI (4/4) and QA (4649/4649) sign-off. Only blocker: merge conflict. Commented requesting rebase.",
-      "action": "kernel-adapters: rebase PR #1448 onto main."
+      "issue": 1452,
+      "title": "[P0] 69.5% swarm failure + 26 zombie vitest + cloud systemic failures",
+      "severity": "P0",
+      "cycleCount": 1,
+      "description": "New swarm health report: 69.5% failure rate, 26 orphaned vitest (~3.3GB), 3 stuck worktrees. Cloud squad at 74.3% exit=1 \u2014 NOT just codex agents.",
+      "action": "Human: kill zombie processes + prune stuck worktrees. Director: investigate cloud-squad systemic exit=1 failures."
     },
     {
       "issue": 1403,
-      "title": "[P1] readybench QA swarm non-operational — 5+ days",
+      "title": "[P1] readybench QA swarm non-operational \u2014 5+ days",
       "severity": "P1",
       "description": "All 19 readybench agents skipping. Depends on #1402.",
-      "action": "Ops: fix box routing after #1402 resolved."
+      "action": "Ops: fix routing after #1402 resolved."
     },
     {
       "issue": 1335,
-      "title": "Codex + Copilot circuit breakers OPEN — auto-resolves Apr 1",
+      "title": "Codex + Copilot circuit breakers OPEN \u2014 auto-resolves Apr 1",
       "severity": "P1",
-      "description": "March budget exhaustion. Auto-resolves 2026-04-01 (2 days).",
       "action": "Wait."
     },
     {
-      "title": "Version drift: cloud 2.10.1 vs 2.10.3 (7th cycle, P1 CRITICAL)",
-      "severity": "P1",
-      "description": "Cloud 2 patches behind. No upgrade PR after 7 consecutive cycles. Missing octi-pulpo MCP allow rule in agentguard.yaml.",
-      "action": "Cloud squad: upgrade to 2.10.3 immediately. This is now a major process failure — 7 cycles with no action."
+      "title": "Version drift: cloud 2.10.1 vs 2.10.3 (8th cycle \u2014 P0 escalation)",
+      "severity": "P0",
+      "description": "Cloud 2 patches behind. Upgrade may resolve systemic exit=1 failures if caused by policy version mismatch.",
+      "action": "Cloud squad: upgrade to 2.10.3 NOW."
+    },
+    {
+      "issue": 1177,
+      "title": "pr-merger-agent policy gap \u2014 github.pr.* not in default allow-list",
+      "severity": "P2",
+      "description": "234 lifetime failures.",
+      "action": "Kernel squad: add github.pr.* to default allow-list."
     },
     {
       "issue": 1449,
-      "title": "Dependabot security alerts — filed this cycle",
+      "title": "Dependabot security alerts \u2014 3 open",
       "severity": "P2",
-      "status": "FILED",
-      "description": "3 alerts: path-to-regexp HIGH (ReDoS), path-to-regexp MEDIUM (DoS), brace-expansion MEDIUM (process hang). Issue #1449 filed.",
-      "action": "Update affected packages. Consider enabling Dependabot auto-merge for patch-level security updates."
+      "action": "Update affected packages."
     },
     {
-      "title": "ShellForge initiative (#1362–#1367) — 6th cycle unassigned",
+      "title": "ShellForge initiative (#1362-#1367) \u2014 7th cycle unassigned",
       "severity": "P2",
-      "description": "6 ShellForge issues open, no squad owner.",
       "action": "Director: assign ShellForge squad owner."
     }
   ],
-  "resolvedSinceLastCycle": [],
+  "resolvedSinceLastCycle": [
+    {
+      "issue": 1430,
+      "title": "Hook stderr false-blocks allowed git commits on readybench",
+      "resolvedBy": "PR #1448 merged by kernel-adapters team. KE-8 COMPLETE."
+    }
+  ],
   "escalations": [
     {
       "priority": "P0",
       "target": "human (jpleva91)",
-      "cycleCount": 9,
-      "reason": "Worker pool dead (#1402). Run: cd ~/agentguard-workspace && server/deploy.sh. Also: kill 1183028 1183035 1183037 (zombie vitest), git worktree prune."
+      "cycleCount": 10,
+      "reason": "#1402: Worker pool dead. Also kill 26 zombie vitest processes and prune 3 stuck worktrees (see #1452 for exact commands)."
     },
     {
       "priority": "P0",
       "target": "director",
-      "cycleCount": 4,
-      "reason": "#1431: codex budget exhausted until Apr 3. Decision: purchase credits or disable codex agents in schedule.json until Apr 3."
+      "cycleCount": 5,
+      "reason": "#1431: codex budget exhausted until Apr 3. Decision required."
     },
     {
-      "priority": "P1",
-      "target": "kernel-adapters-squad",
+      "priority": "P0",
+      "target": "director + cloud-squad",
       "cycleCount": 1,
-      "reason": "#1430 PR #1448 has merge conflicts. Rebase onto main and force-push. CI/QA already green."
-    },
-    {
-      "priority": "P1",
-      "target": "cloud squad",
-      "cycleCount": 7,
-      "reason": "Upgrade agentguard-cloud to 2.10.3 (P1, 7th cycle). Add octi-pulpo allow rule to agentguard-cloud/agentguard.yaml. No action in 7 cycles is a process failure."
+      "reason": "#1452: Cloud squad 74.3% exit=1 failure rate (not codex). Cloud 2.10.1 vs 2.10.3 (8th cycle). Upgrade immediately."
     },
     {
       "priority": "P2",
       "target": "director",
-      "reason": "ShellForge initiative (#1362–#1367): assign squad owner. Dependabot alerts (#1449): triage path-to-regexp HIGH severity."
+      "cycleCount": 7,
+      "reason": "ShellForge squad owner needed. #1449 dependabot triage. #1177 pr-merger-agent policy gap (234 failures)."
     }
   ],
   "humanActionsRequired": [
-    "cd ~/agentguard-workspace && server/deploy.sh  # restart worker pool (#1402) — cycle 9",
-    "kill 1183028 1183035 1183037  # zombie vitest PIDs (consuming RAM)",
-    "cd agent-guard && git worktree prune  # clean orphaned worktrees",
+    "cd ~/agentguard-workspace && server/deploy.sh  # restart worker pool (#1402) \u2014 cycle 10",
+    "ps aux | grep 'cloud-qa-257589|cloud-sr-1428111|tier-c-copilot-implementer-1127453' | grep vitest | awk '{print $2}' | xargs kill  # kill 26 zombie vitest (~3.3GB RAM)",
+    "cd ~/agentguard-workspace/agent-guard && git worktree prune",
+    "rm -rf /home/jared/agentguard-workspace/.worktrees/marketing-em-3815251 /home/jared/agentguard-workspace/.worktrees/octi-pulpo-sr-3847600 /home/jared/agentguard-workspace/.worktrees/octi-pulpo-qa-3847601",
     "Decision: purchase codex credits OR edit server/schedule.json to disable codex agents until 2026-04-03"
   ],
   "actionsThisCycle": [
     {
-      "action": "COMMENTED_PR",
-      "pr": 1448,
-      "detail": "PR #1448 (fix #1430): DIRTY — requested rebase. 4/4 CI + kernel-qa 4649/4649 green. Will merge next cycle once rebased."
+      "action": "MERGED_PR",
+      "pr": 1456,
+      "detail": "docs: sync documentation with codebase state (26 invariants, 43 action types). All CI green."
     },
     {
-      "action": "FILED_ISSUE",
-      "issue": 1449,
-      "detail": "Dependabot security triage: path-to-regexp x2 (HIGH+MEDIUM), brace-expansion (MEDIUM). Filed as P2."
+      "action": "MERGED_PR",
+      "pr": 1454,
+      "detail": "chore(site-em): EM cycle 2026-03-30T06:09Z. All CI green."
+    },
+    {
+      "action": "MERGED_PR",
+      "pr": 1457,
+      "detail": "chore(kernel-em): KE-8 COMPLETE, #1430 merged. All CI green."
+    },
+    {
+      "action": "COMMENTED_PR",
+      "pr": 1455,
+      "detail": "PR DIRTY \u2014 requested rebase. Will merge next cycle once clean."
     },
     {
       "action": "ESCALATED_COUNT",
       "issue": 1402,
-      "detail": "Cycle 9 escalation. No change in worker pool status."
+      "detail": "Cycle 10 escalation with expanded detail from #1452 (zombie vitests, stuck worktrees)."
     },
     {
       "action": "ESCALATED_COUNT",
       "issue": 1431,
-      "detail": "Cycle 4 escalation. No director decision yet."
+      "detail": "Cycle 5 escalation. No director decision yet."
+    },
+    {
+      "action": "NEW_ESCALATION",
+      "issue": 1452,
+      "detail": "Cloud squad 74.3% systemic exit=1 failure rate (not codex). Escalated to director + cloud-squad with cloud version drift context."
     }
   ]
 }
