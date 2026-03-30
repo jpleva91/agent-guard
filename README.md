@@ -390,7 +390,9 @@ For teams running agent fleets, governance becomes invisible. Agents get 8% more
 
 **Zero-dependency deployment** — the Go kernel is a single static binary. No `node_modules`, no `pnpm install`, no bootstrap deadlocks. Drop it in a worktree and it works. This is critical for CI/CD and fleet scenarios where agents spin up fresh environments.
 
-The Go kernel includes: action normalization with AST-based shell parsing, policy evaluation, 26 invariants, escalation state machine, blast radius engine, telemetry shipper (stdout/file/HTTP), and a control plane signals API. It ships automatically via `npm install` — a postinstall script downloads the prebuilt binary for your platform.
+The Go kernel includes: action normalization with AST-based shell parsing, policy evaluation, 26 invariants, escalation state machine, blast radius engine, confidence-gated human-in-the-loop (HITL) approval, telemetry shipper (stdout/file/HTTP), and a control plane signals API. It ships automatically via `npm install` — a postinstall script downloads the prebuilt binary for your platform.
+
+**Confidence-gated HITL** — the Go kernel computes a 0.0–1.0 confidence score from four weighted signals (action risk tier, retry count, escalation state, blast radius). When the score falls below threshold, the kernel emits a `PauseRequested` event and presents a CLI prompt (`y/n`, auto-deny on timeout) before proceeding. This gives human operators a targeted, low-friction approval gate for actions the kernel considers ambiguous — without blocking the entire agent session.
 
 ## For Teams and Enterprise
 

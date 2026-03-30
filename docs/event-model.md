@@ -81,6 +81,8 @@ Events produced by AgentGuard when evaluating agent actions.
 | `BlastRadiusExceeded` | 4 | Action affects too many files/systems |
 | `MergeGuardFailure` | 4 | Protected branch modification attempted |
 | `EvidencePackGenerated` | 1 | Governance evaluation completed (informational) |
+| `PauseRequested` | 3 | Go kernel confidence score fell below threshold — action paused awaiting human approval (CLI y/n prompt) |
+| `PauseResolved` | 1 | Human approved or denied a paused action; or auto-denied on timeout |
 
 ### Session Events
 

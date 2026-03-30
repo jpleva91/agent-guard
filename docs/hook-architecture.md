@@ -2,13 +2,14 @@
 
 ## Supported Drivers
 
-AgentGuard supports three AI coding agent drivers via the same inline hook pattern, plus a Python middleware adapter for LangChain DeepAgents:
+AgentGuard supports four AI coding agent drivers via the same inline hook pattern:
 
 | Driver | Init command | Hook command | Config file |
 |--------|-------------|-------------|------------|
 | **Claude Code** | `agentguard claude-init` | `agentguard claude-hook pre\|post` | `.claude/settings.json` |
 | **GitHub Copilot CLI** | `agentguard copilot-init` | `agentguard copilot-hook pre\|post` | `.github/hooks/hooks.json` |
-| **LangChain DeepAgents** | `agentguard deepagents-init` | `agentguard deepagents-hook pre\|post` | `.deepagents/agentguard_middleware.py` |
+| **OpenAI Codex CLI** | `agentguard codex-init` | `agentguard codex-hook pre\|post` | `.codex/settings.json` |
+| **Google Gemini CLI** | `agentguard gemini-init` | `agentguard gemini-hook pre\|post` | `.gemini/settings.json` |
 
 All drivers follow the same governance flow: the agent fires a `PreToolUse`-equivalent hook before each tool call, AgentGuard evaluates the action against policy and invariants, and responds with an allow or block decision. Agent identity (role + driver) is resolved at session start and flows into all hook evaluations and telemetry.
 
@@ -44,7 +45,7 @@ Claude Code tool call → stdin (JSON) → AgentGuard kernel → stdout (deny) o
 
 ### 2. `PostToolUse` — Error Monitoring
 
-Fires **after** Bash tool calls complete. Reports stderr errors for visibility. This hook is informational only — it does not block or modify behavior.
+Fires **after** Bash tool calls complete. Captures and forwards stderr output from completed tool calls for audit visibility. This hook is informational only — it does not block or modify behavior.
 
 ### 3. `SessionStart` — Build & Status Check
 
@@ -153,6 +154,8 @@ Hook invocations are correlated by session ID:
 - Multiple tool calls in the same Claude Code session share one session record
 - Enables cross-tool governance decisions and session-level analytics
 
+Agent identity (driver + role) is written to `.agentguard/persona.env` at session start by `scripts/write-persona.sh`, before the PreToolUse hook is active. **Once a governed session is running, writes to `.agentguard/persona.env` are blocked by the `no-governance-self-modification` invariant.** This prevents agents from downgrading their driver identity (e.g., `claude` → `human`) to bypass AI-specific restrictions or falsify audit attribution.
+
 ## Storage Backends
 
 The hook supports multiple storage backends for event and decision persistence:
@@ -173,6 +176,8 @@ The hook is designed to **never break Claude Code**:
 - Policy loading failures result in an empty policy (all actions allowed)
 - Storage backend failures are non-fatal (events may be lost, but governance continues)
 - Invalid stdin (non-JSON, empty input) causes a clean exit
+
+**Stderr contract:** Claude Code treats any `stderr` output from a PreToolUse hook as a blocking error signal, even when the hook exits 0. To prevent false blocks, the hook follows a strict rule: **only denials write to stderr. All allow-path code paths produce zero stderr output.** Warnings and informational messages on allow paths are delivered via stdout `additionalContext` JSON instead.
 
 This fail-open design prioritizes developer experience over strict enforcement. If you need fail-closed semantics, monitor the event trail for gaps.
 
@@ -203,10 +208,13 @@ echo '{"tool":"Bash","input":{"command":"git push origin main"}}' | aguard claud
 | `apps/cli/src/commands/claude-init.ts` | Claude Code hook setup and teardown |
 | `apps/cli/src/commands/copilot-hook.ts` | GitHub Copilot CLI hook command |
 | `apps/cli/src/commands/copilot-init.ts` | GitHub Copilot CLI hook setup |
-| `apps/cli/src/commands/deepagents-hook.ts` | LangChain DeepAgents hook command |
-| `apps/cli/src/commands/deepagents-init.ts` | LangChain DeepAgents middleware setup (generates Python shim) |
+| `apps/cli/src/commands/codex-hook.ts` | OpenAI Codex CLI hook command |
+| `apps/cli/src/commands/codex-init.ts` | OpenAI Codex CLI hook setup |
+| `apps/cli/src/commands/gemini-hook.ts` | Google Gemini CLI hook command |
+| `apps/cli/src/commands/gemini-init.ts` | Google Gemini CLI hook setup |
 | `packages/adapters/src/claude-code.ts` | Claude Code payload normalization and action mapping |
 | `packages/adapters/src/copilot-cli.ts` | Copilot CLI payload normalization |
-| `packages/adapters/src/deepagents.ts` | DeepAgents payload normalization and Python tool mapping |
+| `packages/adapters/src/codex-cli.ts` | OpenAI Codex CLI payload normalization (toolArgs JSON-string decoding) |
+| `packages/adapters/src/gemini-cli.ts` | Google Gemini CLI payload normalization |
 | `packages/kernel/src/kernel.ts` | Governed action kernel (policy + invariant evaluation) |
 | `packages/kernel/src/aab.ts` | Action Authorization Boundary (tool → action type) |

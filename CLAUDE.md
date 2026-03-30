@@ -323,6 +323,7 @@ The canonical event model is the architectural spine. Event kinds defined in `pa
 - **Capability Validation**: `CapabilityValidated`
 - **Environmental Enforcement**: `IdeSocketAccessBlocked`
 - **Command Audit**: `UnknownCommandWarn`
+- **HITL (Go kernel)**: `PauseRequested`, `PauseResolved` — emitted by the Go kernel when confidence scoring triggers a human-approval pause (`go/internal/event/schema.go`)
 
 ### Action Classes & Types
 43 canonical action types across 10 classes, defined in `packages/core/src/actions.ts`:
