@@ -31,6 +31,20 @@ type KernelConfig struct {
 	// When set, the kernel emits ActionRequested, ActionAllowed, and ActionDenied
 	// events for every Propose call. Telemetry failures never block enforcement.
 	EventBus *event.Bus
+	// ConfidenceGating configures confidence-based severity modification.
+	ConfidenceGating *ConfidenceGating
+}
+
+// ConfidenceGating configures the confidence-based severity modification.
+type ConfidenceGating struct {
+	// Enabled controls whether confidence scoring is active.
+	Enabled bool
+	// MaxBoost is the maximum severity increase from low confidence (default 3).
+	MaxBoost int
+	// PauseTimeout is how long to wait for human resolution in milliseconds (default 300000).
+	PauseTimeout int
+	// MaxBlastRadius is the file count at which blast radius signal hits 0.0 (default 50).
+	MaxBlastRadius int
 }
 
 // KernelResult is the output of a single Propose call. It captures the
@@ -47,6 +61,14 @@ type KernelResult struct {
 	EvalResult action.EvalResult `json:"evalResult"`
 	// BlastRadius is a placeholder score (blast/ package built separately).
 	BlastRadius float64 `json:"blastRadius"`
+	// Confidence is the computed confidence score (0.0–1.0).
+	Confidence float64 `json:"confidence"`
+	// ConfidenceBreakdown shows each signal's contribution.
+	ConfidenceBreakdown any `json:"confidenceBreakdown,omitempty"`
+	// EffectiveSeverity is severity after confidence boost.
+	EffectiveSeverity int `json:"effectiveSeverity"`
+	// PauseResolution is set when action was paused and resolved by human.
+	PauseResolution string `json:"pauseResolution,omitempty"`
 	// InvariantViolations lists any invariant violations detected (placeholder).
 	InvariantViolations []string `json:"invariantViolations,omitempty"`
 	// Suggestion is a corrective suggestion from the matched policy rule.
