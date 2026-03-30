@@ -26,6 +26,13 @@ AI coding agents (Claude Code, Codex CLI, GitHub Copilot CLI, Google Gemini CLI,
 > Every deny, every escalation, every code review — visible in real time.
 > **[Watch the live swarm &rarr;](https://agentguard-cloud-office-sim.vercel.app)**
 
+## Early Access
+
+**Get notified about v3.0, security updates, and team features:**
+
+> **[Join early access →](https://agentguard-cloud-dashboard.vercel.app/onboarding)** — Cloud waitlist, v3.0 announcements
+> **[GitHub Discussions →](https://github.com/AgentGuardHQ/agentguard/discussions)** — ask questions, share your setup
+
 ## Get Started
 
 ```bash

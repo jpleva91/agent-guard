@@ -991,11 +991,15 @@ function showProtectionSummary(
     );
   }
   process.stderr.write(`\n  ${DIM}ℹ Claude Desktop support coming soon.${RESET}\n`);
-  process.stderr.write(`\n  ${BOLD}☁  Get team governance & telemetry:${RESET}\n`);
-  process.stderr.write(
-    `  ${FG.cyan}https://agentguard-cloud-dashboard.vercel.app/onboarding${RESET}\n`
-  );
-  process.stderr.write(`  ${DIM}  or run: agentguard cloud signup${RESET}\n`);
+  if (process.env.AGENTGUARD_TELEMETRY !== 'off') {
+    process.stderr.write(`\n  ${BOLD}☁  Get team governance & telemetry:${RESET}\n`);
+    process.stderr.write(
+      `  ${FG.cyan}https://agentguard-cloud-dashboard.vercel.app/onboarding${RESET}\n`
+    );
+    process.stderr.write(`  ${DIM}  or run: agentguard cloud signup${RESET}\n\n`);
+    process.stderr.write(`  ${DIM}Get notified about v3.0 and security updates:${RESET}\n`);
+    process.stderr.write(`  ${FG.cyan}→ https://agentguard.dev/early-access${RESET}\n`);
+  }
   process.stderr.write('\n');
 }
 

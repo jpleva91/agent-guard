@@ -155,6 +155,12 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
         '\n  \x1b[2mAgentGuard sends anonymous usage data to help improve the product.\n' +
           '  Run `agentguard telemetry off` to disable.\x1b[0m\n\n'
       );
+      // First-run capture nudge — suppressed when telemetry is disabled
+      if (telemetryMode !== 'off') {
+        process.stderr.write(
+          '\x1b[2m  → Connect to governance dashboard: agentguard cloud signup\x1b[0m\n\n'
+        );
+      }
       const { saveIdentity: save, generateIdentity: gen } =
         await import('@red-codes/telemetry-client');
       const updated = identity ?? gen('anonymous');
