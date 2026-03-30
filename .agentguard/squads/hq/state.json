@@ -6,11 +6,11 @@
   },
   "assignments": {
     "human-jpleva91": {
-      "task": "P0: Run server/deploy.sh on jared box — worker pool dead 6+ cycles, swarm frozen (#1402). Also: kill zombie vitest PIDs 1183028/1183035/1183037, prune orphaned worktrees (git worktree prune + rm -rf .worktrees/fix-kernel-false-positives .worktrees/feat-postinstall-dual-hook .worktrees/strategy-update). Decision: codex credits or disable codex agents until Apr 3.",
+      "task": "P0 URGENT (cycle 7): (1) Run server/deploy.sh on jared box — worker pool dead (#1402). (2) Kill zombie vitest PIDs: kill 1183028 1183035 1183037. (3) Prune orphaned worktrees: git worktree prune && rm -rf .worktrees/fix-kernel-false-positives .worktrees/feat-postinstall-dual-hook .worktrees/strategy-update.",
       "priority": "P0"
     },
     "director": {
-      "task": "P0: #1431 codex budget exhausted until Apr 3 — 25 agents offline. Decide: purchase credits OR disable codex agents in schedule.json until Apr 3. Also: assign squad ownership for ShellForge initiative (#1362–#1367, 5th cycle unassigned).",
+      "task": "P0: #1431 codex budget exhausted until Apr 3 — 25 agents offline (cycle 2). Decide NOW: purchase credits OR disable codex agents in schedule.json until Apr 3. Also: assign squad ownership for ShellForge initiative (#1362–#1367, 5th cycle unassigned).",
       "priority": "P0"
     },
     "cloud-squad": {
@@ -18,11 +18,11 @@
       "priority": "P1"
     },
     "kernel-adapters-squad": {
-      "task": "P1: #1430 — hook stdout/stderr bug: allowed decisions must not output to stderr (causes Claude Code to block the action). Fix claude-hook-wrapper.sh: exit 0 with no stderr for allow decisions. Suppress or move (attempt N/3) counter to stdout.",
+      "task": "P1: #1430 — hook stdout/stderr bug: allowed decisions must not output to stderr (causes Claude Code to block the action). Fix claude-hook-wrapper.sh: exit 0 with no stderr for allow decisions. Suppress or move (attempt N/3) counter to stdout. ageRuns=1 — PR expected this cycle or director escalation.",
       "priority": "P1"
     },
     "kernel-squad": {
-      "task": "P1: #1427 — Add no-persona-self-modification invariant: block file.write to .agentguard/persona.env from non-human drivers. Also make write-persona.sh idempotent (skip if persona.env already exists). #1432 in CI — await merge.",
+      "task": "P1: #1427 — Add no-persona-self-modification invariant: block file.write to .agentguard/persona.env from non-human drivers. Also make write-persona.sh idempotent (skip if persona.env already exists). #1432 merged. ageRuns=1 — PR expected this cycle or director escalation.",
       "priority": "P1"
     },
     "ops": {
@@ -78,24 +78,30 @@
       "priority": "P1",
       "resolvedAt": "2026-03-30T02:40:00.000Z",
       "note": "CORRECTION: analytics package.json pin is 2.10.2, not 2.7.3. Prior state misread pnpm store (.pnpm subdirectory contains old cached versions). Only 1 patch behind — downgraded to P2. Cloud squad: only agentguard-cloud upgrade (2.10.1→2.10.3) remains P1."
+    },
+    "swarm-health-alert-1392": {
+      "task": "Swarm Health Alert — 2026-03-29 (Evening) (#1392)",
+      "priority": "P2",
+      "resolvedAt": "2026-03-30T05:30:00.000Z",
+      "note": "Closed this cycle — superseded by #1431 (midnight alert). All P0/P1 items from evening alert addressed or tracked in active blockers."
     }
   },
   "blockers": [
     {
       "issue": 1402,
-      "description": "P0: Worker pool dead on jared box. 6+ cycles, swarm frozen. All 32 PIDs dead. Human must run server/deploy.sh.",
+      "description": "P0: Worker pool dead on jared box. 7+ cycles, swarm frozen. All 32 PIDs dead. Human must run server/deploy.sh.",
       "escalatedTo": "human (jpleva91)",
       "firstSeen": "2026-03-29T19:00:00.000Z",
-      "escalatedAt": "2026-03-30T02:40:00.000Z",
-      "escalationCount": 6
+      "escalatedAt": "2026-03-30T05:30:00.000Z",
+      "escalationCount": 7
     },
     {
       "issue": 1431,
-      "description": "P0: Codex budget exhausted until Apr 3. 25 agents offline. All-driver circuit cascade at midnight: 53.7% failure rate. Also: 3 zombie vitest PIDs + orphaned worktrees need human cleanup.",
-      "escalatedTo": "human + director",
+      "description": "P0: Codex budget exhausted until Apr 3. 25 agents offline. 53.7% failure rate. Director must decide: buy credits OR disable codex agents until Apr 3.",
+      "escalatedTo": "director + human (jpleva91)",
       "firstSeen": "2026-03-30T00:02:00.000Z",
-      "escalatedAt": "2026-03-30T02:40:00.000Z",
-      "escalationCount": 1
+      "escalatedAt": "2026-03-30T05:30:00.000Z",
+      "escalationCount": 2
     },
     {
       "issue": 1403,
@@ -126,11 +132,11 @@
     }
   ],
   "prQueue": {
-    "open": 1,
-    "reviewed": 0,
+    "open": 2,
+    "reviewed": 2,
     "mergeable": 0,
-    "mergedThisCycle": 1,
-    "notes": "PR #1432 (kernel-em, KE-7 done + KE-8 started) CI in-progress — await completion. PR #1429 merged this cycle (studio-sr, #1342 closed)."
+    "mergedThisCycle": 0,
+    "notes": "PR #1434 (kernel EM 03:00Z) CONFLICTING — commented requesting rebase. PR #1433 (studio EM 05:00Z) CONFLICTING — commented requesting rebase. Note: studio EM confirmed #1342 closed, April 1 dispatch queue ready (7 tasks)."
   },
-  "updatedAt": "2026-03-30T02:40:00.000Z"
+  "updatedAt": "2026-03-30T05:30:00.000Z"
 }

@@ -1,15 +1,15 @@
 {
   "squad": "hq",
-  "generatedAt": "2026-03-30T02:40:00.000Z",
+  "generatedAt": "2026-03-30T05:30:00.000Z",
   "identity": "claude-code:opus:hq:em",
   "health": "red",
-  "healthReason": "Two P0 blockers active: worker pool dead on jared box (#1402, 6th cycle) and codex budget exhausted until Apr 3 with 53.7% swarm failure rate at midnight (#1431). Two new P1 dogfood issues: hook false-blocks allowed decisions (#1430) and agent persona self-modification gap (#1427). Analytics version drift corrected: was 2.10.2 (not 2.7.3 — previous state misread pnpm store vs package.json).",
-  "summary": "Cycle 2026-03-30T02:40Z. Merged PR #1429 (studio-sr EM, #1342 closed — Copilot quota circuit breaker diagnosed). New P0: swarm health #1431 (codex budget exhausted, multi-driver cascade). New P1 dogfood: #1430 (hook stderr false-blocks allowed decisions), #1427 (agent persona self-modification). Version drift correction: analytics 2.10.2 (1 patch behind), not SEVERE 2.7.3 (prior state misread pnpm store). Cloud still 2.10.1.",
+  "healthReason": "Two P0 blockers: #1402 worker pool dead (cycle 7, human must run server/deploy.sh) and #1431 codex budget exhausted until Apr 3 (director decision needed — buy credits or disable codex agents). Zero squad velocity. Both open PRs conflicting.",
+  "summary": "Cycle 2026-03-30T05:30Z. No merges (PR #1434 CONFLICTING, PR #1433 CONFLICTING — commented on both requesting rebase). Closed #1392 (superseded by #1431). 7th escalation of #1402 (worker pool). 2nd escalation of #1431 (codex budget). KE-8 tracked: kernel-adapters (#1430) and kernel (#1427) at ageRuns=1. Positive: #1342 resolved (Copilot pipeline fixed), KE-7 done (PR #1425 merged), April 1 dispatch queue ready (studio EM confirms 7 tasks).",
   "ciStatus": {
     "agentGuard": "yellow",
     "agentguardCloud": "unknown",
     "agentguardAnalytics": "unknown",
-    "recentRuns": "PR #1432 (kernel-em) CI in-progress. PR #1429 (studio-sr) merged — all checks green. Main branch green (PRs #1425, #1421, #1424 all merged)."
+    "recentRuns": "Main branch green. PR #1432 merged (kernel-em, all CI green). PR #1433 and #1434 CONFLICTING — no CI triggered. Last successful run: hq-em-20260330-001628 (all 4 checks green, PR #1435 merged)."
   },
   "versionMatrix": {
     "latest": "2.10.3",
@@ -23,24 +23,26 @@
   },
   "prQueue": {
     "agentGuard": {
-      "open": 1,
+      "open": 2,
       "details": [
         {
-          "number": 1432,
-          "title": "chore(kernel-em): EM cycle 2026-03-30T02:40Z — KE-7 done, KE-8 started, #1430 #1427 triaged",
-          "status": "CI_IN_PROGRESS",
-          "checks": "lint/analyze/test-and-build all IN_PROGRESS (started 00:16Z)",
+          "number": 1434,
+          "title": "chore(kernel-em): EM cycle 2026-03-30T03:00Z — #1432 merged, KE-8 tracking #1430 #1427",
+          "status": "CONFLICTING",
+          "checks": "no CI — merge conflict blocks run",
           "mergeable": false,
-          "note": "Await CI completion. Expect green based on kernel squad history."
+          "note": "Commented requesting rebase. Kernel EM to self-correct on next cycle."
+        },
+        {
+          "number": 1433,
+          "title": "chore(studio-em): EM cycle 2026-03-30T05:00Z — PRs #265 #262 merged, queue clear, April 1 ready",
+          "status": "CONFLICTING",
+          "checks": "no CI — merge conflict blocks run",
+          "mergeable": false,
+          "note": "Commented requesting rebase. Key content noted: #1342 closed, April 1 dispatch queue ready (7 tasks for Copilot/claude-code agents)."
         }
       ],
-      "mergedThisCycle": [
-        {
-          "number": 1429,
-          "title": "chore(studio-sr): EM cycle 2026-03-30 — #1342 diagnosed + closed, workspace#265 opened",
-          "note": "All checks green (lint, analyze, test-and-build, CodeQL). #1342 closed."
-        }
-      ]
+      "mergedThisCycle": []
     }
   },
   "dogfoodPatterns": [
@@ -127,79 +129,76 @@
   ],
   "resolvedSinceLastCycle": [
     {
-      "pr": 1429,
-      "title": "studio-sr EM cycle — #1342 diagnosed and closed",
-      "note": "Copilot circuit breaker from quota exhaustion, not a product bug. Auto-resolves Apr 1."
-    },
-    {
-      "issue": 1342,
-      "title": "Copilot event pipeline 0 events — CLOSED",
-      "note": "Root cause: Copilot quota tripped circuit breaker. Agents fail over to claude-code with wrong driver tag. Auto-resolves Apr 1 on budget reset."
+      "issue": 1392,
+      "title": "Swarm Health Alert 2026-03-29 Evening — CLOSED this cycle",
+      "note": "Superseded by #1431 (midnight alert). All items addressed or tracked in active blockers."
     }
   ],
   "escalations": [
     {
       "priority": "P0",
       "target": "human (jpleva91)",
-      "cycleCount": 6,
-      "reason": "Worker pool dead (#1402). Also: kill zombie vitest PIDs 1183028/1183035/1183037, prune orphaned worktrees, decide on codex credits."
+      "cycleCount": 7,
+      "reason": "Worker pool dead (#1402). Kill zombie vitest PIDs 1183028/1183035/1183037. Prune orphaned worktrees. All squads at zero velocity."
     },
     {
       "priority": "P0",
       "target": "director",
-      "reason": "#1431: codex budget exhausted until Apr 3. Decision: purchase credits or disable codex agents in schedule.json."
+      "cycleCount": 2,
+      "reason": "#1431: Codex budget exhausted until Apr 3 — 25 agents offline. Decide: buy credits OR disable codex agents in schedule.json. ShellForge initiative (#1362–#1367): 5th cycle unassigned."
     },
     {
       "priority": "P1",
       "target": "cloud squad",
-      "reason": "Upgrade agentguard-cloud to 2.10.3. Add octi-pulpo allow rule to agentguard.yaml."
+      "reason": "agentguard-cloud at 2.10.1 (P1, 5th+ cycle). Add octi-pulpo allow rule to agentguard-cloud/agentguard.yaml. analytics at 2.10.2 (P2)."
     },
     {
       "priority": "P1",
       "target": "kernel-adapters squad",
-      "reason": "#1430: hook stderr false-blocks allowed decisions. Fix output format."
+      "reason": "#1430 ageRuns=1: hook stderr false-blocks allowed git commits. PR expected this cycle or kernel EM escalates to director."
     },
     {
       "priority": "P1",
       "target": "kernel squad",
-      "reason": "#1427: add no-persona-self-modification invariant. Make write-persona.sh idempotent."
+      "reason": "#1427 ageRuns=1: no-persona-self-modification invariant + idempotent write-persona.sh. PR expected this cycle or kernel EM escalates to director."
     },
     {
-      "priority": "P2",
-      "target": "director",
-      "reason": "ShellForge initiative (#1362–#1367): 5th cycle unassigned."
+      "priority": "P1",
+      "target": "ops (human)",
+      "reason": "#1403: readybench QA non-operational 5+ days. Fix box routing after #1402 resolved."
     }
   ],
   "humanActionsRequired": [
-    "cd ~/agentguard-workspace && server/deploy.sh  # restart worker pool (#1402)",
-    "kill 1183028 1183035 1183037  # zombie vitest processes from deleted worktree",
+    "cd ~/agentguard-workspace && server/deploy.sh  # restart worker pool (#1402) — cycle 7",
+    "kill 1183028 1183035 1183037  # zombie vitest PIDs",
     "cd agent-guard && git worktree prune && rm -rf .worktrees/fix-kernel-false-positives .worktrees/feat-postinstall-dual-hook .worktrees/strategy-update  # orphaned worktrees",
-    "Decision: purchase codex credits OR disable codex agents in schedule.json until 2026-04-03"
+    "Decision (director): purchase Codex credits OR disable codex agents in schedule.json until 2026-04-03"
   ],
   "actionsThisCycle": [
     {
-      "action": "MERGED_PR",
-      "pr": 1429,
-      "detail": "studio-sr EM: #1342 diagnosed + closed, workspace#265 opened. All checks green."
+      "action": "COMMENTED_PR",
+      "pr": 1434,
+      "detail": "CONFLICTING — requested rebase. Kernel EM 03:00Z. Will self-correct next kernel cycle."
     },
     {
-      "action": "ESCALATED_COMMENT",
+      "action": "COMMENTED_PR",
+      "pr": 1433,
+      "detail": "CONFLICTING — requested rebase. Studio EM 05:00Z. Key: #1342 closed, April 1 dispatch queue ready (7 tasks)."
+    },
+    {
+      "action": "CLOSED_ISSUE",
+      "issue": 1392,
+      "detail": "Swarm Health Alert 2026-03-29 Evening — superseded by #1431. Commented + closed."
+    },
+    {
+      "action": "ESCALATED",
+      "issue": 1402,
+      "detail": "Cycle 7. Added cleanup checklist (zombie PIDs, orphaned worktrees). @jpleva91 tagged."
+    },
+    {
+      "action": "ESCALATED",
       "issue": 1431,
-      "detail": "Swarm health P0 triaged: escalated to human + director. Listed required actions."
-    },
-    {
-      "action": "TRIAGED_DOGFOOD",
-      "issue": 1430,
-      "detail": "Assigned to kernel-adapters squad. Root cause: hook stderr on allowed decision triggers Claude Code review mode."
-    },
-    {
-      "action": "TRIAGED_DOGFOOD",
-      "issue": 1427,
-      "detail": "Assigned to kernel squad. Proposed no-persona-self-modification invariant + idempotent write-persona.sh."
-    },
-    {
-      "action": "VERSION_CORRECTION",
-      "detail": "Analytics version corrected from SEVERE 2.7.3 → 2.10.2 (pnpm store misread in prior cycle)."
+      "detail": "Cycle 2 escalation. Director + human. Codex decision + cleanup checklist added."
     }
   ]
 }
