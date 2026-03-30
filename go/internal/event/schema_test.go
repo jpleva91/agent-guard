@@ -70,6 +70,21 @@ func TestCategoryOf(t *testing.T) {
 	}
 }
 
+func TestPauseEventKinds(t *testing.T) {
+	if PauseRequested != "PauseRequested" {
+		t.Errorf("expected PauseRequested, got %s", PauseRequested)
+	}
+	if PauseResolved != "PauseResolved" {
+		t.Errorf("expected PauseResolved, got %s", PauseResolved)
+	}
+	if CategoryOf(PauseRequested) != CategoryRefMonitor {
+		t.Errorf("PauseRequested should be in ref_monitor category")
+	}
+	if CategoryOf(PauseResolved) != CategoryRefMonitor {
+		t.Errorf("PauseResolved should be in ref_monitor category")
+	}
+}
+
 func TestNewEventNilData(t *testing.T) {
 	evt := NewEvent(RunStarted, "sess", nil)
 	if evt.Data != nil {

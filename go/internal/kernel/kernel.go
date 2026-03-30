@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/AgentGuardHQ/agentguard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/confidence"
 	"github.com/AgentGuardHQ/agentguard/go/internal/config"
 	"github.com/AgentGuardHQ/agentguard/go/internal/engine"
 	"github.com/AgentGuardHQ/agentguard/go/internal/event"
@@ -95,6 +96,23 @@ func (k *Kernel) Propose(raw action.RawAction) (KernelResult, error) {
 	}
 	evalResult := engine.Evaluate(ctx, k.policies, evalOpts)
 
+	// Confidence scoring
+	var conf confidence.Result
+	if k.confidenceEnabled() {
+		conf = confidence.Compute(confidence.Input{
+			ActionType:      ctx.Action,
+			RetryCount:      0,
+			EscalationLevel: 0,
+			FilesAffected:   ctx.FilesAffected,
+			MaxBlastRadius:  k.maxBlastRadius(),
+		})
+	} else {
+		conf = confidence.Result{Score: 1.0}
+	}
+	baseSeverity := evalResult.Severity
+	boost := confidence.SeverityBoost(conf.Score, k.maxBoost())
+	effSeverity := confidence.EffectiveSeverity(baseSeverity, boost)
+
 	// 4. Emit ActionAllowed or ActionDenied — KE-3 compatible envelope.
 	switch evalResult.Decision {
 	case "allow":
@@ -126,17 +144,20 @@ func (k *Kernel) Propose(raw action.RawAction) (KernelResult, error) {
 
 	// 5. Build result
 	result := KernelResult{
-		Decision:         evalResult.Decision,
-		Reason:           evalResult.Reason,
-		Action:           ctx,
-		EvalResult:       evalResult,
-		BlastRadius:      0, // placeholder — blast/ package built separately
-		Suggestion:       evalResult.Suggestion,
-		CorrectedCommand: evalResult.CorrectedCommand,
-		Duration:         time.Since(start),
-		Timestamp:        start,
-		DryRun:           k.config.DryRun,
-		SessionID:        k.sessionID,
+		Decision:            evalResult.Decision,
+		Reason:              evalResult.Reason,
+		Action:              ctx,
+		EvalResult:          evalResult,
+		BlastRadius:         0, // placeholder — blast/ package built separately
+		Confidence:          conf.Score,
+		ConfidenceBreakdown: conf.Breakdown,
+		EffectiveSeverity:   effSeverity,
+		Suggestion:          evalResult.Suggestion,
+		CorrectedCommand:    evalResult.CorrectedCommand,
+		Duration:            time.Since(start),
+		Timestamp:           start,
+		DryRun:              k.config.DryRun,
+		SessionID:           k.sessionID,
 	}
 
 	// 6. Update stats (thread-safe)
@@ -189,6 +210,27 @@ func (k *Kernel) Policies() []*action.LoadedPolicy {
 // Bus returns the kernel's event bus, or nil if none was configured.
 func (k *Kernel) Bus() *event.Bus {
 	return k.bus
+}
+
+func (k *Kernel) confidenceEnabled() bool {
+	if k.config.ConfidenceGating == nil {
+		return false
+	}
+	return k.config.ConfidenceGating.Enabled
+}
+
+func (k *Kernel) maxBoost() int {
+	if k.config.ConfidenceGating == nil || k.config.ConfidenceGating.MaxBoost == 0 {
+		return 3
+	}
+	return k.config.ConfidenceGating.MaxBoost
+}
+
+func (k *Kernel) maxBlastRadius() int {
+	if k.config.ConfidenceGating == nil || k.config.ConfidenceGating.MaxBlastRadius == 0 {
+		return 50
+	}
+	return k.config.ConfidenceGating.MaxBlastRadius
 }
 
 // Close emits a RunEnded event and performs cleanup.

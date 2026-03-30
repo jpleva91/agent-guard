@@ -28,6 +28,10 @@ const (
 	ActionExecuted  Kind = "ActionExecuted"
 	ActionFailed    Kind = "ActionFailed"
 
+	// Confidence-Gated HITL
+	PauseRequested Kind = "PauseRequested"
+	PauseResolved  Kind = "PauseResolved"
+
 	// Governance
 	PolicyDenied         Kind = "PolicyDenied"
 	UnauthorizedAction   Kind = "UnauthorizedAction"
@@ -102,7 +106,7 @@ func CategoryOf(k Kind) Category {
 	switch k {
 	case RunStarted, RunEnded, CheckpointReached, StateChanged:
 		return CategoryLifecycle
-	case ActionRequested, ActionAllowed, ActionDenied, ActionEscalated, ActionExecuted, ActionFailed:
+	case ActionRequested, ActionAllowed, ActionDenied, ActionEscalated, ActionExecuted, ActionFailed, PauseRequested, PauseResolved:
 		return CategoryRefMonitor
 	case PolicyDenied, UnauthorizedAction, InvariantViolation, BlastRadiusExceeded, MergeGuardFailure, EvidencePackGenerated:
 		return CategoryGovernance
