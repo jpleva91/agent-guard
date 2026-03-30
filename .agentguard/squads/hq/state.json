@@ -2,30 +2,29 @@
   "squad": "hq",
   "sprint": {
     "goal": "Validate Go kernel→Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 SHIPPED. Version sync. ShellForge coordination.",
-    "issues": [1335, 1402, 1403, 1430, 1431]
+    "issues": [1335, 1402, 1403, 1431, 1449, 1452]
   },
   "assignments": {
     "human-jpleva91": {
-      "task": "P0: Run server/deploy.sh on jared box — worker pool dead 9+ cycles, swarm frozen (#1402). Also: kill zombie vitest PIDs 1183028/1183035/1183037, prune orphaned worktrees. Decision: codex credits or disable codex agents until Apr 3.",
+      "task": "P0: Kill 26 orphaned vitest processes (see #1452 for exact commands). Clean 3 stuck worktrees: marketing-em-3815251, octi-pulpo-sr-3847600, octi-pulpo-qa-3847601. Run server/deploy.sh on jared box (#1402 — worker pool dead 10+ cycles). Investigate cloud-sr/cloud-em systemic failures post-midnight.",
       "priority": "P0"
     },
     "director": {
-      "task": "P0: #1431 codex budget exhausted until Apr 3 — 25 agents offline. Decide: purchase credits OR disable codex agents in schedule.json. P1: #1430 PR #1448 dirty (rebase requested) — confirm owner handles rebase. P2: assign ShellForge squad owner (#1362–#1367, 6th cycle). Triage #1449 dependabot alerts (1 high, 2 moderate).",
+      "task": "P0: #1431 codex budget exhausted until Apr 3 — 25 agents offline (auto-resolves 2026-04-03T02:25Z). P0: #1452 swarm at 69.5% failure rate — root cause investigation needed. P2: #1449 Dependabot security alerts (path-to-regexp HIGH, brace-expansion MEDIUM) — assign to kernel or CI squad for patch.",
       "priority": "P0"
     },
     "cloud-squad": {
-      "task": "P1: Upgrade agentguard-cloud to 2.10.3 (7th cycle behind — 2 patches). Add octi-pulpo allow rule to agentguard-cloud/agentguard.yaml (mcp.call:octi-pulpo). URGENT — this is now 7 consecutive cycles with no action.",
-      "priority": "P1"
-    },
-    "kernel-adapters-squad": {
-      "task": "P1: #1430 — PR #1448 filed but DIRTY (merge conflicts). Rebase onto main and force-push. All CI passing (4/4), kernel-qa confirmed 4649/4649 tests green. Blocked on rebase only.",
-      "priority": "P1",
-      "ageRuns": 2,
-      "prFiled": 1448,
-      "prStatus": "dirty — rebase requested this cycle"
+      "task": "P0 ESCALATED: Upgrade agentguard-cloud to 2.10.3 — NOW 8TH CONSECUTIVE CYCLE UNACTIONED (pinned: 2.10.1, latest: 2.10.3). Add octi-pulpo allow rule to agentguard-cloud/agentguard.yaml (mcp.call:octi-pulpo). This is being escalated to P0 after 8 missed cycles.",
+      "priority": "P0",
+      "escalatedFromP1": true,
+      "cyclesUnactioned": 8
     },
     "ops": {
-      "task": "#1403: readybench QA swarm non-operational 5+ days — wrong queue routing. Depends on #1402 resolution.",
+      "task": "#1403: readybench QA swarm non-operational — depends on #1402 resolution. #1177: pr-merger-agent policy gap (github.pr.* not in default allow-list) causing 234 failures.",
+      "priority": "P1"
+    },
+    "marketing-squad": {
+      "task": "P1: Rebase PR #1455 (marketing-em cycle) onto main — currently CONFLICTING. P1: #1382 conference talk outline not started (16 days to April 15). P1: #1379 Meta demo not started (6 days to April 5 red line).",
       "priority": "P1"
     }
   },
@@ -70,61 +69,74 @@
       "task": "Analytics version drift SEVERE 2.7.3 (cloud squad)",
       "priority": "P1",
       "resolvedAt": "2026-03-30T02:40:00.000Z",
-      "note": "CORRECTION: analytics package.json pin is 2.10.2, not 2.7.3. Only 1 patch behind — downgraded to P2."
+      "note": "CORRECTION: analytics package.json pin is 2.10.2, not 2.7.3. Only 1 patch behind — P2."
     },
     "persona-env-protection-1427": {
       "task": "#1427 — persona.env not protected by no-governance-self-modification invariant",
       "priority": "P1",
       "resolvedAt": "2026-03-30T09:00:00.000Z",
       "note": "PR #1436 merged (fix(invariants): protect persona.env from agent identity tampering). 5/5 CI green. KE-8 item 1 of 2 complete."
+    },
+    "claude-hook-stderr-1430": {
+      "task": "#1430 — allow-path must not write to stderr in claude-hook",
+      "priority": "P1",
+      "resolvedAt": "2026-03-30T06:16:00.000Z",
+      "note": "PR #1448 merged at 06:16Z (fix(claude-hook): allow-path must not write to stderr). KE-8 COMPLETE per kernel-em cycle PR #1457."
     }
   },
   "blockers": [
     {
+      "issue": 1452,
+      "description": "P0: Swarm at 69.5% failure rate. 26 orphaned vitest processes holding ~3.3GB RAM from 3 deleted worktrees. 3 stuck agent worktrees (marketing-em-3815251, octi-pulpo-sr-3847600, octi-pulpo-qa-3847601). Cloud squad 74.3% failure rate points to systemic config issue.",
+      "escalatedTo": "human (jpleva91)",
+      "firstSeen": "2026-03-30T06:06:00.000Z",
+      "escalatedAt": "2026-03-30T15:00:00.000Z",
+      "escalationCount": 1
+    },
+    {
       "issue": 1402,
-      "description": "P0: Worker pool dead on jared box. 9+ cycles, swarm frozen. All 32 PIDs dead. Human must run server/deploy.sh.",
+      "description": "P0: Worker pool dead on jared box. 10+ cycles, swarm frozen. Human must run server/deploy.sh.",
       "escalatedTo": "human (jpleva91)",
       "firstSeen": "2026-03-29T19:00:00.000Z",
-      "escalatedAt": "2026-03-30T12:00:00.000Z",
-      "escalationCount": 9
+      "escalatedAt": "2026-03-30T15:00:00.000Z",
+      "escalationCount": 10
     },
     {
       "issue": 1431,
-      "description": "P0: Codex budget exhausted until Apr 3. 25 agents offline. All-driver circuit cascade at midnight: 53.7% failure rate.",
+      "description": "P0: Codex budget exhausted until Apr 3. 25 agents offline. Auto-resolves 2026-04-03T02:25Z.",
       "escalatedTo": "human + director",
       "firstSeen": "2026-03-30T00:02:00.000Z",
-      "escalatedAt": "2026-03-30T12:00:00.000Z",
-      "escalationCount": 4
-    },
-    {
-      "issue": 1430,
-      "description": "P1 dogfood: git commit Bash hook false-blocks allowed decisions on readybench. PR #1448 filed (4/4 CI green, kernel-qa 4649/4649 green) but DIRTY — rebase requested this cycle.",
-      "escalatedTo": "kernel-adapters-squad (rebase PR #1448)",
-      "firstSeen": "2026-03-29T23:03:00.000Z",
-      "escalatedAt": "2026-03-30T09:00:00.000Z",
-      "escalationCount": 2,
-      "note": "Progress: PR #1448 exists and CI passes. Blocked on merge conflict only."
+      "escalatedAt": "2026-03-30T15:00:00.000Z",
+      "escalationCount": 5,
+      "expectedResolution": "2026-04-03T02:25:00.000Z"
     },
     {
       "issue": 1403,
-      "description": "P1: readybench QA swarm non-operational 5+ days. All 19 agents skipping. Depends on #1402.",
+      "description": "P1: readybench QA swarm non-operational. Depends on #1402.",
       "escalatedTo": "ops",
       "firstSeen": "2026-03-25T00:00:00.000Z"
     },
     {
       "issue": 1335,
-      "description": "P1: Codex + Copilot circuit breakers OPEN. Auto-resolves 2026-04-01 (2 days).",
+      "description": "P1: Codex + Copilot circuit breakers OPEN. Auto-resolves 2026-04-01.",
       "escalatedTo": "none (auto-resolve)",
       "firstSeen": "2026-03-29T00:00:00.000Z",
       "expectedResolution": "2026-04-01T00:00:00.000Z"
+    },
+    {
+      "issue": 1449,
+      "description": "P2: Dependabot security alerts — path-to-regexp (HIGH ReDoS), brace-expansion (MEDIUM DoS). Transitive deps.",
+      "escalatedTo": "director",
+      "firstSeen": "2026-03-30T05:23:00.000Z"
     }
   ],
   "prQueue": {
     "open": 1,
     "reviewed": 0,
     "mergeable": 0,
-    "mergedThisCycle": 0,
-    "notes": "PR #1448 (fix #1430: hook stderr fix): 4/4 CI green, kernel-qa 4649/4649 green, but DIRTY — commented requesting rebase. Will merge next cycle once clean."
+    "mergedThisCycle": 3,
+    "mergedThisCycleList": ["#1458 (HQ EM 15:00Z cycle)", "#1459 (docs sync)", "#1460 (user capture funnel, closes #1307)"],
+    "notes": "PR #1455 (marketing-em cycle) CONFLICTING — commented requesting rebase. No other open PRs pending merge."
   },
-  "updatedAt": "2026-03-30T12:00:00.000Z"
+  "updatedAt": "2026-03-30T15:00:00.000Z"
 }
