@@ -2,32 +2,32 @@
   "squad": "hq",
   "sprint": {
     "goal": "Validate Go kernel→Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 SHIPPED. Version sync. ShellForge coordination.",
-    "issues": [1335, 1342, 1402, 1403]
+    "issues": [1335, 1402, 1403, 1430, 1427]
   },
   "assignments": {
     "human-jpleva91": {
-      "task": "P0: Run server/deploy.sh on jared box — worker pool dead 5+ cycles, swarm frozen. Also: rebase PR #1421 (site EM, CONFLICTING). (#1402)",
+      "task": "P0: Run server/deploy.sh on jared box — worker pool dead 6+ cycles, swarm frozen (#1402). Also: kill zombie vitest PIDs 1183028/1183035/1183037, prune orphaned worktrees (git worktree prune + rm -rf .worktrees/fix-kernel-false-positives .worktrees/feat-postinstall-dual-hook .worktrees/strategy-update). Decision: codex credits or disable codex agents until Apr 3.",
+      "priority": "P0"
+    },
+    "director": {
+      "task": "P0: #1431 codex budget exhausted until Apr 3 — 25 agents offline. Decide: purchase credits OR disable codex agents in schedule.json until Apr 3. Also: assign squad ownership for ShellForge initiative (#1362–#1367, 5th cycle unassigned).",
       "priority": "P0"
     },
     "cloud-squad": {
-      "task": "URGENT P1: agentguard-analytics at 2.7.3 (SEVERE — 3 minor versions behind 2.10.3). agentguard-cloud at 2.10.1. Upgrade both to 2.10.3. Also add octi-pulpo allow rule to agentguard-cloud/agentguard.yaml (mcp.call:octi-pulpo).",
+      "task": "P1: Upgrade agentguard-cloud to 2.10.3. Add octi-pulpo allow rule to agentguard-cloud/agentguard.yaml (mcp.call:octi-pulpo). Note: analytics version corrected to 2.10.2 (was misread as 2.7.3 — only 1 patch behind, P2).",
       "priority": "P1"
     },
-    "studio-squad": {
-      "task": "#1342: Copilot event pipeline 0 events — FINAL NOTICE (4+ cycles no update). Conference demo (May 6) gap. Investigate or escalate to director. #1335 auto-resolves 2026-04-01.",
+    "kernel-adapters-squad": {
+      "task": "P1: #1430 — hook stdout/stderr bug: allowed decisions must not output to stderr (causes Claude Code to block the action). Fix claude-hook-wrapper.sh: exit 0 with no stderr for allow decisions. Suppress or move (attempt N/3) counter to stdout.",
+      "priority": "P1"
+    },
+    "kernel-squad": {
+      "task": "P1: #1427 — Add no-persona-self-modification invariant: block file.write to .agentguard/persona.env from non-human drivers. Also make write-persona.sh idempotent (skip if persona.env already exists). #1432 in CI — await merge.",
       "priority": "P1"
     },
     "ops": {
       "task": "#1403: readybench QA swarm non-operational 5+ days — wrong queue routing, bench-devs-platform not found on jared host. Depends on #1402 + box routing fix.",
       "priority": "P1"
-    },
-    "kernel-squad": {
-      "task": "PR #1425 (cross-repo-blast-radius): fix broken vitest symlink in source worktree and repush so CI passes. Logic reviewed — sound. KE-7 scope.",
-      "priority": "P1"
-    },
-    "director": {
-      "task": "Assign squad ownership for ShellForge initiative (issues #1362–#1367): single-binary, secret injection, artifact registry, composable stacks. 4th cycle unassigned.",
-      "priority": "P2"
     }
   },
   "resolved": {
@@ -55,51 +55,47 @@
       "resolvedAt": "2026-03-29T22:40:00.000Z",
       "note": "PR #1414 merged. Kernel squad KE-6 complete. KE-7 started."
     },
-    "cron-collision-1372": {
-      "task": "Fix cron collision: shellforge-research-scout (#1372)",
-      "priority": "P3",
-      "resolvedAt": "2026-03-29T22:00:00.000Z",
-      "note": "cron 2→5 8,20 in server/schedule.json. Issue closed."
-    },
-    "worktree-binary-crash": {
-      "task": "Fix worktree CLI binary crash ERR_MODULE_NOT_FOUND (#1376)",
+    "copilot-event-pipeline-1342": {
+      "task": "Copilot event pipeline 0 events — conference demo gap (#1342)",
       "priority": "P1",
-      "resolvedAt": "2026-03-29T22:00:00.000Z",
-      "note": "PR #1400 merged: wrapper probes binary, falls back to main worktree binary."
+      "resolvedAt": "2026-03-30T02:40:00.000Z",
+      "note": "PR #1429 merged (studio-sr). Root cause: Copilot quota exhaustion tripped circuit breaker. Agents fail over to claude-code with wrong driver tag. Issue #1342 closed. Auto-resolves Apr 1 on budget reset."
     },
-    "cron-collision-fix-1327": {
-      "task": "Fix 3 cron collisions in server/schedule.json (issue #1327)",
+    "cross-repo-blast-radius-1425": {
+      "task": "PR #1425 (cross-repo-blast-radius, broken vitest symlink — kernel squad to fix)",
+      "priority": "P1",
+      "resolvedAt": "2026-03-30T00:00:00.000Z",
+      "note": "PR #1425 merged (feat(invariants): cross-repo-blast-radius — session-level aggregate file cap). KE-7 item complete."
+    },
+    "site-em-1421": {
+      "task": "PR #1421 CONFLICTING (site EM — needs rebase)",
       "priority": "P2",
-      "resolvedAt": "2026-03-29T14:18:00.000Z",
-      "note": "Issue #1327 closed."
+      "resolvedAt": "2026-03-30T00:40:00.000Z",
+      "note": "PR #1421 merged: chore(site-em): EM cycle 2026-03-30T00:40Z — stat drift fixed, --tests-count flag added."
     },
-    "kernel-adapters-squad": {
-      "task": "Fix #1347: claude-hook-wrapper.sh bootstrap exemption strip rtk prefix",
+    "analytics-version-drift-severe": {
+      "task": "Analytics version drift SEVERE 2.7.3 (cloud squad)",
       "priority": "P1",
-      "resolvedAt": "2026-03-29T16:49:00.000Z",
-      "note": "Issue #1347 closed. PR #1371 merged."
-    },
-    "ke2-actioncontext": {
-      "task": "KE-2 ActionContext — vendor-neutral action normalization (issue #917)",
-      "priority": "P0",
-      "resolvedAt": "2026-03-29T00:00:00.000Z",
-      "note": "Issue #917 closed. v3.0 item 1 checked. p50 < 100µs verified."
-    },
-    "swarm-health-p0": {
-      "task": "Swarm health P0: 85.7% agents stuck (#1186)",
-      "priority": "P0",
-      "resolvedAt": "2026-03-29T00:00:00.000Z",
-      "note": "Issue #1186 closed. Recovery controller: mode normal, risk score 9."
+      "resolvedAt": "2026-03-30T02:40:00.000Z",
+      "note": "CORRECTION: analytics package.json pin is 2.10.2, not 2.7.3. Prior state misread pnpm store (.pnpm subdirectory contains old cached versions). Only 1 patch behind — downgraded to P2. Cloud squad: only agentguard-cloud upgrade (2.10.1→2.10.3) remains P1."
     }
   },
   "blockers": [
     {
       "issue": 1402,
-      "description": "P0: Worker pool dead on jared box. 5+ cycles, swarm frozen. All 32 PIDs dead. Human must run server/deploy.sh.",
+      "description": "P0: Worker pool dead on jared box. 6+ cycles, swarm frozen. All 32 PIDs dead. Human must run server/deploy.sh.",
       "escalatedTo": "human (jpleva91)",
       "firstSeen": "2026-03-29T19:00:00.000Z",
-      "escalatedAt": "2026-03-30T02:10:00.000Z",
-      "escalationCount": 5
+      "escalatedAt": "2026-03-30T02:40:00.000Z",
+      "escalationCount": 6
+    },
+    {
+      "issue": 1431,
+      "description": "P0: Codex budget exhausted until Apr 3. 25 agents offline. All-driver circuit cascade at midnight: 53.7% failure rate. Also: 3 zombie vitest PIDs + orphaned worktrees need human cleanup.",
+      "escalatedTo": "human + director",
+      "firstSeen": "2026-03-30T00:02:00.000Z",
+      "escalatedAt": "2026-03-30T02:40:00.000Z",
+      "escalationCount": 1
     },
     {
       "issue": 1403,
@@ -108,25 +104,33 @@
       "firstSeen": "2026-03-25T00:00:00.000Z"
     },
     {
+      "issue": 1430,
+      "description": "P1 dogfood: git commit Bash hook false-blocks allowed decisions on readybench. Hook stderr triggers Claude Code review mode.",
+      "escalatedTo": "kernel-adapters-squad",
+      "firstSeen": "2026-03-29T23:03:00.000Z",
+      "escalatedAt": "2026-03-30T02:40:00.000Z"
+    },
+    {
+      "issue": 1427,
+      "description": "P1 dogfood: agents can self-modify .agentguard/persona.env via write-persona.sh re-run. Corrupts driver attribution and audit identity.",
+      "escalatedTo": "kernel-squad",
+      "firstSeen": "2026-03-29T21:16:00.000Z",
+      "escalatedAt": "2026-03-30T02:40:00.000Z"
+    },
+    {
       "issue": 1335,
       "description": "P1: Codex + Copilot circuit breakers OPEN. Auto-resolves 2026-04-01.",
       "escalatedTo": "none (auto-resolve)",
       "firstSeen": "2026-03-29T00:00:00.000Z",
       "expectedResolution": "2026-04-01T00:00:00.000Z"
-    },
-    {
-      "issue": 1342,
-      "description": "P1: Copilot event pipeline 0 events. Conference demo gap (May 6). 4+ cycles no update.",
-      "escalatedTo": "studio-squad",
-      "firstSeen": "2026-03-29T00:00:00.000Z"
     }
   ],
   "prQueue": {
-    "open": 2,
+    "open": 1,
     "reviewed": 0,
     "mergeable": 0,
-    "mergedThisCycle": 3,
-    "notes": "PR #1425 FAILING (cross-repo-blast-radius, broken vitest symlink — kernel squad to fix). PR #1421 CONFLICTING (site EM — needs rebase). PRs #1424, #1423, #1422 merged this cycle."
+    "mergedThisCycle": 1,
+    "notes": "PR #1432 (kernel-em, KE-7 done + KE-8 started) CI in-progress — await completion. PR #1429 merged this cycle (studio-sr, #1342 closed)."
   },
-  "updatedAt": "2026-03-30T02:10:00.000Z"
+  "updatedAt": "2026-03-30T02:40:00.000Z"
 }
