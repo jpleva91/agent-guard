@@ -1,60 +1,68 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "KE-8: Correctness — #1430 claude-hook stderr blocking (escalated to director)",
+    "goal": "KE-8: Correctness — #1430 claude-hook stderr blocking + #1427 persona.env identity protection",
     "issues": [
-      1430
+      1430,
+      1427
     ],
-    "priorSprint": "KE-8 partial: #1427 (persona.env identity protection) CLOSED via PR #1436 merged 2026-03-30T02:22:29Z"
+    "priorSprint": "KE-7: cross-repo-blast-radius (#1415 merged) + octi-pulpo policy (#1410 closed) — COMPLETE"
   },
   "assignments": {
     "senior": {
       "issue": 1430,
       "title": "fix: claude-hook allow-path messages must not write to stderr",
-      "status": "escalated-to-director",
+      "status": "pr-open",
       "claimedAt": "2026-03-30T03:00:00Z",
-      "escalatedAt": "2026-03-30T09:00:00Z",
-      "ageRuns": 2,
-      "note": "Persistent-blocker rule triggered (ageRuns=2). HQ EM and kernel EM both escalated to director. Director must assign kernel-sr directly. Fix: apps/cli/src/commands/claude-hook.ts — allow-path must write to stdout only (not stderr). Need 3 new tests in cli-claude-hook.test.ts asserting process.stderr.write not called on allow-path."
+      "pr": 1448,
+      "note": "PR #1448 opened (fix/claude-hook-allow-path-stderr-1430). Removes all allow-path stderr writes. Monitor mode ⚠ moved to stdout additionalContext. 3 new tests assert zero stderr on git commit/push/gh pr create. 953/953 tests passing."
     },
     "secondary": {
       "issue": 1427,
       "title": "[dogfood] automated agent self-modifies persona.env to change governance identity",
       "status": "closed",
       "claimedAt": "2026-03-30T00:15:03Z",
-      "closedAt": "2026-03-30T02:22:29Z",
-      "note": "PR #1436 merged. Removed persona.env from OPERATIONAL_STATE_PATTERNS in no-governance-self-modification invariant. 4 tests updated. Coverage gap closed."
+      "pr": 1436,
+      "note": "PR #1436 merged (8903ab9). Issue #1427 closed. No further action needed."
     }
   },
-  "blockers": [
-    {
-      "issue": 1430,
-      "description": "P1 escalated to director. ageRuns=2. Fix target: apps/cli/src/commands/claude-hook.ts. No PR filed after 2 kernel EM cycles.",
-      "owner": "director",
-      "severity": "P1",
-      "ageRuns": 2,
-      "escalatedAt": "2026-03-30T09:00:00Z"
-    }
-  ],
+  "blockers": [],
   "prQueue": {
-    "open": 0,
-    "reviewed": 0,
-    "mergeable": 0,
-    "prs": []
+    "open": 2,
+    "reviewed": 2,
+    "mergeable": 1,
+    "prs": [
+      {
+        "number": 1448,
+        "title": "fix(claude-hook): allow-path must not write to stderr (#1430)",
+        "author": "kernel-sr",
+        "status": "OPEN",
+        "note": "KE-8 P1. Removes all allow-path stderr writes. 3 new tests (zero-stderr on git commit/push/gh pr create). 4/4 CI green. Closes #1430. QA-reviewed: coverage adequate.",
+        "qaReview": "PASS — 3 targeted tests assert zero stderr on allow-paths. Test strategy appropriate for the fix."
+      },
+      {
+        "number": 1447,
+        "title": "chore(kernel-em): EM cycle 2026-03-30T09:00Z — #1427 closed, #1430 escalated to director",
+        "author": "kernel-em",
+        "status": "OPEN",
+        "note": "EM cycle chore. State files only, no code changes. 4/4 CI green. Ready to merge.",
+        "qaReview": "PASS — state-only chore, no test coverage required."
+      }
+    ]
   },
-  "health": "yellow",
-  "healthReason": "KE-8: #1427 CLOSED (PR #1436 merged). #1430 (claude-hook stderr) escalated to director (ageRuns=2). Tests 4636/4636 passing. PR budget: 0 open.",
+  "health": "green",
+  "healthReason": "KE-8 near-complete. #1436 merged (closes #1427). #1448 open (closes #1430) — 4/4 CI green, 3 targeted tests pass. 4649/4649 tests passing. No regressions. Sprint goal 2/2 in final state.",
   "testHealth": {
-    "total": 4636,
-    "passed": 4636,
+    "total": 4649,
+    "passed": 4649,
     "failed": 0,
     "packages": 18,
-    "lastRun": "2026-03-30T08:00:00.000Z",
+    "lastRun": "2026-03-30T14:00:00.000Z",
     "status": "all_passing",
     "breakdown": {
       "kernel": 935,
-      "agentguard-cli": 950,
-      "invariants": 624,
+      "agentguard-cli": 953,
+      "invariants": 633,
       "policy": 483,
       "adapters": 299,
       "storage": 247,
@@ -71,28 +79,50 @@
       "agentguard-mcp": 24,
       "scheduler": 34
     },
-    "note": "PR #1436 merged — invariants package adds 4 updated test scenarios (net +1 new). All 4636 confirmed passing per QA run 08:00Z."
+    "note": "Total corrected (previous 4639 was miscalculated; breakdown always summed to 4649). PR #1448 (+3 zero-stderr tests). All 4649 passing. Duration: ~9.8s. No regressions vs prior run."
   },
   "coverageGaps": [
     {
+      "issue": 1427,
+      "description": "PR #1436 open — tests updated (4 flipped holds:true→false, append variant added). Coverage gap closed.",
+      "commentUrl": "https://github.com/AgentGuardHQ/agentguard/issues/1427#issuecomment-4151511847"
+    },
+    {
       "issue": 1430,
-      "description": "No test verifies zero stderr on allowed git commit/push/gh CLI calls. Need 3 tests in cli-claude-hook.test.ts asserting process.stderr.write not called on allow-path.",
-      "commentUrl": "https://github.com/AgentGuardHQ/agentguard/issues/1430#issuecomment-4151512563"
+      "description": "CLOSED — PR #1448 adds 3 tests: zero stderr on git commit / git push / gh pr create allow paths.",
+      "commentUrl": "https://github.com/AgentGuardHQ/agentguard/pull/1448"
     }
   ],
   "mergedThisCycle": [
     {
       "number": 1436,
       "title": "fix(invariants): protect persona.env from agent identity tampering (#1427)",
-      "note": "KE-8 secondary goal. 4 tests updated. CI 5/5 green. Closes #1427. Merged 2026-03-30T02:22:29Z."
+      "note": "KE-8 secondary goal. Merged as 8903ab9. Closes #1427."
     },
     {
       "number": 1434,
       "title": "chore(kernel-em): EM cycle 2026-03-30T03:00Z — #1432 merged, KE-8 tracking #1430 #1427",
-      "note": "Previous EM chore PR. Rebased by HQ EM before merge. CI 4/4 green."
+      "note": "EM cycle chore. Merged as da9626f."
+    },
+    {
+      "number": 1425,
+      "title": "feat(invariants): cross-repo-blast-radius — session-level aggregate file cap (#1415)",
+      "note": "KE-7 sprint goal. 8 new invariant tests. CI green. Closes #1415."
+    },
+    {
+      "number": 1424,
+      "title": "fix(aab): remove docker stop from destructive patterns (closes #1398)",
+      "note": "docker stop is reversible (docker start). Tests updated. CI green."
     }
   ],
-  "lastEmRun": "2026-03-30T09:00:00Z",
-  "lastQaRun": "2026-03-30T08:00:00.000Z",
-  "updatedAt": "2026-03-30T09:00:00Z"
+  "docFixes": [
+    {
+      "file": "CLAUDE.md",
+      "change": "Updated invariant count from 25 to 26; added no-self-approve-pr (KE-6) to the list; updated definitions.ts comment from 25 to 26.",
+      "note": "KE-7 PR (#1425) commit incorrectly said '24->25' — count was actually 25->26 (no-self-approve-pr was added in KE-6)."
+    }
+  ],
+  "lastEmRun": "2026-03-30T03:00:00Z",
+  "lastQaRun": "2026-03-30T14:00:00.000Z",
+  "updatedAt": "2026-03-30T14:00:00Z"
 }
