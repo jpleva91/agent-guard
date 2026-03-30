@@ -1,68 +1,44 @@
 {
   "squad": "kernel",
   "sprint": {
-    "goal": "KE-8: Correctness — #1430 claude-hook stderr blocking + #1427 persona.env identity protection",
-    "issues": [
-      1430,
-      1427
-    ],
-    "priorSprint": "KE-7: cross-repo-blast-radius (#1415 merged) + octi-pulpo policy (#1410 closed) — COMPLETE"
+    "goal": "KE-9: Security maintenance + new governance invariant design (#1449 security deps, #1384 browser governance, #1385 irreversible action detection)",
+    "issues": [1449, 1384, 1385],
+    "priorSprint": "KE-8 COMPLETE: #1427 closed (PR #1436, 2026-03-30T02:22Z), #1430 closed (PR #1448, 2026-03-30T12:10Z)"
   },
   "assignments": {
     "senior": {
-      "issue": 1430,
-      "title": "fix: claude-hook allow-path messages must not write to stderr",
-      "status": "pr-open",
-      "claimedAt": "2026-03-30T03:00:00Z",
-      "pr": 1448,
-      "note": "PR #1448 opened (fix/claude-hook-allow-path-stderr-1430). Removes all allow-path stderr writes. Monitor mode ⚠ moved to stdout additionalContext. 3 new tests assert zero stderr on git commit/push/gh pr create. 953/953 tests passing."
+      "issue": 1449,
+      "title": "chore: triage Dependabot security alerts (path-to-regexp x2, brace-expansion)",
+      "status": "unassigned",
+      "note": "P2 security. path-to-regexp ReDoS HIGH (transitive via commander/express). brace-expansion DoS MEDIUM. Update transitive deps. Check if pnpm overrides or direct dep upgrades are needed."
     },
     "secondary": {
-      "issue": 1427,
-      "title": "[dogfood] automated agent self-modifies persona.env to change governance identity",
-      "status": "closed",
-      "claimedAt": "2026-03-30T00:15:03Z",
-      "pr": 1436,
-      "note": "PR #1436 merged (8903ab9). Issue #1427 closed. No further action needed."
+      "issue": 1384,
+      "title": "feat: browser governance invariants — scope, state, and pacing for browser agents",
+      "status": "unassigned",
+      "note": "Sprint-labeled feature. Design work: what invariant violations fire for browser agent over-reach (scope), stateful navigation (state), and timing (pacing). Coordinate with kernel architect."
     }
   },
   "blockers": [],
   "prQueue": {
-    "open": 2,
-    "reviewed": 2,
-    "mergeable": 1,
-    "prs": [
-      {
-        "number": 1448,
-        "title": "fix(claude-hook): allow-path must not write to stderr (#1430)",
-        "author": "kernel-sr",
-        "status": "OPEN",
-        "note": "KE-8 P1. Removes all allow-path stderr writes. 3 new tests (zero-stderr on git commit/push/gh pr create). 4/4 CI green. Closes #1430. QA-reviewed: coverage adequate.",
-        "qaReview": "PASS — 3 targeted tests assert zero stderr on allow-paths. Test strategy appropriate for the fix."
-      },
-      {
-        "number": 1447,
-        "title": "chore(kernel-em): EM cycle 2026-03-30T09:00Z — #1427 closed, #1430 escalated to director",
-        "author": "kernel-em",
-        "status": "OPEN",
-        "note": "EM cycle chore. State files only, no code changes. 4/4 CI green. Ready to merge.",
-        "qaReview": "PASS — state-only chore, no test coverage required."
-      }
-    ]
+    "open": 0,
+    "reviewed": 0,
+    "mergeable": 0,
+    "prs": []
   },
   "health": "green",
-  "healthReason": "KE-8 near-complete. #1436 merged (closes #1427). #1448 open (closes #1430) — 4/4 CI green, 3 targeted tests pass. 4649/4649 tests passing. No regressions. Sprint goal 2/2 in final state.",
+  "healthReason": "KE-8 COMPLETE. #1430 closed (PR #1448 merged 12:10Z). #1427 closed (prior cycle). 0 open kernel PRs. 4649/4649 tests passing. No escalations. KE-9 sprint starting.",
   "testHealth": {
     "total": 4649,
     "passed": 4649,
     "failed": 0,
     "packages": 18,
-    "lastRun": "2026-03-30T14:00:00.000Z",
+    "lastRun": "2026-03-30T06:14:00.000Z",
     "status": "all_passing",
     "breakdown": {
       "kernel": 935,
       "agentguard-cli": 953,
-      "invariants": 633,
+      "invariants": 624,
       "policy": 483,
       "adapters": 299,
       "storage": 247,
@@ -79,50 +55,22 @@
       "agentguard-mcp": 24,
       "scheduler": 34
     },
-    "note": "Total corrected (previous 4639 was miscalculated; breakdown always summed to 4649). PR #1448 (+3 zero-stderr tests). All 4649 passing. Duration: ~9.8s. No regressions vs prior run."
+    "note": "PR #1448 adds 3 new zero-stderr assertions in cli-claude-hook.test.ts (agentguard-cli: 950→953). Count corrected from prior stale 4636 — QA cycle confirmed 4649."
   },
-  "coverageGaps": [
-    {
-      "issue": 1427,
-      "description": "PR #1436 open — tests updated (4 flipped holds:true→false, append variant added). Coverage gap closed.",
-      "commentUrl": "https://github.com/AgentGuardHQ/agentguard/issues/1427#issuecomment-4151511847"
-    },
-    {
-      "issue": 1430,
-      "description": "CLOSED — PR #1448 adds 3 tests: zero stderr on git commit / git push / gh pr create allow paths.",
-      "commentUrl": "https://github.com/AgentGuardHQ/agentguard/pull/1448"
-    }
-  ],
+  "coverageGaps": [],
   "mergedThisCycle": [
     {
-      "number": 1436,
-      "title": "fix(invariants): protect persona.env from agent identity tampering (#1427)",
-      "note": "KE-8 secondary goal. Merged as 8903ab9. Closes #1427."
+      "number": 1448,
+      "title": "fix(claude-hook): allow-path must not write to stderr (#1430)",
+      "note": "KE-8 primary goal. 3 new tests. CI 4/4 green (post-rebase). Rebased by kernel EM — branch was 5 commits behind main. Closes #1430. Merged 2026-03-30T12:10Z."
     },
     {
-      "number": 1434,
-      "title": "chore(kernel-em): EM cycle 2026-03-30T03:00Z — #1432 merged, KE-8 tracking #1430 #1427",
-      "note": "EM cycle chore. Merged as da9626f."
-    },
-    {
-      "number": 1425,
-      "title": "feat(invariants): cross-repo-blast-radius — session-level aggregate file cap (#1415)",
-      "note": "KE-7 sprint goal. 8 new invariant tests. CI green. Closes #1415."
-    },
-    {
-      "number": 1424,
-      "title": "fix(aab): remove docker stop from destructive patterns (closes #1398)",
-      "note": "docker stop is reversible (docker start). Tests updated. CI green."
+      "number": 1453,
+      "title": "docs: sync invariant count to 26 across all documentation",
+      "note": "Documentation only. 12 files updated. CI 4/4 green. Merged 2026-03-30T12:10Z."
     }
   ],
-  "docFixes": [
-    {
-      "file": "CLAUDE.md",
-      "change": "Updated invariant count from 25 to 26; added no-self-approve-pr (KE-6) to the list; updated definitions.ts comment from 25 to 26.",
-      "note": "KE-7 PR (#1425) commit incorrectly said '24->25' — count was actually 25->26 (no-self-approve-pr was added in KE-6)."
-    }
-  ],
-  "lastEmRun": "2026-03-30T03:00:00Z",
-  "lastQaRun": "2026-03-30T14:00:00.000Z",
-  "updatedAt": "2026-03-30T14:00:00Z"
+  "lastEmRun": "2026-03-30T12:10:00Z",
+  "lastQaRun": "2026-03-30T06:14:00.000Z",
+  "updatedAt": "2026-03-30T12:10:00Z"
 }
