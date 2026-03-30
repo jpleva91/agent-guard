@@ -3,11 +3,14 @@ package hook
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/AgentGuardHQ/agentguard/go/internal/action"
+	"github.com/AgentGuardHQ/agentguard/go/internal/confidence"
 	"github.com/AgentGuardHQ/agentguard/go/internal/config"
 	"github.com/AgentGuardHQ/agentguard/go/internal/engine"
 	"github.com/AgentGuardHQ/agentguard/go/internal/invariant"
+	"github.com/AgentGuardHQ/agentguard/go/internal/monitor"
 )
 
 // readOnlyTools are tools that cannot mutate state.
@@ -21,6 +24,10 @@ var readOnlyTools = map[string]bool{
 	"WebSearch":   true,
 	"WebFetch":    true,
 }
+
+// pauseSeverityThreshold is the minimum effective severity that triggers a PAUSE
+// prompt in guide/enforce modes. Actions below this threshold pass through.
+const pauseSeverityThreshold = 4
 
 // Handler evaluates hook requests against loaded policies and invariants.
 type Handler struct {
@@ -115,6 +122,47 @@ func (h *Handler) Handle(input HookInput) HookResponse {
 
 	// Evaluate against policies
 	result := engine.Evaluate(ctx, h.policies, &engine.EvalOptions{DefaultDeny: defaultDeny})
+
+	// Confidence scoring
+	retryKey := fmt.Sprintf("%s:%s", ctx.Action, ctx.Target)
+	retryCount := GetRetryCount(input.SessionID, retryKey)
+
+	conf := confidence.Compute(confidence.Input{
+		ActionType:      ctx.Action,
+		RetryCount:      retryCount,
+		EscalationLevel: monitor.Normal,
+		FilesAffected:   ctx.FilesAffected,
+		MaxBlastRadius:  50,
+	})
+
+	baseSeverity := result.Severity
+	boost := confidence.SeverityBoost(conf.Score, 3)
+	effSeverity := confidence.EffectiveSeverity(baseSeverity, boost)
+
+	// Confidence-gated PAUSE — trigger for allowed-but-risky actions in guide/enforce modes.
+	// Denied actions skip PAUSE and flow to enforcement mode routing below.
+	// Read-only tools and actions with no severity boost skip PAUSE (no risk signal).
+	if result.Allowed && boost > 0 && effSeverity >= pauseSeverityThreshold &&
+		!readOnlyTools[input.Tool] && (h.mode == "guide" || h.mode == "enforce") {
+		pauseResult := RenderPauseAndWait(PausePrompt{
+			ActionID:   "", // HookInput does not carry a tool-use ID
+			Action:     fmt.Sprintf("%s %s", ctx.Action, ctx.Target),
+			Confidence: conf.Score,
+			Breakdown:  conf.Breakdown,
+			Reason:     fmt.Sprintf("Low confidence (%.2f) on severity %d action", conf.Score, baseSeverity),
+			Timeout:    5 * time.Minute,
+		})
+
+		if !pauseResult.Approved {
+			reason := fmt.Sprintf("PAUSE denied by %s — confidence %.2f, effective severity %d",
+				pauseResult.ResolvedBy, conf.Score, effSeverity)
+			if pauseResult.TimedOut {
+				reason = fmt.Sprintf("PAUSE timed out — confidence %.2f, effective severity %d", conf.Score, effSeverity)
+			}
+			return HookResponse{Decision: "deny", Reason: reason}
+		}
+		return HookResponse{Decision: "allow", Reason: fmt.Sprintf("PAUSE approved by %s", pauseResult.ResolvedBy)}
+	}
 
 	// Enforcement mode routing
 	if !result.Allowed {
