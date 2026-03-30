@@ -16,9 +16,10 @@
     "senior": {
       "agent": "copilot-cli:sonnet:studio:senior",
       "issue": "workspace#273-telemetry-e2e-gate",
-      "status": "dispatched",
+      "status": "completed",
       "dispatchedAt": "2026-03-30T09:00:00Z",
-      "summary": "Verify telemetry pipeline E2E: trigger governance event → check SQLite → check client logs → check cloud ingestion → confirm dashboard shows event. April 10 hard gate. Previous: completed workspace#272 agent performance page — cloud#532 open (awaiting human review)."
+      "completedAt": "2026-03-30T10:45:00Z",
+      "summary": "Telemetry E2E verified 2026-03-30. Cloud pipeline HEALTHY (372k events, latest 10:28 UTC today). 3 bugs filed: agentguard#1476 (better-sqlite3 bindings broken — rebuilt), agentguard#1477 (telemetry.agentguard.dev unreachable default URL — P1), agentguard#1478 (Go fast-path skips cloud telemetry — P2). Dashboard API wired correctly. Deny events confirmed in cloud (10k denied, 209 PolicyDenied). Human action required: fix #1477 before new installs lose telemetry."
     }
   },
   "blockers": [
@@ -99,10 +100,10 @@
     {
       "issue": 273,
       "repo": "AgentGuardHQ/agentguard-workspace",
-      "title": "Telemetry E2E gate — verify live governance events April 10",
+      "title": "Telemetry E2E gate — VERIFIED 2026-03-30, 2 bugs need human action",
       "deadline": "2026-04-10",
-      "priority": "P0",
-      "action": "Studio senior dispatched to verify (workspace#273). Human must confirm results and take action if any step fails. Empty dashboard during demo = worst case."
+      "priority": "P1",
+      "action": "Pipeline HEALTHY but 2 bugs found: (1) agentguard#1477 — telemetry.agentguard.dev default URL broken, silent event loss for users without .env override — fix default URL in claude-hook.ts before next release. (2) agentguard#1476 — better-sqlite3 bindings missing from global install — rebuilt on this box but will recur. agentguard#1478 (Go fast-path gap) is P2/acceptable for demo. Dashboard shows 372k events, deny flow confirmed."
     },
     {
       "issues": [240, 241, 242, 243, 244],
@@ -172,10 +173,15 @@
     { "pr": 271, "title": "chore(squad): EM state update — shellforge run 7 (2026-03-30)" },
     { "pr": 275, "title": "ops(qa-conductor): RED day 5 — swarm non-operational, 07:00 UTC" }
   ],
+  "issuesFiledThisCycle": [
+    { "issue": 1476, "repo": "AgentGuardHQ/agentguard", "title": "bug(telemetry): better-sqlite3 native bindings missing from global pnpm install", "priority": "P1" },
+    { "issue": 1477, "repo": "AgentGuardHQ/agentguard", "title": "bug(telemetry): telemetry.agentguard.dev unreachable default URL — silent event loss", "priority": "P1" },
+    { "issue": 1478, "repo": "AgentGuardHQ/agentguard", "title": "feat(telemetry): Go fast-path skips cloud telemetry — allow decisions invisible", "priority": "P2" }
+  ],
   "closedThisCycle": [],
   "openPRsThisCycle": [
     { "pr": 532, "repo": "AgentGuardHQ/agentguard-cloud", "title": "feat(dashboard): agent fleet overview page — wires /v1/agents/performance", "closes": "workspace#272", "status": "awaiting-review" },
     { "pr": 269, "repo": "AgentGuardHQ/agentguard-workspace", "title": "feat(swarm): add 5 new agents — rebaser, release-notes, dx-smoke, activation-monitor, onboarding-bot", "status": "org-chart-fix-pushed-awaiting-green" }
   ],
-  "updatedAt": "2026-03-30T09:00:00Z"
+  "updatedAt": "2026-03-30T10:45:00Z"
 }
