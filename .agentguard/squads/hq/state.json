@@ -1,35 +1,44 @@
 {
   "squad": "hq",
   "sprint": {
-    "goal": "Validate Go kernel\u2192Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 SHIPPED. KE-8 COMPLETE. Version sync. ShellForge coordination.",
+    "goal": "Validate Go kernel→Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 SHIPPED. KE-8 COMPLETE. Version sync. ShellForge coordination.",
     "issues": [
       1402,
       1403,
       1431,
       1449,
-      1452
+      1452,
+      1462
     ]
   },
   "assignments": {
     "human-jpleva91": {
-      "task": "P0 URGENT (cycle 10): (1) Run server/deploy.sh on jared box (#1402). (2) Kill 26 zombie vitest processes (~3.3GB RAM per #1452): ps aux | grep 'cloud-qa-257589|cloud-sr-1428111|tier-c-copilot-implementer-1127453' | grep vitest | awk '{print $2}' | xargs kill. (3) Prune stuck worktrees: git worktree prune && rm -rf .worktrees/marketing-em-3815251 .worktrees/octi-pulpo-sr-3847600 .worktrees/octi-pulpo-qa-3847601",
+      "task": "P0 URGENT (cycle 11): (1) Run server/deploy.sh on jared box (#1402). (2) Kill 26 zombie vitest processes (~3.3GB RAM per #1452): ps aux | grep 'cloud-qa-257589|cloud-sr-1428111|tier-c-copilot-implementer-1127453' | grep vitest | awk '{print $2}' | xargs kill. (3) Prune stuck worktrees: git worktree prune && rm -rf .worktrees/marketing-em-3815251 .worktrees/octi-pulpo-sr-3847600 .worktrees/octi-pulpo-qa-3847601. (4) Governance: read issue #1462 (5 HIGH items from 65,830 session analysis).",
       "priority": "P0"
     },
     "director": {
-      "task": "P0: #1431 codex budget exhausted until Apr 3 (cycle 5) \u2014 decide: purchase credits OR disable codex agents. P0: Cloud squad 74.3% systemic exit=1 failures (beyond codex per #1452) \u2014 investigate agentguard-cloud policy/config. P2: ShellForge squad owner (#1362-#1367, 7th cycle). P2: #1449 dependabot triage. P2: #1177 pr-merger-agent policy gap (234 failures).",
+      "task": "P0: #1431 codex budget exhausted until Apr 3 (cycle 6) — decide: purchase credits OR disable codex agents. P0: Cloud squad 74.3% systemic exit=1 failures (9th cycle 2.10.1 vs 2.10.3) — investigate agentguard-cloud policy/config. P2: ShellForge squad owner (#1362-#1367, 8th cycle). P2: #1449 dependabot triage (1 high severity). P2: #1177 pr-merger-agent policy gap (234 failures).",
       "priority": "P0"
     },
     "cloud-squad": {
-      "task": "P0 (8th cycle \u2014 CRITICAL): Upgrade agentguard-cloud to 2.10.3 immediately. Add octi-pulpo allow rule to agentguard-cloud/agentguard.yaml. Investigate systemic exit=1 failures (cloud-sr 96.2%, cloud-em 73.7% per #1452). Upgrade may fix policy version mismatch causing failures.",
+      "task": "P0 (9th cycle — CRITICAL): Upgrade agentguard-cloud to 2.10.3 immediately. Add octi-pulpo allow rule to agentguard-cloud/agentguard.yaml. Investigate systemic exit=1 failures (cloud-sr 96.2%, cloud-em 73.7% per #1452). Upgrade likely fixes policy version mismatch causing failures.",
       "priority": "P0"
     },
     "kernel-squad": {
-      "task": "P2: Fix #1177 pr-merger-agent policy gap (github.pr.* not in default allow-list, 234 lifetime failures). P3: Implement worktree cleanup that force-kills child vitest processes before removal (#1452).",
-      "priority": "P2"
+      "task": "P1 (from #1462): (a) Fix gh CLI false positive in destructive command scanner — add allowlist or scope to bare shell. (b) Investigate no-secret-exposure sev5 dormancy across 65,830 sessions. (c) Fix session-to-agent attribution join (team compliance 0/0). (d) Add explicit git.reset deny rule + npm.publish explicit rule to agentguard.yaml. P2: Fix #1177 pr-merger-agent policy gap. P3: Implement worktree cleanup that force-kills child vitest processes before removal.",
+      "priority": "P1"
+    },
+    "hq-ops": {
+      "task": "P1 (from #1462): Add AGENTGUARD_AGENT_NAME export to scripts/write-persona.sh output and all agent schedule configs. 99.9% sessions lack identity — team observability completely dark.",
+      "priority": "P1"
     },
     "ops": {
       "task": "#1403: readybench QA swarm non-operational 5+ days. Depends on #1402 resolution.",
       "priority": "P1"
+    },
+    "marketing-em": {
+      "task": "PR #1455 still CONFLICTING — please rebase on main. 2nd request this cycle.",
+      "priority": "P2"
     }
   },
   "resolved": {
@@ -69,48 +78,55 @@
       "resolvedAt": "2026-03-30T00:00:00.000Z",
       "note": "PR #1425 merged."
     },
-    "analytics-version-drift-severe": {
-      "task": "Analytics version drift corrected to 2.10.2 (was misread as 2.7.3)",
-      "priority": "P1",
-      "resolvedAt": "2026-03-30T02:40:00.000Z",
-      "note": "CORRECTION: analytics is 2.10.2, only 1 patch behind (P2)."
-    },
     "persona-env-protection-1427": {
-      "task": "#1427 \u2014 persona.env not protected by no-governance-self-modification",
+      "task": "#1427 — persona.env not protected by no-governance-self-modification",
       "priority": "P1",
       "resolvedAt": "2026-03-30T09:00:00.000Z",
       "note": "PR #1436 merged. KE-8 item 1 of 2 complete."
     },
     "hook-stderr-1430": {
-      "task": "#1430 \u2014 claude-hook writes to stderr on ALLOW, blocks git commits on readybench",
+      "task": "#1430 — claude-hook writes to stderr on ALLOW, blocks git commits on readybench",
       "priority": "P1",
       "resolvedAt": "2026-03-30T12:10:00.000Z",
       "note": "PR #1448 merged. fix(claude-hook): allow-path must not write to stderr. KE-8 COMPLETE."
+    },
+    "stale-pr-1461": {
+      "task": "PR #1461 HQ EM 18:00Z cycle — CONFLICTING, superseded",
+      "priority": "P2",
+      "resolvedAt": "2026-03-30T21:00:00.000Z",
+      "note": "Closed by HQ EM 21:00Z cycle. New EM cycle PR created."
     }
   },
   "blockers": [
     {
       "issue": 1402,
-      "description": "P0: Worker pool dead on jared box. 10+ cycles, swarm frozen. Human must run server/deploy.sh.",
+      "description": "P0: Worker pool dead on jared box. 11+ cycles, swarm frozen. Human must run server/deploy.sh.",
       "escalatedTo": "human (jpleva91)",
       "firstSeen": "2026-03-29T19:00:00.000Z",
-      "escalatedAt": "2026-03-30T15:00:00.000Z",
-      "escalationCount": 10
+      "escalatedAt": "2026-03-30T21:00:00.000Z",
+      "escalationCount": 11
     },
     {
       "issue": 1431,
-      "description": "P0: Codex budget exhausted until Apr 3. 25+ agents offline. Director decision still pending.",
+      "description": "P0: Codex budget exhausted until Apr 3. 25+ agents offline. Director decision still pending. Auto-resolves 2026-04-03T02:25Z.",
       "escalatedTo": "human + director",
       "firstSeen": "2026-03-30T00:02:00.000Z",
-      "escalatedAt": "2026-03-30T15:00:00.000Z",
-      "escalationCount": 5
+      "escalatedAt": "2026-03-30T21:00:00.000Z",
+      "escalationCount": 6
     },
     {
       "issue": 1452,
-      "description": "P0 (from 06:00 UTC): 69.5% agent failure rate, 26 orphaned vitest processes (~3.3GB RAM), cloud-squad 74.3% exit=1 systemic failures, 3 stuck worktrees.",
-      "escalatedTo": "human (zombie kill + worktree prune) + director (cloud systemic)",
+      "description": "P0 (cycle 2): 69.5% agent failure rate, 26 orphaned vitest processes (~3.3GB RAM), cloud-squad 74.3% exit=1 systemic failures, 3 stuck worktrees.",
+      "escalatedTo": "human (zombie kill + worktree prune) + director (cloud systemic) + cloud-squad (upgrade 2.10.3)",
       "firstSeen": "2026-03-30T06:06:00.000Z",
-      "escalatedAt": "2026-03-30T15:00:00.000Z",
+      "escalatedAt": "2026-03-30T21:00:00.000Z",
+      "escalationCount": 2
+    },
+    {
+      "issue": 1462,
+      "description": "P1 (NEW): Governance report reveals 5 HIGH systemic issues: agent identity 99.9% missing, gh CLI false positive, team compliance broken, no-secret-exposure dormant, policy gaps.",
+      "escalatedTo": "kernel-squad + hq-ops",
+      "firstSeen": "2026-03-30T21:00:00.000Z",
       "escalationCount": 1
     },
     {
@@ -131,8 +147,8 @@
     "open": 1,
     "reviewed": 0,
     "mergeable": 0,
-    "mergedThisCycle": 3,
-    "notes": "Merged: #1456 (docs sync 26 invariants), #1454 (site-em), #1457 (kernel-em KE-8 complete). PR #1455 (marketing-em): DIRTY \u2014 commented requesting rebase."
+    "closedThisCycle": 1,
+    "notes": "Closed #1461 (18:00Z HQ EM, CONFLICTING, superseded). PR #1455 (marketing-em): still CONFLICTING — 2nd rebase request. New cycle PR pending creation."
   },
-  "updatedAt": "2026-03-30T15:00:00.000Z"
+  "updatedAt": "2026-03-30T21:00:00.000Z"
 }

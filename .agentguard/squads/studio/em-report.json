@@ -1,29 +1,37 @@
 {
-  "cycle": "2026-03-30T05:00Z",
-  "agent": "claude-code:sonnet:studio:em",
+  "cycle": "2026-03-30T09:00Z",
+  "agent": "claude-code:opus:studio:em",
   "health": "yellow",
-  "healthReason": "Copilot budget exhaustion P1 auto-resolves April 1. QA agents broken P1 auto-resolves April 1. Kernel #1306 default-deny UNASSIGNED — 11 consecutive cycles, 5 days to deadline. Fundraise cluster #240-244 unowned with 36 days to May 6. Worker pool dead — thundering herd risk if not resolved before April 1.",
-  "summary": "Hold-cycle — sprint blocked until April 1 budget reset. Merged 2 PRs this cycle: #265 (verify-copilot worktree fix, closes #1342) and #262 (prev EM state). Swarm health green (telemetry 2.9h ago). Kernel squad on KE-8 (dogfood correctness: hook stderr + persona.env). PR queue clear — 7-item April 1 dispatch queue ready. Critical: deploy.sh MUST run before April 1 to prevent thundering herd.",
+  "healthReason": "QA conductor RED day 5+ (P1, #274) — 0/18 QA agents operational, all conference PRs unreviewed. Kernel #1306 default-deny UNASSIGNED 12 consecutive cycles, 5 days to April 4 deadline. Worker pool dead (P0, #1402) — thundering herd risk hours before April 1 budget reset. Conference telemetry E2E unverified (P0, #273). 2 PRs pending merge (cloud#532 needs reviewer, workspace#269 CI rerunning).",
+  "summary": "Active cycle — triaged 2 new conference-critical issues (#273 telemetry E2E, #274 QA conductor RED), merged 2 PRs (#271 shellforge state, #275 QA ops report), fixed PR #269 org-chart CI failure (pushed updated org chart, awaiting green), dispatched senior to telemetry E2E verification (#273). Cloud PR #532 (agent fleet overview, workspace#272) awaiting human review — all critical checks green. April 1 dispatch queue loaded (7 items). Worker pool thundering herd risk escalating — hours remain before April 1.",
   "actionsThisCycle": [
     {
-      "action": "Merged PR #265",
-      "detail": "fix(verify-copilot): fallback workspace when run from worktree — closes #1342. Script was giving false negatives when run from worktree context. Added schedule.json-existence fallback for workspace resolution."
+      "action": "Merged PR #271",
+      "detail": "chore(squad): EM state update — shellforge run 7 (2026-03-30). Shellforge squad health RED → YELLOW. Checks passing."
     },
     {
-      "action": "Merged PR #262",
-      "detail": "chore(studio-em): EM cycle 2026-03-30T02:00Z — quota fix merged, April 1 queue loaded. Previous cycle state PR closed and merged."
+      "action": "Merged PR #275",
+      "detail": "ops(qa-conductor): RED day 5 — swarm non-operational, 07:00 UTC. 23:00 UTC conductor miss self-healed. Ops record committed."
+    },
+    {
+      "action": "Fixed PR #269 CI failure",
+      "detail": "check-org-chart was failing because server/schedule.json changed (5 new agents) without updating docs/swarm-org-chart.md. Created worktree for branch agent/studio-sr-20260330-023702, ran scripts/gen-org-chart.sh --update-docs (48 lines changed), committed and pushed. CI rerunning. Auto-merge disabled in repo — needs manual merge when green."
+    },
+    {
+      "action": "Triaged issue #273",
+      "detail": "Telemetry E2E gate — verify live governance events flow before April 10. Classified P0 conference-critical. Dispatched studio-senior to run 5-step verification. April 10 hard gate."
+    },
+    {
+      "action": "Triaged issue #274",
+      "detail": "QA conductor RED day 5+. 0/18 QA agents operational. Classified P0. Root fix blocked on human action (agentguard#1402 — readybench worker). Recommended Option C: manual PR gate for conference-labeled PRs today (1h), parallel root cause investigation. Escalated to human."
+    },
+    {
+      "action": "Dispatched senior to workspace#273",
+      "detail": "Senior previously completed workspace#272 (agent fleet overview page — cloud#532 open awaiting review). New assignment: telemetry E2E verification (#273). 5 verification steps: trigger governance event → check SQLite → check telemetry client logs → check cloud ingestion → confirm dashboard. April 10 deadline."
     },
     {
       "action": "Swarm health check",
-      "detail": "Script checked 0 agents (135 skipped — log dir not present on this host). Telemetry pipeline healthy (latest event 2.9h ago). Copilot event pipeline: 0 events (expected — circuit breaker from quota exhaustion, auto-resolves April 1). All agents healthy."
-    },
-    {
-      "action": "Cross-squad check",
-      "detail": "Kernel=yellow, KE-8 active (hook stderr blocking #1430 + persona.env identity protection #1427). KE-8 is dogfood correctness sprint. #1306 still unassigned (11th cycle). No new studio issues found."
-    },
-    {
-      "action": "PR queue cleared",
-      "detail": "No open PRs remain. Queue is clear heading into April 1 dispatch."
+      "detail": "Checked 101 agents (34 skipped — log dir not present on this host). Telemetry pipeline: healthy (latest event 2.1h ago). Copilot event pipeline: 0 events (expected — circuit breaker from quota exhaustion). All agents healthy."
     }
   ],
   "sprintStatus": {
@@ -31,11 +39,16 @@
     "blockedUntil": "2026-04-01",
     "blockedReason": "Copilot budget reset April 1 — 5 items queued for dispatch",
     "completedThisSprint": [
-      "fix(swarm): real CLI quota metrics (PR #259, closes #201) — three-layer quota tracking",
-      "fix(verify-copilot): worktree workspace detection (PR #265, closes #1342)"
+      "fix(swarm): real CLI quota metrics (PR #259, closes #201)",
+      "fix(verify-copilot): worktree workspace detection (PR #265, closes #1342)",
+      "feat(dashboard): agent fleet overview page (cloud#532 open, closes workspace#272)",
+      "chore(org-chart): regenerate with 5 new agents (pushed to PR #269 branch)"
     ],
     "remaining": [
-      "April 1 dispatch: Guitar Jam #165-169 (copilot-senior), market scout #203 (studio-junior), wizard validation #233 (QA agent)"
+      "April 1 dispatch: Guitar Jam #165-169 (copilot-senior), market scout #203 (studio-junior), wizard validation #233 (QA agent)",
+      "Telemetry E2E verification #273 (senior dispatched this cycle)",
+      "Manual merge PR #269 once CI green",
+      "Human review cloud#532"
     ],
     "april1DispatchReady": [
       "workspace#165 — guitar-jam: scaffold repo + GitHub Pages (copilot)",
@@ -49,10 +62,11 @@
   },
   "swarmHealth": {
     "script": "healthy",
-    "telemetry": "healthy (latest event 2.9h ago)",
+    "telemetry": "healthy (latest event 2.1h ago)",
     "copilotEvents": "0 (expected — circuit breaker from quota exhaustion, auto-resolves April 1)",
     "unhealthyAgents": [],
-    "note": "Log dir not present on this host — 135 agents skipped. Health inferred from telemetry pipeline."
+    "qaCondutor": "RED — 0/18 QA agents operational, day 5+ (#274, #1403)",
+    "note": "Log dir not present on this host — 34 agents skipped. Health inferred from telemetry pipeline."
   },
   "crossSquadAlerts": [
     {
@@ -60,33 +74,50 @@
       "sprint": "KE-8",
       "goal": "Dogfood correctness — hook stderr blocking (#1430) + persona.env identity protection (#1427)",
       "health": "yellow",
-      "updatedAt": "2026-03-30T02:40:00Z"
+      "updatedAt": "2026-03-30T07:00:00Z"
     },
     {
       "squad": "kernel",
       "issue": 1306,
-      "title": "feat(v3.0-gate): default-deny enforcement — 11TH CYCLE UNASSIGNED",
+      "title": "feat(v3.0-gate): default-deny enforcement — 12TH CYCLE UNASSIGNED",
       "deadline": "2026-04-04",
       "daysRemaining": 5,
       "urgency": "P0",
-      "action": "HUMAN MUST ASSIGN TODAY — 11 consecutive EM cycles. Conference demo and v3.0 release both block on this."
+      "action": "HUMAN MUST ASSIGN TODAY — 12 consecutive EM cycles. Conference demo and v3.0 release both block on this."
+    },
+    {
+      "squad": "qa",
+      "issue": "agentguard#1403",
+      "title": "QA conductor RED day 5+ — 0/18 agents operational",
+      "urgency": "P1",
+      "action": "QA EM: verify circuit breaker recovers April 1 with budget reset. Implement manual gate on conference PRs in the interim."
+    },
+    {
+      "squad": "shellforge",
+      "health": "yellow (was red)",
+      "pr": "shellforge#89",
+      "title": "25 tests, closes #68 + #66",
+      "action": "Human: review and merge shellforge#89. CI pending."
     }
   ],
   "conferenceStatus": {
-    "daysRemaining": 36,
+    "daysRemaining": 37,
     "demoSegments": {
       "Install": "shipped",
       "Configure": "cloud#518 merged — wizard validation pending (#233, queued for April 1 QA agent dispatch)",
-      "Govern": "BLOCKED on kernel #1306 (P0, 11th cycle unassigned, 5 days to deadline)",
-      "Observe": "analytics data pending (#38 telemetry snapshot, #36 evidence pack Apr 30)",
+      "Govern": "BLOCKED on kernel #1306 (P0, 12th cycle unassigned, 5 days to deadline)",
+      "Observe": "BLOCKED on telemetry E2E verification (#273, senior dispatched) + analytics evidence pack (#36, Apr 30 deadline)",
       "Capture": "Phase 1 DONE (PR #1388); Phase 2 #233 validation dispatching April 1"
     },
     "criticalPath": [
-      { "deadline": "2026-04-01", "item": "Budget reset — dispatch Guitar Jam + wizard validation to agents", "status": "READY — dispatch queue loaded" },
-      { "deadline": "2026-04-01", "item": "server/deploy.sh on readybench — prevent thundering herd", "status": "UNASSIGNED — P0 HUMAN ACTION REQUIRED" },
-      { "deadline": "2026-04-04", "item": "kernel #1306 assignment + start", "status": "UNASSIGNED — 11th cycle" },
-      { "deadline": "2026-04-10", "item": "DPP dry run owner assigned", "status": "UNOWNED (#152)" },
-      { "deadline": "2026-04-17", "item": "Nix onboarding scheduled", "status": "UNSCHEDULED (#178)" }
+      { "deadline": "2026-04-01", "item": "server/deploy.sh on readybench — prevent thundering herd", "status": "UNASSIGNED — P0 HUMAN HOURS REMAINING" },
+      { "deadline": "2026-04-01", "item": "Budget reset — dispatch Guitar Jam + wizard validation + market scout", "status": "READY — dispatch queue loaded" },
+      { "deadline": "2026-04-04", "item": "kernel #1306 assignment + start", "status": "UNASSIGNED — 12th cycle, 5 days" },
+      { "deadline": "2026-04-05", "item": "QA conductor restored OR manual gate on conference PRs confirmed", "status": "ESCALATED — #274 filed, human action required" },
+      { "deadline": "2026-04-10", "item": "Telemetry E2E gate (#273) — senior dispatched to verify", "status": "IN PROGRESS — senior dispatched" },
+      { "deadline": "2026-04-10", "item": "DPP dry run owner assigned (#152)", "status": "UNOWNED" },
+      { "deadline": "2026-04-15", "item": "Dashboard live with real data (cloud#532 + workspace#272)", "status": "cloud#532 awaiting human review" },
+      { "deadline": "2026-04-17", "item": "Nix onboarding scheduled (#178)", "status": "UNSCHEDULED" }
     ]
   },
   "escalations": [
@@ -97,36 +128,70 @@
       "repo": "AgentGuardHQ/agentguard",
       "title": "Worker pool dead — run server/deploy.sh BEFORE April 1",
       "deadline": "2026-04-01",
-      "daysRemaining": 2,
-      "action": "4th consecutive cycle unassigned. Circuit breakers clear April 1. Dead worker pool + 60+ queued items = thundering herd. Run `server/deploy.sh` on readybench NOW."
+      "hoursRemaining": "~15",
+      "consecutiveCycles": 5,
+      "action": "5th consecutive cycle unassigned. Circuit breakers clear April 1. Dead pool + 60+ queued items = thundering herd. Run `server/deploy.sh` on readybench NOW. Hours, not days."
     },
     {
       "to": "HUMAN",
       "urgency": "P0",
       "issue": 1306,
       "repo": "AgentGuardHQ/agentguard",
-      "title": "feat(v3.0-gate): default-deny enforcement — 11TH CYCLE UNASSIGNED",
+      "title": "feat(v3.0-gate): default-deny enforcement — 12TH CYCLE UNASSIGNED",
       "deadline": "2026-04-04",
       "daysRemaining": 5,
-      "action": "Manually assign kernel #1306 to kernel senior TODAY. v3.0 release and conference demo both block on this. 11 consecutive EM cycles is critical-failure territory."
+      "action": "Manually assign kernel #1306 TODAY. Conference demo depends on v3.0 gate."
+    },
+    {
+      "to": "HUMAN",
+      "urgency": "P0",
+      "issue": 274,
+      "repo": "AgentGuardHQ/agentguard-workspace",
+      "title": "QA conductor RED day 5+ — implement manual gate TODAY",
+      "deadline": "2026-04-05",
+      "action": "Add PR template requiring manual smoke test sign-off for conference-labeled PRs. Takes 1h. Every unreviewed PR merged before May 6 is a demo risk. Option C: manual gate now + root cause parallel."
+    },
+    {
+      "to": "HUMAN",
+      "urgency": "P0",
+      "pr": 532,
+      "repo": "AgentGuardHQ/agentguard-cloud",
+      "title": "Review cloud#532 — agent fleet overview page (workspace#272 last unmet criterion)",
+      "action": "All builds pass, 4 Vercel previews green. This closes workspace#272 (conference success gate). Needs 1 reviewer."
     },
     {
       "to": "HUMAN",
       "urgency": "P0",
       "issues": [240, 241, 242, 243, 244],
       "repo": "AgentGuardHQ/agentguard-workspace",
-      "title": "Fundraise cluster — pitch deck, seed targets, DPP conversion, conference prep, 5-week plan",
-      "daysToConference": 36,
-      "action": "Review #240-244 and own each personally. Agents cannot drive this. 36 days to May 6."
+      "title": "Fundraise cluster — pitch deck, seed targets, DPP conversion — ALL UNOWNED",
+      "daysToConference": 37,
+      "action": "Review #240-244 and own each personally. 37 days to May 6."
     },
     {
       "to": "HUMAN",
       "urgency": "P0",
       "issue": 228,
       "repo": "AgentGuardHQ/agentguard-workspace",
-      "title": "[conference] Agent 365 vs AgentGuard Q&A brief — UNOWNED (10+ cycles)",
+      "title": "[conference] Agent 365 vs AgentGuard Q&A brief — UNOWNED 10+ cycles",
       "deadline": "2026-05-06",
-      "action": "LAST CALL — April 1 budget reset is the last dispatch window before conference crunch. Assign #228 today."
+      "action": "April 1 is the last realistic dispatch window. Assign #228 TODAY."
+    },
+    {
+      "to": "HUMAN",
+      "urgency": "P1",
+      "pr": 269,
+      "repo": "AgentGuardHQ/agentguard-workspace",
+      "title": "Merge PR #269 once CI green — 5 new agents ready",
+      "action": "Org chart fix pushed. When check-org-chart turns green, merge PR #269. Auto-merge disabled in repo."
+    },
+    {
+      "to": "HUMAN",
+      "urgency": "P1",
+      "pr": "shellforge#89",
+      "repo": "jpleva91/shellforge",
+      "title": "Review and merge shellforge#89 — 25 tests, closes #68 + #66",
+      "action": "Shellforge squad health improved RED → YELLOW. This PR closes 2 issues and completes the sprint goal."
     },
     {
       "to": "HUMAN",
@@ -134,7 +199,6 @@
       "issue": 152,
       "title": "DPP dry run needs owner — April 10 deadline",
       "deadline": "2026-04-10",
-      "daysRemaining": 11,
       "action": "Assign owner — 11 days remaining."
     },
     {
@@ -149,17 +213,17 @@
       "to": "HUMAN",
       "urgency": "P1",
       "issues": [245, 246, 247],
-      "title": "Marketing cluster — YouTube, conference abstracts, LinkedIn",
-      "action": "Route to marketing-em. Provide founder-voice narratives. RSA/AI Engineer abstract deadlines unknown — check immediately."
+      "title": "Marketing cluster — YouTube, RSA/AI Engineer abstracts, LinkedIn",
+      "action": "Route to marketing-em. Provide founder-voice narratives. RSA/AI Engineer deadlines unknown — check immediately."
     },
     {
       "to": "qa-em",
       "urgency": "P1",
-      "action": "April 1 (budget reset): retrigger qa-regression-analyzer and qa-test-architect. Dispatch wizard v2 validation (#233) immediately."
+      "action": "April 1 (budget reset): retrigger qa-regression-analyzer and qa-test-architect. Dispatch wizard v2 validation (#233) immediately. Implement manual gate on conference PRs (#274)."
     }
   ],
   "analyticsCoordination": {
-    "note": "No new data requests from studio this cycle. Conference-critical issues #36, #38, #39 remain open. Analytics EM should prioritize #36 evidence pack (Apr 30 deadline).",
+    "note": "No new data requests from studio this cycle. Conference-critical issues #36, #38, #39 remain open. Analytics EM should prioritize #36 evidence pack (Apr 30 deadline). Telemetry E2E verification (#273) may uncover data gaps — analytics team should be ready to respond.",
     "openRequests": {
       "39": "Per-agent API quota consumption — open",
       "38": "Production telemetry snapshot for May 6 narrative — open",
@@ -167,6 +231,6 @@
       "32": "Conference conversion baseline — open"
     }
   },
-  "dogfood": "No AgentGuard governance issues observed during this run.",
-  "updatedAt": "2026-03-30T05:00:00Z"
+  "dogfood": "No AgentGuard governance issues observed during this run. AgentGuard permitted all expected operations (git add, commit, worktree create/remove, gh pr view, gh pr merge).",
+  "updatedAt": "2026-03-30T09:00:00Z"
 }
