@@ -229,7 +229,7 @@ The kernel loop is the core of AgentGuard. Every agent action passes through it:
 1. Agent proposes action (Claude Code tool call → `RawAgentAction`)
 2. AAB normalizes intent (tool → action type, detect git/destructive commands)
 3. Policy evaluator matches rules (deny/allow with scopes, branches, limits)
-4. Invariant checker verifies system state (25 defaults)
+4. Invariant checker verifies system state (26 defaults)
 5. If allowed: execute via adapter (file/shell/git handlers)
 6. Emit lifecycle events: `ACTION_REQUESTED` → `ACTION_ALLOWED/DENIED` → `ACTION_EXECUTED/FAILED`
 7. Sink all events to SQLite for audit trail

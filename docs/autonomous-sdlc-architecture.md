@@ -728,7 +728,7 @@ CI
 |-----------|--------|----------|
 | Action type normalization (AAB) | Exists | `src/kernel/aab.ts` |
 | Policy evaluation | Exists | `src/policy/evaluator.ts` |
-| 24 invariant checks | Exists | `packages/invariants/src/definitions.ts` |
+| 26 invariant checks | Exists | `packages/invariants/src/definitions.ts` |
 | Escalation monitor (4 levels) | Exists | `src/kernel/monitor.ts` |
 | JSONL event persistence | Exists | `src/events/jsonl.ts` |
 | GovernanceDecisionRecord | Exists | `src/kernel/decisions/` |

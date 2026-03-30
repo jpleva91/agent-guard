@@ -47,7 +47,7 @@ action    emit PolicyDenied
 
 ### Invariant Monitoring
 
-Invariants are conditions that must always hold true. AgentGuard monitors these continuously, not just at action boundaries. There are 24 built-in invariants covering secrets exposure, force push, protected branches, package script injection, blast radius, test-before-push, lockfile integrity, CI/CD config modification, permission escalation, governance self-modification, container config modification, environment variable modification, network egress, destructive migrations, transitive effect analysis, IDE socket access, commit scope, script execution tracking, no-verify bypass, and more.
+Invariants are conditions that must always hold true. AgentGuard monitors these continuously, not just at action boundaries. There are 26 built-in invariants covering secrets exposure, force push, protected branches, package script injection, blast radius, test-before-push, lockfile integrity, CI/CD config modification, permission escalation, governance self-modification, container config modification, environment variable modification, network egress, destructive migrations, transitive effect analysis, IDE socket access, commit scope, script execution tracking, no-verify bypass, no-self-approve-pr, cross-repo-blast-radius, and more.
 
 **Example invariants:**
 - No secrets or credentials in committed files (`no-secret-exposure`)
@@ -209,7 +209,7 @@ AgentGuard is **implemented and operational**. The governed action kernel connec
 | Component | File | Status |
 |-----------|------|--------|
 | Invariant checker | `packages/invariants/src/checker.ts` | Complete |
-| 24 built-in invariants | `packages/invariants/src/definitions.ts` | Complete |
+| 26 built-in invariants | `packages/invariants/src/definitions.ts` | Complete |
 | Evidence pack generation | `agentguard/evidence/pack.ts` | Complete |
 
 ### Execution Adapters
@@ -282,7 +282,7 @@ packages/
 │   └── yaml-loader.ts         # YAML policy loader
 ├── invariants/src/
 │   ├── checker.ts             # Invariant evaluation engine
-│   └── definitions.ts         # 24 built-in invariants
+│   └── definitions.ts         # 26 built-in invariants
 ├── adapters/src/
 │   ├── file.ts                # File operations (fs)
 │   ├── shell.ts               # Shell execution (child_process)

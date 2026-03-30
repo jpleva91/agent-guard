@@ -36,7 +36,7 @@ The system has one architectural spine: the **canonical event model**. All syste
          │  1. ACTION_REQUESTED event                          │
          │  2. AAB normalizes intent                           │
          │  3. Policy evaluation (match → allow/deny)          │
-         │  4. Invariant checking (6 default invariants)       │
+         │  4. Invariant checking (26 default invariants)      │
          │  5. Evidence pack generation                        │
          │  6. If allowed: execute via adapter                 │
          │  7. ACTION_ALLOWED/DENIED + ACTION_EXECUTED/FAILED  │
@@ -79,7 +79,7 @@ Agent proposes action (RawAgentAction)
     │
     ▼ Engine.evaluate() → EngineDecision
     │   ├── Policy evaluator: match rules, check deny/allow
-    │   ├── Invariant checker: 6 defaults + custom invariants
+    │   ├── Invariant checker: 26 defaults + custom invariants
     │   └── Evidence pack: structured audit record
     │
     ▼ Monitor.process() → MonitorDecision

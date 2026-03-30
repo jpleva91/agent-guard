@@ -119,7 +119,7 @@ AAB normalization (Bash → shell.exec or git.push, Write → file.write, etc.)
   ↓
 Policy evaluation (match rules from agentguard.yaml)
   ↓
-Invariant checks (24 built-in safety checks)
+Invariant checks (26 built-in safety checks)
   ↓
 Decision: ALLOW or DENY
   ↓

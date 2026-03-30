@@ -51,7 +51,7 @@ packages/
 ├── core/          @red-codes/core — Shared utilities (types, actions, hash, execution-log)
 ├── events/        @red-codes/events — Canonical event model (schema, bus, store)
 ├── policy/        @red-codes/policy — Policy system (composer, evaluator, loaders, pack loader)
-├── invariants/    @red-codes/invariants — Invariant system (24 built-in definitions, checker)
+├── invariants/    @red-codes/invariants — Invariant system (26 built-in definitions, checker)
 ├── invariant-data-protection/ @red-codes/invariant-data-protection — Data protection invariant plugin
 ├── matchers/      @red-codes/matchers — Structured matchers (Aho-Corasick, globs, hash sets)
 ├── kernel/        @red-codes/kernel — Governed action kernel (orchestrate, normalize, decide, escalate)
