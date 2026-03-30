@@ -1414,7 +1414,9 @@ describe('no-governance-self-modification', () => {
   // persona.env defines driver, autonomy level, and agent name used in audit logs.
   // An agent changing DRIVER from 'claude' to 'human' can bypass AI-specific restrictions.
   // Fix: removed persona.env from OPERATIONAL_STATE_PATTERNS so the invariant protects it.
-  // The identity bootstrap script (scripts/write-persona.sh) runs before governed sessions start.
+  // Bootstrap safety guarantee: scripts/write-persona.sh runs before AgentGuard hooks are active
+  // (i.e., outside any governed session), so this invariant cannot fire during identity setup.
+  // Invariants only evaluate within governed sessions — bootstrap writes are architecturally exempt.
   it('does not hold when writing .agentguard/persona.env (identity tampering)', () => {
     const result = inv.check({ currentTarget: '.agentguard/persona.env' });
     expect(result.holds).toBe(false);
