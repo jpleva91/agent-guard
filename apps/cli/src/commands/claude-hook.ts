@@ -355,9 +355,8 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
         // commands (install/build) and read-only tools through so the agent can
         // self-bootstrap. All other actions remain blocked (fail-closed).
         if (isModuleNotFoundError(preErr) && isBootstrapSafeAction(data)) {
-          process.stderr.write(
-            `[agentguard] Bootstrap mode — kernel not built. Allowing bootstrap/read-only action.\n`
-          );
+          // Allow path — no stderr (any stderr output causes Claude Code to surface a
+          // blocking error even on exit 0). The allow context is injected via stdout. (#1430)
           emitBootstrapAllow();
           process.exit(0);
           return;
@@ -594,11 +593,10 @@ async function handlePreToolUse(
   let policyDefs: unknown[] = [];
   try {
     policyDefs = loadPolicyDefs(undefined, targetPath);
-  } catch (policyErr) {
-    // Policy loading failure is non-fatal — continue with no policy (fail-open)
-    process.stderr.write(
-      `agentguard: warning — no policy loaded (${policyErr instanceof Error ? policyErr.message : 'unknown error'}). All actions will be allowed.\n`
-    );
+  } catch {
+    // Policy loading failure is non-fatal — continue with no policy (fail-open).
+    // Do NOT write to stderr: any stderr output on an allow path causes Claude Code
+    // to surface the hook as a blocking error, even when exit code is 0. (#1430)
   }
 
   // Read-only fast-exit: if this is a read-only tool and no policies loaded, skip kernel entirely.
@@ -710,12 +708,6 @@ async function handlePreToolUse(
   let invariants: typeof DEFAULT_INVARIANTS | undefined;
   if (disabledIds.size > 0) {
     invariants = DEFAULT_INVARIANTS.filter((inv) => !disabledIds.has(inv.id));
-  }
-
-  if (policyDefs.length === 0) {
-    process.stderr.write(
-      '[agentguard] WARNING: No policies loaded — running in fail-open mode. All unmatched actions will be allowed.\n'
-    );
   }
 
   // Do NOT pass a manifest here. A manifest with empty grants would trigger capability
@@ -910,16 +902,28 @@ async function handlePreToolUse(
       return true;
     }
 
-    // Monitor mode: warn to stderr but allow the action through
+    // Monitor mode: warn via stdout additionalContext — never stderr on an allow path.
+    // stderr output from a PreToolUse hook causes Claude Code to surface a blocking
+    // error even when exit code is 0. Inject the warning as additionalContext instead
+    // so the agent sees it without triggering the blocking signal. (#1430)
+    const warningLines: string[] = [];
     if (violations.length > 0) {
       for (const v of violations) {
-        process.stderr.write(
-          `\u26A0 agentguard: ${v.invariantId} triggered \u2014 ${v.name} (monitor mode)\n`
-        );
+        warningLines.push(`\u26A0 [monitor] ${v.invariantId} triggered \u2014 ${v.name}`);
       }
     } else {
       const reason = result.decision?.decision?.reason ?? 'Action denied by policy';
-      process.stderr.write(`\u26A0 agentguard: policy denied \u2014 ${reason} (monitor mode)\n`);
+      warningLines.push(`\u26A0 [monitor] policy flagged \u2014 ${reason}`);
+    }
+    if (warningLines.length > 0) {
+      const monitorResponse = JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'PreToolUse',
+          permissionDecision: 'allow',
+          additionalContext: warningLines.join('\n'),
+        },
+      });
+      await new Promise<void>((resolve) => process.stdout.write(monitorResponse, () => resolve()));
     }
     return false;
   }
@@ -952,11 +956,6 @@ function handlePostToolUse(data: Record<string, unknown>, cliArgs: string[] = []
         : typeof data.command === 'string'
           ? data.command
           : '';
-
-  // Track rtk-optimized commands (informational — for session viewer visibility)
-  if (toolInput.startsWith('rtk ') || toolInput.includes('/rtk ')) {
-    process.stderr.write(`  \x1b[36m\u26A1\x1b[0m rtk: token-optimized output\n`);
-  }
 
   // Track format pass — when a Prettier/format command exits 0, record it for the session.
   // This satisfies the `requireFormat` policy condition on subsequent git.commit actions.
@@ -995,7 +994,7 @@ function generateSessionViewerQuietly(cliArgs: string[]): void {
       stdio: 'ignore',
       timeout: 10000,
     });
-    process.stderr.write(
+    process.stdout.write(
       '\n  \x1b[36m\u2139\x1b[0m  PR detected — session viewer generated. Run \x1b[1magentguard session-viewer --last\x1b[0m to open.\n\n'
     );
   } catch {
