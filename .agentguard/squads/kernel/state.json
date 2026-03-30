@@ -9,7 +9,7 @@
     "senior": {
       "issue": 1449,
       "title": "chore: triage Dependabot security alerts (path-to-regexp x2, brace-expansion)",
-      "status": "unassigned",
+      "status": "implementing",
       "note": "P2 security. path-to-regexp ReDoS HIGH (transitive via commander/express). brace-expansion DoS MEDIUM. Update transitive deps. Check if pnpm overrides or direct dep upgrades are needed."
     },
     "secondary": {
@@ -72,5 +72,5 @@
   ],
   "lastEmRun": "2026-03-30T12:10:00Z",
   "lastQaRun": "2026-03-30T18:52:00.000Z",
-  "updatedAt": "2026-03-30T18:52:00.000Z"
+  "updatedAt": "2026-03-30T21:10:00.000Z"
 }
