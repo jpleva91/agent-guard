@@ -15,6 +15,8 @@ export interface RendererConfig {
   readonly dryRun?: boolean;
   readonly simulatorCount?: number;
   readonly trace?: boolean;
+  /** Enforcement posture: 'default-deny' (policy loaded) or 'fail-open' (no policy) */
+  readonly posture?: 'default-deny' | 'fail-open';
 }
 
 /** A single policy trace event for real-time rendering */

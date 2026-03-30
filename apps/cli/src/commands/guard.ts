@@ -286,6 +286,8 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
   }
 
   // Notify renderers: run started
+  // Posture is default-deny when policies are loaded (fail-closed), fail-open otherwise.
+  const posture = policyDefs.length > 0 ? ('default-deny' as const) : ('fail-open' as const);
   renderers.notifyRunStarted({
     runId,
     policyName,
@@ -294,6 +296,7 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     dryRun: options.dryRun,
     simulatorCount: simCount,
     trace: options.trace,
+    posture,
   });
 
   if (!options.stdin) {

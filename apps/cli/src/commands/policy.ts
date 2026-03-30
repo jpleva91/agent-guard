@@ -355,6 +355,9 @@ function formatTerminalResult(result: PolicyValidationResult): string {
   lines.push(`  ${icon} Policy Validation — ${verdict}`);
   lines.push(`  File: ${dim(result.file)}`);
   lines.push(`  Rules: ${result.ruleCount}`);
+  if (result.valid) {
+    lines.push(`  Posture: ${bold(color('default-deny', 'green'))} ${dim('(unmatched actions are denied)')}`);
+  }
 
   if (result.errors.length > 0) {
     lines.push('');

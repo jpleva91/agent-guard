@@ -31,6 +31,7 @@ export interface TuiConfig {
   policyName?: string;
   invariantCount?: number;
   verbose?: boolean;
+  posture?: 'default-deny' | 'fail-open';
 }
 
 export function renderBanner(config: TuiConfig): string {
@@ -44,6 +45,10 @@ export function renderBanner(config: TuiConfig): string {
   }
   if (config.invariantCount !== undefined) {
     parts.push(`invariants: ${ANSI.bold}${config.invariantCount}${ANSI.reset} active`);
+  }
+  if (config.posture) {
+    const postureColor = config.posture === 'default-deny' ? ANSI.green : ANSI.yellow;
+    parts.push(`posture: ${postureColor}${ANSI.bold}${config.posture}${ANSI.reset}`);
   }
   if (parts.length > 0) {
     lines.push(`  ${ANSI.dim}${parts.join(' | ')}${ANSI.reset}`);

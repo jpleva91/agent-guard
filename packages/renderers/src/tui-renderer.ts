@@ -54,6 +54,7 @@ export function createTuiRenderer(options: TuiRendererOptions = {}): GovernanceR
           policyName: config.policyName,
           invariantCount: config.invariantCount,
           verbose: config.verbose ?? verbose,
+          posture: config.posture,
         })
       );
       output.write(`  \x1b[2mrun: ${config.runId}\x1b[0m\n`);
