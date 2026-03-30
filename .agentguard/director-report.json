@@ -1,148 +1,270 @@
 {
-  "runAt": "2026-03-28T21:00:00.000Z",
+  "runAt": "2026-03-30T22:30:00.000Z",
   "runType": "evening",
-  "overallHealth": "yellow",
-  "healthReason": "No squads red. P0 CI regression resolved (PRs #1160, #1168). 3 PRs mergeable and awaiting review. QA agents still broken (P1, deferred to April 1). Budget exhaustion auto-resolves April 1. Stale state files across kernel and HQ need EM refresh.",
+  "overallHealth": "red",
+  "healthReason": "4 squads RED (cloud, hq, qa, analytics). Worker pool dead 11 cycles (#1402) — thundering herd risk < 24h with April 1 budget resets. 69.5% agent failure rate (#1452). Cloud squad 5 days stale with 74.3% systemic failures. QA non-operational 5+ days. v3.0-gate (#1306) 12 cycles unassigned, 5 days to conference deadline. Marketing conference content RED. Escalation threshold (2+ RED) exceeded — human escalation MANDATORY.",
+  "escalationToHuman": {
+    "triggered": true,
+    "reason": "4 squads RED (threshold: 2). Worker pool dead 11 cycles with April 1 thundering herd imminent.",
+    "immediateActions": [
+      "P0 CRITICAL (HOURS): Run server/deploy.sh on jared box (#1402) BEFORE April 1 budget resets. Dead pool + 60+ queued items + circuit breaker auto-clear = thundering herd.",
+      "P0 CRITICAL: Kill 26 zombie vitest processes (~3.3GB RAM) per #1452: ps aux | grep 'cloud-qa-257589|cloud-sr-1428111|tier-c-copilot-implementer-1127453' | grep vitest | awk '{print $2}' | xargs kill",
+      "P0 CRITICAL: Prune 3 stuck worktrees: git worktree prune && rm -rf .worktrees/marketing-em-3815251 .worktrees/octi-pulpo-sr-3847600 .worktrees/octi-pulpo-qa-3847601",
+      "P0 STRATEGIC: Assign kernel #1306 (v3.0-gate default-deny) TODAY — 12 cycles unassigned, conference demo depends on it, 5 days to April 4 deadline.",
+      "P0: Review and merge cloud#532 (agent fleet overview page) — last unmet success criterion for conference gate.",
+      "P0: Assign #228 (Agent 365 Q&A brief) — 10+ cycles unowned, conference dependent.",
+      "P1: Fix agentguard#1477 (telemetry.agentguard.dev unreachable default URL) before next release — silent event loss for users without .env override.",
+      "P1: Review agentguard#1476 (better-sqlite3 bindings) — add postinstall script or prebuilt binary.",
+      "P1: Read #1462 governance report — 5 HIGH systemic issues including 99.9% sessions lacking agent identity."
+    ]
+  },
   "squads": {
     "kernel": {
-      "health": "yellow",
-      "summary": "P0 CI regression RESOLVED — PRs #1160 (test regressions) and #1168 (SQLite fallback, closes #1148) merged. PR #1153 (heredoc fix) rebased and merged. State.json blocker is stale — EM should clear it. PR #969 still awaiting review (CI green). Go kernel work (#955, #957) not yet started.",
-      "staleState": true,
+      "health": "green",
+      "summary": "KE-9 sprint active (security maintenance + new invariant design). 4693/4693 tests passing (+44 new tests this cycle). 2 PRs merged today (#1448 claude-hook stderr fix, #1453 docs sync). #1449 security deps patched (PR #1469 merged). No blockers.",
+      "staleState": false,
       "actionItems": [
-        "EM: clear stale P0 CI blocker from state.json",
-        "EM: review and merge PR #969 (claude-init binary path fix)",
-        "Senior: resume Go kernel hook path (#955, #957)"
+        "Continue KE-9: #1384 browser governance invariants (design work), #1385 irreversible action detection",
+        "From #1462: fix gh CLI false positive in destructive command scanner, investigate no-secret-exposure dormancy, fix session-to-agent attribution join",
+        "Merge PR #1480 when CI passes (read-only command exemption for script-execution-tracking)"
       ]
     },
     "studio": {
       "health": "yellow",
-      "summary": "Guitar Jam Partner architecture merged (#153 closed). PR #176 open (DPP onboarding checklist). March budget exhausted — auto-resets April 1. Junior issues #165-169 queued for April 1.",
+      "summary": "Budget-blocked until April 1. 7 items queued for dispatch (Guitar Jam #165-169, market research #203, QA validation #233). E2E telemetry gate VERIFIED (workspace#273) — 372k cloud events confirmed, 3 bugs filed. PR #1479 (telemetry results) CI green, mergeable.",
       "staleState": false,
       "actionItems": [
-        "EM: review and merge PR #176 (docs only)",
-        "April 1: retrigger broken QA agents (qa-regression-analyzer, qa-test-architect)"
+        "Merge PR #1479 (telemetry gate results, CI 4/4 green)",
+        "April 1: dispatch 7 queued items once budgets reset",
+        "Monitor thundering herd risk — coordinate with #1402 resolution"
       ]
     },
     "cloud": {
-      "health": "yellow",
-      "summary": "PR #472 (outcome filter) listed as ready-to-merge in agentguard-cloud. Version pinned at 2.8.0, 4 versions behind current 2.8.4 (HQ blocker B2). Deployment-gate UI due Apr 15.",
+      "health": "red",
+      "summary": "5 DAYS STALE — no sprint goal, no assignments, no EM activity since March 25. HQ reports 74.3% systemic exit=1 failures (9th cycle). Still running old agentguard version (needs 2.10.3 upgrade). cloud#532 (agent fleet page) awaiting human review with all checks passing.",
       "staleState": true,
+      "staleDays": 5,
       "actionItems": [
-        "Merge PR #472 in agentguard-cloud",
-        "Upgrade @red-codes/agentguard from 2.8.0 → 2.8.4 (P2)"
+        "FORCE-ASSIGN: Cloud EM must update state.json and set sprint goal within 24h",
+        "P0: Upgrade agentguard-cloud to 2.10.3 — likely root cause of 74.3% failure rate",
+        "P0: Add octi-pulpo allow rule to agentguard-cloud/agentguard.yaml",
+        "P0: Human review cloud#532 (agent fleet overview page)"
       ]
     },
     "hq": {
-      "health": "yellow",
-      "summary": "Both blockers resolved: B1 (#1153 merged), B2 still open (cloud version pin). 2 stale EM report PRs (#1150, #1151) should be closed. Cross-repo triage active.",
-      "staleState": true,
+      "health": "red",
+      "summary": "Most active squad (updated 21:00Z today) but managing 5 P0 blockers. Worker pool dead 11 cycles (#1402), codex budget exhausted (#1431), 69.5% agent failure rate (#1452), governance report reveals 5 HIGH systemic issues (#1462). PR #1455 (marketing-em) CONFLICTING — 2nd rebase request. New EM cycle PR pending.",
+      "staleState": false,
       "actionItems": [
-        "EM: close stale PRs #1150 and #1151 (superseded by #1170)",
-        "EM: clear resolved blocker B1 from state.json",
-        "Assign cloud-squad to upgrade agentguard-cloud to 2.8.4"
+        "Continue escalating #1402 (worker pool) — director now force-escalating to human",
+        "Codex budget (#1431): auto-resolves April 3. No purchase needed — accept degraded capacity.",
+        "Close PR #1455 (marketing-em, conflicting) and create fresh PR",
+        "Route #1462 kernel tasks to kernel-squad, hq-ops tasks to ops"
       ]
     },
     "analytics": {
-      "health": "yellow",
-      "summary": "ETL hardening and cost tracking in progress. Waiting on kernel Goose adapter for ShellForge event ingestion. PR #31 merged in agentguard-analytics (pipeline error isolation).",
-      "staleState": false,
+      "health": "red",
+      "summary": "NO STATE FILE EXISTS — squad is completely dark. Cannot assess sprint progress, blockers, or health. Last director report (March 28) said ETL hardening in progress with no blockers.",
+      "staleState": true,
+      "staleDays": "unknown",
       "actionItems": [
-        "Continue ETL hardening — no blockers"
+        "FORCE-ASSIGN: Analytics EM must create state.json and report status within 24h",
+        "Verify ETL pipeline health and ShellForge event ingestion status"
       ]
     },
     "qa": {
-      "health": "yellow",
-      "summary": "qa-regression-analyzer and qa-test-architect both timing out at 1800s on bench-devs-platform (0% success). Budget-silenced until April 1.",
-      "staleState": false,
+      "health": "red",
+      "summary": "5 DAYS STALE — empty sprint goal, no assignments. 0/18 QA agents operational (QA conductor RED day 5+). Blocked on #1402 (worker pool dead) and bench-devs-platform path missing on readybench worker.",
+      "staleState": true,
+      "staleDays": 5,
       "actionItems": [
-        "April 1: retrigger agents with increased timeout or chunked processing",
-        "Escalate to human if still failing after retrigger"
+        "Depends on #1402 resolution first",
+        "April 1: retrigger QA agents once worker pool is restored",
+        "Implement manual QA gate for conference-labeled PRs (Option C from #274)"
       ]
     },
     "design": {
       "health": "yellow",
-      "summary": "Deployment-gate UX wireframes in progress (supports cloud squad, due Apr 15). No blockers.",
-      "staleState": false,
-      "actionItems": []
+      "summary": "5 days stale but low-activity squad. Last report indicated deployment-gate UX wireframes in progress (due Apr 15). No blockers.",
+      "staleState": true,
+      "staleDays": 5,
+      "actionItems": [
+        "EM: refresh state.json with current wireframe progress"
+      ]
     },
     "marketing": {
-      "health": "yellow",
-      "summary": "ShellForge launch content pipeline active. Demo video (#893) blocked on built CLI + real governance demo. Content accuracy flag: site references '21 invariants' but actual count differs.",
+      "health": "red",
+      "summary": "#1387 containment post: 4 cycles with no draft — ESCALATED to Jared. OWASP blog corrected and publish-ready (awaiting LinkedIn). Conference at risk: #1382 talk outline not started (16 days to April 15), #1379 Meta demo not started (6 days to April 5 red line). #1444 marketing site rebrand added (P0, depends on #1443 design system).",
       "staleState": false,
       "actionItems": [
-        "Verify invariant count on site (CLAUDE.md says 24, ROADMAP says 22, site may say 21)",
-        "Provide marketing with built CLI for demo video recording"
+        "ESCALATED: #1387 containment post — Jared must own or kill",
+        "URGENT: #1379 Meta demo — 6 days to red line, no engineering started",
+        "Publish OWASP blog post on LinkedIn (corrections applied)",
+        "Start #1382 conference talk outline (16 days remain)"
       ]
     },
     "site": {
       "health": "green",
-      "summary": "Sprint delivered. ShellForge product page merged (#1157). v3.0 messaging live. Monitoring deploy-pages CI.",
+      "summary": "All stat checks passing after drift fixes (26 invariants, 92 patterns, 43 action types, 48 event kinds, 4649 tests, 35 CLI commands). Monitoring for drift as v2.10 work lands.",
       "staleState": false,
       "actionItems": []
+    },
+    "octi-pulpo": {
+      "health": "yellow",
+      "summary": "Budget-aware dispatch sprint. No blockers reported. State file lacks timestamp and health field — needs EM attention. Cloud-side allow rule still pending (#1410 merged OSS-side).",
+      "staleState": false,
+      "actionItems": [
+        "EM: add updatedAt and health fields to state.json",
+        "Coordinate with cloud squad on allow rule addition"
+      ]
     }
   },
   "crossSquadBlockers": [
     {
       "id": "XB1",
-      "severity": "P2",
-      "description": "agentguard-cloud pinned at @red-codes/agentguard 2.8.0 — 4 versions behind 2.8.4. Risks E2E telemetry pipeline accuracy.",
-      "squads": ["cloud", "hq"],
-      "owner": "cloud-squad",
-      "deadline": "2026-04-03",
-      "status": "open"
+      "severity": "P0",
+      "description": "Worker pool dead on jared box (#1402) — cascades to QA swarm (#1403), studio QA validation, conference readiness. 11 cycles unresolved. April 1 thundering herd imminent.",
+      "squads": ["hq", "qa", "studio"],
+      "owner": "human (jpleva91)",
+      "deadline": "2026-03-31",
+      "status": "FORCE-ESCALATED",
+      "note": "Persisted across 2 director runs. Force-assigning per escalation rules."
     },
     {
       "id": "XB2",
-      "severity": "P1",
-      "description": "ShellForge critical path blocked on kernel Goose adapter — cascades to MCP server, QA bench, cloud telemetry, analytics ETL.",
-      "squads": ["kernel", "cloud", "analytics", "qa"],
-      "owner": "kernel-senior",
-      "deadline": "2026-04-10",
-      "status": "open",
-      "note": "Kernel must finish Go kernel hook path (#955, #957) first, then Goose adapter."
+      "severity": "P0",
+      "description": "Cloud squad 5 days stale + 74.3% systemic exit=1 failures. Needs 2.10.3 upgrade. Blocks telemetry pipeline accuracy, agent fleet dashboard, conference demo.",
+      "squads": ["cloud", "hq", "studio"],
+      "owner": "cloud-em (FORCE-ASSIGNED)",
+      "deadline": "2026-04-01",
+      "status": "FORCE-ASSIGNED",
+      "note": "Cloud EM has been unresponsive 5 days. If no update by April 1, escalate to human."
     },
     {
       "id": "XB3",
+      "severity": "P0",
+      "description": "v3.0-gate default-deny (#1306) — 12 cycles unassigned. Conference demo depends on this. Core product thesis.",
+      "squads": ["kernel"],
+      "owner": "UNASSIGNED — human must assign",
+      "deadline": "2026-04-04",
+      "status": "FORCE-ESCALATED",
+      "note": "12 cycles unassigned triggers force-assign rule. Human must decide owner TODAY."
+    },
+    {
+      "id": "XB4",
+      "severity": "P0",
+      "description": "69.5% agent failure rate (#1452) — 26 zombie vitest processes (~3.3GB RAM), 3 stuck worktrees. System resource exhaustion on jared box.",
+      "squads": ["hq", "cloud", "qa"],
+      "owner": "human (jpleva91)",
+      "deadline": "2026-03-31",
+      "status": "FORCE-ESCALATED"
+    },
+    {
+      "id": "XB5",
       "severity": "P1",
-      "description": "QA agents (qa-regression-analyzer, qa-test-architect) 0% on bench — blocks QA reliability target of 80%+.",
-      "squads": ["qa", "studio"],
-      "owner": "qa-em",
+      "description": "Codex budget exhausted (#1431) until April 3. 25+ agents offline. Director decision: accept degraded capacity (no purchase needed — auto-resolves in 3 days).",
+      "squads": ["hq"],
+      "owner": "director",
       "deadline": "2026-04-03",
-      "status": "deferred_to_april_1"
+      "status": "ACCEPTED — auto-resolves",
+      "note": "Director decision: do NOT purchase credits. 3-day degraded capacity is acceptable."
+    },
+    {
+      "id": "XB6",
+      "severity": "P1",
+      "description": "QA non-operational 5+ days (0/18 agents). Depends on XB1 (#1402). Manual QA gate recommended for conference PRs.",
+      "squads": ["qa", "studio"],
+      "owner": "qa-em + human",
+      "deadline": "2026-04-05",
+      "status": "blocked_on_XB1"
+    },
+    {
+      "id": "XB7",
+      "severity": "P1",
+      "description": "Telemetry default URL broken (#1477) — silent event loss for users without .env override. Must fix before next release.",
+      "squads": ["kernel", "studio"],
+      "owner": "kernel-squad",
+      "deadline": "next release",
+      "status": "open"
+    },
+    {
+      "id": "XB8",
+      "severity": "P1",
+      "description": "Marketing conference content RED — #1387 4 cycles no draft, #1379 Meta demo 6 days to red line, #1382 talk outline 16 days.",
+      "squads": ["marketing"],
+      "owner": "human (jpleva91)",
+      "deadline": "2026-04-05",
+      "status": "ESCALATED"
     }
   ],
   "prQueue": {
     "mergeableNow": [
-      {"repo": "agent-guard", "pr": 1178, "title": "fix(adapters): map Copilot CLI meta-tools to known action types", "ci": "5/5 green"},
-      {"repo": "agent-guard", "pr": 1179, "title": "chore(roadmap): triage backlog + sync roadmap to v2.8.4", "ci": "5/5 green"},
-      {"repo": "agent-guard", "pr": 1183, "title": "test: add tests for cli/commands/trust", "ci": "5/5 green"}
+      {"repo": "agent-guard", "pr": 1479, "title": "chore(squad): studio E2E telemetry gate verified — workspace#273", "ci": "4/4 green"}
     ],
-    "staleToClose": [
-      {"repo": "agent-guard", "pr": 1150, "title": "chore(studio): EM report (stale)", "reason": "superseded by newer EM runs"},
-      {"repo": "agent-guard", "pr": 1151, "title": "chore(hq): EM report (CI failing)", "reason": "superseded by #1170"}
+    "ciPending": [
+      {"repo": "agent-guard", "pr": 1480, "title": "fix(invariants): exempt read-only commands from script-execution-tracking", "ci": "0/4 passed — awaiting CI"}
+    ],
+    "conflicting": [
+      {"repo": "agent-guard", "pr": 1455, "title": "chore(marketing-em): EM cycle 2026-03-30T20:00Z", "ci": "failing — conflicts", "action": "Close and recreate"}
+    ],
+    "crossRepo": [
+      {"repo": "agentguard-cloud", "pr": 532, "title": "feat(dashboard): agent fleet overview page", "ci": "8/8 critical passed", "action": "NEEDS HUMAN REVIEW"},
+      {"repo": "agentguard-workspace", "pr": 269, "title": "feat(swarm): add 5 new agents", "ci": "org-chart fix pushed, awaiting CI green", "action": "Merge when green"}
     ]
   },
   "strategicAlignment": {
-    "status": "aligned",
-    "notes": "All squads aligned with ROADMAP Phase 6 (Reference Monitor Hardening) and ShellForge critical path. No drift detected. Kernel Go kernel work is the primary strategic dependency — needs to unblock before ShellForge E2E pipeline completes."
+    "status": "at_risk",
+    "notes": "3 strategic risks: (1) v3.0-gate (#1306) unassigned 12 cycles — this IS the product thesis (default-deny governance) and the conference demo depends on it. (2) Cloud squad stale 5 days — telemetry pipeline and dashboard are critical for conference. (3) Marketing conference content pipeline RED — Meta demo, talk outline, containment post all behind schedule. Kernel squad is the bright spot — green, productive, aligned with roadmap."
   },
   "resolvedSinceLastRun": [
-    "P0 CI regression — fixed by PRs #1160 (test regressions) and #1168 (SQLite fallback)",
-    "P1 PR #1153 heredoc false-positive — rebased and merged (2026-03-28T03:38)",
-    "Site ShellForge page delivered — PR #1157 merged",
-    "Analytics pipeline error isolation — PR #31 merged in agentguard-analytics"
+    "KE-8 COMPLETE: #1427 (persona.env protection, PR #1436) and #1430 (claude-hook stderr fix, PR #1448) both merged",
+    "Security deps patched: PR #1469 merged (path-to-regexp, brace-expansion)",
+    "Enforcement posture display shipped: PR #1466 merged",
+    "User capture funnel shipped: PR #1466 (early-access CTA, cloud signup nudge)",
+    "Copilot event pipeline fixed: PR #1429 merged (was 0 events)",
+    "Telemetry E2E gate verified: 372k cloud events confirmed, deny flow working",
+    "Site stat drift fixed: 7 occurrences corrected across site",
+    "Docs synced: invariant count updated to 26 across all documentation (#1453)",
+    "+44 new tests (adapters: 299→343 from #1451, invariants: 624→633 from #1436)"
   ],
-  "escalations": [],
+  "directorDecisions": [
+    {
+      "id": "DD1",
+      "decision": "Codex budget (#1431): accept 3-day degraded capacity. Do NOT purchase credits. Auto-resolves April 3.",
+      "rationale": "Cost-benefit: 3 days of reduced throughput is acceptable vs purchasing credits for a budget that resets automatically."
+    },
+    {
+      "id": "DD2",
+      "decision": "Force-escalate #1402 (worker pool) to human. This is the 2nd director run where this blocker persists — per escalation rules, force-assigning with deadline.",
+      "rationale": "11 cycles unresolved. Cascades to 3 squads. April 1 thundering herd risk is the most dangerous near-term threat."
+    },
+    {
+      "id": "DD3",
+      "decision": "Force-assign cloud EM to update state.json and upgrade to 2.10.3 within 24h. If no response, escalate to human.",
+      "rationale": "5 days stale is unacceptable. 74.3% failure rate is likely caused by version mismatch."
+    },
+    {
+      "id": "DD4",
+      "decision": "Force-escalate #1306 (v3.0-gate) to human for immediate assignment. 12 cycles unassigned crosses all thresholds.",
+      "rationale": "This is the product's core thesis and the conference demo keystone. Cannot remain unassigned."
+    }
+  ],
   "dogfood": {
     "issues": [],
-    "notes": "No governance issues encountered during this director run. Dogfood reporting guide not found at claude/shared/dogfood-reporting.md — file may have been moved or not yet created in this repo."
+    "notes": "Dogfood reporting guide (claude/shared/dogfood-reporting.md) not found in this repo. No governance issues encountered during director run — all file reads and state analysis completed without AgentGuard intervention."
   },
+  "nextRun": "2026-03-31T10:00:00.000Z",
   "nextActions": [
-    "Kernel EM: clear stale P0 blocker, review PR #969, resume Go kernel work",
-    "HQ EM: close stale PRs #1150/#1151, update state.json blockers",
-    "Cloud squad: merge PR #472 in agentguard-cloud, upgrade to 2.8.4",
-    "All EMs: review and merge PRs #1178, #1179, #1183 (all CI green)",
-    "QA EM: April 1 — retrigger broken agents with increased timeout",
-    "Marketing: verify invariant count accuracy on site"
+    "HUMAN P0 (HOURS): Run server/deploy.sh BEFORE April 1 budget resets (#1402)",
+    "HUMAN P0: Kill zombie vitest processes and prune stuck worktrees (#1452)",
+    "HUMAN P0: Assign #1306 (v3.0-gate default-deny) TODAY",
+    "HUMAN P0: Review cloud#532 (agent fleet page)",
+    "HUMAN P0: Assign #228 (Agent 365 Q&A brief)",
+    "CLOUD EM: Update state.json, set sprint goal, upgrade to 2.10.3 — deadline 24h",
+    "ANALYTICS EM: Create state.json — squad is completely dark",
+    "KERNEL: Merge PR #1479 (telemetry gate, CI green). Merge PR #1480 when CI passes.",
+    "KERNEL: Fix #1477 (telemetry default URL) before next release",
+    "MARKETING: #1379 Meta demo — 6 days to red line. Start engineering NOW.",
+    "QA: Implement manual gate for conference PRs (Option C) while waiting for #1402"
   ]
 }
