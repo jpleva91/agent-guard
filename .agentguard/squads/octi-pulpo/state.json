@@ -2,9 +2,97 @@
   "squad": "octi-pulpo",
   "status": "GREEN",
   "priority": "P0",
-  "sprint": "Ship budget-aware dispatch + wire as workspace MCP server",
-  "blockers": [],
-  "repo": "AgentGuardHQ/octi-pulpo",
-  "updated": "2026-03-29",
-  "notes": "PRIORITY SHIFT: Octi Pulpo is now the #1 platform deliverable. Today's 36.6% swarm pass rate proves coordination is the bottleneck. Budget-aware dispatch is the highest-leverage item."
+  "sprint": {
+    "goal": "KE-3: Landing page scaffold (#76) + MCP test coverage 23.3%→40% + admission control validation pre-April-1 reset",
+    "issues": [76, 95],
+    "priorSprintSummary": "All P0 director brief items SHIPPED: budget-aware dispatch (#87/#86/#79), coord_claim/admission control (#99/#96), driver health broadcasting (#36), browser drivers (#94), Slack control plane (#98), vector search (#1), agent identity namespacing (#2), cost-tier routing (#8), pipeline controller (#97). Test coverage 14.7%→23.3% (#93). BudgetStore nil-wire bug fixed in #100 (merged this cycle)."
+  },
+  "assignments": {
+    "senior": {
+      "issue": 76,
+      "title": "feat: Octi Pulpo landing page — product site",
+      "status": "assigned",
+      "note": "Scaffold Next.js + Vercel deploy structure WITHOUT @agentguard/ui — design system blocked on agentguard#1443 (open). Full rebrand wired after #1443 merges. Scaffold can proceed independently. See agentguard-cloud PR #531 for design system reference."
+    },
+    "secondary": {
+      "issue": 95,
+      "title": "Verify Preflight completion before task status transitions",
+      "status": "assigned",
+      "note": "P3 but relevant to coordination correctness — prevents sprint_complete firing before work is actually done. Small scope, good for QA agent.",
+      "assignedTo": "octi-pulpo-qa"
+    }
+  },
+  "blockers": [
+    {
+      "id": "agentguard-1443-ui-design-system",
+      "severity": "P2",
+      "description": "#76 full implementation (full rebrand) blocked on agentguard#1443 (@agentguard/ui design system). Landing page scaffold can proceed. Full wire-up after #1443 merges.",
+      "dependsOn": "AgentGuardHQ/agentguard#1443",
+      "autoResolves": "on-merge-of-agentguard-1443"
+    },
+    {
+      "id": "sprint-store-sync-lag",
+      "severity": "P3",
+      "description": "Sprint store shows #5 and #96 as 'open' despite being closed on GitHub. Sync lag in brain — SyncClosed may not be catching all closed-state transitions. Note for octi-pulpo-sr to investigate.",
+      "autoResolves": "on-sprint-sync"
+    }
+  ],
+  "prQueue": {
+    "open": 0,
+    "reviewed": 1,
+    "mergedThisCycle": 1,
+    "closedThisCycle": 1,
+    "prs": [],
+    "mergedPRs": [
+      {
+        "pr": "octi-pulpo#100",
+        "title": "fix(main): wire BudgetStore into WebhookServer and SlackEventHandler",
+        "status": "MERGED this cycle",
+        "note": "Critical bug fix — Slack budget commands (/budget set, /budget reset, PAUSE buttons) were nil-dereference silently. CI passing. Squash-merged."
+      }
+    ],
+    "closedPRs": [
+      {
+        "pr": "workspace#283",
+        "title": "chore(squad): octi-pulpo EM state update — run 8 (2026-03-31)",
+        "status": "CLOSED — CONFLICTING, superseded by run 9"
+      }
+    ]
+  },
+  "loopGuards": {
+    "prBudget": "0 open PRs < max 3 — OK",
+    "retryLoops": "none detected — queue depth 0",
+    "blastRadius": "within limits"
+  },
+  "health": "green",
+  "healthReason": "All P0 director brief items shipped. Brain running live (confirmed via octi-pulpo.log 08:35Z). MCP wired to workspace. BudgetStore bug merged. Sprint #2 starting.",
+  "serverStatus": {
+    "brain": "running — last tick 2026-03-31T08:35:06Z",
+    "mcpWired": true,
+    "redisUrl": "redis://localhost:6379",
+    "lastLog": "2026-03-31T08:35Z leverage: shellforge-sr -> skipped (P0 bug: RunPod GPU)"
+  },
+  "crossSquadObservations": {
+    "kernel": "KE-9 design-phase stalled 2+ cycles — #1384/#1385 need implementation nudge. #1473 governance blocks EM state writes — fix target: narrow OPERATIONAL_STATE_PATTERNS.",
+    "swarm": "44.9% pass rate (2026-03-30). April 1 budget reset imminent — admission control live but untested at scale. Monitor for thundering herd.",
+    "studio": "Dispatch queue of 7 items ready for April 1. Guitar Jam Partner #165-169 go live then.",
+    "hq": "#1402 worker pool dead (13 cycles) is the critical P0 blocking everything. Human MUST run server/deploy.sh before April 1."
+  },
+  "newThisCycle": [
+    {
+      "action": "MERGED octi-pulpo#100 — BudgetStore nil-wire bug fix. Slack budget commands now functional.",
+      "type": "merge"
+    },
+    {
+      "action": "CLOSED workspace#283 — stale/conflicting EM run 8 state PR.",
+      "type": "close"
+    },
+    {
+      "action": "Set next sprint: landing page scaffold + test coverage + admission control validation.",
+      "type": "planning"
+    }
+  ],
+  "emRun": 9,
+  "lastEmRun": "2026-03-31T08:35:00.000Z",
+  "updatedAt": "2026-03-31T08:35:00.000Z"
 }
