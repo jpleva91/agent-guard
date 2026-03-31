@@ -18,7 +18,7 @@
       "issue": "workspace#273-telemetry-e2e-gate",
       "status": "dispatched",
       "dispatchedAt": "2026-03-30T09:00:00Z",
-      "summary": "Verify telemetry pipeline E2E: trigger governance event → check SQLite → check client logs → check cloud ingestion → confirm dashboard shows event. April 10 hard gate. Previous: completed workspace#272 agent performance page — cloud#532 open (awaiting human review)."
+      "summary": "Verify telemetry pipeline E2E: trigger governance event → check SQLite → check client logs → check cloud ingestion → confirm dashboard shows event. April 10 hard gate. Previous: completed workspace#272 agent performance page — cloud#532 MERGED."
     }
   },
   "blockers": [
@@ -42,25 +42,31 @@
       "note": "Issue #1403 (agentguard kernel). Root fix: start readybench worker (human action agentguard#1402)."
     },
     {
-      "id": "cloud-pr-532-pending-review",
+      "id": "workspace-pr-269-conflicting",
       "severity": "P2",
-      "description": "cloud#532 (agent fleet overview page) awaiting human review. Build passes, all Vercel deployments green. No reviewers assigned.",
-      "autoResolves": "on-review"
+      "description": "PR #269 (5 new agents) is CONFLICTING — needs rebase. pr-auto-rebaser agent is in this PR (catch-22). Requires manual rebase.",
+      "autoResolves": "on-manual-rebase"
     },
     {
-      "id": "workspace-pr-269-awaiting-green",
+      "id": "workspace-pr-278-ci-retriggered",
       "severity": "P2",
-      "description": "PR #269 (5 new agents) org chart fix pushed. CI rerunning. Needs manual merge when green (auto-merge disabled in repo).",
+      "description": "PR #278 (signal pipeline) had stale CI failure. Local --check passes (132 agents). CI re-triggered run 23756673596. Ready to merge on green.",
       "autoResolves": "on-ci-green"
     }
   ],
   "prQueue": {
-    "open": 2,
+    "open": 5,
     "pendingMerge": [
-      { "pr": "cloud#532", "title": "feat(dashboard): agent fleet overview page", "status": "awaiting-human-review", "checks": "8/8 critical passed (5 governance checks skipping — expected, needs reviewer)" },
-      { "pr": "workspace#269", "title": "feat(swarm): add 5 new agents", "status": "org-chart-fix-pushed-ci-rerunning", "checks": "org-chart regenerated and pushed, awaiting CI green then manual merge" }
+      { "pr": "workspace#278", "title": "feat: signal pipeline — telemetry-driven LinkedIn content factory", "status": "ci-retriggered-passes-locally", "checks": "Stale failure — local --check passes. CI rerun triggered. Merge on green." },
+      { "pr": "workspace#280", "title": "fix: remove outdated TODO check command from SKILL.md", "status": "ready", "checks": "No CI gate. Simple cleanup. Ready to merge." },
+      { "pr": "workspace#279", "title": "feat: trigger dogfood run on jared box via RunPod GPU", "status": "open-needs-review", "checks": "No CI issues. Human review needed." },
+      { "pr": "workspace#276", "title": "chore(studio-em): EM cycle 2026-03-30T09:00Z", "status": "open-ready", "checks": "Previous EM cycle state PR. Ready to merge." },
+      { "pr": "workspace#269", "title": "feat(swarm): add 5 new agents", "status": "CONFLICTING-needs-rebase", "checks": "Merge conflicts. Needs manual rebase before CI can pass." }
     ],
-    "note": "PRs #271 (shellforge EM) and #275 (QA ops report) merged this cycle."
+    "resolved": [
+      { "pr": "cloud#532", "title": "feat(dashboard): agent fleet overview page", "status": "MERGED", "note": "Closes workspace#272 — conference gate met." }
+    ],
+    "note": "PRs #271 (shellforge EM), #275 (QA ops report), #532 (cloud fleet page) merged since last cycle."
   },
   "humanEscalations": [
     {
@@ -69,17 +75,17 @@
       "title": "Worker pool dead — MUST run server/deploy.sh before April 1 or risk thundering herd",
       "deadline": "2026-04-01",
       "priority": "P0",
-      "consecutiveCyclesUnassigned": 5,
-      "action": "CRITICAL: Run `server/deploy.sh` on readybench before April 1. Circuit breakers (Codex+Copilot) auto-clear April 1 — dead pool + 60+ queued items = thundering herd. HOURS REMAIN."
+      "consecutiveCyclesUnassigned": 6,
+      "action": "CRITICAL: Run `server/deploy.sh` on readybench before April 1. Circuit breakers (Codex+Copilot) auto-clear April 1 — dead pool + 60+ queued items = thundering herd. HOURS REMAIN. This is cycle 6 unassigned."
     },
     {
       "issue": 1306,
       "repo": "AgentGuardHQ/agentguard",
-      "title": "feat(v3.0-gate): default-deny enforcement — 12TH CYCLE UNASSIGNED",
+      "title": "feat(v3.0-gate): default-deny enforcement — 13TH CYCLE UNASSIGNED",
       "deadline": "2026-04-04",
       "priority": "P0",
-      "consecutiveCyclesUnassigned": 12,
-      "action": "CRITICAL: Manually assign kernel #1306 TODAY. Conference demo depends on v3.0 gate. 5 days to deadline."
+      "consecutiveCyclesUnassigned": 13,
+      "action": "CRITICAL: Manually assign kernel #1306 TODAY. Conference demo depends on v3.0 gate. 4 days to deadline."
     },
     {
       "issue": 274,
@@ -87,14 +93,7 @@
       "title": "[swarm] QA conductor RED day 5+ — implement manual gate for conference PRs",
       "deadline": "2026-04-05",
       "priority": "P0",
-      "action": "Option C (hybrid): Add PR template with manual smoke test sign-off for conference-labeled PRs (1h setup). Then parallelize root cause investigation. Issue #274 filed with full analysis."
-    },
-    {
-      "pr": 532,
-      "repo": "AgentGuardHQ/agentguard-cloud",
-      "title": "feat(dashboard): agent fleet overview page — needs human review",
-      "priority": "P0",
-      "action": "Review and merge cloud#532. Build passes, all 4 Vercel previews green. Last unmet success criterion for workspace#272 (conference gate)."
+      "action": "Option C (hybrid): Add PR template with manual smoke test sign-off for conference-labeled PRs (1h setup). Root cause: readybench worker down (agentguard#1402). Fixing #1402 also fixes QA conductor."
     },
     {
       "issue": 273,
@@ -109,12 +108,12 @@
       "repo": "AgentGuardHQ/agentguard-workspace",
       "title": "Fundraise cluster — pitch deck, seed targets, DPP conversion, conference prep, 5-week plan — ALL UNOWNED",
       "priority": "P0",
-      "action": "Human-driven work. Review #240-244 and own each item personally. May 6 deadline — 37 days."
+      "action": "Human-driven work. Review #240-244 and own each item personally. May 6 deadline — 36 days."
     },
     {
       "issue": 228,
       "repo": "AgentGuardHQ/agentguard-workspace",
-      "title": "[conference] Agent 365 vs AgentGuard Q&A brief — UNOWNED (10+ cycles)",
+      "title": "[conference] Agent 365 vs AgentGuard Q&A brief — UNOWNED (11+ cycles)",
       "deadline": "2026-05-06",
       "priority": "P0",
       "action": "April 1 budget reset is the last dispatch window before conference crunch. Assign #228 TODAY."
@@ -131,7 +130,7 @@
       "title": "DPP dry run needs owner — April 10 deadline",
       "deadline": "2026-04-10",
       "priority": "P1",
-      "action": "Assign owner — 11 days remaining."
+      "action": "Assign owner — 10 days remaining."
     },
     {
       "issues": [245, 246, 247],
@@ -152,30 +151,23 @@
   ],
   "newIssuesTriaged": [
     {
-      "issue": 273,
-      "title": "[conference] Telemetry E2E gate — verify live governance events flow end-to-end before April 10",
-      "priority": "P0",
-      "assignedTo": "studio-senior",
-      "deadline": "2026-04-10",
-      "note": "Senior dispatched this cycle to run 5-step verification. Human must confirm results."
-    },
-    {
-      "issue": 274,
-      "title": "[swarm] QA conductor RED day 5+ — restore or manual-gate conference-critical PRs before April 5",
-      "priority": "P0",
-      "assignedTo": "HUMAN",
-      "deadline": "2026-04-05",
-      "note": "Recommend Option C: manual gate today (1h), root cause investigation parallel. Cannot auto-resolve without readybench worker (human action agentguard#1402)."
+      "issue": 281,
+      "title": "TODO: Dashboard deployment is a separate task in project_cloud_deployment.md",
+      "priority": "P3",
+      "assignedTo": "cloud-em",
+      "note": "Low priority — cloud#532 merged covers the dashboard. This TODO may be stale. Route to cloud-em for cleanup."
     }
   ],
   "mergedThisCycle": [
-    { "pr": 271, "title": "chore(squad): EM state update — shellforge run 7 (2026-03-30)" },
-    { "pr": 275, "title": "ops(qa-conductor): RED day 5 — swarm non-operational, 07:00 UTC" }
+    { "pr": "cloud#532", "title": "feat(dashboard): agent fleet overview page — wires /v1/agents/performance", "note": "Closes workspace#272 — conference gate met" }
   ],
   "closedThisCycle": [],
   "openPRsThisCycle": [
-    { "pr": 532, "repo": "AgentGuardHQ/agentguard-cloud", "title": "feat(dashboard): agent fleet overview page — wires /v1/agents/performance", "closes": "workspace#272", "status": "awaiting-review" },
-    { "pr": 269, "repo": "AgentGuardHQ/agentguard-workspace", "title": "feat(swarm): add 5 new agents — rebaser, release-notes, dx-smoke, activation-monitor, onboarding-bot", "status": "org-chart-fix-pushed-awaiting-green" }
+    { "pr": 278, "repo": "AgentGuardHQ/agentguard-workspace", "title": "feat: signal pipeline — telemetry-driven LinkedIn content factory", "status": "ci-retriggered", "note": "Local org chart check passes. Stale CI failure from 11h ago rerun." },
+    { "pr": 279, "repo": "AgentGuardHQ/agentguard-workspace", "title": "feat: trigger dogfood run on jared box via RunPod GPU", "status": "open" },
+    { "pr": 280, "repo": "AgentGuardHQ/agentguard-workspace", "title": "fix: remove outdated TODO check command from SKILL.md", "status": "ready-to-merge" },
+    { "pr": 276, "repo": "AgentGuardHQ/agentguard-workspace", "title": "chore(studio-em): EM cycle 2026-03-30T09:00Z", "status": "ready-to-merge" },
+    { "pr": 269, "repo": "AgentGuardHQ/agentguard-workspace", "title": "feat(swarm): add 5 new agents", "status": "CONFLICTING-needs-rebase" }
   ],
-  "updatedAt": "2026-03-30T09:00:00Z"
+  "updatedAt": "2026-03-31T04:37:55Z"
 }
