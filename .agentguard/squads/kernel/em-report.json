@@ -1,44 +1,70 @@
 {
-  "generatedAt": "2026-03-31T07:37:00.000Z",
+  "generatedAt": "2026-03-31T11:00:00.000Z",
   "identity": "claude-code:opus:kernel:em",
   "runCycle": "3h",
   "health": "yellow",
-  "healthReason": "#1384 and #1385 remain design-phase after 2 EM cycles with no implementation. #1473 (no-governance-self-modification blocks EM state writes) now at ageRuns=2 — escalation threshold met, escalated to director. 0 open PRs this cycle. Tests stable 4693/4693. Swarm P0 alerts (#1431, #1452) are not kernel-owned.",
-  "summary": "Cycle 2026-03-31T07:37Z. KE-9 sprint: #1384 (browser governance) and #1385 (irreversible action detection) remain in design phase — no implementation or PRs yet after 2 EM cycles. #1473 blocker (EM squad state writes blocked by no-governance-self-modification) reached ageRuns=2 and has been escalated to director. 0 kernel-authored PRs in flight. No open PRs returned by GitHub API this cycle — 8 Dependabot PRs tracked last cycle appear resolved. No new P0/P1 issues assigned to kernel. Swarm P0 health alerts (#1431, #1452) noted — owned by swarm-ops/human. Tests stable at 4693/4693.",
+  "healthReason": "#1384 and #1385 in design phase for 3rd consecutive EM cycle — implementation must begin this cycle or health escalates to RED. #1473 blocker (governance-self-modification blocks EM state writes) persists at ageRuns=3, already escalated to director. New P1 issue #1477 (telemetry default URL silent drop) assigned to kernel squad — simple fix needed. 0 kernel PRs in flight. Tests stable 4693/4693.",
+  "summary": "Cycle 2026-03-31T11:00Z (cycle 3). KE-9 sprint: #1384 (browser governance) and #1385 (irreversible action detection) remain in design phase — 3rd EM cycle with no implementation or PRs. This is the design-phase limit; implementation must begin this cycle. #1473 blocker persists (ageRuns=3, escalated to director at run 2). Two new issues filed to kernel squad: #1477 (P1 — telemetry default URL 'telemetry.agentguard.dev' unreachable, events silently dropped for new users) and #1478 (P2 — Go fast-path allow-decisions produce no cloud telemetry). 0 kernel-authored PRs in flight. 3 open PRs from other squads (#1505 octi-pulpo-em, #1504 hq-em, #1503 studio-em) — not kernel-owned, no action. Swarm P0 alerts (#1431, #1452) not kernel-owned.",
   "sprintStatus": {
     "current": "KE-9",
     "goal": "New governance invariant design — browser agents + irreversible actions",
-    "status": "IN_PROGRESS",
-    "cyclesInDesignPhase": 2,
+    "status": "AT_RISK",
+    "cyclesInDesignPhase": 3,
+    "note": "3 full EM cycles in design phase without code is beyond acceptable threshold. Implementation must begin this cycle.",
     "issues": [
       {
         "number": 1384,
         "title": "feat: browser governance invariants — scope, state, and pacing for browser agents",
         "priority": "sprint",
         "status": "assigned",
-        "note": "Senior coder assigned. Design phase — 2nd EM cycle with no implementation. Open questions in issue: action class (browser.* vs shell.exec extension), pacing correction feedback, URL scope matching strategy. No PR filed."
+        "note": "3rd EM cycle in design phase. Senior coder must begin implementation NOW. Minimum deliverable: action class decision (browser.* extension) + stub definitions in packages/invariants/src/definitions.ts (BrowserScopeViolation, BrowserStateViolation, BrowserPacingViolation). Reference: packages/invariants/src/definitions.ts + packages/invariants/src/checker.ts."
       },
       {
         "number": 1385,
         "title": "feat: irreversible action detection — human confirmation gates for one-way operations",
         "priority": "sprint",
         "status": "assigned",
-        "note": "Secondary agent assigned. 1 comment on issue. Design phase — 2nd EM cycle with no implementation. PauseRequested/PauseResolved schema already exists from Go kernel (packages/events/src/schema.ts). No PR filed."
+        "note": "3rd EM cycle in design phase. Secondary agent must begin prototype NOW. PauseRequested/PauseResolved schema already exists in packages/events/src/schema.ts. Start with packages/kernel/src/decision.ts hook for irreversible action detection (infra.destroy, git.force-push, deploy.trigger to prod, file.delete with no backup)."
       }
     ]
   },
+  "newIssues": [
+    {
+      "number": 1477,
+      "title": "bug(telemetry): default fallback URL 'telemetry.agentguard.dev' unreachable — events silently dropped",
+      "priority": "P1",
+      "severity": "high",
+      "assignedTo": "kernel-senior",
+      "location": "apps/cli/src/commands/claude-hook.ts",
+      "fix": "Update default fallback URL from 'https://telemetry.agentguard.dev' to 'https://agentguard-cloud-api-server.vercel.app'. One-line change. Filed by studio-senior during workspace#273 E2E gate. Impacts all new users who haven't run 'agentguard cloud connect'.",
+      "note": "Simple fix — assign as P1 maintenance item. Can be done alongside sprint work."
+    },
+    {
+      "number": 1478,
+      "title": "feat(telemetry): Go fast-path skips cloud telemetry — allow decisions invisible in dashboard",
+      "priority": "P2",
+      "severity": "medium",
+      "assignedTo": "kernel-secondary",
+      "recommendation": "Accept Option 2 — document that dashboard shows governance-evaluated events, not total tool volume. Label dashboard accordingly. This is acceptable for the May 6 demo. Full fix (emit lightweight allow event from Go fast-path) is a KE-10 item.",
+      "note": "Not a correctness issue. Low urgency. Document for now."
+    }
+  ],
   "prQueue": {
     "kernelOpen": 0,
     "kernelPRsMergedThisCycle": [],
+    "otherSquadPRsOpen": [
+      { "number": 1505, "squad": "octi-pulpo-em", "action": "none — not kernel" },
+      { "number": 1504, "squad": "hq-em", "action": "none — not kernel" },
+      { "number": 1503, "squad": "studio-em", "action": "none — not kernel" }
+    ],
     "dependabotPRsNeedingAttention": [],
-    "note": "0 open PRs returned by GitHub API. 8 Dependabot PRs tracked last cycle (#1484-#1491) appear to have been merged or closed between cycles. PR budget 0/3."
+    "note": "0 kernel-authored PRs. PR budget 0/3. 3 open PRs from other squads — kernel has no merge authority over these."
   },
   "loopGuards": {
     "prBudget": {
       "kernelOpen": 0,
       "max": 3,
-      "pass": true,
-      "note": "0 kernel-authored PRs open."
+      "pass": true
     },
     "retryLoops": {
       "stuckAgents": 0,
@@ -54,19 +80,24 @@
       "issue": 1473,
       "title": "[dogfood] no-governance-self-modification blocks EM squad state writes to .agentguard/squads/",
       "severity": "operational",
-      "ageRuns": 2,
+      "ageRuns": 3,
       "escalated": true,
       "escalatedTo": "director",
       "escalatedAt": "2026-03-31T07:37:00.000Z",
-      "recommendation": "Director attention needed. Kernel squad fix: narrow OPERATIONAL_STATE_PATTERNS in packages/invariants/src/definitions.ts to exclude .agentguard/squads/**. Same fix class as #1427 (persona.env exemption). Analytics-em reported 11+ consecutive blocked runs before filing issue. This affects all EM agents writing to .agentguard/squads/. Fix is low-risk and well-precedented."
+      "recommendation": "Director: review and unblock. Kernel senior: fix OPERATIONAL_STATE_PATTERNS in packages/invariants/src/definitions.ts to add '.agentguard/squads/**' exemption (same fix class as #1427 persona.env exemption). This is a 1-line pattern addition. Worktree isolation currently bypasses the invariant, so EM state writes succeed via that workaround."
     }
   ],
   "escalations": [
     {
       "to": "director",
-      "reason": "Blocker #1473 persists across 2 EM runs (threshold: 2). Invariant too broad — .agentguard/squads/** is runtime coordination state, not governance config. Kernel squad owns fix.",
+      "reason": "Blocker #1473 persists at ageRuns=3. Already escalated at run 2. No resolution yet.",
       "triggeredAt": "2026-03-31T07:37:00.000Z",
-      "escalationRule": "If a blocker persists across 2 runs → escalate to director"
+      "status": "pending director action"
+    },
+    {
+      "to": "architect",
+      "reason": "Sprint features #1384 and #1385 in design phase for 3 consecutive EM cycles. No implementation. If not started this cycle, sprint KE-9 is at risk of rolling into KE-10 incomplete. Architect attention needed to unblock design decisions.",
+      "triggeredAt": "2026-03-31T11:00:00.000Z"
     }
   ],
   "escalationRules": {
@@ -75,20 +106,20 @@
       "persistentBlocker": true,
       "governanceDenialsExceeded": false
     },
-    "notes": "#1473 at ageRuns=2 triggers persistent blocker escalation. No CI failures — 0 PRs in flight. 0 governance denials this cycle."
+    "notes": "#1473 persists (ageRuns=3, already escalated). New escalation to architect for design-phase stall on #1384 and #1385 at 3 cycles. No CI failures. 0 governance denials."
   },
   "swarmContext": {
     "p0Alerts": [
       {
         "number": 1452,
-        "summary": "P0: 69.5% swarm failure rate, 26 zombie vitest processes, 3 stuck worktrees (2026-03-30 06:00 UTC)",
-        "kernelAction": "Note: #1452 mentions #1177 policy gap (github.pr.* not in default allow-list) blocks pr-merger-agent. Kernel squad should evaluate as a KE-9/10 backlog item.",
+        "summary": "P0: 69.5% swarm failure rate, 26 zombie vitest processes, 3 stuck worktrees — ongoing",
+        "kernelAction": "#1177 policy gap (github.pr.* not in default allow-list) continues to block pr-merger-agent (234 failures total). Kernel squad should evaluate as KE-9 maintenance or KE-10 backlog.",
         "owner": "swarm-ops + human"
       },
       {
         "number": 1431,
-        "summary": "P0: Codex budget exhausted until 2026-04-03T02:25Z, multi-driver circuit cascade (53.7% failure rate)",
-        "kernelAction": "None — infrastructure issue, not kernel-owned.",
+        "summary": "P0: Codex budget exhausted until 2026-04-03T02:25Z",
+        "kernelAction": "None — infrastructure, not kernel-owned.",
         "owner": "swarm-ops + human"
       }
     ]
@@ -100,24 +131,25 @@
     "issuesClosed": 0,
     "governanceDenials": 0,
     "retries": 0,
-    "note": "No changes this cycle. Sprint features in design phase. Blocker escalated. Tests stable."
+    "newIssuesAssignedToKernel": 2,
+    "note": "Cycle 3. 0 PRs. 2 new issues assigned to kernel (#1477 P1, #1478 P2). Sprint features still in design. Blocker ageRuns=3."
   },
   "dogfoodObservations": [
     {
       "severity": "blocker",
       "issue": 1473,
-      "description": "ESCALATED: no-governance-self-modification invariant fires on Write calls to .agentguard/squads/kernel/state.json and em-report.json. Analytics-em reported 11+ consecutive blocked runs before filing the issue. Fix is narrowing OPERATIONAL_STATE_PATTERNS in packages/invariants/src/definitions.ts to exclude .agentguard/squads/**. Write tool succeeds (shell-level hook intercepts Bash, not Write). Kernel squad owns fix — assign to senior coder as KE-9 maintenance item.",
-      "status": "OPEN — ESCALATED TO DIRECTOR (#1473)"
+      "description": "ESCALATED (ageRuns=3): no-governance-self-modification invariant fires on Write calls to .agentguard/squads/kernel/state.json and em-report.json. Worktree isolation currently bypasses it. Fix: narrow OPERATIONAL_STATE_PATTERNS in packages/invariants/src/definitions.ts to exclude .agentguard/squads/**.",
+      "status": "OPEN — ESCALATED TO DIRECTOR"
     },
     {
       "severity": "info",
       "issue": 1474,
-      "description": "no-credential-file-creation false positive on grep -v (invert-match). Command checking absence of credential keywords triggers invariant incorrectly. Adjacent to #1475 (read-only exemption). Consider: grep -v patterns should not trigger credential creation checks.",
+      "description": "no-credential-file-creation false positive on grep -v (invert-match). Adjacent to #1475 (read-only exemption). Carried from prior cycles.",
       "status": "OPEN (#1474)"
     },
     {
       "severity": "info",
-      "description": "0 governance denials this cycle. No LOCKDOWN triggers. All governed operations clean during this EM run."
+      "description": "0 governance denials this cycle. All governed operations clean during this EM run."
     }
   ],
   "testHealth": {
@@ -126,27 +158,40 @@
     "failed": 0,
     "status": "all_passing",
     "lastRun": "2026-03-30T18:52:00.000Z",
-    "note": "Stable — no kernel/invariants changes this cycle. Baseline from QA run 2026-03-30T18:52Z."
+    "note": "Stable — no kernel/invariants changes this cycle. Needs refresh when #1384/#1385 implementation begins."
   },
   "nextActions": [
     {
+      "priority": "CRITICAL",
+      "action": "Kernel senior: begin implementation on #1384 (browser governance invariants). Design phase at 3 cycles — must produce code this cycle. Minimum: action class decision + stub definitions in packages/invariants/src/definitions.ts.",
+      "owner": "kernel-senior",
+      "deadline": "this cycle"
+    },
+    {
+      "priority": "CRITICAL",
+      "action": "Kernel secondary: begin prototype on #1385 (irreversible action detection). PauseRequested/PauseResolved already in schema. Start hook in packages/kernel/src/decision.ts.",
+      "owner": "kernel-secondary",
+      "deadline": "this cycle"
+    },
+    {
       "priority": "HIGH",
-      "action": "Director: review escalation for #1473. Assign kernel senior coder to fix OPERATIONAL_STATE_PATTERNS in packages/invariants/src/definitions.ts to add .agentguard/squads/** exemption.",
+      "action": "Fix #1477: Update default telemetry URL in apps/cli/src/commands/claude-hook.ts from 'https://telemetry.agentguard.dev' to 'https://agentguard-cloud-api-server.vercel.app'. P1 fix, ~1 line of code.",
+      "owner": "kernel-senior",
+      "deadline": "this cycle"
+    },
+    {
+      "priority": "HIGH",
+      "action": "Director: review escalation for #1473 and unblock. Kernel senior: implement .agentguard/squads/** exemption in OPERATIONAL_STATE_PATTERNS (packages/invariants/src/definitions.ts).",
       "owner": "director + kernel-senior"
     },
     {
-      "priority": "HIGH",
-      "action": "Kernel senior: begin implementation on #1384 (browser governance invariants). Design phase has run 2 cycles without code. Start with action class decision (browser.* vs shell.exec extension) and stub definitions in packages/invariants/src/definitions.ts.",
-      "owner": "kernel-senior"
-    },
-    {
-      "priority": "HIGH",
-      "action": "Kernel secondary: begin prototype on #1385 (irreversible action detection). PauseRequested/PauseResolved schema already exists. Start with packages/kernel/src/decision.ts hook for irreversible action detection.",
+      "priority": "MEDIUM",
+      "action": "Kernel secondary: document #1478 as accepted gap — dashboard shows governance-evaluated events, not total tool volume. Add label to dashboard. Full Go fast-path telemetry is KE-10.",
       "owner": "kernel-secondary"
     },
     {
       "priority": "MEDIUM",
-      "action": "Evaluate #1177 policy gap (github.pr.* not in default allow-list) — mentioned in swarm P0 alert #1452. Assess if this should be a KE-9 maintenance item or KE-10 backlog.",
+      "action": "Architect: evaluate #1177 policy gap (github.pr.* not in default allow-list) blocking pr-merger-agent. 234 failures. Determine if this is KE-9 maintenance or KE-10 backlog.",
       "owner": "kernel-em + architect"
     }
   ]
