@@ -1,45 +1,46 @@
 {
   "squad": "site",
-  "timestamp": "2026-03-30T06:09:00.000Z",
+  "timestamp": "2026-03-31T08:40:00.000Z",
   "health": "green",
-  "summary": "3 stat drifts fixed (invariants card 25→26, destructive patterns stat+card+text 93→92 across 6 locations). PR #1451 codex-cli tests merged, PR #1450 HQ EM merged. 14/14 checks passing. PR #1448 still DIRTY.",
+  "summary": "Site stats 14/14 passing. No open PRs, no site drift. PR #1448 (P1 stderr fix) already merged — P1 escalation resolved. CHANGELOG gap v2.8.1→v2.10.3 persists, blocking #1260 hero copy. Site squad in monitor mode.",
   "siteBuild": {
     "status": "pass",
-    "notes": "check-site-stats.sh: 14/14 checks pass after drift fix."
+    "notes": "check-site-stats.sh: 14/14 checks pass. All numeric claims in site/index.html in sync with codebase."
   },
   "contentFreshness": {
     "status": "current",
-    "resolvedThisCycle": [
-      "invariants card heading 25→26: new invariant added to codebase since last cycle",
-      "destructive patterns 93→92: pattern removed from codebase since last cycle — fixed in stat bar (data-target), card heading, card comment, architecture text, TUI inline display (HTML), TUI inline display (JS animation)"
-    ],
+    "resolvedThisCycle": [],
     "remainingDrift": [],
     "automatedChecks": { "script": "scripts/check-site-stats.sh", "checks": 14, "result": "all pass" },
     "verified": [
-      "invariants: 26", "destructive patterns: 92", "event kinds: 48",
-      "action types: 43", "CLI commands: 35 (file-based)"
+      "invariants: 26",
+      "destructive patterns: 92",
+      "event kinds: 48",
+      "action types: 43",
+      "CLI commands: 35 (file-based)"
+    ],
+    "monitoringForDrift": [
+      "PR #1480 merged: fix(invariants) exempt read-only commands from script-execution-tracking — invariant count unchanged (26), no site impact",
+      "PR #1466 merged: feat enforcement posture display in guard banner — behavioral feature, no numeric stat impact; candidate for features page once CHANGELOG is current",
+      "Deps bumped: @modelcontextprotocol/sdk 1.27.1→1.29.0, turbo, typescript-eslint, re2js, actions/* — no site impact"
     ]
   },
-  "sprintDelivered": [
-    "fix(site): sync invariants card 25→26 and destructive patterns 93→92 — 6 locations in site/index.html"
-  ],
+  "sprintDelivered": [],
   "prQueue": {
-    "mergedThisCycle": [
-      { "pr": 1451, "title": "test(adapters): add tests for codex-cli adapter", "note": "44 tests for codex-cli adapter — clean, 4/4 checks, squash merged" },
-      { "pr": 1450, "title": "chore(hq-em): EM cycle 2026-03-30T12:00Z", "note": "HQ EM report — clean, 4/4 checks, squash merged" }
+    "mergedThisCycle": [],
+    "notedMergedByOthers": [
+      { "pr": 1448, "title": "fix(claude-hook): allow-path must not write to stderr", "note": "P1 resolved — merged by kernel team. Closes #1430. Was listed as DIRTY/stuck last cycle." }
     ],
-    "open": [
-      { "pr": 1448, "title": "fix(claude-hook): allow-path must not write to stderr", "owner": "kernel", "note": "DIRTY — merge conflict, rebase required. Checks passing (4/4). Stuck since HQ cycle at 12:00Z." }
-    ]
+    "open": []
   },
   "issuesTracked": [
     {
       "number": 1260,
-      "title": "v2.9.0 announcement content",
+      "title": "Content: v2.9.0 announcement — wildcard policy fix, safe-subshell allowlist, version 2.9.1",
       "status": "open",
       "priority": "P2",
-      "assessment": "Still deferred — CHANGELOG gap (only goes to v2.8.1, CLI is v2.10.3) blocks accurate hero copy. Monitoring for CHANGELOG update.",
-      "recommendation": "File focused site task for hero copy update once CHANGELOG.md is current through v2.10."
+      "assessment": "Still blocked by CHANGELOG gap. CHANGELOG.md only goes to v2.8.1 but CLI is v2.10.3. Hero copy cannot be drafted accurately until CHANGELOG is current through v2.10.",
+      "recommendation": "Persist escalation to kernel-squad / release process. Once CHANGELOG.md is updated, site-builder can draft PR covering v2.8.x–v2.10.x highlights."
     }
   ],
   "blockers": [],
@@ -48,25 +49,24 @@
       "issue": "CHANGELOG gap — CHANGELOG.md only goes to v2.8.1 but CLI is on v2.10.3",
       "priority": "P2",
       "owner": "kernel-squad or release process",
-      "note": "Blocks drafting accurate #1260 site content. Persisting from previous cycle."
-    },
-    {
-      "issue": "PR #1448 stuck DIRTY — fix for P1 #1430 (hook stderr blocking Claude Code users) is ready but needs rebase",
-      "priority": "P1",
-      "owner": "kernel-squad",
-      "note": "Checks are 4/4. Rebase needed. Stuck since HQ cycle at 12:00Z."
+      "note": "Persists for 4+ cycles. Blocks drafting accurate #1260 hero copy and announcement content. HQ EM also noted this gap in 2026-03-31T04:48Z cycle. Needs owner to update CHANGELOG through v2.10.3."
     }
   ],
   "dogfoodReport": {
     "governanceDenialsThisRun": 0,
     "unexpectedBlocks": [],
     "unexpectedAllows": [],
-    "status": "clean — git, bash, gh operations executed without denial."
+    "status": "clean — rtk git, rtk gh, bash script operations executed without denial this cycle.",
+    "observedDogfoodIssues": [
+      "#1473 no-governance-self-modification blocks EM squads (open, P1) — site-em uses only read/report operations, not affected this cycle",
+      "#1474 no-credential-file-creation false positive on grep (open) — not triggered this cycle"
+    ]
   },
   "nextActions": [
-    "site-builder: file GitHub issue for hero copy update (v2.10 features) once CHANGELOG is current",
-    "site-builder: monitor for new action types / invariants / destructive patterns as kernel work lands",
-    "site-docs-sync: CLAUDE.md CLI audit still current — monitor for new commands"
+    "site-builder: monitor for CHANGELOG update — draft hero copy PR once v2.10.x is documented",
+    "site-builder: note enforcement posture feature (#1466) for future features-page update",
+    "site-docs-sync: CLAUDE.md CLI audit current at 35 commands — monitor for new commands",
+    "escalation owner: CHANGELOG.md needs update to v2.10.3 — blocking #1260 content work"
   ],
   "agentIdentity": "claude-code:opus:site:em"
 }

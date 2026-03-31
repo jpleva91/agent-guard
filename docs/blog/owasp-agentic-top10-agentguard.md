@@ -24,11 +24,11 @@ The gap: shell metacharacter expansion via user-controlled parameters (e.g., `gi
 
 ### 2. Insecure Tool Implementation — Strong (8/10)
 
-This is AgentGuard's core competency. Every agent tool call is normalized into one of 41 canonical action types across 10 classes (`file`, `git`, `shell`, `npm`, `http`, `deploy`, `infra`, `github`, `test`, `mcp`). Execution is dispatched through typed adapters — each handling one action class — rather than directly to the shell. Hook integrity verification confirms the governance hooks themselves haven't been tampered with before any execution occurs.
+This is AgentGuard's core competency. Every agent tool call is normalized into one of 43 canonical action types across 10 classes (`file`, `git`, `shell`, `npm`, `http`, `deploy`, `infra`, `github`, `test`, `mcp`). Execution is dispatched through typed adapters — each handling one action class — rather than directly to the shell. Hook integrity verification confirms the governance hooks themselves haven't been tampered with before any execution occurs.
 
 ### 3. Excessive Agency — Strong (9/10)
 
-24 built-in invariants enforce hard limits on what agents can do regardless of what the policy says:
+26 built-in invariants enforce hard limits on what agents can do regardless of what the policy says:
 
 - `blast-radius-limit` — pre-execution impact forecast blocks overly broad operations
 - `no-permission-escalation` — blocks `chmod 777`, `sudo`, `chown root`

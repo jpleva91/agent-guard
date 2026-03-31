@@ -1,31 +1,36 @@
 {
   "squad": "site",
   "sprint": {
-    "goal": "File hero-copy issue for v2.10 features once CHANGELOG is current; monitor for stat drift as v2.10 work lands",
+    "goal": "Monitor for CHANGELOG update to v2.10.3; draft hero copy PR for #1260 once CHANGELOG is current",
     "issues": [1260]
   },
   "assignments": {
     "site-builder": {
-      "task": "File GitHub issue for v2.10 landing page hero copy update (wildcard fix + new adapters + team-report). Watch for new action types / invariants / destructive patterns as kernel work continues.",
-      "blockedBy": null
+      "task": "Monitor for CHANGELOG.md update to v2.10.3. Once updated, draft hero copy PR covering v2.8.x–v2.10.x highlights (enforcement posture, wildcard fix, four-driver hook parity, team-report, SQLite storage). No action until CHANGELOG gap is closed.",
+      "blockedBy": "CHANGELOG gap (v2.8.1 only vs CLI v2.10.3)"
     },
     "site-docs-sync": {
-      "task": "CLAUDE.md CLI audit current — 35 file-based commands match site counter. Monitor for new commands as v2.10 work lands.",
+      "task": "CLAUDE.md CLI audit current — 35 file-based commands match site counter. Monitor for new commands as v2.10.x work lands.",
       "blockedBy": null
     }
   },
-  "blockers": [],
+  "blockers": [
+    {
+      "id": "changelog-gap",
+      "description": "CHANGELOG.md only goes to v2.8.1; CLI is v2.10.3. Blocks accurate hero copy and #1260 announcement content.",
+      "owner": "kernel-squad or release process",
+      "priority": "P2",
+      "cyclesOpen": 4
+    }
+  ],
   "prQueue": {
-    "open": 1,
+    "open": 0,
     "reviewed": 0,
     "mergeable": 0,
-    "prs": [
-      { "number": 1448, "title": "fix(claude-hook): allow-path must not write to stderr", "owner": "kernel", "note": "DIRTY — merge conflict, needs rebase. Checks 4/4 passing." }
-    ]
+    "prs": []
   },
   "recentlyCompleted": [
-    { "pr": 1451, "title": "test(adapters): add tests for codex-cli adapter", "mergedAt": "2026-03-30T06:08:21Z", "note": "Merged this cycle by site-em — 44 codex-cli adapter tests." },
-    { "pr": 1450, "title": "chore(hq-em): EM cycle 2026-03-30T12:00Z", "mergedAt": "2026-03-30T06:08:43Z", "note": "Merged this cycle by site-em — HQ EM report." }
+    { "pr": 1448, "title": "fix(claude-hook): allow-path must not write to stderr", "mergedAt": "2026-03-31", "note": "P1 resolved — merged by kernel team. Closes #1430. Was DIRTY/stuck last cycle." }
   ],
-  "updatedAt": "2026-03-30T06:09:00.000Z"
+  "updatedAt": "2026-03-31T08:40:00.000Z"
 }
