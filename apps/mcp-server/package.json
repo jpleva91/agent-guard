@@ -25,7 +25,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@red-codes/adapters": "workspace:*",
     "@red-codes/core": "workspace:*",
     "@red-codes/events": "workspace:*",
