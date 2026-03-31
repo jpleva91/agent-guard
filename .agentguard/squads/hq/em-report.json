@@ -1,20 +1,20 @@
 {
   "squad": "hq",
-  "generatedAt": "2026-03-31T07:13:10Z",
+  "generatedAt": "2026-03-31T11:18Z",
   "identity": "claude-code:unknown:planner (hq:em)",
   "runCycle": "3h",
   "health": "red",
-  "healthReason": "Four P0 blockers active: worker pool dead (#1402, cycle 13), codex budget exhausted (#1431, cycle 8 — auto-resolves 2026-04-03), swarm health crisis (#1452, cycle 4), NEW: main-tree toolchain broken 30 dangling symlinks (#1467, cycle 1 — 22h unresolved). NEW P1 sprint-blocker: telemetry default URL unreachable blocks Go→Cloud E2E validation (#1477). Version drift persists: agentguard-cloud 2.10.1 (11th cycle), agentguard-analytics 2.7.3.",
-  "summary": "This cycle (04:48Z→07:13Z): merged 3 EM cycle PRs (#1499 site-em, #1500 studio-em, #1501 kernel-em — all green). Triaged 5 untriaged issues: #1477 (P1 telemetry URL broken, sprint-blocking), #1478 (P2 Go fast-path skips cloud telemetry, sprint-relevant), #1476 (P1 better-sqlite3 cluster #3), #1482 (P2 CLI not in PATH), #1483 (P2 MCP policy-as-guidance). Escalated #1467 (NEW P0: 30 dangling symlinks main-tree toolchain break — human action: pnpm install --force). Sprint concern: #1477+#1478 together mean Go→Cloud E2E telemetry pipeline cannot be validated until fixed.",
+  "healthReason": "Four P0 blockers still unresolved (cycle 4h): main-tree toolchain broken (#1467, 26h), worker pool dead (#1402, cycle 14), codex budget exhausted (#1431, cycle 9 — auto-resolves Apr 3), swarm health crisis + 74.3% cloud exit=1 (#1452, cycle 5). agentguard-cloud version drift persists at 2.10.1 for 12th cycle (target: 2.10.3). Sprint blockers #1477+#1478 unresolved.",
+  "summary": "This cycle (07:13Z→11:18Z): merged 2 PRs (#1504 HQ EM 08:40Z cycle, #1507 docs ecosystem table — all checks passing). Sprint plan #1508 filed by planning agent (recommended sequence: #1467 toolchain → better-sqlite3 cluster → #1477 telemetry URL → #1305 KE-4). agentguard-cloud confirmed still at 2.10.1 (no open PRs, no upgrade in progress). 0 new P0 issues this cycle. PR #1505 (octi-pulpo-em) and #1503 (studio-em) open with UNKNOWN mergeability (checks all passing).",
   "sprintStatus": {
     "goal": "Validate Go kernel→Cloud telemetry E2E pipeline (workspace #60, due Apr 17). KE-2 SHIPPED. KE-8 COMPLETE. KE-9 IN PROGRESS.",
-    "issues": [1402, 1403, 1431, 1452, 1462],
+    "issues": [1402, 1403, 1431, 1452, 1462, 1467, 1477, 1478],
     "sprintBlockers": [
       {
         "issue": 1477,
         "title": "Telemetry default URL unreachable — events silently dropped",
         "priority": "P1",
-        "note": "Sprint-blocking: Go→Cloud E2E cannot be validated without reliable telemetry. Fix fallback URL or document required .env setup."
+        "note": "Sprint-blocking: Go->Cloud E2E cannot be validated. Fix fallback URL or gate behind null check."
       },
       {
         "issue": 1478,
@@ -31,136 +31,50 @@
       }
     ]
   },
-  "ciStatus": {
-    "agentGuard": "green (CI passes; main-tree toolchain broken due to #1467 dangling symlinks — risk: fresh build will fail on cache miss)",
-    "agentguardCloud": "green (CI passes; systemic exit=1 agent failures are runtime/policy mismatch with version 2.10.1 — 11th cycle)",
-    "agentguardAnalytics": "unknown",
-    "recentMerges": "PR #1499 (site-em), #1500 (studio-em), #1501 (kernel-em). All green, merged this cycle.",
-    "securityAlerts": {
-      "count": 0,
-      "status": "RESOLVED — PR #1469 patched path-to-regexp and brace-expansion (#1449 closed)."
+  "prsThisCycle": {
+    "merged": [
+      { "number": 1504, "title": "chore(hq-em): EM cycle 2026-03-31T08:40Z", "note": "Stale EM cycle PR — squash merged" },
+      { "number": 1507, "title": "docs: add ecosystem table to README", "note": "All checks passing — squash merged" }
+    ],
+    "pendingMerge": [
+      { "number": 1505, "title": "chore(octi-pulpo-em): cycle 2026-03-31T08:35Z", "status": "MERGEABLE:UNKNOWN, checks passing" },
+      { "number": 1503, "title": "chore(studio-em): cycle 2026-03-31T08:15Z", "status": "MERGEABLE:UNKNOWN, checks passing" }
+    ]
+  },
+  "crossRepoStatus": {
+    "agentguard-cloud": {
+      "currentVersion": "2.10.1",
+      "targetVersion": "2.10.3",
+      "versionDriftCycles": 12,
+      "agentFailureRate": "74.3%",
+      "openPRs": 0,
+      "status": "CRITICAL — no upgrade in progress"
+    },
+    "agentguard-analytics": {
+      "openPRs": 0,
+      "status": "no open PRs, no drift detected this cycle"
     }
   },
-  "versionMatrix": {
-    "latest": "2.10.3",
-    "agentGuard": "2.10.3",
-    "agentguardCloud": "2.10.1",
-    "agentguardAnalytics": "2.7.3",
-    "drift": {
-      "agentguardCloud": "2 patches behind (P0 — 11th consecutive cycle, CRITICAL. Cloud systemic failures almost certainly caused by version/policy mismatch.)",
-      "agentguardAnalytics": "3+ minor versions behind (P1 — actual version confirmed 2.7.3. Director must prioritize upgrade investigation.)"
-    }
-  },
-  "prQueue": {
-    "agentGuard": {
-      "open": 0,
-      "mergedThisCycle": [1499, 1500, 1501],
-      "closedThisCycle": []
-    }
-  },
-  "newIssuesTriaged": [
+  "newIssuesSincePreviousCycle": [
     {
-      "number": 1477,
-      "title": "bug(telemetry): default fallback URL 'telemetry.agentguard.dev' unreachable",
-      "priority": "P1",
-      "squad": "kernel",
-      "sprintRelevant": true,
-      "note": "Sprint-blocking: Go→Cloud E2E cannot be validated without reliable telemetry. Fix fallback URL or document required .env setup."
-    },
-    {
-      "number": 1478,
-      "title": "feat(telemetry): Go fast-path skips cloud telemetry — allow decisions invisible",
-      "priority": "P2",
-      "squad": "kernel",
-      "sprintRelevant": true,
-      "note": "Sprint-relevant: dashboard underreports workload. Critical for May 6 demo accuracy."
-    },
-    {
-      "number": 1476,
-      "title": "bug(telemetry): better-sqlite3 native bindings missing from global pnpm install",
-      "priority": "P1",
-      "squad": "kernel",
-      "note": "Part of better-sqlite3 cluster (#1463, #1471, #1476). Likely caused by #1467 dangling symlinks."
-    },
-    {
-      "number": 1482,
-      "title": "[dogfood] start-governance-runtime skill fails — CLI not present in worktrees",
-      "priority": "P2",
-      "squad": "kernel",
-      "note": "DX issue: agentguard CLI not in PATH in bench-devs-platform worktrees. Workaround: node_modules/.bin/agentguard."
-    },
-    {
-      "number": 1483,
-      "title": "feat(mcp): add policy-as-guidance tools to MCP server",
-      "priority": "P2",
-      "squad": "kernel",
-      "note": "KE-10 backlog candidate. Gate on KE-9 completion."
+      "number": 1508,
+      "title": "Sprint Plan — 2026-03-31",
+      "source": "planning-agent",
+      "note": "Key work sequence: #1467 toolchain fix -> #1476/#1463/#1471 better-sqlite3 cluster -> #1477 telemetry URL -> #1305 KE-4 plane separation -> #1276 PreToolUse hook fix"
     }
   ],
-  "blockers": [
-    {
-      "issue": 1467,
-      "description": "P0 NEW (cycle 1, 22h unresolved): 30 dangling node_modules symlinks in main tree — vitest, eslint, tsc, prettier, esbuild, turbo, better-sqlite3, tsx all broken. Fix: pnpm install --force in agent-guard/. Likely root cause of better-sqlite3 cluster (#1463, #1471, #1476).",
-      "escalatedTo": "human (jpleva91)",
-      "firstSeen": "2026-03-30T09:12:21Z",
-      "escalatedAt": "2026-03-31T07:13:10Z",
-      "escalationCount": 1
-    },
-    {
-      "issue": 1402,
-      "description": "P0: Worker pool dead on jared box. 13+ cycles, swarm frozen. Human must run server/deploy.sh. #1481 corroborates: queue backlog 110, copilot agents starved.",
-      "escalatedTo": "human (jpleva91)",
-      "firstSeen": "2026-03-29T19:00:00.000Z",
-      "escalatedAt": "2026-03-31T07:13:10Z",
-      "escalationCount": 13
-    },
-    {
-      "issue": 1431,
-      "description": "P0: Codex budget exhausted until Apr 3. 25+ agents offline. Auto-resolves 2026-04-03T02:25Z.",
-      "escalatedTo": "human + director",
-      "firstSeen": "2026-03-30T00:02:00.000Z",
-      "escalatedAt": "2026-03-31T07:13:10Z",
-      "escalationCount": 8
-    },
-    {
-      "issue": 1452,
-      "description": "P0 (cycle 4): 69.5% agent failure rate, 26 orphaned vitest processes (~3.3GB RAM), cloud-squad 74.3% exit=1. NEW CONTEXT: #1467 (dangling symlinks) may be root cause of better-sqlite3 failures. Human actions still pending: kill zombies + prune worktrees + pnpm install --force.",
-      "escalatedTo": "human (zombie kill + worktree prune + pnpm install --force) + director (cloud systemic) + cloud-squad (upgrade 2.10.3)",
-      "firstSeen": "2026-03-30T06:06:00.000Z",
-      "escalatedAt": "2026-03-31T07:13:10Z",
-      "escalationCount": 4
-    },
-    {
-      "issue": 1462,
-      "description": "P1 (cycle 3): Governance report — 5 HIGH systemic issues: agent identity 99.9% missing, gh CLI false positive, team compliance broken, no-secret-exposure dormant, policy gaps.",
-      "escalatedTo": "kernel-squad + hq-ops",
-      "firstSeen": "2026-03-30T21:00:00.000Z",
-      "escalationCount": 3
-    },
-    {
-      "issue": 1403,
-      "description": "P1: readybench QA swarm non-operational 5+ days. Depends on #1402.",
-      "escalatedTo": "ops",
-      "firstSeen": "2026-03-25T00:00:00.000Z"
-    }
+  "escalations": [
+    { "issue": 1402, "target": "human (jpleva91)", "priority": "P0", "escalationCount": 14, "note": "Worker pool dead — run server/deploy.sh" },
+    { "issue": 1467, "target": "human (jpleva91)", "priority": "P0", "escalationCount": 2, "note": "30 dangling node_modules symlinks — run pnpm install --force in agent-guard/" },
+    { "issue": 1431, "target": "director", "priority": "P0", "escalationCount": 9, "note": "Codex budget exhausted — auto-resolves Apr 3" },
+    { "issue": 1452, "target": "human + cloud-squad", "priority": "P0", "escalationCount": 5, "note": "Kill zombie vitest + prune worktrees + cloud-squad upgrade to 2.10.3" }
   ],
-  "crossRepoCoordination": {
-    "versionSync": {
-      "agentguardCloud": "BLOCKED — 11th cycle. Cloud-squad must upgrade agentguard.yaml + package.json to 2.10.3.",
-      "agentguardAnalytics": "BLOCKED — actual version 2.7.3 confirmed. Director must prioritize upgrade investigation."
-    }
-  },
-  "dogfoodPatterns": [
+  "dogfoodObservations": [
     {
-      "pattern": "No governance denials encountered during this EM session (persona write, PR merges, issue edits, state file writes all passed through).",
-      "severity": "info",
-      "status": "nominal"
-    },
-    {
-      "pattern": "Identity set as claude-code:unknown:planner — note 'unknown' model field from write-persona.sh. Relates to #1462 agent identity gap (hq-ops task).",
-      "severity": "warning",
-      "status": "open",
-      "relatedIssue": 1462
+      "issue": 1473,
+      "description": "no-governance-self-modification still blocks .agentguard/squads/ writes in sessions where governance hooks are active. HQ EM using reports/ workaround. Kernel-squad has assignment.",
+      "severity": "P1",
+      "cycleObserved": "2026-03-31T11:18Z"
     }
   ]
 }
