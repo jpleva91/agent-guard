@@ -549,6 +549,16 @@ agentguard cloud login     # Connect after you have an API key
 | Contributing | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Issues | [github.com/AgentGuardHQ/agentguard/issues](https://github.com/AgentGuardHQ/agentguard/issues) |
 
+## Ecosystem
+
+| Repo | Role |
+|------|------|
+| **AgentGuard** | **Governance — policy enforcement, telemetry, invariants** |
+| [Octi Pulpo](https://github.com/AgentGuardHQ/octi-pulpo) | Coordination — pipeline controller, model routing |
+| [ShellForge](https://github.com/AgentGuardHQ/shellforge) | Orchestration — multi-runtime agent execution |
+| [Preflight](https://github.com/AgentGuardHQ/preflight) | Protocol — universal design-before-you-build standard |
+| [Extensions](https://github.com/AgentGuardHQ/agentguard-extensions) | Drivers, integrations, policies, example swarms |
+
 ## License
 
 [Apache 2.0](LICENSE)
