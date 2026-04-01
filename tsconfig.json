@@ -41,9 +41,6 @@
       "path": "packages/matchers"
     },
     {
-      "path": "packages/swarm"
-    },
-    {
       "path": "packages/sdk"
     },
     {

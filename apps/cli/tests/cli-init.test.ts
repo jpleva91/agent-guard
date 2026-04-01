@@ -10,19 +10,13 @@ vi.mock('node:fs', () => ({
   readFileSync: vi.fn(),
 }));
 
-vi.mock('@red-codes/swarm', () => ({
-  scaffold: vi.fn(),
-}));
-
 import { init } from '../src/commands/init.js';
-import { scaffold } from '@red-codes/swarm';
 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.mocked(existsSync).mockReturnValue(false);
-  vi.mocked(scaffold).mockReturnValue({ agents: [{}, {}, {}], skillsWritten: 3, skillsSkipped: 0 });
 });
 
 afterEach(() => {
@@ -565,38 +559,6 @@ describe('init command', () => {
       expect(output).toContain('ci-safe');
     });
 
-    it('should scaffold swarm by default in non-interactive mode', async () => {
-      setupStudioMocks();
-      await init(['studio', '--non-interactive']);
-      expect(vi.mocked(scaffold)).toHaveBeenCalled();
-    });
-
-    it('should use minimal swarm preset for a non-monorepo project', async () => {
-      setupStudioMocks();
-      await init(['studio', '--non-interactive']);
-      const call = vi.mocked(scaffold).mock.calls[0];
-      expect(call?.[0]?.tiers).toEqual(['core']);
-    });
-
-    it('should use full swarm preset for a monorepo', async () => {
-      setupStudioMocks({ isMonorepo: true });
-      await init(['studio', '--non-interactive']);
-      const call = vi.mocked(scaffold).mock.calls[0];
-      expect(call?.[0]?.tiers).toEqual(
-        expect.arrayContaining(['core', 'governance', 'ops', 'quality', 'marketing'])
-      );
-    });
-
-    it('should handle swarm scaffold failure gracefully and still return 0', async () => {
-      setupStudioMocks();
-      vi.mocked(scaffold).mockImplementation(() => {
-        throw new Error('disk full');
-      });
-      const code = await init(['studio', '--non-interactive']);
-      expect(code).toBe(0);
-      expect(console.error).toHaveBeenCalledWith(expect.stringContaining('disk full'));
-    });
-
     it('should overwrite existing agentguard.yaml in non-interactive mode', async () => {
       setupStudioMocks({ hasExistingYaml: true });
       await init(['studio', '--non-interactive']);
@@ -624,15 +586,6 @@ describe('init command', () => {
 
       const output = consoleSpy.mock.calls.flat().join('\n');
       expect(output).toContain('Studio initialized');
-    });
-
-    it('should include swarm tier in summary when swarm was scaffolded', async () => {
-      setupStudioMocks();
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      await init(['studio', '--non-interactive']);
-
-      const output = consoleSpy.mock.calls.flat().join('\n');
-      expect(output).toContain('minimal');
     });
 
     it('should write files to custom --dir when provided', async () => {

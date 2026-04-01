@@ -20,11 +20,7 @@ Install in 30 seconds. Your agents can't break what matters.</p>
 AI coding agents (Claude Code, Codex CLI, GitHub Copilot CLI, Google Gemini CLI, OpenCode, Goose, and more) run autonomously — writing files, executing commands, pushing code. AgentGuard prevents them from doing catastrophic things: no accidental pushes to main, no credential leaks, no runaway destructive loops. 26 built-in safety checks, zero config required.
 
 **For individuals:** stop your AI from wrecking your machine or repo.
-**For teams:** run fleets of agents safely at scale, with audit trails that pass compliance.
-
-> **See it live** — We run 100+ autonomous AI agents building AgentGuard itself, governed 24/7.
-> Every deny, every escalation, every code review — visible in real time.
-> **[Watch the live swarm &rarr;](https://agentguard-cloud-office-sim.vercel.app)**
+**For teams:** govern agents at scale, with audit trails that pass compliance.
 
 ## What Problem Does AgentGuard Solve?
 
@@ -121,7 +117,6 @@ agentguard cloud login                  # Opens browser → authenticate → CLI
 
 | Link | Description |
 |------|-------------|
-| **[Live Office](https://agentguard-cloud-office-sim.vercel.app)** | **Watch our 100+ agent swarm build software 24/7** — real-time governance visualization |
 | [Dashboard](https://agentguard-cloud-dashboard.vercel.app) | Team dashboard — runs, violations, analytics |
 
 ## Agent Identity
@@ -144,7 +139,6 @@ Identity consists of a **role** (`developer`, `reviewer`, `ops`, `security`, `ci
 | **48 event kinds** | Full lifecycle telemetry: `ActionRequested → ActionAllowed/Denied → ActionExecuted` |
 | **Real-time cloud dashboard** | Telemetry streams to your team dashboard; opt-in, anonymous by default |
 | **Multi-tenant** | Team workspaces, GitHub/Google OAuth, SSO-ready |
-| **Live Office visualization** | [24/7 live view](https://agentguard-cloud-office-sim.vercel.app) of our actual 100+ agent swarm — watch AI build software under governance |
 | **Agent SDK** | Programmatic governance for custom integrations and RunManifest-driven workflows |
 | **Agent identity** | Declare agent role + driver for governance telemetry — automatic prompt or CLI flag |
 | **Pre-push hooks** | Branch protection enforcement via git pre-push hooks, configured from agentguard.yaml |
@@ -357,7 +351,7 @@ rules:
 | `recursive-operation-guard` | Low | `find -exec`, `xargs` with write/delete |
 | `lockfile-integrity` | Low | `package.json` changes without lockfile sync |
 | `no-verify-bypass` | High | `git push/commit --no-verify` — prevents skipping pre-push/pre-commit hooks |
-| `no-self-approve-pr` | Critical | Agents merging or approving PRs they authored — enforces separation of duties in multi-agent swarms |
+| `no-self-approve-pr` | Critical | Agents merging or approving PRs they authored — enforces separation of duties in multi-agent setups |
 | `cross-repo-blast-radius` | High | Caps cumulative unique files written across all repos in a session (default: 50 files) |
 
 ## Architecture
@@ -539,7 +533,6 @@ agentguard cloud login     # Connect after you have an API key
 | Resource | URL |
 |----------|-----|
 | Dashboard | [agentguard-cloud-dashboard.vercel.app](https://agentguard-cloud-dashboard.vercel.app) |
-| **Live Office** | **[agentguard-cloud-office-sim.vercel.app](https://agentguard-cloud-office-sim.vercel.app)** — watch our swarm build software 24/7 |
 | Website | [agentguardhq.github.io/agentguard](https://agentguardhq.github.io/agentguard/) |
 | Docs | [docs/](docs/) |
 | Architecture | [docs/unified-architecture.md](docs/unified-architecture.md) |
@@ -557,7 +550,7 @@ agentguard cloud login     # Connect after you have an API key
 | [Octi Pulpo](https://github.com/AgentGuardHQ/octi-pulpo) | Coordination — pipeline controller, model routing |
 | [ShellForge](https://github.com/AgentGuardHQ/shellforge) | Orchestration — multi-runtime agent execution |
 | [Preflight](https://github.com/AgentGuardHQ/preflight) | Protocol — universal design-before-you-build standard |
-| [Extensions](https://github.com/AgentGuardHQ/agentguard-extensions) | Drivers, integrations, policies, example swarms |
+| [Extensions](https://github.com/AgentGuardHQ/agentguard-extensions) | Drivers, integrations, policies |
 
 ## License
 

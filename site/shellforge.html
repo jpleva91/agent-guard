@@ -127,7 +127,6 @@
         <a href="#quickstart" class="text-muted hover:text-text transition-colors text-sm font-medium">Quick Start</a>
         <a href="#stack" class="text-muted hover:text-text transition-colors text-sm font-medium">Stack</a>
         <a href="#governance" class="text-muted hover:text-text transition-colors text-sm font-medium">Governance</a>
-        <a href="#swarm" class="text-muted hover:text-text transition-colors text-sm font-medium">Swarm</a>
         <a href="index.html" class="text-muted hover:text-text transition-colors text-sm font-medium">AgentGuard</a>
         <a href="https://github.com/AgentGuardHQ/shellforge" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm font-medium">GitHub</a>
         <button id="theme-toggle" class="theme-toggle text-muted hover:text-text" aria-label="Toggle light/dark mode">
@@ -506,93 +505,6 @@
     </section>
 
     <!-- ============================================ -->
-    <!-- SWARM MODE                                   -->
-    <!-- ============================================ -->
-    <section id="swarm" class="py-24 bg-surface/30" aria-labelledby="swarm-heading">
-      <div class="max-w-7xl mx-auto px-6">
-        <div class="text-center mb-16 reveal">
-          <span class="inline-block font-mono text-bg text-xs font-bold tracking-wider uppercase bg-orange px-3 py-1 rounded-full mb-4">Swarm Mode</span>
-          <h2 id="swarm-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Run a 24/7 governed agent swarm on your Mac</h2>
-          <p class="text-muted text-lg max-w-2xl mx-auto">Memory-aware scheduling automatically computes how many agents can run in parallel based on your available RAM. Queue the rest.</p>
-        </div>
-
-        <div class="grid lg:grid-cols-2 gap-12 items-start">
-          <!-- Config example -->
-          <div class="reveal">
-            <div class="bg-surface rounded-xl border border-surface-light overflow-hidden">
-              <div class="flex items-center gap-2 px-4 py-3 bg-surface-light/50 border-b border-surface-light">
-                <span class="font-mono text-xs text-muted">agents.yaml</span>
-              </div>
-              <pre class="p-5 font-mono text-xs leading-relaxed text-muted overflow-x-auto"><code><span class="text-cta">max_parallel</span>: 0  <span class="text-surface-light"># 0 = auto from RAM</span>
-<span class="text-cta">model_ram_gb</span>: 19  <span class="text-surface-light"># qwen3:30b Q4</span>
-
-<span class="text-cta">agents</span>:
-  - <span class="text-cta">name</span>: qa-agent
-    <span class="text-cta">system</span>: <span class="text-text">"You are a QA engineer."</span>
-    <span class="text-cta">prompt</span>: <span class="text-text">"Find test gaps."</span>
-    <span class="text-cta">schedule</span>: <span class="text-text">"4h"</span>
-    <span class="text-cta">priority</span>: 2
-    <span class="text-cta">timeout</span>: 300
-
-  - <span class="text-cta">name</span>: security-agent
-    <span class="text-cta">system</span>: <span class="text-text">"You are a security reviewer."</span>
-    <span class="text-cta">prompt</span>: <span class="text-text">"Audit for vulnerabilities."</span>
-    <span class="text-cta">schedule</span>: <span class="text-text">"24h"</span>
-    <span class="text-cta">priority</span>: 1
-    <span class="text-cta">timeout</span>: 600</code></pre>
-            </div>
-            <div class="mt-4 font-mono text-sm">
-              <div class="text-muted"># Start the swarm</div>
-              <div><span class="text-orange">$</span> <span class="text-text">shellforge serve agents.yaml</span></div>
-            </div>
-          </div>
-
-          <!-- Memory table + multi-driver -->
-          <div class="reveal space-y-6">
-            <div class="bg-surface border border-surface-light rounded-xl p-6">
-              <h3 class="font-mono font-semibold text-text mb-4">Memory Budget — qwen3:30b Q4</h3>
-              <div class="overflow-x-auto">
-                <table class="w-full text-sm font-mono">
-                  <thead>
-                    <tr class="border-b border-surface-light">
-                      <th class="text-left text-muted font-medium pb-2">Mac</th>
-                      <th class="text-left text-muted font-medium pb-2">RAM</th>
-                      <th class="text-left text-muted font-medium pb-2">Max Parallel</th>
-                    </tr>
-                  </thead>
-                  <tbody class="space-y-1">
-                    <tr class="border-b border-surface-light/50">
-                      <td class="py-2 text-text">M4 Pro 48GB</td>
-                      <td class="py-2 text-muted">48 GB</td>
-                      <td class="py-2 text-cta">3–4 agents</td>
-                    </tr>
-                    <tr class="border-b border-surface-light/50">
-                      <td class="py-2 text-text">M4 32GB</td>
-                      <td class="py-2 text-muted">32 GB</td>
-                      <td class="py-2 text-cta">1–2 agents</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <p class="text-muted text-xs mt-3"><code class="text-cta">OLLAMA_KV_CACHE_TYPE=q8_0</code> halves KV cache memory — doubles agent capacity.</p>
-            </div>
-
-            <div class="bg-surface border border-surface-light rounded-xl p-6">
-              <h3 class="font-mono font-semibold text-text mb-3">Multi-Driver in One DAG</h3>
-              <p class="text-muted text-sm mb-4">Orchestrate multiple agent drivers in a single Dagu pipeline. Each driver runs with full governance.</p>
-              <div class="font-mono text-xs space-y-1">
-                <div><span class="text-orange">$</span> <span class="text-text">shellforge run claude "review this code"</span></div>
-                <div><span class="text-orange">$</span> <span class="text-text">shellforge run codex "generate tests"</span></div>
-                <div><span class="text-orange">$</span> <span class="text-text">shellforge run gemini "security audit"</span></div>
-                <div class="text-muted"># or compose in dags/multi-driver-swarm.yaml</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================================ -->
     <!-- MODEL OPTIONS                                -->
     <!-- ============================================ -->
     <section class="py-20 border-y border-surface-light" aria-labelledby="models-heading">
@@ -684,7 +596,6 @@
             <li><a href="#quickstart" class="text-muted hover:text-text transition-colors">Quick Start</a></li>
             <li><a href="#stack" class="text-muted hover:text-text transition-colors">The Stack</a></li>
             <li><a href="#governance" class="text-muted hover:text-text transition-colors">Governance</a></li>
-            <li><a href="#swarm" class="text-muted hover:text-text transition-colors">Swarm Mode</a></li>
             <li><a href="https://github.com/AgentGuardHQ/shellforge" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors">GitHub</a></li>
           </ul>
         </div>

@@ -57,7 +57,6 @@
     "@red-codes/policy": "workspace:*",
     "@red-codes/renderers": "workspace:*",
     "@red-codes/storage": "workspace:*",
-    "@red-codes/swarm": "workspace:*",
     "@red-codes/telemetry": "workspace:*",
     "@red-codes/telemetry-client": "workspace:*",
     "@types/better-sqlite3": "^7.6.0",

@@ -12,7 +12,7 @@
 
 AgentGuard is the **Execution Control Plane for autonomous AI agents** — the independent governance layer that sits between autonomous agents and the real world. All agent side effects must pass through deterministic governance before reaching the environment, regardless of which orchestration framework, cloud provider, or AI model powers the agents.
 
-**Strategic positioning**: Autonomous Execution Governance (AEG). Like Okta for the application layer, AgentGuard controls the trust boundary without replacing the underlying systems. The OSS repo houses Layer 1 (Kernel — the moat) and Layer 2 (Studio Runtime — adapters, swarm templates, execution profiles, and the `agentguard init studio` wizard that bootstraps governed workspaces).
+**Strategic positioning**: Autonomous Execution Governance (AEG). Like Okta for the application layer, AgentGuard controls the trust boundary without replacing the underlying systems. The OSS repo houses Layer 1 (Kernel — the moat) and Layer 2 (Studio Runtime — adapters, execution profiles, and the `agentguard init studio` wizard that bootstraps governed workspaces).
 
 **Core thesis**: Once autonomous agents start modifying production systems, organizations need deterministic execution governance. Prompt alignment cannot solve this. Only a reference monitor architecture — default-deny, tamper-evident, fully auditable — provides the guarantees enterprises require. Orchestration is commoditizing (LangGraph, CrewAI, AutoGen, platform-level tools); governance remains scarce.
 
@@ -41,7 +41,7 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | MCP governance server (15 tools) | Implemented | Production |
 | Plugin ecosystem (discovery, registry, sandboxing) | Implemented | Production |
 | 8 policy packs (essentials, strict, ci-safe, enterprise, open-source, soc2, hipaa, eng-standards) | Implemented | Production |
-| 26-agent autonomous swarm templates | Implemented | Production |
+| Multi-agent governance templates | Implemented | Production |
 | KE-1 Structured matchers (Aho-Corasick, globs, reason codes) | **Shipped v2.3.0** | `packages/matchers/` |
 | All 46 event kinds mapped to cloud AgentEvent | **Shipped v2.3.0** | `packages/telemetry/src/event-mapper.ts` |
 | Agent SDK for programmatic governance | **Shipped v2.3.0** | Programmatic governance integration |
@@ -61,7 +61,7 @@ AgentGuard is the **Execution Control Plane for autonomous AI agents** — the i
 | No-verify-bypass invariant (#24) — blocks `git push/commit --no-verify` | **Shipped v2.6.0** | `packages/invariants/src/definitions.ts` |
 | Read-only operations permitted on protected paths | **Shipped v2.7.0** | `packages/adapters/src/file.ts` (closes #648) |
 | Install attribution telemetry — opt-in postinstall ping (version, OS, Node, CI env, anon ID) | **Shipped v2.7.0** | `apps/cli/src/postinstall.ts` (PR #991) |
-| `agentguard init studio` wizard, execution profiles, swarm template schema | **Shipped v2.7.0** | `apps/cli/src/commands/init.ts`, `packages/swarm/` (PR #987) |
+| `agentguard init studio` wizard + execution profiles | **Shipped v2.7.0** | `apps/cli/src/commands/init.ts` (PR #987) |
 | OpenCode driver support | **Shipped v2.7.0** | Agent driver registry (PR #1019) |
 | Codex CLI adapter (PreToolUse/PostToolUse hook commands) | **Shipped v2.8.0** | `packages/adapters/src/codex-cli.ts` (PR #1024) |
 | Gemini CLI adapter (BeforeTool/AfterTool hook commands) | **Shipped v2.8.0** | `packages/adapters/src/gemini-cli.ts` (PR #1024) |
@@ -197,7 +197,7 @@ This sprint implements the architectural upgrades required for AgentGuard to fun
 
 **Traction note (2026-03-24)**: npm reports ~1,761 weekly downloads, but investigation shows the majority are internal Vercel CI builds of `agentguard-cloud` which pins `@red-codes/agentguard@2.0.0`. Each Vercel build (ephemeral containers, preview deploys, branch builds) triggers a fresh `npm install`. Real external adoption is likely in the low hundreds. This makes install attribution tracking and the user capture funnel critical — without them, we cannot distinguish real adoption from CI noise. The version drift (cloud at 2.0.0 vs OSS at 2.4.0) should also be resolved.
 
-**Release cadence**: v3.0 (KE-2 ActionContext + stranger test + capture funnel), v3.1 (Runner + `apps/runner`), v3.2+ (advanced integrations). Note: `agentguard init studio` wizard, execution profiles, swarm template schema, and install attribution all shipped early in v2.7.x ahead of schedule; Codex CLI + Gemini CLI + DeepAgents adapters shipped in v2.8.x (latest: v2.8.4).
+**Release cadence**: v3.0 (KE-2 ActionContext + stranger test + capture funnel), v3.1 (Runner + `apps/runner`), v3.2+ (advanced integrations). Note: `agentguard init studio` wizard, execution profiles, and install attribution all shipped early in v2.7.x ahead of schedule; Codex CLI + Gemini CLI + DeepAgents adapters shipped in v2.8.x (latest: v2.8.4).
 
 ### Next — Pull-Based Runner (Phase 6.5 — `apps/runner`)
 
@@ -225,9 +225,8 @@ Depends on: v3.0 released + Cloud Phase 2A (orchestrator + runner protocol).
 
 Shipped ahead of schedule in v2.7.x; dependency on v3.0 stranger test waived for early delivery.
 
-- [x] ~~**`agentguard init studio` wizard**~~ — ✅ Done 2026-03-26 — detects project type (monorepo/single), CI/CD, test framework, agent runtimes; offers execution profile + swarm preset selection (full/qa-focused/dev-ops/minimal); `--non-interactive` mode for CI; optional Cloud connection (PR #987)
+- [x] ~~**`agentguard init studio` wizard**~~ — ✅ Done 2026-03-26 — detects project type (monorepo/single), CI/CD, test framework, agent runtimes; offers execution profile selection (full/qa-focused/dev-ops/minimal); `--non-interactive` mode for CI; optional Cloud connection (PR #987)
 - [x] ~~**Execution profiles**~~ — ✅ Done 2026-03-26 — `ci-safe` and `enterprise` profiles shipped; 6 profiles total via `agentguard init --profile <name>` (PR #987)
-- [x] ~~**Swarm template schema**~~ — ✅ Done 2026-03-26 — canonical JSON schema for swarm manifest, squad manifest, swarm config with zero-dependency runtime validator (PR #987)
 
 ### Next — Capability-Scoped Sessions (Phase 7)
 

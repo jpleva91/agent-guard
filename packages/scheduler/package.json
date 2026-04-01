@@ -1,7 +1,7 @@
 {
   "name": "@red-codes/scheduler",
   "version": "2.9.3",
-  "description": "Task scheduler, queue, lease manager, and worker orchestration for AgentGuard swarm",
+  "description": "Task scheduler, queue, lease manager, and worker orchestration for AgentGuard",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

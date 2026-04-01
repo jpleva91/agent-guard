@@ -72,11 +72,6 @@ export async function init(args: string[]): Promise<number> {
     return initFirestore(dir);
   }
 
-  // Swarm scaffolding mode
-  if (extensionType === 'swarm') {
-    return initSwarm(parsed);
-  }
-
   // Studio wizard — interactive project bootstrap
   if (extensionType === 'studio') {
     return initStudio(parsed);
@@ -1287,122 +1282,6 @@ AGENTGUARD_STORE=firestore
   return 0;
 }
 
-/**
- * Scaffold the agent swarm: copy skill templates, render config, and output
- * scheduled task definitions for registration.
- */
-async function initSwarm(parsed: ReturnType<typeof parseArgs>): Promise<number> {
-  const dir = parsed.flags.dir as string | undefined;
-  const force = parsed.flags.force === true || parsed.flags.force === 'true';
-  const tiersFlag = parsed.flags.tiers as string | undefined;
-  const tiers = tiersFlag ? tiersFlag.split(',').map((t) => t.trim()) : undefined;
-  const projectRoot = resolve(dir ?? '.');
-
-  let scaffoldFn: typeof import('@red-codes/swarm').scaffold;
-  try {
-    const swarmModule = await import('@red-codes/swarm');
-    scaffoldFn = swarmModule.scaffold;
-  } catch {
-    console.error(`\n  ${color('Error', 'red')}: @red-codes/swarm package not found.`);
-    console.error(`  Install it with: pnpm add @red-codes/swarm\n`);
-    return 1;
-  }
-
-  const result = scaffoldFn({ projectRoot, force, tiers });
-
-  console.log(
-    `\n  ${color('✓', 'green')} Swarm initialized (${bold(String(result.agents.length))} agents, ${bold(String(result.skillsWritten + result.skillsSkipped))} skills)\n`
-  );
-
-  if (result.configWritten) {
-    console.log(
-      `  ${dim('Created')} agentguard-swarm.yaml ${dim('(customize schedules, paths, labels)')}`
-    );
-  }
-
-  console.log(
-    `  ${dim('Skills written:')} ${result.skillsWritten}  ${dim('Skipped (existing):')} ${result.skillsSkipped}\n`
-  );
-
-  // Print agent table
-  console.log(
-    `  ${bold('Agent')}${' '.repeat(28)}${bold('Tier')}${' '.repeat(8)}${bold('Schedule')}`
-  );
-  console.log(`  ${'─'.repeat(65)}`);
-  for (const agent of result.agents) {
-    const name = agent.name.padEnd(33);
-    const tier = agent.tier.padEnd(12);
-    console.log(`  ${name}${tier}${agent.cron}`);
-  }
-
-  console.log(`\n  ${bold('Next steps:')}`);
-  console.log(`    ${dim('# Register scheduled tasks (run inside Claude Code):')}`);
-  console.log(
-    `    ${dim('# The agent prompts are in .claude/skills/ — use them with the scheduled tasks API')}`
-  );
-  console.log(
-    `    ${dim('# Or use the register-swarm-tasks skill to auto-register all agents')}\n`
-  );
-
-  // Write a register-swarm-tasks skill
-  const registerSkillPath = join(projectRoot, '.claude', 'skills', 'register-swarm-tasks.md');
-  if (!existsSync(registerSkillPath) || force) {
-    const registerContent = buildRegisterSkill(result);
-    mkdirSync(join(projectRoot, '.claude', 'skills'), { recursive: true });
-    writeFileSync(registerSkillPath, registerContent, 'utf8');
-    console.log(`  ${dim('Created')} .claude/skills/register-swarm-tasks.md\n`);
-  }
-
-  return 0;
-}
-
-function buildRegisterSkill(result: {
-  agents: ReadonlyArray<{
-    id: string;
-    name: string;
-    tier: string;
-    cron: string;
-    description: string;
-    prompt: string;
-  }>;
-}): string {
-  const lines = [
-    '# Skill: Register Swarm Tasks',
-    '',
-    'Register all swarm agents as scheduled tasks. Run this once after `agentguard init swarm`.',
-    '',
-    '## Autonomy Directive',
-    '',
-    'This skill runs interactively. Confirm with the user before creating tasks.',
-    '',
-    '## Steps',
-    '',
-    '### 1. Create Scheduled Tasks',
-    '',
-    'Use the `mcp__scheduled-tasks__create_scheduled_task` tool to register each agent:',
-    '',
-  ];
-
-  for (const agent of result.agents) {
-    lines.push(`#### ${agent.name}`);
-    lines.push('');
-    lines.push(`- **Task ID**: \`${agent.id}\``);
-    lines.push(`- **Cron**: \`${agent.cron}\``);
-    lines.push(`- **Description**: ${agent.description}`);
-    lines.push(`- **Prompt**: Use the content from the \`${agent.id}\` prompt template`);
-    lines.push('');
-  }
-
-  lines.push('### 2. Verify');
-  lines.push('');
-  lines.push(
-    'After creating all tasks, use `mcp__scheduled-tasks__list_scheduled_tasks` to verify they are registered.'
-  );
-  lines.push('');
-
-  return lines.join('\n');
-}
-
 // ---------------------------------------------------------------------------
 // Studio wizard — interactive project bootstrap
 // ---------------------------------------------------------------------------
@@ -1482,13 +1361,6 @@ const PROFILE_DESCRIPTIONS: Record<string, string> = {
   strict: 'Maximum guardrails — deny all destructive ops',
   enterprise: 'Strict + compliance — audit trail, approval workflows, SOC2/HIPAA',
   permissive: 'Minimal — only block the most dangerous operations',
-};
-
-const SWARM_PRESETS: Record<string, string[]> = {
-  full: ['core', 'governance', 'ops', 'quality', 'marketing'],
-  'qa-focused': ['core', 'quality'],
-  'dev-ops': ['core', 'governance', 'ops'],
-  minimal: ['core'],
 };
 
 async function studioPrompt(question: string, options: string[], defaultIdx = 0): Promise<number> {
@@ -1571,30 +1443,7 @@ async function initStudio(parsed: ReturnType<typeof parseArgs>): Promise<number>
   }
   const selectedProfile = profileNames[profileIdx];
 
-  // Step 3: Select swarm preset
-  const presetNames = Object.keys(SWARM_PRESETS);
-  const presetOptions = presetNames.map(
-    (p) => `${bold(p)} — tiers: ${SWARM_PRESETS[p].join(', ')}`
-  );
-
-  let defaultPresetIdx = 0; // full
-  if (!detection.isMonorepo) {
-    defaultPresetIdx = presetNames.indexOf('minimal');
-  }
-
-  let swarmPresetIdx: number;
-  let includeSwarm: boolean;
-  if (nonInteractive) {
-    includeSwarm = true;
-    swarmPresetIdx = defaultPresetIdx;
-  } else {
-    includeSwarm = await studioConfirm(`\n  ${bold('Include agent swarm?')}`, true);
-    swarmPresetIdx = includeSwarm
-      ? await studioPrompt('Select swarm preset:', presetOptions, defaultPresetIdx)
-      : 0;
-  }
-
-  // Step 4: Scaffold execution profile
+  // Step 3: Scaffold execution profile
   mkdirSync(projectRoot, { recursive: true });
   const templatesDir = resolveTemplatesDir();
   const templatePath = join(templatesDir, `${selectedProfile}.yaml`);
@@ -1626,40 +1475,7 @@ async function initStudio(parsed: ReturnType<typeof parseArgs>): Promise<number>
     );
   }
 
-  // Step 5: Scaffold swarm (if selected)
-  if (includeSwarm) {
-    const selectedPreset = presetNames[swarmPresetIdx];
-    const tiers = SWARM_PRESETS[selectedPreset];
-
-    let scaffoldFn: typeof import('@red-codes/swarm').scaffold;
-    try {
-      const swarmModule = await import('@red-codes/swarm');
-      scaffoldFn = swarmModule.scaffold;
-    } catch {
-      console.error(
-        `\n  ${color('⚠', 'yellow')} @red-codes/swarm not found — skipping swarm scaffold`
-      );
-      scaffoldFn = null as unknown as typeof import('@red-codes/swarm').scaffold;
-    }
-
-    if (scaffoldFn) {
-      try {
-        const result = scaffoldFn({ projectRoot, tiers });
-
-        console.log(
-          `  ${color('✓', 'green')} Swarm: ${bold(selectedPreset)} preset (${result.agents.length} agents, ${tiers.join(', ')})`
-        );
-        console.log(
-          `    ${dim('Skills written:')} ${result.skillsWritten}  ${dim('Skipped:')} ${result.skillsSkipped}`
-        );
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error(`  ${color('⚠', 'yellow')} Swarm scaffold failed: ${msg}`);
-      }
-    }
-  }
-
-  // Step 6: Set up Claude Code hooks (if Claude Code detected)
+  // Step 4: Set up Claude Code hooks (if Claude Code detected)
   if (detection.agentRuntimes.includes('Claude Code')) {
     const setupHooks =
       nonInteractive ||
@@ -1690,12 +1506,6 @@ async function initStudio(parsed: ReturnType<typeof parseArgs>): Promise<number>
   console.log(`\n  ${color('✓', 'green')} ${bold('Studio initialized')}\n`);
   console.log(`  ${bold('What was set up:')}`);
   console.log(`    ${dim('Policy:')}    ${selectedProfile} execution profile`);
-  if (includeSwarm) {
-    const selectedPreset = presetNames[swarmPresetIdx];
-    console.log(
-      `    ${dim('Swarm:')}     ${selectedPreset} preset (${SWARM_PRESETS[selectedPreset].join(', ')})`
-    );
-  }
   if (detection.agentRuntimes.includes('Claude Code')) {
     console.log(`    ${dim('Hooks:')}     Claude Code governance hooks`);
   }
@@ -1703,10 +1513,6 @@ async function initStudio(parsed: ReturnType<typeof parseArgs>): Promise<number>
   console.log(`\n  ${bold('Next steps:')}`);
   console.log(`    ${dim('#')} Review and customize agentguard.yaml`);
   console.log(`    aguard guard --dry-run`);
-  if (includeSwarm) {
-    console.log(`    ${dim('#')} Register swarm tasks in Claude Code`);
-    console.log(`    ${dim('#')} See .claude/skills/register-swarm-tasks.md`);
-  }
   console.log('');
 
   return 0;
@@ -1714,7 +1520,7 @@ async function initStudio(parsed: ReturnType<typeof parseArgs>): Promise<number>
 
 function printInitHelp(): void {
   console.log(`
-  ${bold('agentguard init')} — Scaffold a new governance extension, policy template, or agent swarm
+  ${bold('agentguard init')} — Scaffold a new governance extension or policy template
 
   ${bold('Usage:')}
     agentguard init --extension <type> [--name <name>] [--dir <path>]
@@ -1730,10 +1536,7 @@ function printInitHelp(): void {
     simulator          Custom action simulator
 
   ${bold('Studio wizard:')}
-    studio             Interactive workspace bootstrap — detect project, select profile + swarm
-
-  ${bold('Agent swarm:')}
-    swarm              Scaffold the full agent swarm (skills, config, task definitions)
+    studio             Interactive workspace bootstrap — detect project, select profile
 
   ${bold('Storage backends:')}
     firestore          Set up Firestore backend (security rules + credentials guide)
@@ -1751,8 +1554,6 @@ function printInitHelp(): void {
     --template, -t     Policy template name (creates agentguard.yaml)
     --name, -n         Extension name (default: my-<type>)
     --dir, -d          Output directory (default: ./<name> or . for templates)
-    --tiers            Comma-separated tiers for swarm (core,governance,ops,quality,marketing)
-    --force            Overwrite existing skill files during swarm init
     --non-interactive  Skip prompts, use detected defaults (for CI/scripting)
 
   ${bold('Examples:')}
@@ -1765,8 +1566,5 @@ function printInitHelp(): void {
     agentguard init firestore
     agentguard init studio
     agentguard init studio --non-interactive
-    agentguard init swarm
-    agentguard init swarm --tiers core,governance
-    agentguard init swarm --force
 `);
 }

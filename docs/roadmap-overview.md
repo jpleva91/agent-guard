@@ -39,7 +39,7 @@ AgentGuard is the **mandatory execution control plane for AI agents** — the ru
 | MCP governance server (15 tools) | Implemented | Production |
 | Plugin ecosystem (discovery, registry, sandboxing) | Implemented | Production |
 | 8 policy packs (essentials, strict, ci-safe, enterprise, open-source, soc2, hipaa, eng-standards) | Implemented | Production |
-| 26-agent autonomous swarm templates | Implemented | Production |
+| Multi-agent governance templates | Implemented | Production |
 | KE-1 Structured matchers (Aho-Corasick, globs, reason codes) | **Shipped v2.3.0** | `packages/matchers/` |
 | All 47 event kinds mapped to cloud AgentEvent | **Shipped v2.3.0** | `packages/telemetry/src/event-mapper.ts` |
 | Agent SDK for programmatic governance | **Shipped v2.3.0** | Programmatic governance integration |

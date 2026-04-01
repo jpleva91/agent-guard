@@ -368,7 +368,6 @@
         <a href="#architecture" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Architecture</a>
         <a href="#invariants" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Invariants</a>
         <a href="#cli" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">CLI</a>
-        <a href="#swarm" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Swarm</a>
         <a href="https://agentguard-cloud-dashboard.vercel.app" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Dashboard</a>
         <a href="shellforge.html" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">ShellForge</a>
         <a href="posts.html" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Newsletter</a>
@@ -395,7 +394,6 @@
         <a href="#architecture" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Architecture</a>
         <a href="#invariants" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Invariants</a>
         <a href="#cli" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">CLI</a>
-        <a href="#swarm" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Swarm</a>
         <a href="https://agentguard-cloud-dashboard.vercel.app" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Dashboard</a>
         <a href="shellforge.html" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">ShellForge</a>
         <a href="posts.html" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Newsletter</a>
@@ -874,15 +872,6 @@
             </div>
             <h3 class="font-mono font-semibold text-text mb-2">Agents That Learn</h3>
             <p class="text-muted text-sm leading-relaxed">Educate mode captures governance lessons into persistent memory. Agents improve over time&mdash;junior agents level up through the governance training ladder without hard blocks slowing delivery.</p>
-          </div>
-
-          <!-- Card 12: Squad Swarm -->
-          <div class="reveal bg-surface border border-surface-light rounded-xl p-6 card-lift cursor-pointer">
-            <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
-              <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-            </div>
-            <h3 class="font-mono font-semibold text-text mb-2">Squad-Based Swarm</h3>
-            <p class="text-muted text-sm leading-relaxed">Organize agents into governed squads with EM&rarr;Director reporting, loop guards, lease-based coordination, and budget-aware task dispatch. Scale from 3 to 1000 agents with discipline.</p>
           </div>
 
           <!-- Card 10: Pre-Push Hooks -->
@@ -1679,164 +1668,6 @@ rules:
     </section>
 
     <!-- ============================================ -->
-    <!-- AGENT SWARM                                  -->
-    <!-- ============================================ -->
-    <section id="swarm" class="py-24 bg-surface/30" aria-labelledby="swarm-heading">
-      <div class="max-w-7xl mx-auto px-6">
-        <div class="text-center mb-6 reveal">
-          <h2 id="swarm-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Agent Swarm</h2>
-          <p class="text-muted text-lg max-w-2xl mx-auto">Deploy a coordinated team of governed AI agents. 139 agents across 5 governed drivers, each with dedicated skills, schedules, and governance policies.</p>
-        </div>
-
-        <!-- Stats -->
-        <div class="flex justify-center gap-8 mb-14 reveal">
-          <div class="text-center">
-            <span class="block font-mono font-bold text-2xl text-cta">139</span>
-            <span class="text-muted text-xs uppercase tracking-wider">Agents</span>
-          </div>
-          <div class="text-center">
-            <span class="block font-mono font-bold text-2xl text-cta">5</span>
-            <span class="text-muted text-xs uppercase tracking-wider">Drivers</span>
-          </div>
-          <div class="text-center">
-            <span class="block font-mono font-bold text-2xl text-cta">60+</span>
-            <span class="text-muted text-xs uppercase tracking-wider">Skills</span>
-          </div>
-          <div class="text-center">
-            <span class="block font-mono font-bold text-2xl text-cta">24</span>
-            <span class="text-muted text-xs uppercase tracking-wider">Prompts</span>
-          </div>
-        </div>
-
-        <!-- Architecture Diagram -->
-        <div class="mb-14 reveal">
-          <div class="max-w-4xl mx-auto bg-surface border border-surface-light rounded-xl p-4 sm:p-6">
-            <img src="assets/sdlc-swarm-control-plane.svg" alt="Autonomous SDLC Swarm — Control Plane architecture diagram showing governed AI agents across multiple drivers connected to a central control plane with recovery controller escalation states" class="w-full h-auto rounded-lg" loading="lazy"/>
-          </div>
-        </div>
-
-        <!-- Tier cards -->
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12 reveal-stagger">
-          <!-- Core -->
-          <div class="reveal bg-surface border border-surface-light rounded-xl p-5">
-            <div class="flex items-center gap-2 mb-3">
-              <span class="w-2 h-2 rounded-full bg-cta"></span>
-              <h3 class="font-mono font-semibold text-cta text-xs uppercase tracking-wider">Core</h3>
-              <span class="ml-auto text-muted text-xs font-mono">7 agents</span>
-            </div>
-            <ul class="space-y-2 text-sm font-mono">
-              <li class="text-muted"><span class="text-text">Implementation</span> &mdash; Picks issues, codes, opens PRs</li>
-              <li class="text-muted"><span class="text-text">Code Review</span> &mdash; Reviews open PRs</li>
-              <li class="text-muted"><span class="text-text">PR Merger</span> &mdash; Auto-merges approved PRs</li>
-              <li class="text-muted"><span class="text-text">CI Triage</span> &mdash; Diagnoses failing CI</li>
-              <li class="text-muted"><span class="text-text">Conflict Resolver</span> &mdash; Fixes merge conflicts</li>
-              <li class="text-muted"><span class="text-text">PR Responder</span> &mdash; Addresses review comments</li>
-              <li class="text-muted"><span class="text-text">Branch Janitor</span> &mdash; Cleans stale branches</li>
-            </ul>
-          </div>
-
-          <!-- Governance -->
-          <div class="reveal bg-surface border border-surface-light rounded-xl p-5">
-            <div class="flex items-center gap-2 mb-3">
-              <span class="w-2 h-2 rounded-full bg-danger"></span>
-              <h3 class="font-mono font-semibold text-danger text-xs uppercase tracking-wider">Governance</h3>
-              <span class="ml-auto text-muted text-xs font-mono">3 agents</span>
-            </div>
-            <ul class="space-y-2 text-sm font-mono">
-              <li class="text-muted"><span class="text-text">Risk Escalation</span> &mdash; Assesses cumulative risk</li>
-              <li class="text-muted"><span class="text-text">Recovery Controller</span> &mdash; Self-healing playbooks</li>
-              <li class="text-muted"><span class="text-text">Governance Monitor</span> &mdash; Audits governance logs</li>
-            </ul>
-          </div>
-
-          <!-- Ops -->
-          <div class="reveal bg-surface border border-surface-light rounded-xl p-5">
-            <div class="flex items-center gap-2 mb-3">
-              <span class="w-2 h-2 rounded-full bg-warning"></span>
-              <h3 class="font-mono font-semibold text-warning text-xs uppercase tracking-wider">Ops</h3>
-              <span class="ml-auto text-muted text-xs font-mono">8 agents</span>
-            </div>
-            <ul class="space-y-2 text-sm font-mono">
-              <li class="text-muted"><span class="text-text">Planning</span> &mdash; Sprint planning from backlog</li>
-              <li class="text-muted"><span class="text-text">Observability</span> &mdash; Monitors runtime health</li>
-              <li class="text-muted"><span class="text-text">Backlog Groomer</span> &mdash; Triages stale issues</li>
-              <li class="text-muted"><span class="text-text">Docs</span> &mdash; Keeps docs in sync</li>
-              <li class="text-muted"><span class="text-text">Product Health</span> &mdash; Dependency &amp; coverage checks</li>
-              <li class="text-muted"><span class="text-text">Progress Controller</span> &mdash; Tracks sprint velocity</li>
-              <li class="text-muted"><span class="text-text">Repo Hygiene</span> &mdash; Labels, templates, configs</li>
-              <li class="text-muted"><span class="text-text">Retrospective</span> &mdash; Weekly retrospectives</li>
-            </ul>
-          </div>
-
-          <!-- Quality -->
-          <div class="reveal bg-surface border border-surface-light rounded-xl p-5">
-            <div class="flex items-center gap-2 mb-3">
-              <span class="w-2 h-2 rounded-full bg-info"></span>
-              <h3 class="font-mono font-semibold text-info text-xs uppercase tracking-wider">Quality</h3>
-              <span class="ml-auto text-muted text-xs font-mono">7 agents</span>
-            </div>
-            <ul class="space-y-2 text-sm font-mono">
-              <li class="text-muted"><span class="text-text">Testing</span> &mdash; Runs &amp; expands test suites</li>
-              <li class="text-muted"><span class="text-text">Test Generation</span> &mdash; Generates new tests</li>
-              <li class="text-muted"><span class="text-text">Security Audit</span> &mdash; Scans for vulnerabilities</li>
-              <li class="text-muted"><span class="text-text">Architecture Review</span> &mdash; Detects drift &amp; debt</li>
-              <li class="text-muted"><span class="text-text">CI/CD Hardener</span> &mdash; Strengthens pipelines</li>
-              <li class="text-muted"><span class="text-text">PR Audit</span> &mdash; Audits merged PRs</li>
-              <li class="text-muted"><span class="text-text">Infra Health</span> &mdash; Infrastructure checks</li>
-            </ul>
-          </div>
-
-          <!-- Marketing -->
-          <div class="reveal bg-surface border border-surface-light rounded-xl p-5">
-            <div class="flex items-center gap-2 mb-3">
-              <span class="w-2 h-2 rounded-full bg-surface-light"></span>
-              <h3 class="font-mono font-semibold text-muted text-xs uppercase tracking-wider">Marketing</h3>
-              <span class="ml-auto text-muted text-xs font-mono">1 agent</span>
-            </div>
-            <ul class="space-y-2 text-sm font-mono">
-              <li class="text-muted"><span class="text-text">Content Agent</span> &mdash; Changelogs, social posts &amp; community engagement from project activity</li>
-            </ul>
-          </div>
-
-          <!-- Quick Start card -->
-          <div class="reveal bg-surface border border-cta/20 rounded-xl p-5">
-            <div class="flex items-center gap-2 mb-3">
-              <span class="w-2 h-2 rounded-full bg-cta"></span>
-              <h3 class="font-mono font-semibold text-cta text-xs uppercase tracking-wider">Quick Start</h3>
-            </div>
-            <div class="space-y-3">
-              <div>
-                <p class="text-muted text-xs mb-1">Scaffold all tiers:</p>
-                <pre class="bg-bg rounded-lg px-3 py-2 text-sm font-mono text-text overflow-x-auto"><code>agentguard init swarm</code></pre>
-              </div>
-              <div>
-                <p class="text-muted text-xs mb-1">Select specific tiers:</p>
-                <pre class="bg-bg rounded-lg px-3 py-2 text-sm font-mono text-text overflow-x-auto"><code>agentguard init swarm \
-  --tiers core,governance</code></pre>
-              </div>
-              <p class="text-muted text-xs mt-3">Install with <span class="text-text font-mono">npm install -g @red-codes/agentguard</span>. Generates <span class="text-text font-mono">.claude/skills/</span>, agent prompts, and <span class="text-text font-mono">agentguard-swarm.yaml</span> config.</p>
-            </div>
-          </div>
-
-          <!-- Post-Setup card -->
-          <div class="reveal bg-surface border border-border rounded-xl p-5 mt-4">
-            <div class="flex items-center gap-2 mb-3">
-              <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
-              <h3 class="font-mono font-semibold text-yellow-400 text-xs uppercase tracking-wider">Post-Setup — Required</h3>
-            </div>
-            <p class="text-muted text-sm mb-3">Scaffolding generates the files, but agents still need to be configured in <strong class="text-text">Claude Desktop</strong> before they can run:</p>
-            <ol class="text-muted text-sm space-y-2 list-decimal list-inside">
-              <li><strong class="text-text">Create scheduled tasks</strong> — Register each agent as a scheduled task in Claude Desktop using the cron schedules from the agent manifest.</li>
-              <li><strong class="text-text">Set <span class="font-mono text-cta">worktree: true</span></strong> — Enable worktree isolation so parallel agents get their own git worktree and don't conflict on file writes or git state.</li>
-              <li><strong class="text-text">Bypass permissions manually</strong> — Agents run unattended with no human to approve prompts. Pre-approve the required tool permissions (file, shell, git) in Claude Desktop for each agent.</li>
-            </ol>
-            <p class="text-muted text-xs mt-3">AgentGuard's governance policy + invariant system enforces safety boundaries even with permissions bypassed.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================================ -->
     <!-- INTEGRATIONS                                 -->
     <!-- ============================================ -->
     <section class="py-24" aria-labelledby="integrations-heading">
@@ -2194,7 +2025,6 @@ rules:
             <li><a href="#architecture" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Architecture</a></li>
             <li><a href="#invariants" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Invariants</a></li>
             <li><a href="#cli" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">CLI Commands</a></li>
-            <li><a href="#swarm" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Agent Swarm</a></li>
             <li><a href="shellforge.html" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">ShellForge</a></li>
             <li><a href="https://www.npmjs.com/package/@red-codes/agentguard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">@red-codes/agentguard</a></li>
             <li><a href="https://www.npmjs.com/package/@red-codes/core" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">@red-codes/core</a></li>

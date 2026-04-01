@@ -700,10 +700,6 @@ agent-guard/
       registry.ts                   # Renderer registry
       tui-renderer.ts               # TUI renderer implementation
       tui-formatters.ts             # TUI formatting helpers
-    swarm/src/                      # @red-codes/swarm — Agent swarm templates
-      config.ts                     # Swarm configuration
-      manifest.ts                   # Swarm manifest parsing
-      scaffolder.ts                 # Swarm scaffolding
     telemetry/src/                  # @red-codes/telemetry — Runtime telemetry and logging
       cloud-sink.ts                 # Cloud telemetry sink
       event-mapper.ts               # Event mapping

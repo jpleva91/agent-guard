@@ -140,12 +140,6 @@ packages/
 │   └── types.ts                # Storage type definitions
 ├── telemetry/src/              # @red-codes/telemetry — Runtime telemetry and logging
 ├── telemetry-client/src/       # @red-codes/telemetry-client — Telemetry client (identity, signing, queue, sender)
-├── swarm/src/                  # @red-codes/swarm — Shareable agent swarm templates
-│   ├── config.ts               # Swarm configuration
-│   ├── manifest.ts             # Swarm manifest parsing
-│   ├── scaffolder.ts           # Swarm scaffolding
-│   ├── types.ts                # Swarm type definitions
-│   └── index.ts                # Module re-exports
 ├── sdk/src/                    # @red-codes/sdk — Agent SDK for programmatic governance
 │   ├── sdk.ts                  # SDK implementation
 │   ├── session.ts              # Session management
@@ -254,8 +248,7 @@ Each workspace package maps to a single architectural concept:
 - **packages/telemetry/** — Runtime telemetry and logging
 - **packages/telemetry-client/** — Telemetry client (identity, signing, queue, sender)
 - **packages/sdk/** — Agent SDK for programmatic governance integration
-- **packages/swarm/** — Shareable agent swarm templates (config, manifest, scaffolder)
-- **packages/scheduler/** — Task scheduler, queue, lease manager, and worker orchestration for swarm
+- **packages/scheduler/** — Task scheduler, queue, lease manager, and worker orchestration
 - **apps/cli/** — CLI entry point and commands (published as `@red-codes/agentguard`)
 - **packages/invariant-data-protection/** — Data protection invariant plugin
 - **apps/mcp-server/** — MCP governance server (15 governance tools)
@@ -379,7 +372,7 @@ pnpm test --filter=@red-codes/kernel  # Test a single package
 **Test structure:**
 - **Vitest workspace** (`vitest.workspace.ts`): orchestrates tests across all packages
 - **TypeScript tests** (distributed across `packages/*/tests/` and `apps/*/tests/`): vitest
-- **Coverage areas**: adapters (file, git, shell, claude-code, copilot-cli, hook integrity), kernel (AAB, engine, monitor, blast radius, heartbeat, integration, e2e pipeline, conformance, tiers, intent drift, enforcement audit, interventions), CLI commands (args, guard, inspect, init, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate, policy-verify, diff, evidence-pr, traces, plugin, auto-setup, config, demo, migrate), decision records, domain models, events, evidence packs (explainable, explanation chain), evidence summary, execution log, export-import roundtrip, impact forecast, invariants, matchers (path-matcher, command-scanner, policy-matcher, benchmark), notification formatter, plugins (discovery, registry, sandbox, validation), policy evaluation (including composer, pack loader, policy packs, evaluation trace, forecast conditions, gate conditions, persona, trust, pack versioning), renderers, replay (engine, comparator, processor), simulation (filesystem, git, package, dependency graph), SQLite storage (migrations, session, sink, store, cross-run, factory, aggregation queries, commands), swarm (scaffolder, config, manifest), telemetry (event queue, event sender, anonymize, cloud sink, event mapper), TUI renderer, violation mapper, VS Code event reader, YAML loading
+- **Coverage areas**: adapters (file, git, shell, claude-code, copilot-cli, hook integrity), kernel (AAB, engine, monitor, blast radius, heartbeat, integration, e2e pipeline, conformance, tiers, intent drift, enforcement audit, interventions), CLI commands (args, guard, inspect, init, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate, policy-verify, diff, evidence-pr, traces, plugin, auto-setup, config, demo, migrate), decision records, domain models, events, evidence packs (explainable, explanation chain), evidence summary, execution log, export-import roundtrip, impact forecast, invariants, matchers (path-matcher, command-scanner, policy-matcher, benchmark), notification formatter, plugins (discovery, registry, sandbox, validation), policy evaluation (including composer, pack loader, policy packs, evaluation trace, forecast conditions, gate conditions, persona, trust, pack versioning), renderers, replay (engine, comparator, processor), simulation (filesystem, git, package, dependency graph), SQLite storage (migrations, session, sink, store, cross-run, factory, aggregation queries, commands), telemetry (event queue, event sender, anonymize, cloud sink, event mapper), TUI renderer, violation mapper, VS Code event reader, YAML loading
 
 ## CI/CD & Automation
 

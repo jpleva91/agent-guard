@@ -79,7 +79,7 @@ Every governance session requires an agent identity. Resolution order:
 
 If no identity is set, PreToolUse hooks **block all actions** with a message directing the agent to identify itself. The `.agentguard-identity` file is session-scoped and gitignored — it is blanked on session start/stop to prevent stale values.
 
-For autonomous agent swarms, pass identity via env var per-process or `--agent-name` flag:
+For multi-agent setups, pass identity via env var per-process or `--agent-name` flag:
 
 ```bash
 aguard guard --agent-name "builder-agent-3" --policy agentguard.yaml
@@ -216,16 +216,6 @@ aguard status                    # Confirms: ⚡ Token optimization active
 ```
 
 Works with git, npm, cargo, tsc, docker, kubectl, and more. No configuration needed — AgentGuard detects RTK automatically.
-
-## Agent Swarm
-
-AgentGuard ships with a 26-agent autonomous development swarm:
-
-```bash
-aguard init swarm    # Scaffolds agents, skills, and governance into your repo
-```
-
-Agents handle implementation, code review, CI triage, security audits, planning, docs, and more — all under governance.
 
 ## Links
 
