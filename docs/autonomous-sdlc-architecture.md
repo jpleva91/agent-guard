@@ -767,7 +767,7 @@ cp policies/developer.yaml .agentguard/active-policy.yaml
 4. **Scheduler creates worktree**: `git worktree add ../worktrees/issue-42 -b agent/implementation/issue-42`
 5. **Scheduler writes CLAUDE.md** with role template + task description
 6. **Scheduler writes capability token** to `.agentguard/capabilities/current.json` in the worktree
-7. **Scheduler spawns agent**: `claude --print -p "Complete the task described in CLAUDE.md"` in the worktree
+7. **Scheduler dispatches task**: via Octi Pulpo HTTP API → ShellForge → Anthropic API, in an isolated worktree
 8. **Agent works** — every tool call triggers PreToolUse hook → AgentGuard kernel
 9. **Kernel evaluates**: capability check → policy check → invariant check → execute or deny
 10. **Agent completes** — commits to worktree branch
