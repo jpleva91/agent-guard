@@ -3,22 +3,26 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/AgentGuardHQ/agentguard/go/internal/action"
 	"github.com/AgentGuardHQ/agentguard/go/internal/config"
 	"github.com/AgentGuardHQ/agentguard/go/internal/engine"
+	"github.com/AgentGuardHQ/agentguard/go/internal/gateway"
 	"github.com/AgentGuardHQ/agentguard/go/internal/kernel"
 	"github.com/AgentGuardHQ/agentguard/go/pkg/hook"
 )
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "Usage: agentguard <guard|normalize|evaluate|claude-hook|copilot-hook>")
+		fmt.Fprintln(os.Stderr, "Usage: agentguard <guard|normalize|evaluate|gateway|claude-hook|copilot-hook>")
 		os.Exit(1)
 	}
 	switch os.Args[1] {
@@ -28,6 +32,8 @@ func main() {
 		runNormalize()
 	case "evaluate":
 		runEvaluate(os.Args[2:])
+	case "gateway":
+		runGateway(os.Args[2:])
 	case "claude-hook":
 		if err := hook.RunClaudeHook(); err != nil {
 			fmt.Fprintf(os.Stderr, "claude-hook error: %v\n", err)
@@ -258,6 +264,31 @@ func runGuard(args []string) {
 
 	if anyDenied {
 		os.Exit(2)
+	}
+}
+
+// runGateway starts the MCP governance gateway proxy.
+func runGateway(args []string) {
+	fs := flag.NewFlagSet("gateway", flag.ExitOnError)
+	configPath := fs.String("config", "agentguard-gateway.yaml", "Path to gateway config file")
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintf(os.Stderr, "parse flags: %v\n", err)
+		os.Exit(1)
+	}
+
+	cfg, err := gateway.LoadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "load config: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Create context that cancels on SIGINT/SIGTERM
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	if err := gateway.Run(ctx, cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "gateway error: %v\n", err)
+		os.Exit(1)
 	}
 }
 
