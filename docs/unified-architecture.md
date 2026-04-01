@@ -8,25 +8,53 @@ AgentGuard is a **governed action runtime**. The Action is the primary unit of c
 
 The system has one architectural spine: the **canonical event model**. All system activity becomes events. The kernel produces governance events. Subscribers (TUI renderer, JSONL sink, CLI inspect) consume them.
 
+## Enforcement Surfaces
+
+AgentGuard provides three ways to integrate the governance kernel:
+
+| Mode | Integration | Use case |
+|------|------------|----------|
+| **Hook mode** | CLI adapters call the kernel per tool use (PreToolUse/PostToolUse) | Claude Code, Copilot, Codex, Gemini, Goose |
+| **Embedded mode** | Import the Go kernel as a library | Custom orchestrators (e.g., ShellForge) |
+| **Gateway mode** | MCP-to-MCP proxy intercepts tool calls over SSE | Any MCP-compatible agent — zero code changes |
+
+All three modes share the same kernel, the same 26 invariants, and the same YAML policy format.
+
+### Gateway Mode
+
+The MCP Governance Gateway is an MCP-to-MCP proxy (`go/internal/gateway/`). It listens on SSE for agent connections, proxies multiple upstream MCP tool servers simultaneously, and evaluates every tool call through the Go kernel. The gateway adds session-level governance: cumulative blast radius, action velocity, runaway detection, budget tracking, and denial density.
+
+```
+Agent ──SSE──▶ AgentGuard Gateway ──▶ Upstream MCP Tool Server(s)
+                     │
+                     ▼
+              Go Kernel (26 invariants + policy eval)
+              Session governance (blast radius, velocity, budget)
+```
+
+Configuration via `agentguard-gateway.yaml`. CLI: `agentguard gateway start` / `agentguard gateway status`.
+
 ## System Model
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                        Event Sources                             │
 │                                                                  │
-│  Claude Code Hooks        Agent Tool Calls      CI Systems       │
-│  ├── PreToolUse           ├── file.write        ├── pipeline     │
-│  ├── PostToolUse          ├── git.commit         ├── build       │
-│  └── (future hooks)       ├── git.push          └── deploy      │
-│                           └── shell.exec                         │
+│  CLI Hook Adapters        Embedded (Go lib)     MCP Gateway      │
+│  ├── Claude Code          ├── ShellForge        ├── SSE listener │
+│  ├── Copilot CLI          └── Custom agents     ├── MCP proxy    │
+│  ├── Codex CLI                                  └── Upstream     │
+│  ├── Gemini CLI                                    tool servers  │
+│  └── Goose                                                       │
 └──────────────────┬───────────────────┬───────────────┬───────────┘
                    │                   │               │
                    ▼                   ▼               ▼
          ┌─────────────────────────────────────────────────────┐
-         │              Claude Code Adapter                     │
+         │           Adapter / Normalization Layer              │
          │                                                     │
          │  Normalize tool calls → RawAgentAction              │
-         │  Implementation: packages/adapters/src/claude-code.ts │
+         │  Hook adapters: packages/adapters/src/              │
+         │  Gateway proxy: go/internal/gateway/                │
          └──────────────────────┬──────────────────────────────┘
                                 │
                                 ▼
@@ -42,18 +70,19 @@ The system has one architectural spine: the **canonical event model**. All syste
          │  7. ACTION_ALLOWED/DENIED + ACTION_EXECUTED/FAILED  │
          │  8. Escalation tracking (monitor)                   │
          │                                                     │
-         │  Implementation: packages/kernel/src/kernel.ts               │
+         │  Implementation: packages/kernel/src/kernel.ts      │
+         │  Go kernel: go/internal/kernel/                     │
          └──────────────────────┬──────────────────────────────┘
                                 │
                ┌────────────────┼────────────────┐
                │                │                │
                ▼                ▼                ▼
      ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-     │ TUI Renderer │  │ JSONL Sink   │  │  EventBus   │
+     │ TUI Renderer │  │ SQLite Sink  │  │  EventBus   │
      │              │  │              │  │             │
      │ Terminal     │  │ .agentguard/ │  │ Pub/sub     │
-     │ action       │  │ events/      │  │ broadcast   │
-     │ stream       │  │ <runId>.jsonl│  │             │
+     │ action       │  │ audit trail  │  │ broadcast   │
+     │ stream       │  │              │  │             │
      └──────────────┘  └──────────────┘  └──────┬──────┘
                                                 │
                                                 ▼
@@ -62,6 +91,7 @@ The system has one architectural spine: the **canonical event model**. All syste
                                     │                   │
                                     │  CLI inspect      │
                                     │  CLI events       │
+                                    │  Cloud telemetry  │
                                     └───────────────────┘
 ```
 
@@ -147,7 +177,7 @@ Pure domain logic with no environment dependencies.
 
 1. **Single event schema.** The kernel and all consumers use the same canonical event format.
 
-2. **Kernel as single mediation point.** All agent actions pass through the kernel. No bypass.
+2. **Kernel as single mediation point.** All agent actions pass through the kernel — whether via hook adapter, embedded library, or MCP gateway. No bypass.
 
 3. **Independent operation.** The kernel operates independently. Subscribers connect through the canonical event model.
 

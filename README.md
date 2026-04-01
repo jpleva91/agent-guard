@@ -142,6 +142,7 @@ Identity consists of a **role** (`developer`, `reviewer`, `ops`, `security`, `ci
 | **Agent SDK** | Programmatic governance for custom integrations and RunManifest-driven workflows |
 | **Agent identity** | Declare agent role + driver for governance telemetry — automatic prompt or CLI flag |
 | **Pre-push hooks** | Branch protection enforcement via git pre-push hooks, configured from agentguard.yaml |
+| **Three enforcement surfaces** | Hook mode (CLI adapters), embedded mode (Go library), and gateway mode (MCP-to-MCP proxy) |
 | **Works with** | Claude Code, Codex CLI, GitHub Copilot CLI, Google Gemini CLI, OpenCode, Goose (Block), any MCP client |
 
 ## Policy Format (YAML)
@@ -357,16 +358,22 @@ rules:
 ## Architecture
 
 ```
-Agent tool call
-      │
-      ▼
-AgentGuard Kernel
-  1. Normalize   — map tool call to canonical action type
-  2. Evaluate    — match policy rules (deny / allow / escalate)
-  3. Check       — run 26 built-in invariants
-  4. Execute     — run action via adapter (file, shell, git)
-  5. Emit        — 48 event kinds → SQLite audit trail + cloud telemetry
+┌─── Hook Mode ────────────┐  ┌─── Embedded Mode ─────┐  ┌─── Gateway Mode ──────────────┐
+│ Claude Code / Copilot /  │  │ ShellForge imports     │  │ Agent ──SSE──▶ Gateway ──▶     │
+│ Codex / Gemini / Goose   │  │ kernel as Go library   │  │ MCP tool servers (filesystem,  │
+│ call kernel per tool use │  │                        │  │ GitHub, DB, etc.)              │
+└──────────┬───────────────┘  └──────────┬─────────────┘  └──────────┬─────────────────────┘
+           │                             │                           │
+           ▼                             ▼                           ▼
+                          AgentGuard Go Kernel
+                1. Normalize   — map tool call to canonical action type
+                2. Evaluate    — match policy rules (deny / allow / escalate)
+                3. Check       — run 26 built-in invariants
+                4. Execute     — run action via adapter (file, shell, git)
+                5. Emit        — 48 event kinds → SQLite audit trail + cloud telemetry
 ```
+
+All three modes share the same kernel, the same 26 invariants, and the same YAML policy format.
 
 **Storage:** SQLite audit trail at `.agentguard/`. Every decision is recorded and verifiable.
 
@@ -411,6 +418,65 @@ The Go kernel includes: action normalization with AST-based shell parsing, polic
 
 **Confidence-gated HITL** — the Go kernel computes a 0.0–1.0 confidence score from four weighted signals (action risk tier, retry count, escalation state, blast radius). When the score falls below threshold, the kernel emits a `PauseRequested` event and presents a CLI prompt (`y/n`, auto-deny on timeout) before proceeding. This gives human operators a targeted, low-friction approval gate for actions the kernel considers ambiguous — without blocking the entire agent session.
 
+### Three Enforcement Surfaces
+
+AgentGuard enforces governance through three deployment modes. Use whichever fits your integration:
+
+| Mode | How it works | Best for |
+|------|-------------|----------|
+| **Hook mode** | CLI adapters (Claude Code, Copilot, Codex, Gemini, Goose) call the kernel on every tool use | Individual developers and teams using supported CLI agents |
+| **Embedded mode** | Import the Go kernel as a library in your own orchestrator | Custom agent frameworks (e.g., ShellForge) |
+| **Gateway mode** | MCP-to-MCP proxy sits between any agent and any MCP tool server | Any MCP-compatible agent — zero code changes required |
+
+### MCP Governance Gateway
+
+The gateway is an MCP-to-MCP proxy that intercepts every tool call between an agent and its MCP tool servers. Point your agent at the gateway instead of the tool server — governance is applied transparently.
+
+```
+Agent ──SSE──▶ AgentGuard Gateway ──▶ Upstream MCP Tool Server(s)
+                     │
+                     ▼
+              Go Kernel (26 invariants + policy eval)
+              Session governance (blast radius, velocity, budget)
+```
+
+**Key capabilities:**
+- Proxies multiple upstream MCP tool servers simultaneously
+- Evaluates every tool call through the full Go kernel (26 invariants + policy evaluation)
+- Session-level governance: cumulative blast radius, action velocity, runaway detection, budget tracking, denial density
+- Zero code changes for agents — just change the MCP endpoint URL
+
+**Quick start:**
+
+```bash
+agentguard gateway start                 # Start the gateway (reads agentguard-gateway.yaml)
+agentguard gateway status                # Check gateway health and upstream connections
+```
+
+**Configuration** (`agentguard-gateway.yaml`):
+
+```yaml
+listen:
+  host: 127.0.0.1
+  port: 4100
+  transport: sse
+
+upstreams:
+  - name: filesystem
+    url: http://localhost:3100/sse
+  - name: github
+    url: http://localhost:3200/sse
+
+policy: agentguard.yaml       # Same policy format as hook/embedded mode
+
+session:
+  blastRadiusLimit: 50        # Cumulative files across all tool calls
+  actionVelocityWindow: 60s   # Rate limiting window
+  budgetMaxDollars: 5.00      # Per-session spend cap
+```
+
+Agents connect to `http://127.0.0.1:4100/sse` and see a unified tool catalog from all upstreams — with every call governed.
+
 ## For Teams and Enterprise
 
 | Feature | Details |
@@ -436,6 +502,10 @@ agentguard gemini-init                    # Set up Google Gemini CLI hook integr
 agentguard goose-init                     # Set up Goose (Block) CLI integration
 agentguard init --template strict         # Scaffold policy from a template
 agentguard status                         # Show governance status
+
+# Gateway (MCP-to-MCP proxy)
+agentguard gateway start                  # Start the MCP governance gateway
+agentguard gateway status                 # Check gateway health and upstream connections
 
 # Runtime
 agentguard guard                          # Start governed action runtime
