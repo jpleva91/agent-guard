@@ -606,19 +606,7 @@ async function handlePreToolUse(
     return false;
   }
 
-  // --- Go kernel fast-path: try the Go binary for policy evaluation (~2ms vs ~290ms) ---
-  // If the Go binary is installed and policies loaded, delegate to it for fast evaluation.
-  // On allow: return immediately (skip TS kernel entirely — massive perf win).
-  // On deny: fall through to the TS kernel for full mode handling, formatting, and telemetry.
-  if (policyDefs.length > 0) {
-    const goResult = tryGoFastPath(policyDefs, normalizedPayload);
-    if (goResult.used && goResult.allowed) {
-      return false; // Action allowed by Go fast-path — not denied
-    }
-    // If Go denied or was not used, continue to TS kernel for full processing
-  }
-
-  // Generate run ID
+  // Generate run ID early — needed for telemetry even on fast-path allows
   const runId = `hook_${Date.now()}_${randomUUID().replace(/-/g, '').slice(0, 8)}`;
 
   // Resolve storage backend from CLI args (e.g. --store sqlite) or AGENTGUARD_STORE env var
@@ -670,6 +658,91 @@ async function handlePreToolUse(
     }
   } catch {
     // Cloud telemetry setup failure is non-fatal
+  }
+
+  // --- Go kernel fast-path: try the Go binary for policy evaluation (~2ms vs ~290ms) ---
+  // If the Go binary is installed and policies loaded, delegate to it for fast evaluation.
+  // On allow: record telemetry and return immediately (skip TS kernel entirely — massive perf win).
+  // On deny: fall through to the TS kernel for full mode handling, formatting, and telemetry.
+  if (policyDefs.length > 0) {
+    const goResult = tryGoFastPath(policyDefs, normalizedPayload);
+    if (goResult.used && goResult.allowed) {
+      // Record fast-path allow decision to telemetry before returning
+      // Build event sinks list for recording
+      const allEventSinks = [eventSink, cloudSinks?.eventSink].filter(Boolean);
+      const allDecisionSinks = [decisionSink, cloudSinks?.decisionSink].filter(Boolean);
+      // Optional JSONL streaming sink (for real-time tailing via `tail -f`)
+      if (storageConfig.jsonlPath) {
+        const { createJsonlEventSink, createJsonlDecisionSink } = await import('@red-codes/storage');
+        allEventSinks.push(createJsonlEventSink(storageConfig.jsonlPath, runId));
+        allDecisionSinks.push(createJsonlDecisionSink(storageConfig.jsonlPath, runId));
+      }
+      // Record decision event for fast-path allow
+      // Create a minimal decision record for fast-path allows
+      // Note: This is a simplified record since we don't have full kernel evaluation
+      const toolInput = normalizedPayload.tool_input as Record<string, unknown> || {};
+      const decisionRecord = {
+        recordId: `dec_${Date.now()}_${randomUUID().replace(/-/g, '').slice(0, 8)}`,
+        runId,
+        timestamp: Date.now(),
+        action: {
+          type: normalizedPayload.tool_name,
+          target: String(toolInput.file_path || toolInput.command || toolInput.path || 'unknown'),
+          agent: agentId || 'unknown',
+          destructive: false, // Fast-path only allows non-destructive actions
+          command: toolInput.command as string | undefined,
+        },
+        outcome: 'allow' as const,
+        reason: 'Go fast-path evaluation',
+        intervention: null,
+        policy: {
+          matchedPolicyId: 'fast-path-cache',
+          matchedPolicyName: 'fast-path-cache',
+          severity: 0,
+        },
+        invariants: {
+          allHold: true,
+          violations: [],
+        },
+        capabilityGrant: null,
+        simulation: null,
+        evidencePackId: null,
+        monitor: {
+          escalationLevel: 0,
+          totalEvaluations: 0,
+          totalDenials: 0,
+        },
+        evaluationTimeMs: 0,
+        fastPath: true,
+        agentRole: null,
+        execution: {
+          executed: false, // Fast-path doesn't execute, just evaluates
+          success: null,
+          durationMs: null,
+          error: null,
+        },
+      };
+      // Record to all decision sinks
+      for (const sink of allDecisionSinks) {
+        if (sink) {
+          try {
+            sink.write(decisionRecord);
+          } catch {
+            // Sink recording failure is non-fatal
+          }
+        }
+      }
+      // Flush cloud telemetry if available
+      if (cloudSinks) {
+        try {
+          await cloudSinks.flush();
+        } catch {
+          // Flush failure is non-fatal
+        }
+      }
+      return false; // Action allowed by Go fast-path — not denied
+    }
+    // If Go denied or was not used, continue to TS kernel for full processing
   }
 
   // Build kernel — dryRun: true = evaluate policies/invariants only (no adapter execution).
