@@ -1,0 +1,58 @@
+name: Cata Agent Dispatch
+on:
+  repository_dispatch:
+    types: [octi-pulpo-dispatch]
+
+jobs:
+  cata-agent:
+    runs-on: ubuntu-latest
+    if: |
+      github.event.client_payload.type == 'evolve' ||
+      github.event.client_payload.type == 'code-gen' ||
+      github.event.client_payload.type == 'bugfix' ||
+      github.event.client_payload.type == 'config'
+    env:
+      TASK_ID: ${{ github.event.client_payload.task_id }}
+      TASK_TYPE: ${{ github.event.client_payload.type }}
+      TASK_PRIORITY: ${{ github.event.client_payload.priority }}
+      TASK_PROMPT: ${{ github.event.client_payload.prompt }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Cata binary
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Task ID:   ${TASK_ID}"
+          echo "Type:      ${TASK_TYPE}"
+          echo "Priority:  ${TASK_PRIORITY}"
+          gh release download --repo AgentGuardHQ/cata \
+            --pattern "cata-linux-amd64" \
+            --output cata \
+            --clobber || echo "WARN: cata release not yet published"
+          chmod +x cata 2>/dev/null || true
+
+      - name: Configure git identity
+        run: |
+          git config --global user.email "octi-pulpo@agentguardhq.com"
+          git config --global user.name "Octi Pulpo Bot"
+
+      - name: Run Cata agent
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ ! -f ./cata ]; then
+            echo "ERROR: cata binary not available"
+            exit 1
+          fi
+          ./cata run \
+            --provider deepseek \
+            --model deepseek-chat \
+            --max-turns 100 \
+            "${TASK_PROMPT}" \
+            || echo "WARN: cata exited non-zero for task ${TASK_ID}"
+
+      - name: Report outcome
+        if: always()
+        run: echo "Task ${TASK_ID} dispatch complete. Status: ${{ job.status }}"
