@@ -26,7 +26,7 @@ jobs:
           echo "Task ID:   ${TASK_ID}"
           echo "Type:      ${TASK_TYPE}"
           echo "Priority:  ${TASK_PRIORITY}"
-          gh release download --repo AgentGuardHQ/clawta \
+          gh release download --repo chitinhq/clawta \
             --pattern "clawta-linux-amd64" \
             --output clawta \
             --clobber || echo "WARN: clawta release not yet published"
@@ -34,7 +34,7 @@ jobs:
 
       - name: Configure git identity
         run: |
-          git config --global user.email "octi-pulpo@agentguardhq.com"
+          git config --global user.email "octi-pulpo@chitinhq.com"
           git config --global user.name "Octi Pulpo Bot"
 
       - name: Run Clawta agent
