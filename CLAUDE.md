@@ -233,6 +233,20 @@ The kernel loop is the core of AgentGuard. Every agent action passes through it:
 Key files: `packages/kernel/src/kernel.ts`, `packages/kernel/src/aab.ts`, `packages/kernel/src/decision.ts`, `packages/kernel/src/monitor.ts`
 See `docs/unified-architecture.md` for the full model.
 
+### Invariant Configuration (Policy Overrides)
+
+The 26 built-in invariants (defined in `packages/invariants/src/definitions.ts`) enforce by default, but operators can override them in policy YAML via two mechanisms. **`invariantModes`** sets an invariant to `monitor` mode — it still evaluates and emits warnings but does not block the action, useful for rolling out new invariants or during planned maintenance. **`disabledInvariants`** completely removes an invariant from evaluation — use sparingly, as it eliminates the safety check entirely. Both fields are parsed in `packages/policy/src/yaml-loader.ts` and merged across composed policies in `packages/policy/src/composer.ts` (disabled invariants union across all sources).
+
+```yaml
+# Set a specific invariant to monitor mode (warn but don't block)
+invariantModes:
+  no-cicd-config-modification: monitor
+
+# Or disable invariants entirely (use sparingly)
+disabledInvariants:
+  - no-cicd-config-modification
+```
+
 ### Package Layout
 Each workspace package maps to a single architectural concept:
 - **packages/kernel/** — Governed action kernel, escalation, evidence, decisions, simulation
